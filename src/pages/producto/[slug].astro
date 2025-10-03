@@ -1,0 +1,16 @@
+---
+import Layout from '../../layouts/BaseLayout.astro';
+import ProductDetail from '../../components/sections/ProductDetail'; // Ajusta la ruta según dónde esté
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/404');
+}
+---
+
+<Layout title="Producto">
+  <ProductDetail slug={slug} client:load />
+</Layout>

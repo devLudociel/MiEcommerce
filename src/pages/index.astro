@@ -1,0 +1,80 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HeroCarousel from '../components/sections/HeroCarousel.tsx';
+import FooterComponent from '../components/sections/Footer.tsx';
+import ProductGrid from '../components/sections/ProductGrid.tsx';
+import SpecialOffers from '../components/sections/SpecialOffert.tsx';
+---
+
+<BaseLayout title="PersonalizaTodo - Tu idea, nuestra realidad">
+  
+  <!-- Hero Section -->
+  <section id="inicio" class="bg-gradient-to-br from-brand-600 via-brand-700 to-accent-500 text-white">
+    <HeroCarousel client:load />
+  </section>
+
+  <!-- Products Grid (Firebase) -->
+  <ProductGrid client:load />
+
+  <!-- Services Section -->
+  <section id="servicios" class="py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold text-gray-800 mb-4">Nuestros Servicios</h2>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+          Amplia gama de servicios de personalización
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+          <div class="w-16 h-16 bg-brand-600 rounded-lg flex items-center justify-center mb-4">
+            <span class="text-white text-2xl">👕</span>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-800 mb-2">Estampado Textil</h3>
+          <p class="text-gray-600 mb-4">Camisetas, sudaderas y más. Estampado de alta calidad en cualquier posición y tamaño.</p>
+          <div class="text-brand-600 font-semibold">Desde €2.00</div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+          <div class="w-16 h-16 bg-brand-600 rounded-lg flex items-center justify-center mb-4">
+            <span class="text-white text-2xl">🪡</span>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-800 mb-2">Bordado</h3>
+          <p class="text-gray-600 mb-4">Bordados elegantes y duraderos para un acabado premium en tus prendas.</p>
+          <div class="text-brand-600 font-semibold">Desde €3.00</div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+          <div class="w-16 h-16 bg-brand-600 rounded-lg flex items-center justify-center mb-4">
+            <span class="text-white text-2xl">🖨️</span>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-800 mb-2">Impresión 3D</h3>
+          <p class="text-gray-600 mb-4">Resina y filamento. Convierte tus ideas en objetos físicos con la mejor calidad.</p>
+          <div class="text-brand-600 font-semibold">Cotización</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ofertas-especiales" class="py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold text-gray-800 mb-4">Ofertas Especiales</h2>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+          Aprovecha nuestros descuentos exclusivos por tiempo limitado
+        </p>
+      </div>
+
+      <SpecialOffers client:load />
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white py-12">
+    <FooterComponent />
+  </footer>
+
+  <!-- Firebase v8 scripts y lógica duplicada eliminados. La carga de productos
+       ahora la maneja el componente React ProductsSection usando Firestore v9+. -->
+</BaseLayout>

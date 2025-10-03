@@ -1,0 +1,18 @@
+# Archivos temporales
+TEMP_*.txt
+CON
+
+# Dependencias (no necesarias si ya tienes package-lock.json, pero por seguridad)
+node_modules/
+
+# Entorno de desarrollo
+.env
+.env.local
+.env.*.local
+
+# VS Code (opcional: comenta si quieres subir configuraciones)
+.vscode/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db

@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminProductsPanel from '../../components/admin/AdminProductsPanel.tsx';
+import RequireAdmin from '../../components/auth/RequireAdmin.tsx';
+---
+
+<BaseLayout title="Admin | Productos">
+  <!-- Monta el guard (redirige si no es admin) -->
+  <RequireAdmin client:load />
+  <!-- Monta el panel con hidratación propia para manejar eventos -->
+  <AdminProductsPanel client:load />
+</BaseLayout>
