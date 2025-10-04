@@ -38,16 +38,28 @@ export default function AddressSelector({ onChange, title = 'Direcciones' }: Pro
 
   useEffect(() => { onChange?.({ shipping, billing }); }, [shipping, billing]);
 
-  if (!uid) return <div className="p-4 bg-white rounded-xl border">Inicia sesión para seleccionar direcciones.</div>;
+  if (!uid) return <div className="card p-6">Inicia sesión para seleccionar direcciones.</div>;
 
   return (
-    <div className="p-4 bg-white rounded-xl border space-y-4">
-      <div className="font-bold text-lg">{title}</div>
-      <div className="grid md:grid-cols-2 gap-4">
+    <div className="card card-cyan p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-bold text-gray-900">{title}</h3>
+        <a href="/account/addresses" className="text-sm text-cyan-600 hover:underline">
+          Gestionar direcciones
+        </a>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium mb-1">Dirección de envío</label>
-          <select className="input" value={shippingId} onChange={e => setShippingId(e.target.value)}>
-            <option value="none">Selecciona…</option>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Dirección de envío
+          </label>
+          <select 
+            className="input" 
+            value={shippingId} 
+            onChange={e => setShippingId(e.target.value)}
+          >
+            <option value="none">Selecciona una dirección…</option>
             {addresses.map(a => (
               <option key={a.id} value={a.id}>
                 {(a.label || 'Dirección')} — {a.city}{a.state ? `, ${a.state}` : ''}
@@ -55,16 +67,27 @@ export default function AddressSelector({ onChange, title = 'Direcciones' }: Pro
             ))}
           </select>
         </div>
+
         <div>
-          <label className="block text-sm font-medium mb-1">Dirección de facturación</label>
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <label className="text-sm flex items-center gap-2">
-              <input type="checkbox" checked={sameAsShipping} onChange={e => setSameAsShipping(e.target.checked)} />
-              Igual que envío
-            </label>
-          </div>
-          <select className="input" value={sameAsShipping ? (shippingId || 'none') : billingId} onChange={e => setBillingId(e.target.value)} disabled={sameAsShipping}>
-            <option value="none">Selecciona…</option>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Dirección de facturación
+          </label>
+          <label className="flex items-center gap-2 mb-3 text-sm text-gray-600">
+            <input 
+              type="checkbox" 
+              checked={sameAsShipping} 
+              onChange={e => setSameAsShipping(e.target.checked)} 
+              className="w-4 h-4"
+            />
+            Igual que dirección de envío
+          </label>
+          <select 
+            className="input" 
+            value={sameAsShipping ? (shippingId || 'none') : billingId} 
+            onChange={e => setBillingId(e.target.value)} 
+            disabled={sameAsShipping}
+          >
+            <option value="none">Selecciona una dirección…</option>
             {addresses.map(a => (
               <option key={a.id} value={a.id}>
                 {(a.label || 'Dirección')} — {a.city}{a.state ? `, ${a.state}` : ''}
@@ -73,8 +96,14 @@ export default function AddressSelector({ onChange, title = 'Direcciones' }: Pro
           </select>
         </div>
       </div>
-      <div className="text-xs text-gray-500">Gestiona tus direcciones en <a href="/account/addresses" className="underline">Mi cuenta → Mis direcciones</a>.</div>
+
+      {addresses.length === 0 && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm text-yellow-800">
+            No tienes direcciones guardadas. <a href="/account/addresses" className="underline font-medium">Añade una dirección</a> para continuar.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
-

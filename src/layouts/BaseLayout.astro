@@ -9,7 +9,6 @@ interface Props {
 }
 
 const { title, description = "Especialistas en personalización: estampado, bordado, impresión 3D, corte láser y mucho más.", ogImage = "/og-image.jpg" } = Astro.props;
-
 ---
 
 <!DOCTYPE html>
@@ -41,7 +40,9 @@ const { title, description = "Especialistas en personalización: estampado, bord
   </head>
   <body class="bg-gray-50 min-h-screen">
     <Header client:load />
-    <main class="pt-40 md:pt-44">
+    <!-- Espaciador único para compensar el header fijo -->
+    <div style="height: 150px;"></div>
+    <main>
       <slot />
     </main>
   </body>

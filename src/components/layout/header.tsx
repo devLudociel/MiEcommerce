@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../../store/cartStore';
 import SearchDropdown from '../navigation/SearchDropdown';
+import { useAuth } from '../../components/hooks/useAuth';
 
 function CartBadge() {
   const { count } = useCart();
@@ -103,6 +104,8 @@ const Header: React.FC<HeaderProps> = () => {
     document.addEventListener('click', onDocClick);
     return () => document.removeEventListener('click', onDocClick);
   }, []);
+
+  const { user, email, displayName, isAuthenticated, logout } = useAuth();
 
   // Categorías con la estructura actualizada
   const categories: MenuCategory[] = [
@@ -274,34 +277,112 @@ const Header: React.FC<HeaderProps> = () => {
 
               {/* Cuenta */}
               <div className="relative">
-                <button 
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center"
-                  style={{ gap: 'var(--spacing-2)', color: 'var(--color-gray-600)', transition: 'var(--transition-all)' }}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <span className="text-sm lg:block hidden">Mi cuenta</span>
-                </button>
+  <button 
+    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+    className="flex items-center"
+    style={{ gap: 'var(--spacing-2)', color: 'var(--color-gray-600)', transition: 'var(--transition-all)' }}
+  >
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+    <span className="text-sm lg:block hidden">Mi cuenta</span>
+  </button>
 
-                {isUserMenuOpen && (
-                  <div 
-                    className="absolute bg-white rounded-lg shadow-xl border z-50"
-                    style={{ 
-                      top: '100%', 
-                      right: 0, 
-                      marginTop: 'var(--spacing-2)', 
-                      width: '12rem',
-                      borderColor: 'var(--color-gray-200)',
-                      padding: 'var(--spacing-2) 0'
-                    }}
-                  >
-                    <a href="/login" className="block text-sm" style={{ color: 'var(--color-gray-700)', padding: 'var(--spacing-2) var(--spacing-4)' }}>Iniciar sesión</a>
-                    <a href="/register" className="block text-sm" style={{ color: 'var(--color-gray-700)', padding: 'var(--spacing-2) var(--spacing-4)' }}>Crear cuenta</a>
-                  </div>
-                )}
+  {isUserMenuOpen && (
+    <div 
+      className="absolute bg-white rounded-lg shadow-xl border z-50"
+      style={{ 
+        top: '100%', 
+        right: 0, 
+        marginTop: 'var(--spacing-2)', 
+        width: '280px',
+        borderColor: 'var(--color-gray-200)',
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {isAuthenticated ? (
+        <>
+          {/* Header con info del usuario */}
+          <div style={{ padding: 'var(--spacing-4)', borderBottom: '1px solid var(--color-gray-200)' }}>
+            <div className="flex items-center" style={{ gap: 'var(--spacing-3)' }}>
+              <div
+                className="flex items-center justify-center rounded-full bg-cyan-100 text-cyan-700 font-semibold"
+                style={{ width: '40px', height: '40px', fontSize: '1.125rem' }}
+              >
+                {(displayName || email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
               </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-gray-900 text-sm truncate">
+                  Hola {displayName || email?.split('@')[0] || 'Usuario'}
+                </div>
+                <div className="text-xs text-gray-500 truncate">{email}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Opciones del menú */}
+          <div style={{ padding: 'var(--spacing-2) 0' }}>
+            <div style={{ padding: '0 var(--spacing-3) var(--spacing-2) var(--spacing-3)' }}>
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Cuenta</h4>
+            </div>
+            <a href="/account" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
+              Panel de control
+            </a>
+            <a href="/account/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
+              Perfil de la cuenta
+            </a>
+          </div>
+
+          <div style={{ padding: 'var(--spacing-2) 0', borderTop: '1px solid var(--color-gray-100)' }}>
+            <div style={{ padding: '0 var(--spacing-3) var(--spacing-2) var(--spacing-3)' }}>
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Mis compras</h4>
+            </div>
+            <a href="/account/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
+              Historial de compras y volver a pedir
+            </a>
+          </div>
+
+          <div style={{ padding: 'var(--spacing-2) 0', borderTop: '1px solid var(--color-gray-100)' }}>
+            <a href="/account/wishlist" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
+              Mis favoritos
+            </a>
+            <a href="/account/addresses" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
+              Mis direcciones
+            </a>
+            <a href="/account" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
+              Configuración de la cuenta
+            </a>
+          </div>
+
+          <div style={{ padding: 'var(--spacing-2)', borderTop: '1px solid var(--color-gray-100)' }}>
+            <button
+              onClick={() => {
+                setIsUserMenuOpen(false);
+                logout();
+              }}
+              className="w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50 rounded font-medium"
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </>
+      ) : (
+        <div style={{ padding: 'var(--spacing-4)' }}>
+          <h3 className="font-semibold text-gray-900 mb-2">¡Bienvenido!</h3>
+          <p className="text-sm text-gray-600 mb-4">Inicia sesión para acceder a tu cuenta</p>
+          <div className="space-y-2">
+            <a href="/login" className="block w-full px-4 py-2 text-sm text-center bg-cyan-600 text-white rounded hover:bg-cyan-700 font-medium" onClick={() => setIsUserMenuOpen(false)}>
+              Iniciar sesión
+            </a>
+            <a href="/register" className="block w-full px-4 py-2 text-sm text-center border border-gray-300 text-gray-700 rounded hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
+              Crear cuenta
+            </a>
+          </div>
+        </div>
+      )}
+    </div>
+  )}
+</div>
 
               {/* Cesta */}
               <div className="relative">

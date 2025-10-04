@@ -207,6 +207,21 @@ button {
   --spacing-24: 6rem;
   --spacing-28: 7rem;
   --spacing-32: 8rem;
+  --spacing-36: 9rem;
+  --spacing-40: 10rem;
+  --spacing-44: 11rem;
+  --spacing-48: 12rem;
+  --spacing-52: 13rem;
+  --spacing-56: 14rem;
+  --spacing-60: 15rem;
+  --spacing-64: 16rem;
+  --spacing-72: 18rem;
+  --spacing-80: 20rem;
+  --spacing-96: 24rem;
+  --spacing-120: 30rem;
+  --spacing-160: 40rem;
+  --spacing-200: 50rem;
+  
 
   /* === RADIOS === */
   --radius-none: 0;
