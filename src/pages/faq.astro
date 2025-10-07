@@ -1,0 +1,9 @@
+---
+// src/pages/faq.astro
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FAQComponent from '../components/pages/FAQComponent.tsx';
+---
+
+<BaseLayout title="Preguntas Frecuentes - ImprimeArte">
+  <FAQComponent client:load />
+</BaseLayout>

@@ -1,0 +1,9 @@
+---
+// src/pages/confirmacion.astro
+import BaseLayout from '../layouts/BaseLayout.astro';
+import OrderConfirmation from '../components/pages/OrderConfirmation';
+---
+
+<BaseLayout title="Pedido Confirmado">
+  <OrderConfirmation client:load />
+</BaseLayout>

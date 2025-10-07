@@ -1,101 +1,167 @@
-import { useEffect, useState } from 'react';
+// src/store/cartStore.ts
+import { atom } from 'nanostores';
 
 export interface CartItem {
-  id: string | number;
+  id: string;
   name: string;
   price: number;
   quantity: number;
-  image?: string;
-  variantId?: string | number;
+  image: string;
+  variantId?: number;
   variantName?: string;
-  options?: Record<string, string> | string[];
+  customization?: {
+    uploadedImage: string | null;
+    uploadedImageFile: File | null;
+    text: string;
+    textColor: string;
+    textFont: string;
+    textSize: number;
+    backgroundColor: string;
+    selectedColor: string;
+    selectedSize: string;
+    selectedMaterial: string;
+    selectedFinish: string;
+    quantity: number;
+    position: { x: number; y: number };
+    rotation: number;
+    scale: number;
+  };
 }
 
-const CART_KEY = 'cart:v1';
-const CART_EVENT = 'cart:change';
+export interface CartState {
+  items: CartItem[];
+  total: number;
+}
 
-function readCart(): CartItem[] {
-  if (typeof window === 'undefined') return [];
+// Cargar carrito desde localStorage al iniciar
+const loadCartFromStorage = (): CartState => {
+  if (typeof window === 'undefined') {
+    return { items: [], total: 0 };
+  }
+  
   try {
-    const raw = localStorage.getItem(CART_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+    const stored = localStorage.getItem('cart');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return {
+        items: parsed.items || [],
+        total: parsed.total || 0,
+      };
+    }
+  } catch (e) {
+    console.error('Error loading cart from storage:', e);
   }
-}
+  
+  return { items: [], total: 0 };
+};
 
-function writeCart(items: CartItem[]) {
+// Guardar carrito en localStorage
+const saveCartToStorage = (state: CartState): void => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(CART_KEY, JSON.stringify(items));
-  window.dispatchEvent(new CustomEvent(CART_EVENT));
-}
+  
+  try {
+    localStorage.setItem('cart', JSON.stringify(state));
+  } catch (e) {
+    console.error('Error saving cart to storage:', e);
+  }
+};
 
-export function getCartItems(): CartItem[] {
-  return readCart();
-}
+// Calcular total del carrito
+const calculateTotal = (items: CartItem[]): number => {
+  return items.reduce((sum: number, item: CartItem) => sum + item.price * item.quantity, 0);
+};
 
-export function addToCart(item: CartItem) {
-  const items = readCart();
-  const idx = items.findIndex(
-    (i) => i.id === item.id && (i.variantId ?? null) === (item.variantId ?? null)
+// Atom del carrito
+export const cartStore = atom<CartState>(loadCartFromStorage());
+
+// Agregar item al carrito
+export function addToCart(item: CartItem): void {
+  const currentState = cartStore.get();
+  const existingItemIndex = currentState.items.findIndex(
+    (i: CartItem) => i.id === item.id && i.variantId === item.variantId
   );
-  if (idx >= 0) {
-    items[idx].quantity += item.quantity;
+
+  let newItems: CartItem[];
+
+  if (existingItemIndex > -1) {
+    // Si el item ya existe, aumentar cantidad
+    newItems = currentState.items.map((i: CartItem, index: number) =>
+      index === existingItemIndex
+        ? { ...i, quantity: i.quantity + item.quantity }
+        : i
+    );
   } else {
-    items.push({ ...item });
+    // Si no existe, agregarlo
+    newItems = [...currentState.items, item];
   }
-  writeCart(items);
+
+  const newState: CartState = {
+    items: newItems,
+    total: calculateTotal(newItems),
+  };
+
+  cartStore.set(newState);
+  saveCartToStorage(newState);
 }
 
-export function updateQuantity(
-  id: CartItem['id'],
-  quantity: number,
-  variantId?: CartItem['variantId']
-) {
-  const items = readCart();
-  const idx = items.findIndex(
-    (i) => i.id === id && (i.variantId ?? null) === (variantId ?? null)
+// Actualizar cantidad de un item
+export function updateCartItemQuantity(itemId: string, variantId: number | undefined, quantity: number): void {
+  const currentState = cartStore.get();
+  
+  const newItems = currentState.items.map((item: CartItem) =>
+    item.id === itemId && item.variantId === variantId
+      ? { ...item, quantity: Math.max(1, quantity) }
+      : item
   );
-  if (idx >= 0) {
-    items[idx].quantity = Math.max(0, quantity);
-  }
-  writeCart(items.filter((i) => i.quantity > 0));
+
+  const newState: CartState = {
+    items: newItems,
+    total: calculateTotal(newItems),
+  };
+
+  cartStore.set(newState);
+  saveCartToStorage(newState);
 }
 
-export function removeFromCart(id: CartItem['id'], variantId?: CartItem['variantId']) {
-  const next = readCart().filter(
-    (i) => !(i.id === id && (i.variantId ?? null) === (variantId ?? null))
+// Remover item del carrito
+export function removeFromCart(itemId: string, variantId?: number): void {
+  const currentState = cartStore.get();
+  
+  const newItems = currentState.items.filter(
+    (item: CartItem) => !(item.id === itemId && item.variantId === variantId)
   );
-  writeCart(next);
+
+  const newState: CartState = {
+    items: newItems,
+    total: calculateTotal(newItems),
+  };
+
+  cartStore.set(newState);
+  saveCartToStorage(newState);
 }
 
-export function clearCart() {
-  writeCart([]);
+// Limpiar carrito
+export function clearCart(): void {
+  const newState: CartState = { items: [], total: 0 };
+  cartStore.set(newState);
+  saveCartToStorage(newState);
 }
 
-export function useCart() {
-  const [items, setItems] = useState<CartItem[]>(() => readCart());
+// Hook para usar el carrito en React
+export function useCart(): CartState {
+  return cartStore.get();
+}
 
-  useEffect(() => {
-    const onChange = () => setItems(readCart());
-    window.addEventListener(CART_EVENT, onChange as EventListener);
-    // Hydrate on mount in case it changed before subscription
-    setItems(readCart());
-    return () => window.removeEventListener(CART_EVENT, onChange as EventListener);
-  }, []);
+// Obtener cantidad total de items
+export function getCartItemCount(): number {
+  const state = cartStore.get();
+  return state.items.reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
+}
 
-  const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const count = items.reduce((sum, i) => sum + i.quantity, 0);
-
-  return {
-    items,
-    total,
-    count,
-    add: addToCart,
-    update: updateQuantity,
-    remove: removeFromCart,
-    clear: clearCart,
-  } as const;
+// Verificar si un producto está en el carrito
+export function isInCart(productId: string, variantId?: number): boolean {
+  const state = cartStore.get();
+  return state.items.some(
+    (item: CartItem) => item.id === productId && item.variantId === variantId
+  );
 }

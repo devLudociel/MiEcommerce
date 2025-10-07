@@ -1,0 +1,13 @@
+---
+import Layout from '../../layouts/BaseLayout.astro';
+import ProductCustomizer from '../../components/pages/ProductCustomizer';
+
+const { slug } = Astro.params;
+---
+
+<Layout title={`Personalizar Producto - ${slug}`}>
+  <ProductCustomizer 
+    client:load 
+    slug={slug}
+  />
+</Layout>

@@ -1,11 +1,13 @@
 ﻿// Header.tsx - Versión actualizada con búsqueda integrada
 import { useState, useEffect, useRef } from 'react';
-import { useCart } from '../../store/cartStore';
 import SearchDropdown from '../navigation/SearchDropdown';
 import { useAuth } from '../../components/hooks/useAuth';
+import { useStore } from '@nanostores/react';
+import { cartStore, updateCartItemQuantity, removeFromCart, getCartItemCount } from '../../store/cartStore';
 
 function CartBadge() {
-  const { count } = useCart();
+  const cart = useStore(cartStore);
+  const count = cart.items.reduce((sum, item) => sum + item.quantity, 0);
   if (!count) return null;
   return (
     <span
@@ -18,7 +20,7 @@ function CartBadge() {
 }
 
 function CartDropdown({ onClose }: { onClose: () => void }) {
-  const cart = useCart();
+  const cart = useStore(cartStore);
   return (
     <div
       className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-50"
@@ -43,10 +45,30 @@ function CartDropdown({ onClose }: { onClose: () => void }) {
                     <div className="text-xs text-gray-500 truncate">{item.variantName}</div>
                   )}
                   <div className="flex items-center gap-2 mt-1">
-                    <button className="w-6 h-6 rounded border text-gray-700 hover:bg-gray-50" onClick={() => cart.update(item.id, Math.max(0, item.quantity - 1), item.variantId)} aria-label="Disminuir">−</button>
+                    <button 
+                      type="button"
+                      className="w-6 h-6 rounded border text-gray-700 hover:bg-gray-50" 
+                      onClick={() => updateCartItemQuantity(item.id, item.variantId, Math.max(1, item.quantity - 1))} 
+                      aria-label="Disminuir"
+                    >
+                      −
+                    </button>
                     <span className="text-sm text-gray-700 w-6 text-center">{item.quantity}</span>
-                    <button className="w-6 h-6 rounded border text-gray-700 hover:bg-gray-50" onClick={() => cart.update(item.id, item.quantity + 1, item.variantId)} aria-label="Aumentar">+</button>
-                    <button className="ml-2 text-xs text-red-600 hover:underline" onClick={() => cart.remove(item.id, item.variantId)}>Eliminar</button>
+                    <button 
+                      type="button"
+                      className="w-6 h-6 rounded border text-gray-700 hover:bg-gray-50" 
+                      onClick={() => updateCartItemQuantity(item.id, item.variantId, item.quantity + 1)} 
+                      aria-label="Aumentar"
+                    >
+                      +
+                    </button>
+                    <button 
+                      type="button"
+                      className="ml-2 text-xs text-red-600 hover:underline" 
+                      onClick={() => removeFromCart(item.id, item.variantId)}
+                    >
+                      Eliminar
+                    </button>
                   </div>
                 </div>
                 <div className="text-sm font-semibold text-cyan-700 whitespace-nowrap">€{(item.price * item.quantity).toFixed(2)}</div>
@@ -62,12 +84,14 @@ function CartDropdown({ onClose }: { onClose: () => void }) {
         </div>
         <div className="flex gap-2">
           <a href="/cart" className="px-3 py-2 text-sm rounded border hover:bg-gray-50">Ver carrito</a>
-          <a href="/cart" className="px-3 py-2 text-sm rounded bg-cyan-600 text-white hover:bg-cyan-700">Finalizar</a>
+          <a href="/checkout" className="px-3 py-2 text-sm rounded bg-cyan-600 text-white hover:bg-cyan-700">Finalizar</a>
         </div>
       </div>
     </div>
   );
 }
+
+// Después de estos componentes continúa con el resto de tu Header.tsx tal cual está
 
 interface MenuCategory {
   id: string;

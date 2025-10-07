@@ -1,0 +1,13 @@
+---
+import Layout from '../../layouts/BaseLayout.astro';
+import CategoryPage from '../../components/pages/CategoryPage';
+
+const { categorySlug } = Astro.params;
+---
+
+<Layout title={`Categoría - ${categorySlug}`}>
+  <CategoryPage 
+    client:load 
+    categorySlug={categorySlug}
+  />
+</Layout>

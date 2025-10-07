@@ -1,10 +1,10 @@
 // src/pages/CategoryPage.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase'; // Ajusta esta ruta según tu estructura
-import Breadcrumbs from '../components/navigation/Breadcrumbs';
-import ProductFilters from '../components/products/ProductFilters';
-import ProductGrid from '../components/products/ProductGrid';
+import { db } from '../../lib/firebase'; // Ajusta esta ruta según tu estructura
+import Breadcrumbs from '../navigation/Breadcrumbs';
+import ProductFilters from '../products/ProductFilters';
+import ProductGrid from '../products/ProductGrid';
 
 interface CategoryPageProps {
   categorySlug?: string;
