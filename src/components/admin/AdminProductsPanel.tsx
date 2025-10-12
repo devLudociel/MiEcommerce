@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, listAll, deleteObject } from 'firebase/storage';
 import { signOut } from 'firebase/auth';
+import VariantImageManager from './VariantImageManager';
 
 // Tipos actualizados
 interface ProductCategory {
@@ -72,7 +73,10 @@ interface FirebaseProduct {
   updatedAt?: any;
 }
 
-type DraftProduct = Omit<FirebaseProduct, 'id' | 'createdAt' | 'updatedAt'> & { id?: string };
+type DraftProduct = Omit<FirebaseProduct, 'id' | 'createdAt' | 'updatedAt'> & { 
+  id?: string;
+  customizerType?: 'shirt' | 'frame' | 'resin' | 'default';
+};
 
 const emptyProduct: DraftProduct = {
   name: '',
@@ -86,6 +90,7 @@ const emptyProduct: DraftProduct = {
   featured: false,
   slug: '',
   active: true,
+  customizerType: 'default',
 };
 
 // Datos de categorías y subcategorías según tu clasificación
@@ -214,44 +219,44 @@ const attributes: ProductAttribute[] = [
 // Relación subcategoría -> atributos
 const subcategoryAttributes: SubcategoryAttribute[] = [
   // Tarjetas de Visita
-  { subcategoryId: '1', attributeId: '1' }, // Forma
-  { subcategoryId: '1', attributeId: '2' }, // Acabado
-  { subcategoryId: '1', attributeId: '13' }, // Cantidad
+  { subcategoryId: '1', attributeId: '1' },
+  { subcategoryId: '1', attributeId: '2' },
+  { subcategoryId: '1', attributeId: '13' },
   
   // Etiquetas y Pegatinas
-  { subcategoryId: '2', attributeId: '6' }, // Material
-  { subcategoryId: '2', attributeId: '7' }, // Forma
-  { subcategoryId: '2', attributeId: '12' }, // Tamaño
-  { subcategoryId: '2', attributeId: '13' }, // Cantidad
+  { subcategoryId: '2', attributeId: '6' },
+  { subcategoryId: '2', attributeId: '7' },
+  { subcategoryId: '2', attributeId: '12' },
+  { subcategoryId: '2', attributeId: '13' },
   
   // Ropa Personalizada
-  { subcategoryId: '4', attributeId: '3' }, // Tipo de Prenda
-  { subcategoryId: '4', attributeId: '4' }, // Técnica
-  { subcategoryId: '4', attributeId: '5' }, // Talla
-  { subcategoryId: '4', attributeId: '14' }, // Color Base
+  { subcategoryId: '4', attributeId: '3' },
+  { subcategoryId: '4', attributeId: '4' },
+  { subcategoryId: '4', attributeId: '5' },
+  { subcategoryId: '4', attributeId: '14' },
   
   // Complementos Textiles
-  { subcategoryId: '5', attributeId: '4' }, // Técnica
-  { subcategoryId: '5', attributeId: '12' }, // Tamaño
-  { subcategoryId: '5', attributeId: '14' }, // Color Base
+  { subcategoryId: '5', attributeId: '4' },
+  { subcategoryId: '5', attributeId: '12' },
+  { subcategoryId: '5', attributeId: '14' },
   
   // Vajilla Personalizada
-  { subcategoryId: '8', attributeId: '8' }, // Producto
-  { subcategoryId: '8', attributeId: '9' }, // Tipo Especial
-  { subcategoryId: '8', attributeId: '13' }, // Cantidad
+  { subcategoryId: '8', attributeId: '8' },
+  { subcategoryId: '8', attributeId: '9' },
+  { subcategoryId: '8', attributeId: '13' },
   
   // Llaveros
-  { subcategoryId: '10', attributeId: '10' }, // Material Base
-  { subcategoryId: '10', attributeId: '12' }, // Tamaño
-  { subcategoryId: '10', attributeId: '13' }, // Cantidad
+  { subcategoryId: '10', attributeId: '10' },
+  { subcategoryId: '10', attributeId: '12' },
+  { subcategoryId: '10', attributeId: '13' },
   
   // Impresión 3D
-  { subcategoryId: '14', attributeId: '11' }, // Material Impresión
-  { subcategoryId: '15', attributeId: '11' }, // Material Impresión
-  { subcategoryId: '14', attributeId: '12' }, // Tamaño
-  { subcategoryId: '15', attributeId: '12' }, // Tamaño
-  { subcategoryId: '14', attributeId: '14' }, // Color
-  { subcategoryId: '15', attributeId: '14' }, // Color
+  { subcategoryId: '14', attributeId: '11' },
+  { subcategoryId: '15', attributeId: '11' },
+  { subcategoryId: '14', attributeId: '12' },
+  { subcategoryId: '15', attributeId: '12' },
+  { subcategoryId: '14', attributeId: '14' },
+  { subcategoryId: '15', attributeId: '14' },
 ];
 
 export default function AdminProductsPanel() {
@@ -263,7 +268,6 @@ export default function AdminProductsPanel() {
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
 
-  // Debug helpers
   const logInfo = (...args: any[]) => console.log('[AdminProductsPanel]', ...args);
   const logError = (label: string, err: any) => {
     console.error('[AdminProductsPanel]', label, {
@@ -300,7 +304,6 @@ export default function AdminProductsPanel() {
     };
   }, []);
 
-  // Monitor authentication state
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       console.log('🔄 Estado de autenticación cambió:', {
@@ -315,13 +318,11 @@ export default function AdminProductsPanel() {
 
   const isEditing = useMemo(() => !!draft.id, [draft.id]);
 
-  // Subcategorías filtradas por categoría seleccionada
   const availableSubcategories = useMemo(() => {
     if (!draft.categoryId) return [];
     return subcategories.filter(sub => sub.categoryId === draft.categoryId && sub.active);
   }, [draft.categoryId]);
 
-  // Atributos filtrados por subcategoría seleccionada
   const availableAttributes = useMemo(() => {
     if (!draft.subcategoryId) return [];
     const subcatAttrIds = subcategoryAttributes
@@ -330,7 +331,6 @@ export default function AdminProductsPanel() {
     return attributes.filter(attr => subcatAttrIds.includes(attr.id));
   }, [draft.subcategoryId]);
 
-  // Calcular precio total con modificadores
   const totalPrice = useMemo(() => {
     let total = draft.basePrice;
     
@@ -355,7 +355,6 @@ export default function AdminProductsPanel() {
     setSuccess(null);
   }
 
-  // Actualizar atributos cuando cambia la subcategoría
   useEffect(() => {
     if (draft.subcategoryId && !isEditing) {
       const newAttributes = availableAttributes
@@ -369,7 +368,6 @@ export default function AdminProductsPanel() {
     }
   }, [draft.subcategoryId, isEditing, availableAttributes]);
 
-  // Funciones para manejar atributos
   function updateAttributeValue(attributeId: string, value: string) {
     setDraft(prev => ({
       ...prev,
@@ -399,7 +397,6 @@ export default function AdminProductsPanel() {
     }));
   }
 
-  // Test Storage connection
   async function testStorageConnection() {
     try {
       console.log('🧪 Probando conexión a Storage...');
@@ -505,7 +502,6 @@ export default function AdminProductsPanel() {
         throw new Error('Nombre, descripción, slug, categoría y subcategoría son obligatorios');
       }
 
-      // Validar atributos requeridos
       const requiredAttributes = availableAttributes.filter(attr => attr.required);
       for (const reqAttr of requiredAttributes) {
         const hasValue = draft.attributes.some(attr => 
@@ -528,6 +524,7 @@ export default function AdminProductsPanel() {
         const docRef = await addDoc(collection(db, 'products'), {
           ...normalized,
           images: [],
+          customizerType: draft.customizerType || 'default',
           createdAt,
           updatedAt,
         });
@@ -593,6 +590,7 @@ export default function AdminProductsPanel() {
           slug: draft.slug,
           active: !!draft.active,
           images: nextImages,
+          customizerType: draft.customizerType || 'default',
           updatedAt: Timestamp.now(),
         });
         console.log('[AdminProductsPanel] updateDoc ok id=', id);
@@ -645,7 +643,6 @@ export default function AdminProductsPanel() {
     try {
       setLoading(true);
       await deleteDoc(doc(db, 'products', p.id));
-      // try delete storage folder
       await deleteAllInFolder(`products/${p.id}`);
       setSuccess('Producto eliminado');
     } catch (err: any) {
@@ -754,7 +751,6 @@ export default function AdminProductsPanel() {
     }
   }
 
-  // Obtener nombres de categoría y subcategoría para mostrar
   function getCategoryName(categoryId: string): string {
     return categories.find(cat => cat.id === categoryId)?.name || 'Sin categoría';
   }
@@ -789,6 +785,10 @@ export default function AdminProductsPanel() {
           </div>
         </div>
 
+        <div style={{ marginBottom: '32px' }}>
+          <VariantImageManager />
+        </div>
+
         {error && (
           <div className="error-box mb-6"><strong>Error:</strong> {error}</div>
         )}
@@ -796,11 +796,9 @@ export default function AdminProductsPanel() {
           <div className="" style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46', padding: '12px', borderRadius: '12px', marginBottom: '16px' }}>{success}</div>
         )}
 
-        {/* Formulario */}
         <form onSubmit={handleSubmit} className="card" style={{ padding: '16px', borderRadius: '16px', boxShadow: 'var(--shadow-md)', background: 'white', marginBottom: '24px' }}>
           <div className="grid grid-auto-fit" style={{ gap: '12px' }}>
             
-            {/* Información básica */}
             <div>
               <label>Nombre *</label>
               <input 
@@ -821,7 +819,6 @@ export default function AdminProductsPanel() {
               />
             </div>
             
-            {/* Categorización */}
             <div>
               <label>Categoría *</label>
               <select 
@@ -831,8 +828,8 @@ export default function AdminProductsPanel() {
                   setDraft({ 
                     ...draft, 
                     categoryId: e.target.value, 
-                    subcategoryId: '', // Reset subcategoría
-                    attributes: [] // Reset atributos
+                    subcategoryId: '',
+                    attributes: []
                   });
                 }}
                 required
@@ -853,7 +850,7 @@ export default function AdminProductsPanel() {
                   setDraft({ 
                     ...draft, 
                     subcategoryId: e.target.value,
-                    attributes: [] // Reset atributos cuando cambia subcategoría
+                    attributes: []
                   });
                 }}
                 required
@@ -878,7 +875,6 @@ export default function AdminProductsPanel() {
               />
             </div>
 
-            {/* Mostrar precio total calculado */}
             {totalPrice !== draft.basePrice && (
               <div style={{ gridColumn: '1 / -1' }}>
                 <div style={{ 
@@ -906,7 +902,6 @@ export default function AdminProductsPanel() {
               />
             </div>
             
-            {/* Atributos dinámicos */}
             {availableAttributes.length > 0 && (
               <div style={{ gridColumn: '1 / -1' }}>
                 <h3 style={{ margin: '16px 0 12px 0', fontSize: '18px', fontWeight: 'bold' }}>
@@ -1026,7 +1021,6 @@ export default function AdminProductsPanel() {
                 </div>
               )}
               
-              {/* Thumbnails existentes */}
               {draft.images?.length ? (
                 <div className="grid grid-auto-fit" style={{ marginTop: '12px', gap: '12px' }}>
                   {draft.images.map((url) => (
@@ -1054,6 +1048,146 @@ export default function AdminProductsPanel() {
             </div>
           </div>
 
+          <div style={{ gridColumn: '1 / -1', marginTop: '24px' }}>
+            <div style={{ 
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+              color: 'white',
+              padding: '16px',
+              borderRadius: '12px',
+              marginBottom: '16px'
+            }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>
+                ✨ Configuración de Personalización
+              </h3>
+              <p style={{ fontSize: '14px', opacity: 0.9 }}>
+                Define cómo los clientes podrán personalizar este producto
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>
+                Tipo de Personalizador
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                {([
+                  { value: 'shirt' as const, label: '👕 Camisetas/Ropa', desc: 'Para textiles personalizables' },
+                  { value: 'frame' as const, label: '🖼️ Cuadros', desc: 'Para cuadros de flores' },
+                  { value: 'resin' as const, label: '🎨 Figuras Resina', desc: 'Para figuras 3D personalizadas' },
+                  { value: 'default' as const, label: '📦 Estándar', desc: 'Sin personalización especial' }
+                ] as const).map(option => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setDraft({ ...draft, customizerType: option.value })}
+                    style={{
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: draft.customizerType === option.value ? '3px solid #8b5cf6' : '2px solid #d1d5db',
+                      background: draft.customizerType === option.value ? '#f5f3ff' : 'white',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px' }}>
+                      {option.label}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                      {option.desc}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {draft.customizerType && draft.customizerType !== 'default' && (
+              <div style={{
+                background: '#dbeafe',
+                border: '2px solid #3b82f6',
+                borderRadius: '12px',
+                padding: '16px',
+                marginTop: '16px'
+              }}>
+                <div style={{ fontWeight: 'bold', color: '#1e40af', marginBottom: '8px' }}>
+                  💡 Subida de Imágenes de Variantes
+                </div>
+                <p style={{ fontSize: '14px', color: '#1e3a8a', marginBottom: '12px' }}>
+                  {draft.customizerType === 'shirt' && 
+                    'Sube imágenes para cada color de camiseta (blanco, negro, amarillo, rojo, azul, verde, rosa, gris)'}
+                  {draft.customizerType === 'frame' && 
+                    'Sube imágenes de cuadros con diferentes colores de flores (rosa, rojo, morado, amarillo, blanco, azul, naranja)'}
+                  {draft.customizerType === 'resin' && 
+                    'Sube imágenes de cajas en diferentes colores (azul, rosa, dorado, plata, negro, blanco, verde, morado)'}
+                </p>
+                
+                <div style={{ 
+                  background: '#fef3c7',
+                  border: '1px solid #f59e0b',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  fontSize: '13px',
+                  color: '#92400e'
+                }}>
+                  <strong>⚠️ Importante:</strong> Por ahora, las imágenes de variantes se suben manualmente a Firebase Storage.
+                  <br />
+                  📍 Ruta: <code style={{ background: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>
+                    variants/{draft.customizerType === 'shirt' ? 'camisetas' : draft.customizerType === 'frame' ? 'cuadros' : 'cajas'}/[color]/preview.jpg
+                  </code>
+                </div>
+
+                <details style={{ marginTop: '12px' }}>
+                  <summary style={{ 
+                    cursor: 'pointer', 
+                    fontWeight: 'bold', 
+                    color: '#1e40af',
+                    padding: '8px',
+                    background: 'white',
+                    borderRadius: '8px'
+                  }}>
+                    📚 Ver estructura completa de carpetas
+                  </summary>
+                  <pre style={{ 
+                    background: '#1e293b', 
+                    color: '#e2e8f0', 
+                    padding: '12px', 
+                    borderRadius: '8px', 
+                    fontSize: '12px',
+                    marginTop: '8px',
+                    overflow: 'auto'
+                  }}>
+{`variants/
+├── camisetas/
+│   ├── blanco/preview.jpg
+│   ├── negro/preview.jpg
+│   ├── amarillo/preview.jpg
+│   ├── rojo/preview.jpg
+│   ├── azul/preview.jpg
+│   ├── verde/preview.jpg
+│   ├── rosa/preview.jpg
+│   └── gris/preview.jpg
+├── cuadros/
+│   ├── flores-rosa/preview.jpg
+│   ├── flores-rojo/preview.jpg
+│   ├── flores-morado/preview.jpg
+│   ├── flores-amarillo/preview.jpg
+│   ├── flores-blanco/preview.jpg
+│   ├── flores-azul/preview.jpg
+│   └── flores-naranja/preview.jpg
+└── cajas/
+    ├── azul/preview.jpg
+    ├── rosa/preview.jpg
+    ├── dorado/preview.jpg
+    ├── plata/preview.jpg
+    ├── negro/preview.jpg
+    ├── blanco/preview.jpg
+    ├── verde/preview.jpg
+    └── morado/preview.jpg`}
+                  </pre>
+                </details>
+              </div>
+            )}
+          </div>
+
           <div className="flex" style={{ gap: '12px', marginTop: '16px' }}>
             <button className="btn btn-primary" type="submit" disabled={loading}>
               {loading ? '⏳ Guardando...' : (isEditing ? 'Guardar cambios' : 'Crear producto')}
@@ -1067,7 +1201,6 @@ export default function AdminProductsPanel() {
           </div>
         </form>
 
-        {/* Listado de productos */}
         <div className="grid grid-auto-fit">
           {products.map((p) => (
             <div key={p.id} className="card card-product">
@@ -1084,12 +1217,10 @@ export default function AdminProductsPanel() {
                 <h3 className="text-xl font-bold text-gray-800 mb-2">{p.name}</h3>
                 <p className="text-gray-600 mb-2">€{p.basePrice?.toFixed?.(2) || p.basePrice}</p>
                 
-                {/* Mostrar categoría y subcategoría */}
                 <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
                   📂 {getCategoryName(p.categoryId)} → {getSubcategoryName(p.subcategoryId)}
                 </div>
                 
-                {/* Mostrar atributos */}
                 {p.attributes && p.attributes.length > 0 && (
                   <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '8px' }}>
                     🔧 {p.attributes.map(attr => {

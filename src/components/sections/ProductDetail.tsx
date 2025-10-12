@@ -54,6 +54,7 @@ function toUIProduct(data: FirebaseProduct & { id: string }): UIProduct {
 }
 
 export default function ProductDetail({ id, slug }: Props) {
+  const [mounted, setMounted] = useState(false);
   const [uiProduct, setUiProduct] = useState<UIProduct | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<UIProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +68,10 @@ export default function ProductDetail({ id, slug }: Props) {
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const imageRef = useRef<HTMLDivElement>(null);
+
+   useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -124,8 +129,8 @@ export default function ProductDetail({ id, slug }: Props) {
         setLoading(false); 
       }
     }
-    if (id || slug) load();
-  }, [id, slug]);
+    if (mounted && (id || slug)) load(); // ✅ AÑADE mounted &&
+  }, [id, slug, mounted]); // ✅ AÑADE mounted a las dependencias
 
   const handleAddToCart = async () => {
     if (!uiProduct) return;
@@ -192,6 +197,36 @@ export default function ProductDetail({ id, slug }: Props) {
     const y = ((e.clientY - r.top) / r.height) * 100; 
     imageRef.current.style.transformOrigin = `${x}% ${y}%`; 
   };
+
+  // ✅ AÑADE TODO ESTO ANTES DEL if (loading)
+  if (!mounted) {
+    return (
+      <section className="py-20" style={{ background: 'white' }}>
+        <div className="container">
+          <div className="text-center py-12">
+            <div className="loading-spinner" />
+            <p className="mt-4 text-gray-600">Cargando producto...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!id && !slug) {
+    return (
+      <section className="py-20" style={{ background: 'white' }}>
+        <div className="container">
+          <div className="text-center py-12">
+            <div className="error-box mb-4">
+              Falta parámetro <strong>id</strong> o <strong>slug</strong> en la URL
+            </div>
+            <a href="/" className="btn btn-primary">Volver al inicio</a>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
 
   if (loading) return (
     <section className="py-20" style={{ background: 'white' }}>

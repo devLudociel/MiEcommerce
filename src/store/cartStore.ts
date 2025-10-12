@@ -10,21 +10,23 @@ export interface CartItem {
   variantId?: number;
   variantName?: string;
   customization?: {
-    uploadedImage: string | null;
-    uploadedImageFile: File | null;
-    text: string;
-    textColor: string;
-    textFont: string;
-    textSize: number;
-    backgroundColor: string;
-    selectedColor: string;
-    selectedSize: string;
-    selectedMaterial: string;
-    selectedFinish: string;
-    quantity: number;
-    position: { x: number; y: number };
-    rotation: number;
-    scale: number;
+    customizationId?: string;
+    uploadedImage?: string | null;
+    uploadedImageFile?: File | null;
+    text?: string;
+    textColor?: string;
+    textFont?: string;
+    textSize?: number;
+    backgroundColor?: string;
+    selectedColor?: string;
+    selectedSize?: string;
+    selectedMaterial?: string;
+    selectedFinish?: string;
+    quantity?: number;
+    position?: { x: number; y: number };
+    rotation?: number;
+    scale?: number;
+    [key: string]: any;
   };
 }
 

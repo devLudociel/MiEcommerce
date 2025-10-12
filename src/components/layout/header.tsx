@@ -5,10 +5,32 @@ import { useAuth } from '../../components/hooks/useAuth';
 import { useStore } from '@nanostores/react';
 import { cartStore, updateCartItemQuantity, removeFromCart, getCartItemCount } from '../../store/cartStore';
 
+// ✅ DESPUÉS (sin error de hidratación)
 function CartBadge() {
-  const cart = useStore(cartStore);
-  const count = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-  if (!count) return null;
+  const [count, setCount] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // Solo ejecutar en el cliente después de montar
+    setMounted(true);
+    
+    const updateCount = () => {
+      const state = cartStore.get();
+      const total = state.items.reduce((sum, item) => sum + item.quantity, 0);
+      setCount(total);
+    };
+    
+    updateCount();
+    
+    // Suscribirse a cambios del carrito
+    const unsubscribe = cartStore.listen(updateCount);
+    
+    return () => unsubscribe();
+  }, []);
+
+  // No renderizar hasta que esté montado en el cliente
+  if (!mounted || count === 0) return null;
+  
   return (
     <span
       className="absolute bg-red-500 text-white text-xs rounded-full flex items-center justify-center"

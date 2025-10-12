@@ -653,6 +653,7 @@ button {
 .text-gray-800 { color: var(--color-gray-800); }
 .text-gray-900 { color: var(--color-gray-900); }
 .text-white { color: white; }
+.text-black { color: black; }
 
 /* Texto con gradiente */
 .text-gradient {
@@ -1702,4 +1703,281 @@ button {
 
 @media (min-width: 1280px) {
   .xl\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+}
+
+
+/* ===== ESTILOS PARA CUSTOMIZER DINÁMICO ===== */
+
+/* Campos de atributos con estilo mejorado */
+.attribute-field {
+  background: linear-gradient(135deg, #f0fdff 0%, #fef0fe 100%);
+  border: 2px solid var(--color-gray-200);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-4);
+  transition: var(--transition-all);
+}
+
+.attribute-field:hover {
+  border-color: var(--color-cyan-300);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.attribute-field.required {
+  border-color: var(--color-yellow-300);
+  background: linear-gradient(135deg, #fffef0 0%, #fff 100%);
+}
+
+.attribute-field.required::before {
+  content: '⚠️ Obligatorio';
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  background: var(--color-yellow-500);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+}
+
+/* Input range personalizado */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(to right, var(--color-cyan-300), var(--color-magenta-300));
+  outline: none;
+  transition: var(--transition-all);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: var(--transition-all);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: var(--shadow-lg);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  border: none;
+  transition: var(--transition-all);
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Color picker mejorado */
+input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-all);
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: 2px solid var(--color-gray-300);
+  border-radius: var(--radius-lg);
+  transition: var(--transition-all);
+}
+
+input[type="color"]:hover::-webkit-color-swatch {
+  border-color: var(--color-cyan-500);
+  transform: scale(1.05);
+}
+
+/* Animación para success message */
+@keyframes slide-in-from-top {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in.slide-in-from-top {
+  animation: slide-in-from-top 0.3s ease-out;
+}
+
+/* Canvas de preview mejorado */
+.preview-canvas {
+  position: relative;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+}
+
+.preview-canvas::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.05) 100%);
+  pointer-events: none;
+}
+
+/* Tabs mejorados con indicador */
+.tab-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--gradient-primary);
+  transition: var(--transition-all);
+  border-radius: var(--radius-full);
+}
+
+/* Badge de cantidad en resumen */
+.quantity-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  background: var(--gradient-primary);
+  color: white;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-md);
+}
+
+/* Loading state para botones */
+.btn.loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.btn.loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(2px);
+  border-radius: inherit;
+}
+
+/* Efecto drag and drop */
+.dropzone {
+  position: relative;
+  transition: var(--transition-all);
+}
+
+.dropzone.dragging {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 4px rgba(0, 215, 250, 0.2);
+}
+
+.dropzone.dragging::before {
+  content: '📁 Suelta aquí tu imagen';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 215, 250, 0.95);
+  color: white;
+  font-weight: 700;
+  font-size: 1.5rem;
+  border-radius: inherit;
+  z-index: 10;
+}
+
+/* Tooltip para precio modificadores */
+.price-tooltip {
+  position: relative;
+  cursor: help;
+}
+
+.price-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background: var(--color-gray-800);
+  color: white;
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-lg);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: var(--transition-all);
+  z-index: 100;
+}
+
+.price-tooltip:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-12px);
+}
+
+/* Grid responsive mejorado para atributos */
+.attributes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-4);
+}
+
+@media (max-width: 640px) {
+  .attributes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Estado de validación */
+.input-valid {
+  border-color: var(--color-success) !important;
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+.input-invalid {
+  border-color: var(--color-error) !important;
+  background-color: rgba(255, 51, 102, 0.05);
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+/* Utilidades de aspect ratio */
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+.aspect-4-3 {
+  aspect-ratio: 4 / 3;
 }
