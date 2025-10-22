@@ -32,9 +32,17 @@ const SHIPPING_COST = 5.99;
 const FREE_SHIPPING_THRESHOLD = 50;
 
 export default function Checkout() {
+  console.log('🔵🔵🔵 COMPONENTE CHECKOUT RENDERIZADO 🔵🔵🔵');
+
   const cart = useStore(cartStore);
   const [currentStep, setCurrentStep] = useState<CheckoutStep>(1);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  console.log('🔵 Estado actual:', {
+    currentStep,
+    cartItems: cart.items.length,
+    isProcessing
+  });
   
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     firstName: '',
@@ -439,7 +447,17 @@ export default function Checkout() {
 
                   <div className="flex gap-4">
                     <button onClick={handlePreviousStep} className="flex-1 py-4 bg-gray-200 text-gray-700 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all duration-300">← Volver</button>
-                    <button onClick={handlePlaceOrder} disabled={!acceptTerms || isProcessing} className={`flex-1 py-4 rounded-2xl font-black text-lg transition-all duration-300 ${!acceptTerms || isProcessing ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-gradient-rainbow text-white shadow-lg hover:shadow-2xl transform hover:scale-105'}`}>
+                    <button
+                      onClick={() => {
+                        console.log('🟡🟡🟡 BOTÓN CLICKEADO 🟡🟡🟡');
+                        console.log('🟡 acceptTerms:', acceptTerms);
+                        console.log('🟡 isProcessing:', isProcessing);
+                        console.log('🟡 Botón disabled?:', !acceptTerms || isProcessing);
+                        handlePlaceOrder();
+                      }}
+                      disabled={!acceptTerms || isProcessing}
+                      className={`flex-1 py-4 rounded-2xl font-black text-lg transition-all duration-300 ${!acceptTerms || isProcessing ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-gradient-rainbow text-white shadow-lg hover:shadow-2xl transform hover:scale-105'}`}
+                    >
                       {isProcessing ? <span className="flex items-center justify-center gap-2"><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />Procesando...</span> : `✓ Realizar Pedido - €${total.toFixed(2)}`}
                     </button>
                   </div>
