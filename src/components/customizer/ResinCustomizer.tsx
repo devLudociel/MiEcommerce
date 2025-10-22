@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Loader } from 'lucide-react';
 import { ref, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../lib/firebase';
+import { storage, auth } from '../../lib/firebase';
 import { uploadCustomImage, saveCustomization } from '../../lib/firebase';
 import { compressImage, validateImageFile, fileToBase64 } from '../../utils/imageCompression';
 import { addToCart } from '../../store/cartStore';
@@ -70,31 +70,26 @@ export default function ResinCustomizer({ product }: Props) {
         .filter(Boolean)
     : [];
 
-  // 🔄 FUNCIÓN ACTUALIZADA PARA CARGAR IMÁGENES DESDE variants/cajas/
   useEffect(() => {
     async function loadBoxImages() {
       setLoadingImages(true);
       const imageUrls: Record<string, string> = {};
       
-      console.log('🎨 Cargando imágenes de cajas desde variants/cajas/...');
+      console.log('Cargando imágenes de cajas...');
       
       for (const colorKey of Object.keys(BOX_COLORS)) {
         try {
-          // 🔄 CAMBIO: productos/cajas/ → variants/cajas/
           const imageRef = ref(storage, `variants/cajas/${colorKey}/preview.jpg`);
           const url = await getDownloadURL(imageRef);
           imageUrls[colorKey] = url;
-          console.log(`✅ Cargada imagen de caja ${colorKey}:`, url);
+          console.log(`Cargada imagen de caja ${colorKey}`);
         } catch (error) {
-          console.log(`⚠️ No se encontró imagen para caja ${colorKey} en variants/cajas/${colorKey}/preview.jpg`);
+          console.log(`No se encontró imagen para caja ${colorKey}`);
         }
       }
       
       setBoxImages(imageUrls);
       setLoadingImages(false);
-      
-      const loadedCount = Object.keys(imageUrls).length;
-      console.log(`📊 Total de imágenes cargadas: ${loadedCount}/${Object.keys(BOX_COLORS).length}`);
     }
 
     loadBoxImages();
@@ -120,6 +115,13 @@ export default function ResinCustomizer({ product }: Props) {
       setError(null);
       setIsLoading(true);
 
+      const user = auth.currentUser;
+      if (!user) {
+        setError('Debes estar autenticado para subir imágenes');
+        setIsLoading(false);
+        return;
+      }
+
       const validation = validateImageFile(file, { maxSizeMB: 10 });
       if (!validation.valid) {
         setError(validation.error || 'Error de validación');
@@ -131,9 +133,7 @@ export default function ResinCustomizer({ product }: Props) {
       setConfig(prev => ({ ...prev, customImage: base64 }));
 
       const compressedFile = await compressImage(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
-
-      const userId = 'guest';
-      const { url, path } = await uploadCustomImage(compressedFile, userId, 'resina');
+      const { url, path } = await uploadCustomImage(compressedFile, user.uid, 'resina');
 
       setConfig(prev => ({ ...prev, imageUrl: url, imagePath: path }));
       setIsLoading(false);
@@ -215,7 +215,8 @@ export default function ResinCustomizer({ product }: Props) {
         return;
       }
 
-      const userId = 'guest';
+      const user = auth.currentUser;
+      const userId = user?.uid || 'guest';
       const cantidadAttr = config.attributes.find(attr => attr.attributeId === '13');
       const cantidad = cantidadAttr ? parseInt(cantidadAttr.value) || 1 : 1;
 
@@ -235,7 +236,6 @@ export default function ResinCustomizer({ product }: Props) {
       };
 
       const customizationId = await saveCustomization(customizationData);
-      console.log('✅ Personalización guardada:', customizationId);
 
       const customDetails = [
         `Caja ${BOX_COLORS[config.boxColor as keyof typeof BOX_COLORS].name}`,
@@ -299,7 +299,7 @@ export default function ResinCustomizer({ product }: Props) {
               <span className="text-gray-800 font-medium">Personalizar Figura</span>
             </nav>
             <h1 className="text-3xl md:text-4xl font-black text-gray-800 flex items-center gap-3">
-              🎨 Personaliza tu {product.name}
+              Personaliza tu {product.name}
             </h1>
           </div>
           <button
@@ -311,7 +311,6 @@ export default function ResinCustomizer({ product }: Props) {
         </div>
       </div>
 
-      {/* 🆕 INDICADOR DE CARGA DE IMÁGENES */}
       {loadingImages && (
         <div className="container mx-auto px-6 mb-6">
           <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg flex items-center gap-3">
@@ -321,12 +320,10 @@ export default function ResinCustomizer({ product }: Props) {
         </div>
       )}
 
-      {/* 🆕 AVISO SI NO HAY IMÁGENES */}
       {!loadingImages && Object.keys(boxImages).length === 0 && (
         <div className="container mx-auto px-6 mb-6">
           <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-lg">
-            <strong>⚠️ Imágenes no encontradas:</strong> No se encontraron imágenes en <code className="bg-yellow-200 px-2 py-1 rounded">variants/cajas/</code>. 
-            Por favor sube las imágenes usando el gestor de variantes en el panel de admin.
+            <strong>⚠️ Imágenes no encontradas:</strong> No se encontraron imágenes en <code className="bg-yellow-200 px-2 py-1 rounded">variants/cajas/</code>
           </div>
         </div>
       )}
@@ -407,6 +404,33 @@ export default function ResinCustomizer({ product }: Props) {
           <div className="space-y-6">
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h3 className="text-xl font-bold mb-4 text-gray-800">Sube la Foto</h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+  onClick={() => fileInputRef.current?.click()}
+  disabled={isLoading}
+  className="btn-upload-photo w-full sm:w-auto"
+>
+  <Upload size={20} />
+  {isLoading ? 'Subiendo...' : 'Subir Foto'}
+</button>
+
+                {config.customImage ? (
+                  <div className="border-2 border-green-400 bg-green-50 rounded-xl p-4 flex flex-col items-center justify-center">
+                    <img
+                      src={config.customImage}
+                      alt="Vista previa"
+                      className="w-full h-24 object-contain rounded-lg mb-2"
+                    />
+                    <p className="text-xs font-bold text-green-700">✓ Foto cargada</p>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-300 bg-gray-50 rounded-xl p-4 flex flex-col items-center justify-center">
+                    <p className="text-xs text-gray-500 text-center">Tu imagen aparecerá aquí</p>
+                  </div>
+                )}
+              </div>
+
               <input
                 type="file"
                 ref={fileInputRef}
@@ -414,18 +438,6 @@ export default function ResinCustomizer({ product }: Props) {
                 accept="image/*"
                 className="hidden"
               />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
-              >
-                {isLoading ? 'Subiendo...' : '📤 Subir Foto'}
-              </button>
-              {config.customImage && (
-                <div className="mt-4 bg-green-50 border-2 border-green-200 rounded-xl p-3">
-                  <p className="text-green-800 font-bold text-sm">✓ Foto cargada</p>
-                </div>
-              )}
             </div>
 
             <div className="bg-white rounded-2xl shadow-lg p-6">
@@ -521,7 +533,7 @@ export default function ResinCustomizer({ product }: Props) {
               </div>
             )}
 
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl shadow-lg p-6 border-2 border-purple-200">
+            <div className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl shadow-lg p-6 border-2 border-cyan-300">
               <h3 className="text-xl font-bold text-gray-800 mb-4">Resumen</h3>
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between text-sm">
@@ -536,17 +548,17 @@ export default function ResinCustomizer({ product }: Props) {
                 )}
                 <div className="border-t-2 pt-3 flex justify-between">
                   <span className="text-xl font-black">Total</span>
-                  <span className="text-3xl font-black text-purple-600">€{calculatePrice()}</span>
+                  <span className="text-3xl font-black text-cyan-600">€{calculatePrice()}</span>
                 </div>
               </div>
 
-              <button
-                onClick={handleAddToCart}
-                disabled={isAddingToCart}
-                className="w-full py-4 px-6 rounded-xl font-bold text-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50"
-              >
-                {isAddingToCart ? 'Agregando...' : `🛒 Añadir al Carrito - €${calculatePrice()}`}
-              </button>
+             <button
+  onClick={handleAddToCart}
+  disabled={isAddingToCart}
+  className="btn-add-to-cart"
+>
+  {isAddingToCart ? 'Agregando...' : `🛒 Añadir al Carrito - €${calculatePrice()}`}
+</button>
             </div>
           </div>
         </div>

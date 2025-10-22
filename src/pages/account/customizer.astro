@@ -2,10 +2,10 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import RequireAuth from '../../components/auth/RequireAuth.tsx';
 import AccountMenu from '../../components/account/AccountMenu.tsx';
-import AccountDashboard from '../../components/account/AccountDashboard.tsx';
+import ImageCustomizer from '../../components/account/ImageCustomizer.tsx';
 ---
 
-<BaseLayout title="Mi Cuenta - Panel de Control">
+<BaseLayout title="Personalizador de Diseños">
   <section class="py-8 lg:py-16">
     <div class="container">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
@@ -25,7 +25,7 @@ import AccountDashboard from '../../components/account/AccountDashboard.tsx';
         <!-- Contenido principal - 1 columna -->
         <main class="lg:col-span-1">
           <RequireAuth client:load>
-            <AccountDashboard client:load />
+            <ImageCustomizer client:load />
           </RequireAuth>
         </main>
 

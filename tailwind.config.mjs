@@ -1,9 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  content: [
+    './src/**/*.{astro,html,js,jsx,ts,tsx}',
+  ],
   theme: {
     extend: {
       colors: {
-        // Colores temporales - los cambiaremos por los tuyos después
         brand: {
           50: '#eff6ff',
           100: '#dbeafe', 

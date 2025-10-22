@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Move, ZoomIn, ZoomOut, Loader, ShoppingCart } from 'lucide-react';
-import { uploadCustomImage, saveCustomization, getProductImageUrl } from '../../lib/firebase';
+import { uploadCustomImage, saveCustomization, getProductImageUrl, auth } from '../../lib/firebase';
 import { compressImage, validateImageFile, fileToBase64 } from '../../utils/imageCompression';
 import { addToCart } from '../../store/cartStore';
 import { attributes, subcategoryAttributes } from '../../data/productAttributes';
@@ -65,7 +65,6 @@ export default function ShirtCustomizer({ product }: Props) {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Cargar atributos disponibles
   const availableAttributes = product.subcategoryId 
     ? subcategoryAttributes
         .filter(sa => sa.subcategoryId === product.subcategoryId)
@@ -73,7 +72,6 @@ export default function ShirtCustomizer({ product }: Props) {
         .filter(Boolean)
     : [];
 
-  // Cargar imágenes del producto desde Firebase Storage al montar
   useEffect(() => {
     async function loadProductImages() {
       const imageUrls: Record<string, string> = {};
@@ -94,7 +92,6 @@ export default function ShirtCustomizer({ product }: Props) {
 
     loadProductImages();
 
-    // Inicializar atributos por defecto
     if (product.subcategoryId && availableAttributes.length > 0) {
       const defaultAttrs = availableAttributes.map(attr => {
         if (!attr) return null;
@@ -111,13 +108,18 @@ export default function ShirtCustomizer({ product }: Props) {
     }
   }, [product.subcategoryId]);
 
-  // Manejar subida de imagen
   const handleImageUpload = async (file: File) => {
     try {
       setError(null);
       setIsLoading(true);
 
-      // Validar
+      const user = auth.currentUser;
+      if (!user) {
+        setError('Debes estar autenticado para subir imágenes');
+        setIsLoading(false);
+        return;
+      }
+
       const validation = validateImageFile(file, { maxSizeMB: 10 });
       if (!validation.valid) {
         setError(validation.error || 'Error de validación');
@@ -125,16 +127,11 @@ export default function ShirtCustomizer({ product }: Props) {
         return;
       }
 
-      // Convertir a base64 para preview inmediato
       const base64 = await fileToBase64(file);
       setConfig(prev => ({ ...prev, customImage: base64 }));
 
-      // Comprimir
       const compressedFile = await compressImage(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
-
-      // Subir a Firebase Storage
-      const userId = 'guest'; // Cambiar por auth.currentUser?.uid cuando tengas auth
-      const { url, path } = await uploadCustomImage(compressedFile, userId, 'camiseta');
+      const { url, path } = await uploadCustomImage(compressedFile, user.uid, 'camiseta');
 
       setConfig(prev => ({ ...prev, imageUrl: url, imagePath: path }));
       setIsLoading(false);
@@ -214,7 +211,6 @@ export default function ShirtCustomizer({ product }: Props) {
       setIsAddingToCart(true);
       setError(null);
 
-      // Validar campos requeridos
       const requiredAttributes = availableAttributes.filter(attr => attr?.required);
       for (const reqAttr of requiredAttributes) {
         if (!reqAttr) continue;
@@ -234,11 +230,11 @@ export default function ShirtCustomizer({ product }: Props) {
         return;
       }
 
-      const userId = 'guest';
+      const user = auth.currentUser;
+      const userId = user?.uid || 'guest';
       const cantidadAttr = config.attributes.find(attr => attr.attributeId === '13');
       const cantidad = cantidadAttr ? parseInt(cantidadAttr.value) || 1 : 1;
 
-      // Guardar personalización en Firestore
       const customizationData = {
         userId,
         productId: product.id,
@@ -257,9 +253,8 @@ export default function ShirtCustomizer({ product }: Props) {
       };
 
       const customizationId = await saveCustomization(customizationData);
-      console.log('✅ Personalización guardada:', customizationId);
+      console.log('Personalización guardada:', customizationId);
 
-      // Añadir al carrito local
       const customDetails = config.attributes
         .map(attrValue => {
           const attribute = attributes.find(a => a.id === attrValue.attributeId);
@@ -292,7 +287,6 @@ export default function ShirtCustomizer({ product }: Props) {
     }
   };
 
-  // Obtener imagen del producto según el color seleccionado
   const currentProductImage = productImages[config.color] || product.images?.[0] || '';
 
   return (
@@ -308,7 +302,7 @@ export default function ShirtCustomizer({ product }: Props) {
               <span className="text-gray-800 font-medium">Personalizar Camiseta</span>
             </nav>
             <h1 className="text-3xl md:text-4xl font-black text-gray-800 flex items-center gap-3">
-              👕 Personaliza tu {product.name}
+              Personaliza tu {product.name}
             </h1>
           </div>
           <button
@@ -320,7 +314,6 @@ export default function ShirtCustomizer({ product }: Props) {
         </div>
       </div>
 
-      {/* Mensajes */}
       {error && (
         <div className="container mx-auto px-6 mb-6">
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
@@ -338,7 +331,6 @@ export default function ShirtCustomizer({ product }: Props) {
 
       <div className="container mx-auto px-6">
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Vista Previa */}
           <div className="bg-white rounded-2xl shadow-2xl p-8">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Vista Previa</h2>
             
@@ -350,7 +342,6 @@ export default function ShirtCustomizer({ product }: Props) {
               onMouseUp={() => setIsDragging(false)}
               onMouseLeave={() => setIsDragging(false)}
             >
-              {/* Imagen del producto real desde Firebase */}
               {currentProductImage && (
                 <img
                   src={currentProductImage}
@@ -359,7 +350,6 @@ export default function ShirtCustomizer({ product }: Props) {
                 />
               )}
 
-              {/* Simulación de camiseta si no hay imagen */}
               {!currentProductImage && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-3/4 h-5/6 relative">
@@ -373,7 +363,6 @@ export default function ShirtCustomizer({ product }: Props) {
                 </div>
               )}
 
-              {/* Diseño personalizado */}
               {config.customImage && (
                 <img
                   src={config.customImage}
@@ -407,7 +396,6 @@ export default function ShirtCustomizer({ product }: Props) {
               )}
             </div>
 
-            {/* Controles de ajuste */}
             {config.customImage && (
               <div className="mt-6 bg-gray-50 rounded-xl p-6 space-y-4">
                 <h3 className="font-bold text-gray-800">Ajustar Diseño</h3>
@@ -445,9 +433,7 @@ export default function ShirtCustomizer({ product }: Props) {
             )}
           </div>
 
-          {/* Controles */}
           <div className="space-y-6">
-            {/* Selector de color */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h3 className="text-xl font-bold mb-4 text-gray-800">Color de Camiseta</h3>
               <div className="grid grid-cols-4 gap-3">
@@ -465,9 +451,35 @@ export default function ShirtCustomizer({ product }: Props) {
               </div>
             </div>
 
-            {/* Subir imagen */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h3 className="text-xl font-bold mb-4 text-gray-800">Subir Diseño</h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                  className="btn-upload-photo w-full"
+                >
+                  <Upload size={20} />
+                  {isLoading ? 'Subiendo...' : 'Subir Imagen'}
+                </button>
+
+                {config.customImage ? (
+                  <div className="border-2 border-green-400 bg-green-50 rounded-xl p-4 flex flex-col items-center justify-center">
+                    <img
+                      src={config.customImage}
+                      alt="Vista previa"
+                      className="w-full h-24 object-contain rounded-lg mb-2"
+                    />
+                    <p className="text-xs font-bold text-green-700">✓ Imagen cargada</p>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-300 bg-gray-50 rounded-xl p-4 flex flex-col items-center justify-center">
+                    <p className="text-xs text-gray-500 text-center">Tu imagen aparecerá aquí</p>
+                  </div>
+                )}
+              </div>
+
               <input
                 type="file"
                 ref={fileInputRef}
@@ -475,16 +487,8 @@ export default function ShirtCustomizer({ product }: Props) {
                 accept="image/*"
                 className="hidden"
               />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
-              >
-                {isLoading ? 'Subiendo...' : '📤 Subir Imagen'}
-              </button>
             </div>
 
-            {/* Atributos */}
             {availableAttributes.length > 0 && (
               <div className="bg-white rounded-2xl shadow-lg p-6 max-h-96 overflow-y-auto">
                 <h3 className="text-xl font-bold mb-4 text-gray-800">Opciones</h3>
@@ -534,8 +538,7 @@ export default function ShirtCustomizer({ product }: Props) {
               </div>
             )}
 
-            {/* Resumen y botón */}
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl shadow-lg p-6 border-2 border-purple-200">
+            <div className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl shadow-lg p-6 border-2 border-cyan-300">
               <h3 className="text-xl font-bold text-gray-800 mb-4">Resumen</h3>
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between text-sm">
@@ -550,16 +553,16 @@ export default function ShirtCustomizer({ product }: Props) {
                 )}
                 <div className="border-t-2 pt-3 flex justify-between">
                   <span className="text-xl font-black">Total</span>
-                  <span className="text-3xl font-black text-purple-600">€{calculatePrice()}</span>
+                  <span className="text-3xl font-black text-cyan-600">€{calculatePrice()}</span>
                 </div>
               </div>
 
               <button
                 onClick={handleAddToCart}
                 disabled={isAddingToCart}
-                className="w-full py-4 px-6 rounded-xl font-bold text-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50"
+                className="btn-add-to-cart"
               >
-                {isAddingToCart ? 'Agregando...' : `🛒 Añadir al Carrito - €${calculatePrice()}`}
+                {isAddingToCart ? 'Agregando...' : `Añadir al Carrito - €${calculatePrice()}`}
               </button>
             </div>
           </div>

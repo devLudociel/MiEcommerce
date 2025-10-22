@@ -74,6 +74,16 @@ export default function AccountMenu() {
               Mis servicios de diseño
             </a>
             <a 
+              href="/account/customizer" 
+              className={`block px-0 py-2 text-sm transition-colors rounded-lg ${
+                isActive('/account/customizer') 
+                  ? 'text-cyan-600 font-semibold bg-cyan-50' 
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              Personalizador de diseños
+            </a>
+            <a 
               href="/account/websites" 
               className={`block px-0 py-2 text-sm transition-colors rounded-lg ${
                 isActive('/account/websites') 

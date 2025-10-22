@@ -19,16 +19,12 @@ const { title, description = "Especialistas en personalización: estampado, bord
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
     
-    <!-- Firebase se inicializa vía SDK npm en src/lib/firebase.ts -->
-    
-    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content={Astro.url} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={new URL(ogImage, Astro.url)} />
 
-    <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content={Astro.url} />
     <meta property="twitter:title" content={title} />
@@ -37,11 +33,32 @@ const { title, description = "Especialistas en personalización: estampado, bord
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
+    <style>
+      /* Variable CSS para la altura del header - ajústala según tu header real */
+      :root {
+        --header-height: 208px;
+      }
+      
+      main {
+        padding-top: var(--header-height);
+      }
+      
+      /* Breakpoints responsivos si es necesario */
+      @media (max-width: 1024px) {
+        :root {
+          --header-height: 208px;
+        }
+      }
+      
+      @media (max-width: 768px) {
+        :root {
+          --header-height: 220px; /* Puede ser más en móvil si tienes más elementos */
+        }
+      }
+    </style>
   </head>
   <body class="bg-white min-h-screen">
     <Header client:load />
-    <!-- Espaciador único para compensar el header fijo -->
-    <div style="height: 150px;"></div>
     <main>
       <slot />
     </main>

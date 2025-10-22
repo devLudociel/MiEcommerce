@@ -33,7 +33,7 @@ export default function WishlistPanel() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 lg:mt-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-3xl font-bold text-gradient-primary">Mis Favoritos</h2>

@@ -28,14 +28,14 @@ export default function AccountDashboard() {
   return (
     <div className="space-y-8">
       {/* Encabezado */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Hola, {firstName}.</h1>
           <p className="text-gray-600 mt-1">Esto es lo que está pasando en tu cuenta.</p>
         </div>
         <a 
           href="/account/settings" 
-          className="btn btn-outline"
+          className="btn btn-outline whitespace-nowrap"
         >
           Configuración de la cuenta
         </a>
@@ -44,7 +44,7 @@ export default function AccountDashboard() {
       {/* Información de la cuenta */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Información de la cuenta</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-4">
           {/* Card de Pedidos */}
           <div className="card card-cyan p-6">
             <div className="space-y-4">
@@ -124,19 +124,19 @@ export default function AccountDashboard() {
         </div>
 
         <div className="card p-6">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
             <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
               <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 text-center sm:text-left">
               <h3 className="font-semibold text-gray-900">No hay pedidos aún</h3>
               <p className="text-sm text-gray-600 mt-1">Cuando compres, verás el estado aquí.</p>
             </div>
             <a 
               href="/" 
-              className="btn btn-primary"
+              className="btn btn-primary whitespace-nowrap"
             >
               Comprar
             </a>
@@ -157,7 +157,7 @@ export default function AccountDashboard() {
         </div>
 
         {wishlist.items.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {wishlist.items.slice(0, 4).map((item) => (
               <div key={item.id} className="card p-0 overflow-hidden group hover:shadow-xl transition-all">
                 <div className="aspect-square bg-white flex items-center justify-center p-4">
@@ -209,7 +209,7 @@ export default function AccountDashboard() {
         </div>
 
         {wishlist.items.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {wishlist.items.slice(0, 3).map((item) => (
               <div key={item.id} className="card p-4 flex items-center gap-4">
                 <div className="w-20 h-20 bg-gray-50 flex items-center justify-center rounded-lg flex-shrink-0">

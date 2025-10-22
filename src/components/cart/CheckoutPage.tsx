@@ -313,7 +313,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 md:px-6" style={{ marginTop: '200px' }}>
+    <div className="max-w-6xl mx-auto px-4 md:px-6">
       {/* Barra de progreso */}
       <div className="mb-10">
         <div className="max-w-4xl mx-auto">
