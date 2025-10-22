@@ -126,16 +126,23 @@ export default function Checkout() {
   };
 
   const handlePlaceOrder = async () => {
+    console.log('🟢 INICIO: handlePlaceOrder ejecutado');
+
     if (!acceptTerms) {
+      console.log('❌ Error: Términos no aceptados');
       alert('Debes aceptar los términos y condiciones');
       return;
     }
+
+    console.log('🟢 Términos aceptados, procesando...');
     setIsProcessing(true);
 
     try {
+      console.log('🟢 Entrando al bloque try');
       // Por ahora todos los pedidos se crean como "pending"
       // El pago con Stripe se procesará después cuando el admin apruebe
       const paymentStatus = 'pending';
+      console.log('🟢 Estado de pago:', paymentStatus);
 
       // Crear objeto de pedido
       const orderData = {
@@ -154,41 +161,60 @@ export default function Checkout() {
         paymentStatus,
       };
 
-      console.log('📦 Guardando pedido:', orderData);
+      console.log('📦 Objeto de pedido creado:', orderData);
+      console.log('📦 Número de items:', cart.items.length);
+      console.log('📦 Total del pedido:', total);
 
       // Guardar pedido en Firestore
+      console.log('🌐 Haciendo fetch a /api/save-order...');
+      console.log('🌐 URL completa:', window.location.origin + '/api/save-order');
+
       const saveResponse = await fetch('/api/save-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData),
       });
 
+      console.log('🌐 Fetch completado. Status:', saveResponse.status);
+      console.log('🌐 Response OK?:', saveResponse.ok);
+
       if (!saveResponse.ok) {
         const errorText = await saveResponse.text();
-        console.error('❌ Error del servidor:', errorText);
+        console.error('❌ Error del servidor (texto):', errorText);
         throw new Error('Error al guardar el pedido en el servidor');
       }
 
+      console.log('🌐 Parseando respuesta JSON...');
       const responseData = await saveResponse.json();
-      console.log('✅ Respuesta del servidor:', responseData);
+      console.log('✅ Respuesta del servidor parseada:', responseData);
 
       if (responseData.error) {
+        console.error('❌ Error en responseData:', responseData.error);
         throw new Error(responseData.error);
       }
 
       if (!responseData.orderId) {
+        console.error('❌ No se recibió orderId en la respuesta');
         throw new Error('No se recibió ID de pedido');
       }
 
       // Limpiar carrito y redirigir
-      console.log('✅ Pedido guardado con ID:', responseData.orderId);
+      console.log('✅ Pedido guardado exitosamente con ID:', responseData.orderId);
+      console.log('🧹 Limpiando carrito...');
       clearCart();
+      console.log('🧹 Carrito limpiado');
+      console.log('🔄 Redirigiendo a confirmación...');
       window.location.href = `/confirmacion?orderId=${responseData.orderId}`;
 
     } catch (error: any) {
-      console.error('❌ Error al procesar el pedido:', error);
+      console.error('❌❌❌ ERROR CAPTURADO EN CATCH ❌❌❌');
+      console.error('❌ Tipo de error:', typeof error);
+      console.error('❌ Error objeto:', error);
+      console.error('❌ Error mensaje:', error.message);
+      console.error('❌ Error stack:', error.stack);
       alert(error.message || 'Hubo un error al procesar tu pedido. Por favor, intenta de nuevo.');
     } finally {
+      console.log('🔵 Finally: setIsProcessing(false)');
       setIsProcessing(false);
     }
   };
