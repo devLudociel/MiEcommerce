@@ -357,20 +357,105 @@ export async function getAllProducts(): Promise<ProductData[]> {
   try {
     const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(collection(db, 'productos'));
     const products: ProductData[] = [];
-    
+
     querySnapshot.forEach((doc) => {
       const data = doc.data();
-      products.push({ 
-        id: doc.id, 
+      products.push({
+        id: doc.id,
         categoria: data.categoria || '',
-        ...data 
+        ...data
       } as ProductData);
     });
-    
+
     console.log(`✅ ${products.length} productos totales encontrados`);
     return products;
   } catch (error) {
     console.error('❌ Error obteniendo todos los productos:', error);
+    throw error;
+  }
+}
+
+// ============================================
+// 📦 FUNCIONES PARA PEDIDOS
+// ============================================
+
+export interface OrderData {
+  id?: string;
+  items: any[];
+  shippingInfo: any;
+  paymentInfo: any;
+  subtotal: number;
+  shipping: number;
+  total: number;
+  status: string;
+  paymentStatus: string;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+/**
+ * Obtener pedido por ID
+ */
+export async function getOrderById(orderId: string): Promise<OrderData | null> {
+  try {
+    const docRef = doc(db, 'orders', orderId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() } as OrderData;
+    } else {
+      console.log('⚠️ Pedido no encontrado:', orderId);
+      return null;
+    }
+  } catch (error) {
+    console.error('❌ Error obteniendo pedido:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtener pedidos de un usuario
+ */
+export async function getUserOrders(userId: string): Promise<OrderData[]> {
+  try {
+    const q = query(
+      collection(db, 'orders'),
+      where('shippingInfo.email', '==', userId)
+    );
+
+    const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
+    const orders: OrderData[] = [];
+
+    querySnapshot.forEach((doc) => {
+      orders.push({ id: doc.id, ...doc.data() } as OrderData);
+    });
+
+    console.log(`✅ ${orders.length} pedidos encontrados para usuario`);
+    return orders;
+  } catch (error) {
+    console.error('❌ Error obteniendo pedidos del usuario:', error);
+    throw error;
+  }
+}
+
+/**
+ * Actualizar estado de pedido
+ */
+export async function updateOrderStatus(
+  orderId: string,
+  status: string
+): Promise<boolean> {
+  try {
+    const docRef = doc(db, 'orders', orderId);
+    await updateDoc(docRef, {
+      status,
+      updatedAt: serverTimestamp()
+    });
+
+    console.log('✅ Estado de pedido actualizado:', orderId);
+    return true;
+  } catch (error) {
+    console.error('❌ Error actualizando estado de pedido:', error);
     throw error;
   }
 }

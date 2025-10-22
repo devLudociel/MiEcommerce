@@ -1,19 +1,9 @@
 import { useEffect, useState } from 'react';
-
-interface Order {
-  id: string;
-  date: string;
-  items: any[];
-  shippingInfo: any;
-  paymentInfo: any;
-  subtotal: number;
-  shipping: number;
-  total: number;
-  status: string;
-}
+import { getOrderById } from '../../lib/firebase';
+import type { OrderData } from '../../lib/firebase';
 
 export default function OrderConfirmation() {
-  const [order, setOrder] = useState<Order | null>(null);
+  const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,21 +15,22 @@ export default function OrderConfirmation() {
       return;
     }
 
-    try {
-      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-      const foundOrder = orders.find((o: Order) => o.id === orderId);
-
-      if (foundOrder) {
-        setOrder(foundOrder);
-      } else {
+    // Cargar pedido desde Firestore
+    getOrderById(orderId)
+      .then((foundOrder) => {
+        if (foundOrder) {
+          setOrder(foundOrder);
+        } else {
+          window.location.href = '/';
+        }
+      })
+      .catch((error) => {
+        console.error('Error loading order:', error);
         window.location.href = '/';
-      }
-    } catch (error) {
-      console.error('Error loading order:', error);
-      window.location.href = '/';
-    } finally {
-      setLoading(false);
-    }
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   if (loading) {
@@ -57,7 +48,7 @@ export default function OrderConfirmation() {
     return null;
   }
 
-  const orderDate = new Date(order.date);
+  const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date();
   const estimatedDelivery = new Date(orderDate);
   estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
 

@@ -3,6 +3,7 @@ import { useStore } from '@nanostores/react';
 import { cartStore, clearCart } from '../../store/cartStore';
 import type { CartItem } from '../../store/cartStore';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { stripePromise } from '../../lib/stripe';
 
 interface ShippingInfo {
   firstName: string;
@@ -130,27 +131,106 @@ export default function Checkout() {
       return;
     }
     setIsProcessing(true);
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      const order = {
-        id: `ORDER-${Date.now()}`,
-        date: new Date().toISOString(),
+      let paymentStatus = 'pending';
+      let paymentId = '';
+
+      // Procesar pago con tarjeta usando Stripe
+      if (paymentInfo.method === 'card') {
+        const stripe = await stripePromise;
+        if (!stripe) {
+          throw new Error('Error cargando Stripe');
+        }
+
+        // Crear Payment Intent
+        const response = await fetch('/api/create-payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: total, currency: 'eur' }),
+        });
+
+        const { clientSecret, error: apiError } = await response.json();
+
+        if (apiError) {
+          throw new Error(apiError);
+        }
+
+        // Confirmar pago
+        const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
+          clientSecret,
+          {
+            payment_method: {
+              card: {
+                number: paymentInfo.cardNumber?.replace(/\s/g, '') || '',
+                exp_month: parseInt(paymentInfo.cardExpiry?.split('/')[0] || '0'),
+                exp_year: parseInt('20' + (paymentInfo.cardExpiry?.split('/')[1] || '0')),
+                cvc: paymentInfo.cardCVV || '',
+              },
+              billing_details: {
+                name: `${shippingInfo.firstName} ${shippingInfo.lastName}`,
+                email: shippingInfo.email,
+                phone: shippingInfo.phone,
+                address: {
+                  line1: shippingInfo.address,
+                  city: shippingInfo.city,
+                  state: shippingInfo.state,
+                  postal_code: shippingInfo.zipCode,
+                  country: 'ES',
+                },
+              },
+            },
+          }
+        );
+
+        if (stripeError) {
+          throw new Error(stripeError.message || 'Error procesando el pago');
+        }
+
+        if (paymentIntent?.status === 'succeeded') {
+          paymentStatus = 'paid';
+          paymentId = paymentIntent.id;
+        }
+      } else {
+        // Para otros métodos (transferencia, contra reembolso)
+        paymentStatus = 'pending';
+      }
+
+      // Crear objeto de pedido
+      const orderData = {
         items: cart.items,
         shippingInfo,
-        paymentInfo: { method: paymentInfo.method },
+        paymentInfo: {
+          method: paymentInfo.method,
+          paymentId,
+        },
         subtotal,
         shipping: shippingCost,
         total,
-        status: 'pending',
+        status: paymentStatus,
+        paymentStatus,
       };
-      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-      orders.push(order);
-      localStorage.setItem('orders', JSON.stringify(orders));
+
+      // Guardar pedido en Firestore
+      const saveResponse = await fetch('/api/save-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData),
+      });
+
+      const { orderId, error: saveError } = await saveResponse.json();
+
+      if (saveError) {
+        throw new Error(saveError);
+      }
+
+      // Limpiar carrito y redirigir
       clearCart();
-      window.location.href = `/confirmacion?orderId=${order.id}`;
-    } catch (error) {
+      window.location.href = `/confirmacion?orderId=${orderId}`;
+
+    } catch (error: any) {
       console.error('Error al procesar el pedido:', error);
-      alert('Hubo un error al procesar tu pedido. Por favor, intenta de nuevo.');
+      alert(error.message || 'Hubo un error al procesar tu pedido. Por favor, intenta de nuevo.');
     } finally {
       setIsProcessing(false);
     }
