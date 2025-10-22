@@ -3,32 +3,44 @@ import { getOrderById } from '../../lib/firebase';
 import type { OrderData } from '../../lib/firebase';
 
 export default function OrderConfirmation() {
+  console.log('🟣🟣🟣 OrderConfirmation RENDERIZADO 🟣🟣🟣');
+
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🟣 useEffect ejecutado');
     const params = new URLSearchParams(window.location.search);
     const orderId = params.get('orderId');
+    console.log('🟣 orderId desde URL:', orderId);
 
     if (!orderId) {
+      console.log('❌ No hay orderId, redirigiendo a inicio');
       window.location.href = '/';
       return;
     }
 
+    console.log('🟣 Intentando cargar pedido desde Firestore...');
+
     // Cargar pedido desde Firestore
     getOrderById(orderId)
       .then((foundOrder) => {
+        console.log('🟣 getOrderById respuesta:', foundOrder);
         if (foundOrder) {
+          console.log('✅ Pedido encontrado, mostrando confirmación');
           setOrder(foundOrder);
         } else {
+          console.log('❌ Pedido no encontrado, redirigiendo');
           window.location.href = '/';
         }
       })
       .catch((error) => {
-        console.error('Error loading order:', error);
+        console.error('❌ Error cargando pedido:', error);
+        console.error('❌ Error detalles:', error.message);
         window.location.href = '/';
       })
       .finally(() => {
+        console.log('🟣 Finally: setLoading(false)');
         setLoading(false);
       });
   }, []);
