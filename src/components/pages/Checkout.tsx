@@ -133,68 +133,9 @@ export default function Checkout() {
     setIsProcessing(true);
 
     try {
-      let paymentStatus = 'pending';
-      let paymentId = '';
-
-      // Procesar pago con tarjeta usando Stripe
-      if (paymentInfo.method === 'card') {
-        const stripe = await stripePromise;
-        if (!stripe) {
-          throw new Error('Error cargando Stripe');
-        }
-
-        // Crear Payment Intent
-        const response = await fetch('/api/create-payment-intent', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: total, currency: 'eur' }),
-        });
-
-        const { clientSecret, error: apiError } = await response.json();
-
-        if (apiError) {
-          throw new Error(apiError);
-        }
-
-        // Confirmar pago
-        const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
-          clientSecret,
-          {
-            payment_method: {
-              card: {
-                number: paymentInfo.cardNumber?.replace(/\s/g, '') || '',
-                exp_month: parseInt(paymentInfo.cardExpiry?.split('/')[0] || '0'),
-                exp_year: parseInt('20' + (paymentInfo.cardExpiry?.split('/')[1] || '0')),
-                cvc: paymentInfo.cardCVV || '',
-              },
-              billing_details: {
-                name: `${shippingInfo.firstName} ${shippingInfo.lastName}`,
-                email: shippingInfo.email,
-                phone: shippingInfo.phone,
-                address: {
-                  line1: shippingInfo.address,
-                  city: shippingInfo.city,
-                  state: shippingInfo.state,
-                  postal_code: shippingInfo.zipCode,
-                  country: 'ES',
-                },
-              },
-            },
-          }
-        );
-
-        if (stripeError) {
-          throw new Error(stripeError.message || 'Error procesando el pago');
-        }
-
-        if (paymentIntent?.status === 'succeeded') {
-          paymentStatus = 'paid';
-          paymentId = paymentIntent.id;
-        }
-      } else {
-        // Para otros métodos (transferencia, contra reembolso)
-        paymentStatus = 'pending';
-      }
+      // Por ahora todos los pedidos se crean como "pending"
+      // El pago con Stripe se procesará después cuando el admin apruebe
+      const paymentStatus = 'pending';
 
       // Crear objeto de pedido
       const orderData = {
@@ -202,7 +143,9 @@ export default function Checkout() {
         shippingInfo,
         paymentInfo: {
           method: paymentInfo.method,
-          paymentId,
+          cardLast4: paymentInfo.method === 'card'
+            ? paymentInfo.cardNumber?.slice(-4)
+            : undefined,
         },
         subtotal,
         shipping: shippingCost,
@@ -211,6 +154,8 @@ export default function Checkout() {
         paymentStatus,
       };
 
+      console.log('📦 Guardando pedido:', orderData);
+
       // Guardar pedido en Firestore
       const saveResponse = await fetch('/api/save-order', {
         method: 'POST',
@@ -218,18 +163,30 @@ export default function Checkout() {
         body: JSON.stringify(orderData),
       });
 
-      const { orderId, error: saveError } = await saveResponse.json();
+      if (!saveResponse.ok) {
+        const errorText = await saveResponse.text();
+        console.error('❌ Error del servidor:', errorText);
+        throw new Error('Error al guardar el pedido en el servidor');
+      }
 
-      if (saveError) {
-        throw new Error(saveError);
+      const responseData = await saveResponse.json();
+      console.log('✅ Respuesta del servidor:', responseData);
+
+      if (responseData.error) {
+        throw new Error(responseData.error);
+      }
+
+      if (!responseData.orderId) {
+        throw new Error('No se recibió ID de pedido');
       }
 
       // Limpiar carrito y redirigir
+      console.log('✅ Pedido guardado con ID:', responseData.orderId);
       clearCart();
-      window.location.href = `/confirmacion?orderId=${orderId}`;
+      window.location.href = `/confirmacion?orderId=${responseData.orderId}`;
 
     } catch (error: any) {
-      console.error('Error al procesar el pedido:', error);
+      console.error('❌ Error al procesar el pedido:', error);
       alert(error.message || 'Hubo un error al procesar tu pedido. Por favor, intenta de nuevo.');
     } finally {
       setIsProcessing(false);
