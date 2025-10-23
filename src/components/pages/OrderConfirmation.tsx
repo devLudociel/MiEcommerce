@@ -67,11 +67,18 @@ export default function OrderConfirmation() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-cyan-50 py-16">
       <div className="container mx-auto px-6 max-w-4xl">
-        
+
         {/* Mensaje de éxito */}
-        <div className="text-center mb-12 animate-in slide-in-from-top duration-500">
-          <div className="inline-block p-6 bg-green-500 rounded-full mb-6 shadow-2xl animate-bounce">
-            <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20">
+        <div className="text-center mb-12">
+          <div className="inline-block p-6 bg-green-500 rounded-full mb-6 shadow-2xl">
+            <svg
+              className="w-16 h-16 text-white"
+              width="64"
+              height="64"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              style={{ width: '64px', height: '64px' }}
+            >
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
           </div>
@@ -167,6 +174,9 @@ export default function OrderConfirmation() {
                     src={item.image}
                     alt={item.name}
                     className="w-20 h-20 object-cover rounded-lg"
+                    width="80"
+                    height="80"
+                    style={{ width: '80px', height: '80px', objectFit: 'cover' }}
                   />
                   <div className="flex-1">
                     <h4 className="font-bold text-gray-800">{item.name}</h4>
