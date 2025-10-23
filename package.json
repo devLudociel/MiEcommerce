@@ -21,6 +21,7 @@
     "firebase-admin": "^13.5.0",
     "lucide-react": "^0.542.0",
     "nanostores": "^1.0.1",
+    "pdfmake": "^0.2.20",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "resend": "^6.2.2",

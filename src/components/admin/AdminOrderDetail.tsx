@@ -272,6 +272,14 @@ export default function AdminOrderDetail() {
                   🖨️ Imprimir Pedido
                 </button>
                 <a
+                  href={`/api/generate-invoice?orderId=${order.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full px-4 py-3 bg-purple-500 text-white rounded-xl font-bold hover:bg-purple-600 transition-all text-center"
+                >
+                  📄 Descargar Factura PDF
+                </a>
+                <a
                   href={`mailto:${order.shippingInfo.email}?subject=Actualización de tu pedido ${order.id}`}
                   className="block w-full px-4 py-3 bg-cyan-500 text-white rounded-xl font-bold hover:bg-cyan-600 transition-all text-center"
                 >

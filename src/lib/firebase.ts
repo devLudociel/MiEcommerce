@@ -391,6 +391,8 @@ export interface OrderData {
   paymentStatus: string;
   createdAt?: any;
   updatedAt?: any;
+  invoiceNumber?: string;
+  invoiceDate?: any;
 }
 
 /**
