@@ -459,3 +459,57 @@ export async function updateOrderStatus(
     throw error;
   }
 }
+
+/**
+ * Obtener todos los pedidos (para admin)
+ */
+export async function getAllOrders(): Promise<OrderData[]> {
+  try {
+    const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(
+      collection(db, 'orders')
+    );
+    const orders: OrderData[] = [];
+
+    querySnapshot.forEach((doc) => {
+      orders.push({ id: doc.id, ...doc.data() } as OrderData);
+    });
+
+    // Ordenar por fecha más reciente
+    orders.sort((a, b) => {
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    console.log(`✅ ${orders.length} pedidos totales encontrados`);
+    return orders;
+  } catch (error) {
+    console.error('❌ Error obteniendo todos los pedidos:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtener pedidos por estado
+ */
+export async function getOrdersByStatus(status: string): Promise<OrderData[]> {
+  try {
+    const q = query(
+      collection(db, 'orders'),
+      where('status', '==', status)
+    );
+
+    const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
+    const orders: OrderData[] = [];
+
+    querySnapshot.forEach((doc) => {
+      orders.push({ id: doc.id, ...doc.data() } as OrderData);
+    });
+
+    console.log(`✅ ${orders.length} pedidos con estado ${status}`);
+    return orders;
+  } catch (error) {
+    console.error('❌ Error obteniendo pedidos por estado:', error);
+    throw error;
+  }
+}
