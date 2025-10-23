@@ -52,8 +52,25 @@ export default function AdminOrderDetail() {
 
     try {
       await updateOrderStatus(orderId, newStatus);
+
+      // Enviar email de notificación
+      try {
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId,
+            type: 'status-update',
+            newStatus,
+          }),
+        });
+        console.log('✅ Email de notificación enviado');
+      } catch (emailError) {
+        console.error('⚠️ Error enviando email (no crítico):', emailError);
+      }
+
       await loadOrder(orderId);
-      alert('Estado actualizado correctamente');
+      alert('Estado actualizado correctamente. Email enviado al cliente.');
     } catch (error) {
       console.error('Error actualizando estado:', error);
       alert('Error actualizando estado');

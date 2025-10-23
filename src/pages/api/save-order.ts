@@ -31,6 +31,29 @@ export const POST: APIRoute = async ({ request }) => {
 
     console.log('✅ API save-order: Pedido guardado con ID:', docRef.id);
 
+    // Enviar email de confirmación automáticamente
+    try {
+      console.log('📧 API save-order: Enviando email de confirmación...');
+
+      const emailResponse = await fetch(new URL('/api/send-email', request.url).toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: docRef.id,
+          type: 'confirmation',
+        }),
+      });
+
+      if (emailResponse.ok) {
+        console.log('✅ API save-order: Email de confirmación enviado');
+      } else {
+        console.error('⚠️ API save-order: Error enviando email (no crítico)');
+      }
+    } catch (emailError) {
+      console.error('⚠️ API save-order: Error enviando email (no crítico):', emailError);
+      // No falla la operación si el email falla
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

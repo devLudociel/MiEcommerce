@@ -23,6 +23,7 @@
     "nanostores": "^1.0.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "resend": "^6.2.2",
     "stripe": "^19.1.0",
     "tailwindcss": "^4.1.12"
   }
