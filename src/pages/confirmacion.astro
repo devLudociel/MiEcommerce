@@ -5,5 +5,7 @@ import OrderConfirmation from '../components/pages/OrderConfirmation';
 ---
 
 <BaseLayout title="Pedido Confirmado">
-  <OrderConfirmation client:only="react" />
+  <div class="min-h-screen">
+    <OrderConfirmation client:load />
+  </div>
 </BaseLayout>
