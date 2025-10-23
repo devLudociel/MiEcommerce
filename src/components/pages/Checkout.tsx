@@ -211,8 +211,15 @@ export default function Checkout() {
       console.log('🧹 Limpiando carrito...');
       clearCart();
       console.log('🧹 Carrito limpiado');
-      console.log('🔄 Redirigiendo a confirmación...');
-      window.location.href = `/confirmacion?orderId=${responseData.orderId}`;
+
+      const redirectUrl = `/confirmacion?orderId=${responseData.orderId}`;
+      console.log('🔄 URL de redirección construida:', redirectUrl);
+      console.log('🔄 Redirigiendo AHORA...');
+
+      // Asegurar que el redirect pase
+      setTimeout(() => {
+        window.location.href = redirectUrl;
+      }, 100);
 
     } catch (error: any) {
       console.error('❌❌❌ ERROR CAPTURADO EN CATCH ❌❌❌');
