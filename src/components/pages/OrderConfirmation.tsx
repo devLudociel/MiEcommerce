@@ -65,7 +65,7 @@ export default function OrderConfirmation() {
   estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-cyan-50 py-16 mt-32">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-cyan-50 py-16">
       <div className="container mx-auto px-6 max-w-4xl">
         
         {/* Mensaje de éxito */}
