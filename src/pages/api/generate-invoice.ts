@@ -1,6 +1,6 @@
 // src/pages/api/generate-invoice.ts
 import type { APIRoute } from 'astro';
-import { db } from '../../lib/firebase.server';
+import { db } from '../../lib/firebase';
 import { doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
 import { generateInvoiceDefinition } from '../../lib/invoiceGenerator';
 import type { InvoiceData } from '../../lib/invoiceGenerator';
