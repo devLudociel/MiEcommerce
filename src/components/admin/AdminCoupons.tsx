@@ -1,8 +1,8 @@
 // src/components/admin/AdminCoupons.tsx
 import { useState, useEffect } from 'react';
-import { createCoupon, getActiveCoupons, deactivateCoupon } from '../../lib/firebase';
+import { getActiveCoupons, deactivateCoupon, db } from '../../lib/firebase';
 import type { Coupon } from '../../types/firebase';
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../hooks/useAuth';
 
 export default function AdminCoupons() {
@@ -50,7 +50,9 @@ export default function AdminCoupons() {
     }
 
     try {
-      // Construir objeto solo con campos que tienen valores (Firebase no acepta undefined)
+      console.log('🚀 [DIRECT] Creando cupón directamente desde componente');
+
+      // Construir objeto base solo con campos requeridos
       const couponData: any = {
         code: formData.code.toUpperCase(),
         description: formData.description,
@@ -60,6 +62,9 @@ export default function AdminCoupons() {
         endDate: Timestamp.fromDate(new Date(formData.endDate)),
         active: true,
         createdBy: user.uid,
+        currentUses: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
       // Solo agregar campos opcionales si tienen valores > 0
@@ -76,11 +81,22 @@ export default function AdminCoupons() {
         couponData.maxUsesPerUser = formData.maxUsesPerUser;
       }
 
-      await createCoupon(couponData);
+      // Filtrar explícitamente cualquier undefined
+      const cleanData = Object.fromEntries(
+        Object.entries(couponData).filter(([_, v]) => v !== undefined)
+      );
 
+      console.log('🧹 [DIRECT] Datos limpios:', cleanData);
+      console.log('🔍 [DIRECT] Verificando undefined:', Object.values(cleanData).filter(v => v === undefined).length);
+
+      // Llamar DIRECTAMENTE a Firebase sin usar la función createCoupon
+      const docRef = await addDoc(collection(db, 'coupons'), cleanData);
+
+      console.log('✅ [DIRECT] Cupón creado con ID:', docRef.id);
       alert('Cupón creado exitosamente');
       setShowForm(false);
       loadCoupons();
+
       // Reset form
       setFormData({
         code: '',
@@ -95,8 +111,8 @@ export default function AdminCoupons() {
         endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       });
     } catch (error) {
-      console.error('Error creando cupón:', error);
-      alert('Error al crear el cupón');
+      console.error('❌ [DIRECT] Error creando cupón:', error);
+      alert('Error al crear el cupón: ' + (error as Error).message);
     }
   };
 
