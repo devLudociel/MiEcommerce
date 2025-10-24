@@ -63,7 +63,6 @@ export default function AdminCoupons() {
         endDate: Timestamp.fromDate(new Date(formData.endDate)),
         active: true,
         createdBy: user.uid,
-        createdAt: Timestamp.now(),
       });
 
       alert('Cupón creado exitosamente');
