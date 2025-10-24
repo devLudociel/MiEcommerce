@@ -1,0 +1,12 @@
+---
+// src/pages/admin/cupones.astro
+import Layout from '../../layouts/Layout.astro';
+import RequireAdmin from '../../components/auth/RequireAdmin';
+import AdminCoupons from '../../components/admin/AdminCoupons';
+---
+
+<Layout title="Gestión de Cupones - Admin">
+  <RequireAdmin client:only="react">
+    <AdminCoupons client:load />
+  </RequireAdmin>
+</Layout>
