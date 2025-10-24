@@ -1,19 +1,21 @@
 // src/lib/firebase.ts
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import type { FirebaseApp } from 'firebase/app';
-import { 
-  getFirestore, 
-  initializeFirestore, 
-  setLogLevel, 
-  collection, 
-  addDoc, 
-  updateDoc, 
-  doc, 
-  getDoc, 
-  getDocs, 
-  query, 
-  where, 
-  serverTimestamp
+import {
+  getFirestore,
+  initializeFirestore,
+  setLogLevel,
+  collection,
+  addDoc,
+  updateDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  serverTimestamp,
+  setDoc,
+  increment
 } from 'firebase/firestore';
 import type { Firestore, DocumentData, QuerySnapshot } from 'firebase/firestore';
 import { 
@@ -646,5 +648,381 @@ export async function markReviewHelpful(reviewId: string): Promise<void> {
   } catch (error) {
     console.error('❌ Error marcando review como útil:', error);
     throw error;
+  }
+}
+
+// ============================================
+// 💰 FUNCIONES PARA MONEDERO (WALLET)
+// ============================================
+
+import type { Wallet, WalletTransaction } from '../types/firebase';
+export type { Wallet, WalletTransaction } from '../types/firebase';
+
+/**
+ * Obtener o crear wallet del usuario
+ */
+export async function getOrCreateWallet(userId: string): Promise<Wallet> {
+  try {
+    const walletRef = doc(db, 'wallets', userId);
+    const walletSnap = await getDoc(walletRef);
+
+    if (walletSnap.exists()) {
+      return { id: walletSnap.id, ...walletSnap.data() } as Wallet;
+    }
+
+    // Crear wallet nuevo
+    const newWallet: Wallet = {
+      userId,
+      balance: 0,
+      totalEarned: 0,
+      totalSpent: 0,
+    };
+
+    await setDoc(walletRef, {
+      ...newWallet,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log('✅ Wallet creado para usuario:', userId);
+    return newWallet;
+  } catch (error) {
+    console.error('❌ Error obteniendo/creando wallet:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtener saldo del wallet
+ */
+export async function getWalletBalance(userId: string): Promise<number> {
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    return wallet.balance;
+  } catch (error) {
+    console.error('❌ Error obteniendo saldo del wallet:', error);
+    return 0;
+  }
+}
+
+/**
+ * Agregar fondos al wallet (cashback, bonos, etc)
+ */
+export async function addWalletFunds(
+  userId: string,
+  amount: number,
+  description: string,
+  orderId?: string
+): Promise<void> {
+  try {
+    const walletRef = doc(db, 'wallets', userId);
+    const wallet = await getOrCreateWallet(userId);
+
+    const newBalance = wallet.balance + amount;
+
+    // Actualizar wallet
+    await updateDoc(walletRef, {
+      balance: newBalance,
+      totalEarned: wallet.totalEarned + amount,
+      updatedAt: serverTimestamp(),
+    });
+
+    // Registrar transacción
+    await addDoc(collection(db, 'wallet_transactions'), {
+      userId,
+      type: 'earn',
+      amount,
+      balance: newBalance,
+      orderId,
+      description,
+      createdAt: serverTimestamp(),
+    });
+
+    console.log(`✅ ${amount} agregados al wallet de ${userId}`);
+  } catch (error) {
+    console.error('❌ Error agregando fondos al wallet:', error);
+    throw error;
+  }
+}
+
+/**
+ * Gastar fondos del wallet
+ */
+export async function spendWalletFunds(
+  userId: string,
+  amount: number,
+  description: string,
+  orderId?: string
+): Promise<boolean> {
+  try {
+    const walletRef = doc(db, 'wallets', userId);
+    const wallet = await getOrCreateWallet(userId);
+
+    if (wallet.balance < amount) {
+      console.error('❌ Saldo insuficiente en wallet');
+      return false;
+    }
+
+    const newBalance = wallet.balance - amount;
+
+    // Actualizar wallet
+    await updateDoc(walletRef, {
+      balance: newBalance,
+      totalSpent: wallet.totalSpent + amount,
+      updatedAt: serverTimestamp(),
+    });
+
+    // Registrar transacción
+    await addDoc(collection(db, 'wallet_transactions'), {
+      userId,
+      type: 'spend',
+      amount,
+      balance: newBalance,
+      orderId,
+      description,
+      createdAt: serverTimestamp(),
+    });
+
+    console.log(`✅ ${amount} gastados del wallet de ${userId}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error gastando fondos del wallet:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtener historial de transacciones del wallet
+ */
+export async function getWalletTransactions(userId: string, limitCount: number = 50): Promise<WalletTransaction[]> {
+  try {
+    const q = query(
+      collection(db, 'wallet_transactions'),
+      where('userId', '==', userId),
+      limit(limitCount)
+    );
+
+    const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
+    const transactions: WalletTransaction[] = [];
+
+    querySnapshot.forEach((doc) => {
+      transactions.push({ id: doc.id, ...doc.data() } as WalletTransaction);
+    });
+
+    // Ordenar por fecha más reciente
+    transactions.sort((a, b) => {
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    console.log(`✅ ${transactions.length} transacciones encontradas`);
+    return transactions;
+  } catch (error) {
+    console.error('❌ Error obteniendo transacciones del wallet:', error);
+    throw error;
+  }
+}
+
+// ============================================
+// 🎟️ FUNCIONES PARA CUPONES
+// ============================================
+
+import type { Coupon, CouponUsage } from '../types/firebase';
+export type { Coupon, CouponUsage } from '../types/firebase';
+
+/**
+ * Validar y obtener cupón por código
+ */
+export async function validateCoupon(
+  code: string,
+  userId: string,
+  cartTotal: number
+): Promise<{ valid: boolean; coupon?: Coupon; error?: string; discount?: number }> {
+  try {
+    // Buscar cupón por código
+    const q = query(
+      collection(db, 'coupons'),
+      where('code', '==', code.toUpperCase()),
+      where('active', '==', true),
+      limit(1)
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      return { valid: false, error: 'Cupón no válido' };
+    }
+
+    const couponDoc = querySnapshot.docs[0];
+    const coupon = { id: couponDoc.id, ...couponDoc.data() } as Coupon;
+
+    // Verificar fecha de expiración
+    const now = new Date();
+    const startDate = coupon.startDate.toDate();
+    const endDate = coupon.endDate.toDate();
+
+    if (now < startDate || now > endDate) {
+      return { valid: false, error: 'Cupón expirado' };
+    }
+
+    // Verificar usos máximos totales
+    if (coupon.maxUses && coupon.currentUses >= coupon.maxUses) {
+      return { valid: false, error: 'Cupón agotado' };
+    }
+
+    // Verificar usos por usuario
+    if (coupon.maxUsesPerUser) {
+      const usageQuery = query(
+        collection(db, 'coupon_usage'),
+        where('couponId', '==', coupon.id),
+        where('userId', '==', userId)
+      );
+      const usageSnapshot = await getDocs(usageQuery);
+
+      if (usageSnapshot.size >= coupon.maxUsesPerUser) {
+        return { valid: false, error: 'Ya usaste este cupón el máximo de veces' };
+      }
+    }
+
+    // Verificar monto mínimo
+    if (coupon.minPurchase && cartTotal < coupon.minPurchase) {
+      return {
+        valid: false,
+        error: `Compra mínima: $${coupon.minPurchase.toFixed(2)}`,
+      };
+    }
+
+    // Calcular descuento
+    let discount = 0;
+    if (coupon.type === 'percentage') {
+      discount = (cartTotal * coupon.value) / 100;
+      if (coupon.maxDiscount && discount > coupon.maxDiscount) {
+        discount = coupon.maxDiscount;
+      }
+    } else if (coupon.type === 'fixed') {
+      discount = Math.min(coupon.value, cartTotal);
+    }
+    // Para 'free_shipping', el descuento se maneja en el checkout
+
+    return { valid: true, coupon, discount };
+  } catch (error) {
+    console.error('❌ Error validando cupón:', error);
+    return { valid: false, error: 'Error al validar cupón' };
+  }
+}
+
+/**
+ * Aplicar uso de cupón
+ */
+export async function useCoupon(
+  couponId: string,
+  userId: string,
+  orderId: string,
+  discountAmount: number,
+  couponCode: string
+): Promise<boolean> {
+  try {
+    const couponRef = doc(db, 'coupons', couponId);
+
+    // Incrementar contador de usos
+    await updateDoc(couponRef, {
+      currentUses: increment(1),
+      updatedAt: serverTimestamp(),
+    });
+
+    // Registrar uso
+    await addDoc(collection(db, 'coupon_usage'), {
+      couponId,
+      couponCode,
+      userId,
+      orderId,
+      discountAmount,
+      usedAt: serverTimestamp(),
+    });
+
+    console.log(`✅ Cupón ${couponCode} usado por usuario ${userId}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error usando cupón:', error);
+    return false;
+  }
+}
+
+/**
+ * Crear nuevo cupón (solo admin)
+ */
+export async function createCoupon(couponData: Omit<Coupon, 'id' | 'currentUses' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  try {
+    const docRef = await addDoc(collection(db, 'coupons'), {
+      ...couponData,
+      code: couponData.code.toUpperCase(),
+      currentUses: 0,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log('✅ Cupón creado:', docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error('❌ Error creando cupón:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtener todos los cupones activos
+ */
+export async function getActiveCoupons(): Promise<Coupon[]> {
+  try {
+    const q = query(
+      collection(db, 'coupons'),
+      where('active', '==', true)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const coupons: Coupon[] = [];
+
+    querySnapshot.forEach((doc) => {
+      coupons.push({ id: doc.id, ...doc.data() } as Coupon);
+    });
+
+    console.log(`✅ ${coupons.length} cupones activos encontrados`);
+    return coupons;
+  } catch (error) {
+    console.error('❌ Error obteniendo cupones:', error);
+    throw error;
+  }
+}
+
+/**
+ * Actualizar cupón
+ */
+export async function updateCoupon(couponId: string, updates: Partial<Coupon>): Promise<boolean> {
+  try {
+    const couponRef = doc(db, 'coupons', couponId);
+
+    await updateDoc(couponRef, {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log('✅ Cupón actualizado:', couponId);
+    return true;
+  } catch (error) {
+    console.error('❌ Error actualizando cupón:', error);
+    return false;
+  }
+}
+
+/**
+ * Desactivar cupón
+ */
+export async function deactivateCoupon(couponId: string): Promise<boolean> {
+  try {
+    return await updateCoupon(couponId, { active: false });
+  } catch (error) {
+    console.error('❌ Error desactivando cupón:', error);
+    return false;
   }
 }

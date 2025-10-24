@@ -94,3 +94,55 @@ export interface ReviewStats {
     1: number;
   };
 }
+
+// Para monedero de recompensas (Wallet)
+export interface Wallet {
+  id?: string;
+  userId: string;
+  balance: number; // Saldo disponible en moneda local
+  totalEarned: number; // Total acumulado históricamente
+  totalSpent: number; // Total gastado del wallet
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface WalletTransaction {
+  id?: string;
+  userId: string;
+  type: 'earn' | 'spend' | 'refund';
+  amount: number;
+  balance: number; // Saldo después de la transacción
+  orderId?: string; // Pedido relacionado
+  description: string;
+  createdAt?: Timestamp;
+}
+
+// Para sistema de cupones
+export interface Coupon {
+  id?: string;
+  code: string; // Código único (ej: "BIENVENIDO10")
+  description: string;
+  type: 'percentage' | 'fixed' | 'free_shipping';
+  value: number; // % o monto fijo según el tipo
+  minPurchase?: number; // Monto mínimo de compra
+  maxDiscount?: number; // Descuento máximo (para % cupones)
+  maxUses?: number; // Usos totales permitidos
+  maxUsesPerUser?: number; // Usos por usuario
+  currentUses: number; // Usos actuales
+  startDate: Timestamp;
+  endDate: Timestamp;
+  active: boolean;
+  createdBy: string; // Admin que lo creó
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface CouponUsage {
+  id?: string;
+  couponId: string;
+  couponCode: string;
+  userId: string;
+  orderId: string;
+  discountAmount: number;
+  usedAt: Timestamp;
+}
