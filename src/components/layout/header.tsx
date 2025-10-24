@@ -105,7 +105,7 @@ function CartDropdown({ onClose }: { onClose: () => void }) {
           <span className="font-semibold text-cyan-700">€{cart.total.toFixed(2)}</span>
         </div>
         <div className="flex gap-2">
-          <a href="/cart" className="px-3 py-2 text-sm rounded border hover:bg-gray-50">Ver carrito</a>
+          <a href="/checkout" className="px-3 py-2 text-sm rounded border hover:bg-gray-50">Ver carrito</a>
           <a href="/checkout" className="px-3 py-2 text-sm rounded bg-cyan-600 text-white hover:bg-cyan-700">Finalizar</a>
         </div>
       </div>
@@ -152,6 +152,11 @@ const Header: React.FC<HeaderProps> = () => {
   }, []);
 
   const { user, email, displayName, isAuthenticated, logout } = useAuth();
+  const adminEmails = (import.meta.env.PUBLIC_ADMIN_EMAILS || '')
+    .split(',')
+    .map((s: string) => s.trim().toLowerCase())
+    .filter(Boolean);
+  const isAdmin = !!email && adminEmails.includes(email.toLowerCase());
 
   // Categorías con la estructura actualizada
   const categories: MenuCategory[] = [
@@ -387,6 +392,23 @@ const Header: React.FC<HeaderProps> = () => {
               Historial de compras y volver a pedir
             </a>
           </div>
+
+          {isAdmin && (
+            <div style={{ padding: 'var(--spacing-2) 0', borderTop: '1px solid var(--color-gray-100)' }}>
+              <div style={{ padding: '0 var(--spacing-3) var(--spacing-2) var(--spacing-3)' }}>
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Admin</h4>
+              </div>
+              <a href="/admin/cupones" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
+                Gestión de cupones
+              </a>
+              <a href="/admin/products" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
+                Gestión de productos
+              </a>
+              <a href="/admin/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
+                Pedidos
+              </a>
+            </div>
+          )}
 
           <div style={{ padding: 'var(--spacing-2) 0', borderTop: '1px solid var(--color-gray-100)' }}>
             <a href="/mi-wallet" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2" onClick={() => setIsUserMenuOpen(false)}>

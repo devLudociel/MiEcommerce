@@ -1,8 +1,8 @@
 // src/components/admin/AdminCoupons.tsx
 import { useState, useEffect } from 'react';
-import { getActiveCoupons, deactivateCoupon, db } from '../../lib/firebase';
+import { getActiveCoupons, deactivateCoupon, createCoupon } from '../../lib/firebase';
 import type { Coupon } from '../../types/firebase';
-import { Timestamp, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '../hooks/useAuth';
 
 export default function AdminCoupons() {
@@ -43,7 +43,7 @@ export default function AdminCoupons() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    /*
     alert('🔥 CÓDIGO NUEVO CARGADO - VERSIÓN 2024-v3 🔥');
 
     console.log('========== INICIO handleSubmit ==========');
@@ -53,8 +53,65 @@ export default function AdminCoupons() {
     console.log('4️⃣ formData.maxUses:', formData.maxUses, 'tipo:', typeof formData.maxUses);
     console.log('5️⃣ formData.maxUsesPerUser:', formData.maxUsesPerUser, 'tipo:', typeof formData.maxUsesPerUser);
 
+    */
     if (!user) {
       alert('Debes estar autenticado');
+      return;
+    }
+
+    // Flujo centralizado: validación de datos y creación via helper
+    try {
+      const code = formData.code.trim().toUpperCase();
+      const description = formData.description.trim();
+      if (!code || !description) {
+        alert('Completa el código y la descripción');
+        return;
+      }
+      if (formData.type === 'percentage' && (formData.value < 1 || formData.value > 100)) {
+        alert('El porcentaje debe estar entre 1 y 100');
+        return;
+      }
+      if (formData.type === 'fixed' && formData.value < 1) {
+        alert('El descuento fijo debe ser mayor a 0');
+        return;
+      }
+
+      const payload: Omit<Coupon, 'id' | 'currentUses' | 'createdAt' | 'updatedAt'> = {
+        code,
+        description,
+        type: formData.type,
+        value: formData.type === 'free_shipping' ? 0 : formData.value,
+        startDate: Timestamp.fromDate(new Date(formData.startDate)) as any,
+        endDate: Timestamp.fromDate(new Date(formData.endDate)) as any,
+        active: true,
+        createdBy: user.uid,
+        minPurchase: formData.minPurchase > 0 ? formData.minPurchase : undefined,
+        maxDiscount: formData.maxDiscount > 0 ? formData.maxDiscount : undefined,
+        maxUses: formData.maxUses > 0 ? formData.maxUses : undefined,
+        maxUsesPerUser: formData.maxUsesPerUser > 0 ? formData.maxUsesPerUser : undefined,
+      };
+
+      await createCoupon(payload);
+      alert('Cupón creado exitosamente');
+      setShowForm(false);
+      loadCoupons();
+
+      setFormData({
+        code: '',
+        description: '',
+        type: 'percentage',
+        value: 10,
+        minPurchase: 0,
+        maxDiscount: 0,
+        maxUses: 0,
+        maxUsesPerUser: 1,
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      });
+      return;
+    } catch (error) {
+      console.error('Error creando cupón:', error);
+      alert('Error al crear el cupón: ' + (error as Error).message);
       return;
     }
 
@@ -173,9 +230,22 @@ export default function AdminCoupons() {
   };
 
   const formatDate = (timestamp: any): string => {
+<<<<<<< Updated upstream
     if (!timestamp) return 'N/A';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return date.toLocaleDateString('es-ES');
+=======
+    if (!timestamp) return '-';
+    try {
+      const date = typeof timestamp?.toDate === 'function'
+        ? timestamp.toDate()
+        : new Date(timestamp);
+      if (isNaN(date.getTime())) return '-';
+      return date.toLocaleDateString('es-ES');
+    } catch {
+      return '-';
+    }
+>>>>>>> Stashed changes
   };
 
   if (loading) {
