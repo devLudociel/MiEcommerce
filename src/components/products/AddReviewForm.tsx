@@ -1,8 +1,7 @@
 // src/components/products/AddReviewForm.tsx
 import { useState, useEffect } from 'react';
 import { addReview, hasUserReviewed } from '../../lib/firebase';
-import { $user } from '../../stores/authStore';
-import { useStore } from '@nanostores/react';
+import { useAuth } from '../hooks/useAuth';
 
 interface AddReviewFormProps {
   productId: string;
@@ -10,7 +9,7 @@ interface AddReviewFormProps {
 }
 
 export default function AddReviewForm({ productId, onReviewAdded }: AddReviewFormProps) {
-  const user = useStore($user);
+  const { user, loading: authLoading } = useAuth();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -77,7 +76,7 @@ export default function AddReviewForm({ productId, onReviewAdded }: AddReviewFor
     }
   };
 
-  if (checking) {
+  if (checking || authLoading) {
     return (
       <div className="text-center py-4">
         <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-cyan-500 border-r-transparent"></div>
