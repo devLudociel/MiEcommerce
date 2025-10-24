@@ -50,20 +50,33 @@ export default function AdminCoupons() {
     }
 
     try {
-      await createCoupon({
+      // Construir objeto solo con campos que tienen valores (Firebase no acepta undefined)
+      const couponData: any = {
         code: formData.code.toUpperCase(),
         description: formData.description,
         type: formData.type,
         value: formData.value,
-        minPurchase: formData.minPurchase > 0 ? formData.minPurchase : undefined,
-        maxDiscount: formData.maxDiscount > 0 ? formData.maxDiscount : undefined,
-        maxUses: formData.maxUses > 0 ? formData.maxUses : undefined,
-        maxUsesPerUser: formData.maxUsesPerUser,
         startDate: Timestamp.fromDate(new Date(formData.startDate)),
         endDate: Timestamp.fromDate(new Date(formData.endDate)),
         active: true,
         createdBy: user.uid,
-      });
+      };
+
+      // Solo agregar campos opcionales si tienen valores > 0
+      if (formData.minPurchase > 0) {
+        couponData.minPurchase = formData.minPurchase;
+      }
+      if (formData.maxDiscount > 0) {
+        couponData.maxDiscount = formData.maxDiscount;
+      }
+      if (formData.maxUses > 0) {
+        couponData.maxUses = formData.maxUses;
+      }
+      if (formData.maxUsesPerUser > 0) {
+        couponData.maxUsesPerUser = formData.maxUsesPerUser;
+      }
+
+      await createCoupon(couponData);
 
       alert('Cupón creado exitosamente');
       setShowForm(false);
