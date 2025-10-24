@@ -43,34 +43,26 @@ export default function AdminCoupons() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    /*
-    alert('🔥 CÓDIGO NUEVO CARGADO - VERSIÓN 2024-v3 🔥');
 
-    console.log('========== INICIO handleSubmit ==========');
-    console.log('1️⃣ formData completo:', formData);
-    console.log('2️⃣ formData.minPurchase:', formData.minPurchase, 'tipo:', typeof formData.minPurchase);
-    console.log('3️⃣ formData.maxDiscount:', formData.maxDiscount, 'tipo:', typeof formData.maxDiscount);
-    console.log('4️⃣ formData.maxUses:', formData.maxUses, 'tipo:', typeof formData.maxUses);
-    console.log('5️⃣ formData.maxUsesPerUser:', formData.maxUsesPerUser, 'tipo:', typeof formData.maxUsesPerUser);
-
-    */
     if (!user) {
       alert('Debes estar autenticado');
       return;
     }
 
-    // Flujo centralizado: validación de datos y creación via helper
     try {
       const code = formData.code.trim().toUpperCase();
       const description = formData.description.trim();
+
       if (!code || !description) {
         alert('Completa el código y la descripción');
         return;
       }
+
       if (formData.type === 'percentage' && (formData.value < 1 || formData.value > 100)) {
         alert('El porcentaje debe estar entre 1 y 100');
         return;
       }
+
       if (formData.type === 'fixed' && formData.value < 1) {
         alert('El descuento fijo debe ser mayor a 0');
         return;
@@ -108,110 +100,8 @@ export default function AdminCoupons() {
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       });
-      return;
     } catch (error) {
       console.error('Error creando cupón:', error);
-      alert('Error al crear el cupón: ' + (error as Error).message);
-      return;
-    }
-
-    try {
-      console.log('🚀 [DIRECT-v2] Iniciando creación de cupón');
-
-      // Construir objeto base solo con campos requeridos
-      const couponData: any = {
-        code: formData.code.toUpperCase(),
-        description: formData.description,
-        type: formData.type,
-        value: formData.value,
-        startDate: Timestamp.fromDate(new Date(formData.startDate)),
-        endDate: Timestamp.fromDate(new Date(formData.endDate)),
-        active: true,
-        createdBy: user.uid,
-        currentUses: 0,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
-
-      console.log('6️⃣ couponData BASE (antes de opcionales):', couponData);
-
-      // Solo agregar campos opcionales si tienen valores > 0
-      console.log('7️⃣ Evaluando minPurchase > 0:', formData.minPurchase, '>', 0, '=', formData.minPurchase > 0);
-      if (formData.minPurchase > 0) {
-        console.log('   ✅ AGREGANDO minPurchase:', formData.minPurchase);
-        couponData.minPurchase = formData.minPurchase;
-      } else {
-        console.log('   ❌ NO agregando minPurchase');
-      }
-
-      console.log('8️⃣ Evaluando maxDiscount > 0:', formData.maxDiscount, '>', 0, '=', formData.maxDiscount > 0);
-      if (formData.maxDiscount > 0) {
-        console.log('   ✅ AGREGANDO maxDiscount:', formData.maxDiscount);
-        couponData.maxDiscount = formData.maxDiscount;
-      } else {
-        console.log('   ❌ NO agregando maxDiscount');
-      }
-
-      console.log('9️⃣ Evaluando maxUses > 0:', formData.maxUses, '>', 0, '=', formData.maxUses > 0);
-      if (formData.maxUses > 0) {
-        console.log('   ✅ AGREGANDO maxUses:', formData.maxUses);
-        couponData.maxUses = formData.maxUses;
-      } else {
-        console.log('   ❌ NO agregando maxUses');
-      }
-
-      console.log('🔟 Evaluando maxUsesPerUser > 0:', formData.maxUsesPerUser, '>', 0, '=', formData.maxUsesPerUser > 0);
-      if (formData.maxUsesPerUser > 0) {
-        console.log('   ✅ AGREGANDO maxUsesPerUser:', formData.maxUsesPerUser);
-        couponData.maxUsesPerUser = formData.maxUsesPerUser;
-      } else {
-        console.log('   ❌ NO agregando maxUsesPerUser');
-      }
-
-      console.log('1️⃣1️⃣ couponData COMPLETO (después de opcionales):', couponData);
-      console.log('1️⃣2️⃣ Claves de couponData:', Object.keys(couponData));
-      console.log('1️⃣3️⃣ Valores de couponData:', Object.values(couponData));
-
-      // Filtrar explícitamente cualquier undefined
-      const cleanData = Object.fromEntries(
-        Object.entries(couponData).filter(([key, value]) => {
-          const isUndefined = value === undefined;
-          console.log(`   Filtrado ${key}:`, value, isUndefined ? '❌ ELIMINAR' : '✅ MANTENER');
-          return !isUndefined;
-        })
-      );
-
-      console.log('1️⃣4️⃣ cleanData FINAL:', cleanData);
-      console.log('1️⃣5️⃣ Claves de cleanData:', Object.keys(cleanData));
-      console.log('1️⃣6️⃣ Valores de cleanData:', Object.values(cleanData));
-      console.log('1️⃣7️⃣ Campos undefined en cleanData:', Object.entries(cleanData).filter(([k, v]) => v === undefined));
-
-      // Llamar DIRECTAMENTE a Firebase sin usar la función createCoupon
-      console.log('1️⃣8️⃣ A punto de llamar addDoc...');
-      const docRef = await addDoc(collection(db, 'coupons'), cleanData);
-
-      console.log('✅ [DIRECT-v2] Cupón creado con ID:', docRef.id);
-      alert('Cupón creado exitosamente');
-      setShowForm(false);
-      loadCoupons();
-
-      // Reset form
-      setFormData({
-        code: '',
-        description: '',
-        type: 'percentage',
-        value: 10,
-        minPurchase: 0,
-        maxDiscount: 0,
-        maxUses: 0,
-        maxUsesPerUser: 1,
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      });
-    } catch (error) {
-      console.error('❌ [DIRECT-v2] Error creando cupón:', error);
-      console.error('❌ Mensaje de error:', (error as Error).message);
-      console.error('❌ Stack:', (error as Error).stack);
       alert('Error al crear el cupón: ' + (error as Error).message);
     }
   };
@@ -230,11 +120,6 @@ export default function AdminCoupons() {
   };
 
   const formatDate = (timestamp: any): string => {
-<<<<<<< Updated upstream
-    if (!timestamp) return 'N/A';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleDateString('es-ES');
-=======
     if (!timestamp) return '-';
     try {
       const date = typeof timestamp?.toDate === 'function'
@@ -245,7 +130,6 @@ export default function AdminCoupons() {
     } catch {
       return '-';
     }
->>>>>>> Stashed changes
   };
 
   if (loading) {

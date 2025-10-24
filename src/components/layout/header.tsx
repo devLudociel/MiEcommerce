@@ -299,8 +299,14 @@ const Header: React.FC<HeaderProps> = () => {
             {/* Iconos de usuario */}
             <div className="flex items-center" style={{ gap: 'var(--spacing-6)' }}>
               
-              {/* Ayuda */}
-              <button className="lg:flex hidden items-center" style={{ gap: 'var(--spacing-3)', color: 'var(--color-gray-600)', transition: 'var(--transition-all)' }}>
+              {/* Ayuda por WhatsApp */}
+              <a
+                href="https://wa.me/34645341452?text=Hola,%20necesito%20ayuda%20con%20mi%20pedido"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="lg:flex hidden items-center hover:text-cyan-600"
+                style={{ gap: 'var(--spacing-3)', color: 'var(--color-gray-600)', transition: 'var(--transition-all)' }}
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -308,23 +314,31 @@ const Header: React.FC<HeaderProps> = () => {
                   <div>¿Necesitas ayuda?</div>
                   <div className="text-gray-500">645 341 452</div>
                 </div>
-              </button>
+              </a>
 
               {/* Proyectos */}
-              <button className="lg:flex hidden items-center" style={{ gap: 'var(--spacing-2)', color: 'var(--color-gray-600)', transition: 'var(--transition-all)' }}>
+              <a
+                href="/account/projects"
+                className="lg:flex hidden items-center hover:text-cyan-600"
+                style={{ gap: 'var(--spacing-2)', color: 'var(--color-gray-600)', transition: 'var(--transition-all)' }}
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
                 <span className="text-sm">Mis proyectos</span>
-              </button>
+              </a>
 
               {/* Favoritos */}
-              <button className="lg:flex hidden items-center" style={{ gap: 'var(--spacing-2)', color: 'var(--color-gray-600)', transition: 'var(--transition-all)' }}>
+              <a
+                href="/account/wishlist"
+                className="lg:flex hidden items-center hover:text-cyan-600"
+                style={{ gap: 'var(--spacing-2)', color: 'var(--color-gray-600)', transition: 'var(--transition-all)' }}
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
                 <span className="text-sm">Mis favoritos</span>
-              </button>
+              </a>
 
               {/* Cuenta */}
               <div className="relative">
