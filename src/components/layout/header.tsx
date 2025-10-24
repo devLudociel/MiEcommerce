@@ -389,6 +389,10 @@ const Header: React.FC<HeaderProps> = () => {
           </div>
 
           <div style={{ padding: 'var(--spacing-2) 0', borderTop: '1px solid var(--color-gray-100)' }}>
+            <a href="/mi-wallet" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2" onClick={() => setIsUserMenuOpen(false)}>
+              <span>💰</span>
+              <span>Mi Wallet - Recompensas</span>
+            </a>
             <a href="/account/wishlist" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
               Mis favoritos
             </a>
