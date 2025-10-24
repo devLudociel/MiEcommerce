@@ -44,6 +44,8 @@ export default function AdminCoupons() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    alert('🔥 CÓDIGO NUEVO CARGADO - VERSIÓN 2024-v3 🔥');
+
     console.log('========== INICIO handleSubmit ==========');
     console.log('1️⃣ formData completo:', formData);
     console.log('2️⃣ formData.minPurchase:', formData.minPurchase, 'tipo:', typeof formData.minPurchase);
