@@ -954,10 +954,10 @@ export async function useCoupon(
  */
 export async function createCoupon(couponData: Omit<Coupon, 'id' | 'currentUses' | 'createdAt' | 'updatedAt'>): Promise<string> {
   try {
-    console.log('🔍 [v2] Datos recibidos en createCoupon:', couponData);
+    console.log('🔍 [v3-FINAL] Datos recibidos:', couponData);
 
-    // Construir el objeto solo con campos definidos (Firebase no acepta undefined)
-    const cleanData: any = {
+    // Preparar datos base
+    const baseData: any = {
       code: couponData.code.toUpperCase(),
       description: couponData.description,
       type: couponData.type,
@@ -971,33 +971,29 @@ export async function createCoupon(couponData: Omit<Coupon, 'id' | 'currentUses'
       updatedAt: serverTimestamp(),
     };
 
-    // Solo agregar campos opcionales si tienen valores definidos
-    if (couponData.minPurchase !== undefined && couponData.minPurchase > 0) {
-      console.log('✅ Agregando minPurchase:', couponData.minPurchase);
-      cleanData.minPurchase = couponData.minPurchase;
-    }
-    if (couponData.maxDiscount !== undefined && couponData.maxDiscount > 0) {
-      console.log('✅ Agregando maxDiscount:', couponData.maxDiscount);
-      cleanData.maxDiscount = couponData.maxDiscount;
-    }
-    if (couponData.maxUses !== undefined && couponData.maxUses > 0) {
-      console.log('✅ Agregando maxUses:', couponData.maxUses);
-      cleanData.maxUses = couponData.maxUses;
-    }
-    if (couponData.maxUsesPerUser !== undefined && couponData.maxUsesPerUser > 0) {
-      console.log('✅ Agregando maxUsesPerUser:', couponData.maxUsesPerUser);
-      cleanData.maxUsesPerUser = couponData.maxUsesPerUser;
-    }
+    // Agregar campos opcionales si existen
+    if (couponData.minPurchase) baseData.minPurchase = couponData.minPurchase;
+    if (couponData.maxDiscount) baseData.maxDiscount = couponData.maxDiscount;
+    if (couponData.maxUses) baseData.maxUses = couponData.maxUses;
+    if (couponData.maxUsesPerUser) baseData.maxUsesPerUser = couponData.maxUsesPerUser;
 
-    console.log('🧹 Datos limpiados para Firebase:', cleanData);
-    console.log('🔍 Verificando undefined:', Object.entries(cleanData).filter(([k, v]) => v === undefined));
+    // ELIMINAR EXPLÍCITAMENTE cualquier campo undefined
+    const cleanData = Object.entries(baseData).reduce((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as any);
+
+    console.log('🧹 [v3-FINAL] Datos limpios:', cleanData);
+    console.log('🔍 [v3-FINAL] Campos undefined restantes:', Object.entries(cleanData).filter(([k, v]) => v === undefined).length);
 
     const docRef = await addDoc(collection(db, 'coupons'), cleanData);
 
     console.log('✅ Cupón creado:', docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error('❌ Error creando cupón:', error);
+    console.error('❌ [v3-FINAL] Error creando cupón:', error);
     throw error;
   }
 }
