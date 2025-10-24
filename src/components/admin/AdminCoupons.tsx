@@ -115,7 +115,7 @@ export default function AdminCoupons() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mt-32 md:mt-40 px-6 py-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
