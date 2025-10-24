@@ -5,11 +5,17 @@ import { doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
 import { generateInvoiceDefinition } from '../../lib/invoiceGenerator';
 import type { InvoiceData } from '../../lib/invoiceGenerator';
 import type { OrderData } from '../../lib/firebase';
-import pdfMake from 'pdfmake/build/pdfmake';
-import pdfFonts from 'pdfmake/build/vfs_fonts';
+import PdfPrinter from 'pdfmake/src/printer';
 
-// Configurar fuentes VFS
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+// Configurar fuentes estándar de PDFKit (no requieren archivos externos)
+const fonts = {
+  Roboto: {
+    normal: 'Helvetica',
+    bold: 'Helvetica-Bold',
+    italics: 'Helvetica-Oblique',
+    bolditalics: 'Helvetica-BoldOblique',
+  },
+};
 
 // Información de la empresa (puedes moverla a variables de entorno)
 const COMPANY_INFO = {
@@ -96,13 +102,18 @@ export const GET: APIRoute = async ({ request, url }) => {
     // Generar definición del PDF
     const docDefinition = generateInvoiceDefinition(invoiceData);
 
-    // Crear el PDF usando pdfMake
-    const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+    // Crear el PDF usando PdfPrinter
+    const printer = new PdfPrinter(fonts);
+    const pdfDoc = printer.createPdfKitDocument(docDefinition);
 
-    // Generar el buffer del PDF
-    return new Promise((resolve, reject) => {
-      pdfDocGenerator.getBuffer((buffer: Buffer) => {
-        resolve(new Response(buffer, {
+    // Convertir el PDF a buffer
+    const chunks: Buffer[] = [];
+
+    return new Promise((resolve) => {
+      pdfDoc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      pdfDoc.on('end', () => {
+        const pdfBuffer = Buffer.concat(chunks);
+        resolve(new Response(pdfBuffer, {
           status: 200,
           headers: {
             'Content-Type': 'application/pdf',
@@ -110,6 +121,8 @@ export const GET: APIRoute = async ({ request, url }) => {
           },
         }));
       });
+
+      pdfDoc.end();
     });
 
   } catch (error) {
