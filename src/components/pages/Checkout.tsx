@@ -4,6 +4,10 @@ import { cartStore, clearCart } from '../../store/cartStore';
 import type { CartItem } from '../../store/cartStore';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { stripePromise } from '../../lib/stripe';
+import { useAuth } from '../hooks/useAuth';
+import WalletBalance from '../wallet/WalletBalance';
+import ApplyCoupon from '../wallet/ApplyCoupon';
+import type { Coupon } from '../../types/firebase';
 
 interface ShippingInfo {
   firstName: string;
@@ -31,17 +35,96 @@ type CheckoutStep = 1 | 2 | 3;
 const SHIPPING_COST = 5.99;
 const FREE_SHIPPING_THRESHOLD = 50;
 
+// Componente inline para usar saldo del wallet
+function WalletBalanceCheckout({ userId, totalAfterCoupon, useWallet, onToggle }: { userId: string; totalAfterCoupon: number; useWallet: boolean; onToggle: (checked: boolean, balance: number) => void }) {
+  const [balance, setBalance] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadBalance() {
+      try {
+        const { getWalletBalance } = await import('../../lib/firebase');
+        const bal = await getWalletBalance(userId);
+        setBalance(bal);
+      } catch (error) {
+        console.error('Error cargando balance:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadBalance();
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <div className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
+        <div className="animate-pulse flex items-center gap-2">
+          <div className="h-4 w-4 bg-gray-300 rounded"></div>
+          <div className="h-4 flex-1 bg-gray-300 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (balance <= 0) {
+    return null; // No mostrar si no hay saldo
+  }
+
+  const canUse = totalAfterCoupon > 0;
+  const amountToUse = Math.min(balance, totalAfterCoupon);
+
+  return (
+    <div className={`bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border-2 ${useWallet ? 'border-purple-300' : 'border-purple-200'}`}>
+      <label className="flex items-start gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={useWallet}
+          onChange={(e) => onToggle(e.target.checked, balance)}
+          disabled={!canUse}
+          className="mt-1 w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+        />
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-bold text-gray-800">Usar saldo del monedero</span>
+            <span className="text-sm font-bold text-purple-600">${balance.toFixed(2)} disponible</span>
+          </div>
+          {useWallet && canUse && (
+            <p className="text-sm text-purple-700">
+              Se descontará ${amountToUse.toFixed(2)} de tu saldo
+            </p>
+          )}
+          {!canUse && (
+            <p className="text-xs text-gray-500">
+              No hay saldo suficiente para usar
+            </p>
+          )}
+        </div>
+      </label>
+    </div>
+  );
+}
+
 export default function Checkout() {
   console.log('🔵🔵🔵 COMPONENTE CHECKOUT RENDERIZADO 🔵🔵🔵');
 
   const cart = useStore(cartStore);
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState<CheckoutStep>(1);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Estados para descuentos y recompensas
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | undefined>();
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [walletAmountUsed, setWalletAmountUsed] = useState(0);
+  const [useWallet, setUseWallet] = useState(false);
 
   console.log('🔵 Estado actual:', {
     currentStep,
     cartItems: cart.items.length,
-    isProcessing
+    isProcessing,
+    appliedCoupon: appliedCoupon?.code,
+    couponDiscount,
+    walletAmountUsed,
   });
   
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
@@ -75,8 +158,16 @@ export default function Checkout() {
   }, [cart.items.length]);
 
   const subtotal = cart.total;
-  const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
-  const total = subtotal + shippingCost;
+
+  // Calcular envío (gratis si hay cupón de envío gratis o si se alcanza el umbral)
+  const freeShipping = (appliedCoupon?.type === 'free_shipping') || (subtotal >= FREE_SHIPPING_THRESHOLD);
+  const shippingCost = freeShipping ? 0 : SHIPPING_COST;
+
+  // Calcular total con descuentos
+  const totalBeforeDiscounts = subtotal + shippingCost;
+  const totalAfterCoupon = totalBeforeDiscounts - couponDiscount;
+  const totalAfterWallet = Math.max(0, totalAfterCoupon - walletAmountUsed);
+  const total = totalAfterWallet;
 
   const validateStep1 = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -133,6 +224,28 @@ export default function Checkout() {
     }
   };
 
+  const handleCouponApplied = (coupon: Coupon, discount: number) => {
+    setAppliedCoupon(coupon);
+    setCouponDiscount(discount);
+  };
+
+  const handleCouponRemoved = () => {
+    setAppliedCoupon(undefined);
+    setCouponDiscount(0);
+  };
+
+  const handleWalletToggle = async (checked: boolean, availableBalance: number) => {
+    setUseWallet(checked);
+    if (checked) {
+      // Calcular cuánto del wallet se puede usar
+      const amountAfterCoupon = totalBeforeDiscounts - couponDiscount;
+      const walletToUse = Math.min(availableBalance, amountAfterCoupon);
+      setWalletAmountUsed(walletToUse);
+    } else {
+      setWalletAmountUsed(0);
+    }
+  };
+
   const handlePlaceOrder = async () => {
     console.log('🟢 INICIO: handlePlaceOrder ejecutado');
 
@@ -164,9 +277,20 @@ export default function Checkout() {
         },
         subtotal,
         shipping: shippingCost,
+        discounts: {
+          coupon: appliedCoupon ? {
+            code: appliedCoupon.code,
+            id: appliedCoupon.id,
+            amount: couponDiscount,
+          } : undefined,
+          wallet: walletAmountUsed > 0 ? {
+            amount: walletAmountUsed,
+          } : undefined,
+        },
         total,
         status: paymentStatus,
         paymentStatus,
+        userId: user?.uid,
       };
 
       console.log('📦 Objeto de pedido creado:', orderData);
@@ -492,6 +616,32 @@ export default function Checkout() {
                   </div>
                 ))}
               </div>
+
+              {/* Cupón de descuento */}
+              {user && currentStep >= 2 && (
+                <div className="mb-4">
+                  <ApplyCoupon
+                    userId={user.uid}
+                    cartTotal={subtotal}
+                    onCouponApplied={handleCouponApplied}
+                    onCouponRemoved={handleCouponRemoved}
+                    appliedCoupon={appliedCoupon}
+                  />
+                </div>
+              )}
+
+              {/* Saldo del monedero */}
+              {user && currentStep >= 2 && (
+                <div className="mb-6">
+                  <WalletBalanceCheckout
+                    userId={user.uid}
+                    totalAfterCoupon={totalBeforeDiscounts - couponDiscount}
+                    useWallet={useWallet}
+                    onToggle={handleWalletToggle}
+                  />
+                </div>
+              )}
+
               <div className="space-y-3 py-4 border-t-2 border-gray-200">
                 <div className="flex justify-between text-gray-700">
                   <span>Subtotal ({cart.items.length} {cart.items.length === 1 ? 'producto' : 'productos'})</span>
@@ -501,9 +651,24 @@ export default function Checkout() {
                   <span>Envío</span>
                   {shippingCost === 0 ? <span className="font-bold text-green-500">GRATIS ✓</span> : <span className="font-bold">€{shippingCost.toFixed(2)}</span>}
                 </div>
-                {subtotal < FREE_SHIPPING_THRESHOLD && (
+                {!freeShipping && subtotal < FREE_SHIPPING_THRESHOLD && (
                   <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded-lg">💡 ¡Añade €{(FREE_SHIPPING_THRESHOLD - subtotal).toFixed(2)} más para envío GRATIS!</div>
                 )}
+
+                {/* Mostrar descuentos aplicados */}
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Descuento de cupón ({appliedCoupon?.code})</span>
+                    <span className="font-bold">-€{couponDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+                {walletAmountUsed > 0 && (
+                  <div className="flex justify-between text-purple-600">
+                    <span>Saldo de monedero</span>
+                    <span className="font-bold">-€{walletAmountUsed.toFixed(2)}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between text-xl font-black text-gray-800 pt-3 border-t-2 border-gray-200">
                   <span>Total</span>
                   <span className="text-cyan-600">€{total.toFixed(2)}</span>

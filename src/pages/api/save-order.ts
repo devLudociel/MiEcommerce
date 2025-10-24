@@ -1,7 +1,9 @@
 // src/pages/api/save-order.ts
 import type { APIRoute } from 'astro';
-import { db } from '../../lib/firebase';
+import { db, addWalletFunds, spendWalletFunds, useCoupon } from '../../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+
+const CASHBACK_PERCENTAGE = 0.05; // 5% de cashback
 
 export const POST: APIRoute = async ({ request }) => {
   console.log('🔵 API save-order: Solicitud recibida');
@@ -30,6 +32,57 @@ export const POST: APIRoute = async ({ request }) => {
     });
 
     console.log('✅ API save-order: Pedido guardado con ID:', docRef.id);
+
+    // Procesar wallet si se usó saldo
+    if (orderData.discounts?.wallet && orderData.userId) {
+      try {
+        console.log('💰 API save-order: Procesando gasto de wallet...');
+        const walletAmount = orderData.discounts.wallet.amount;
+        await spendWalletFunds(
+          orderData.userId,
+          walletAmount,
+          `Compra - Pedido ${docRef.id}`,
+          docRef.id
+        );
+        console.log('✅ API save-order: Wallet procesado correctamente');
+      } catch (walletError) {
+        console.error('⚠️ API save-order: Error procesando wallet (no crítico):', walletError);
+      }
+    }
+
+    // Procesar cupón si se usó
+    if (orderData.discounts?.coupon && orderData.userId) {
+      try {
+        console.log('🎟️ API save-order: Procesando cupón...');
+        await useCoupon(
+          orderData.discounts.coupon.id,
+          orderData.userId,
+          docRef.id,
+          orderData.discounts.coupon.amount,
+          orderData.discounts.coupon.code
+        );
+        console.log('✅ API save-order: Cupón procesado correctamente');
+      } catch (couponError) {
+        console.error('⚠️ API save-order: Error procesando cupón (no crítico):', couponError);
+      }
+    }
+
+    // Agregar cashback al wallet (solo si hay userId)
+    if (orderData.userId && orderData.subtotal) {
+      try {
+        console.log('💸 API save-order: Calculando cashback...');
+        const cashbackAmount = orderData.subtotal * CASHBACK_PERCENTAGE;
+        await addWalletFunds(
+          orderData.userId,
+          cashbackAmount,
+          `Cashback 5% - Pedido ${docRef.id}`,
+          docRef.id
+        );
+        console.log(`✅ API save-order: Cashback de $${cashbackAmount.toFixed(2)} agregado`);
+      } catch (cashbackError) {
+        console.error('⚠️ API save-order: Error agregando cashback (no crítico):', cashbackError);
+      }
+    }
 
     // Enviar email de confirmación automáticamente
     try {
