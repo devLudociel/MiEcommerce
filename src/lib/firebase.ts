@@ -954,6 +954,8 @@ export async function useCoupon(
  */
 export async function createCoupon(couponData: Omit<Coupon, 'id' | 'currentUses' | 'createdAt' | 'updatedAt'>): Promise<string> {
   try {
+    console.log('🔍 [v2] Datos recibidos en createCoupon:', couponData);
+
     // Construir el objeto solo con campos definidos (Firebase no acepta undefined)
     const cleanData: any = {
       code: couponData.code.toUpperCase(),
@@ -971,17 +973,24 @@ export async function createCoupon(couponData: Omit<Coupon, 'id' | 'currentUses'
 
     // Solo agregar campos opcionales si tienen valores definidos
     if (couponData.minPurchase !== undefined && couponData.minPurchase > 0) {
+      console.log('✅ Agregando minPurchase:', couponData.minPurchase);
       cleanData.minPurchase = couponData.minPurchase;
     }
     if (couponData.maxDiscount !== undefined && couponData.maxDiscount > 0) {
+      console.log('✅ Agregando maxDiscount:', couponData.maxDiscount);
       cleanData.maxDiscount = couponData.maxDiscount;
     }
     if (couponData.maxUses !== undefined && couponData.maxUses > 0) {
+      console.log('✅ Agregando maxUses:', couponData.maxUses);
       cleanData.maxUses = couponData.maxUses;
     }
     if (couponData.maxUsesPerUser !== undefined && couponData.maxUsesPerUser > 0) {
+      console.log('✅ Agregando maxUsesPerUser:', couponData.maxUsesPerUser);
       cleanData.maxUsesPerUser = couponData.maxUsesPerUser;
     }
+
+    console.log('🧹 Datos limpiados para Firebase:', cleanData);
+    console.log('🔍 Verificando undefined:', Object.entries(cleanData).filter(([k, v]) => v === undefined));
 
     const docRef = await addDoc(collection(db, 'coupons'), cleanData);
 
