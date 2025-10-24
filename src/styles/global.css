@@ -794,6 +794,12 @@ button {
   background-origin: padding-box, border-box;
 }
 
+/* Footer */
+.footer {
+  margin-top: auto;
+  width: 100%;
+}
+
 .nav {
   display: flex;
   align-items: center;
