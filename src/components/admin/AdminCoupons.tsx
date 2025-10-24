@@ -173,6 +173,7 @@ export default function AdminCoupons() {
   };
 
   const formatDate = (timestamp: any): string => {
+    if (!timestamp) return 'N/A';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return date.toLocaleDateString('es-ES');
   };
