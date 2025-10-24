@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db } from '../../lib/firebase';
+import { db, getProductReviewStats } from '../../lib/firebase';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { collection, query, where, limit, getDocs } from 'firebase/firestore';
 
@@ -96,6 +96,8 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
           limit(maxItems)
         );
         const snap = await getDocs(q);
+
+        // Crear productos con datos básicos primero
         const list: Product[] = snap.docs.map((d: any) => {
           const data = d.data() || {};
           return {
@@ -108,15 +110,33 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
             images: data.images || [],
             category: data.category || 'general',
             badge: data.featured ? 'hot' : undefined,
-            rating: 5,
+            rating: 0,
             reviews: 0,
             inStock: !!data.active,
             colors: [],
             slug: data.slug || d.id,
           } as Product;
         });
-        setProducts(list);
-        setFilteredProducts(list);
+
+        // Cargar estadísticas de reviews para cada producto en paralelo
+        const listWithReviews = await Promise.all(
+          list.map(async (product) => {
+            try {
+              const stats = await getProductReviewStats(product.id);
+              return {
+                ...product,
+                rating: stats.averageRating,
+                reviews: stats.totalReviews,
+              };
+            } catch (err) {
+              console.error(`Error cargando reviews para ${product.id}:`, err);
+              return product;
+            }
+          })
+        );
+
+        setProducts(listWithReviews);
+        setFilteredProducts(listWithReviews);
       } catch (e: any) {
         console.error('[ProductGrid] load error:', e?.code, e?.message);
         setError(e?.message || 'Error cargando productos');

@@ -66,3 +66,31 @@ export interface OrderItem {
   customization?: Record<string, any>;
   uploadedFiles?: string[]; // URLs de los archivos subidos
 }
+
+// Para reseñas y ratings
+export interface Review {
+  id?: string;
+  productId: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  rating: number;
+  comment: string;
+  images?: string[];
+  verified: boolean;
+  helpful: number;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface ReviewStats {
+  averageRating: number;
+  totalReviews: number;
+  ratingDistribution: {
+    5: number;
+    4: number;
+    3: number;
+    2: number;
+    1: number;
+  };
+}

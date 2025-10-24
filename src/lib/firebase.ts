@@ -515,3 +515,136 @@ export async function getOrdersByStatus(status: string): Promise<OrderData[]> {
     throw error;
   }
 }
+
+// ============================================
+// ⭐ FUNCIONES PARA REVIEWS Y RATINGS
+// ============================================
+
+import type { Review, ReviewStats } from '../types/firebase';
+export type { Review, ReviewStats } from '../types/firebase';
+
+/**
+ * Agregar una review a un producto
+ */
+export async function addReview(reviewData: Omit<Review, 'id' | 'createdAt' | 'updatedAt' | 'helpful'>): Promise<string> {
+  try {
+    const docRef = await addDoc(collection(db, 'reviews'), {
+      ...reviewData,
+      helpful: 0,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log('✅ Review agregada:', docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error('❌ Error agregando review:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtener reviews de un producto
+ */
+export async function getProductReviews(productId: string): Promise<Review[]> {
+  try {
+    const q = query(
+      collection(db, 'reviews'),
+      where('productId', '==', productId)
+    );
+
+    const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
+    const reviews: Review[] = [];
+
+    querySnapshot.forEach((doc) => {
+      reviews.push({ id: doc.id, ...doc.data() } as Review);
+    });
+
+    // Ordenar por fecha más reciente
+    reviews.sort((a, b) => {
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    console.log(`✅ ${reviews.length} reviews encontradas para producto ${productId}`);
+    return reviews;
+  } catch (error) {
+    console.error('❌ Error obteniendo reviews:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtener estadísticas de reviews de un producto
+ */
+export async function getProductReviewStats(productId: string): Promise<ReviewStats> {
+  try {
+    const reviews = await getProductReviews(productId);
+
+    const stats: ReviewStats = {
+      averageRating: 0,
+      totalReviews: reviews.length,
+      ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+    };
+
+    if (reviews.length === 0) {
+      return stats;
+    }
+
+    let totalRating = 0;
+    reviews.forEach((review) => {
+      totalRating += review.rating;
+      stats.ratingDistribution[review.rating as keyof typeof stats.ratingDistribution]++;
+    });
+
+    stats.averageRating = Number((totalRating / reviews.length).toFixed(1));
+
+    console.log(`✅ Stats calculadas: ${stats.averageRating} estrellas (${stats.totalReviews} reviews)`);
+    return stats;
+  } catch (error) {
+    console.error('❌ Error obteniendo stats de reviews:', error);
+    throw error;
+  }
+}
+
+/**
+ * Verificar si el usuario ya dejó review en un producto
+ */
+export async function hasUserReviewed(productId: string, userId: string): Promise<boolean> {
+  try {
+    const q = query(
+      collection(db, 'reviews'),
+      where('productId', '==', productId),
+      where('userId', '==', userId)
+    );
+
+    const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
+    return !querySnapshot.empty;
+  } catch (error) {
+    console.error('❌ Error verificando review del usuario:', error);
+    throw error;
+  }
+}
+
+/**
+ * Incrementar contador de "útil" en una review
+ */
+export async function markReviewHelpful(reviewId: string): Promise<void> {
+  try {
+    const reviewRef = doc(db, 'reviews', reviewId);
+    const reviewDoc = await getDoc(reviewRef);
+
+    if (reviewDoc.exists()) {
+      const currentHelpful = reviewDoc.data().helpful || 0;
+      await updateDoc(reviewRef, {
+        helpful: currentHelpful + 1,
+        updatedAt: serverTimestamp(),
+      });
+      console.log('✅ Review marcada como útil');
+    }
+  } catch (error) {
+    console.error('❌ Error marcando review como útil:', error);
+    throw error;
+  }
+}
