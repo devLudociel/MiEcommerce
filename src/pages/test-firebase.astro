@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Test Firebase">
+  <div class="container mx-auto p-8">
+    <h1 class="text-3xl font-bold mb-4">Test Firebase</h1>
+    <button id="testBtn" class="px-6 py-3 bg-blue-500 text-white rounded-lg">
+      Crear Documento de Prueba
+    </button>
+    <div id="result" class="mt-4 p-4 border rounded"></div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { db } from '../lib/firebase';
+  import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+
+  const btn = document.getElementById('testBtn');
+  const result = document.getElementById('result');
+
+  btn?.addEventListener('click', async () => {
+    try {
+      console.log('🧪 TEST: Iniciando...');
+      result!.innerHTML = '<p class="text-blue-500">Creando documento...</p>';
+
+      // Crear objeto SUPER simple sin campos opcionales
+      const testData = {
+        code: 'TEST123',
+        description: 'Test simple',
+        type: 'percentage',
+        value: 10,
+        active: true,
+        createdBy: 'test-user',
+        currentUses: 0,
+        createdAt: serverTimestamp(),
+      };
+
+      console.log('🧪 TEST: Datos a enviar:', testData);
+      console.log('🧪 TEST: Verificando undefined:', Object.entries(testData).filter(([k, v]) => v === undefined));
+
+      const docRef = await addDoc(collection(db, 'coupons'), testData);
+
+      console.log('✅ TEST: Documento creado con ID:', docRef.id);
+      result!.innerHTML = `<p class="text-green-500">✅ Documento creado con ID: ${docRef.id}</p>`;
+    } catch (error: any) {
+      console.error('❌ TEST: Error:', error);
+      result!.innerHTML = `<p class="text-red-500">❌ Error: ${error.message}</p>`;
+    }
+  });
+</script>
+</BaseLayout>
