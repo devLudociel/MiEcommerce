@@ -954,13 +954,36 @@ export async function useCoupon(
  */
 export async function createCoupon(couponData: Omit<Coupon, 'id' | 'currentUses' | 'createdAt' | 'updatedAt'>): Promise<string> {
   try {
-    const docRef = await addDoc(collection(db, 'coupons'), {
-      ...couponData,
+    // Construir el objeto solo con campos definidos (Firebase no acepta undefined)
+    const cleanData: any = {
       code: couponData.code.toUpperCase(),
+      description: couponData.description,
+      type: couponData.type,
+      value: couponData.value,
+      startDate: couponData.startDate,
+      endDate: couponData.endDate,
+      active: couponData.active,
+      createdBy: couponData.createdBy,
       currentUses: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    // Solo agregar campos opcionales si tienen valores definidos
+    if (couponData.minPurchase !== undefined && couponData.minPurchase > 0) {
+      cleanData.minPurchase = couponData.minPurchase;
+    }
+    if (couponData.maxDiscount !== undefined && couponData.maxDiscount > 0) {
+      cleanData.maxDiscount = couponData.maxDiscount;
+    }
+    if (couponData.maxUses !== undefined && couponData.maxUses > 0) {
+      cleanData.maxUses = couponData.maxUses;
+    }
+    if (couponData.maxUsesPerUser !== undefined && couponData.maxUsesPerUser > 0) {
+      cleanData.maxUsesPerUser = couponData.maxUsesPerUser;
+    }
+
+    const docRef = await addDoc(collection(db, 'coupons'), cleanData);
 
     console.log('✅ Cupón creado:', docRef.id);
     return docRef.id;
