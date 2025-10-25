@@ -6,37 +6,62 @@ interface Props {
   title: string;
   description?: string;
   ogImage?: string;
+  ogType?: string;
+  canonical?: string;
+  noindex?: boolean;
 }
 
-const { title, description = "Especialistas en personalización: estampado, bordado, impresión 3D, corte láser y mucho más.", ogImage = "/og-image.jpg" } = Astro.props;
+const {
+  title,
+  description = "Especialistas en personalización: estampado, bordado, impresión 3D, corte láser y mucho más.",
+  ogImage = "/og-image.jpg",
+  ogType = "website",
+  canonical,
+  noindex = false
+} = Astro.props;
+
+const siteName = "ImprimeArte";
+const canonicalURL = canonical || Astro.url.pathname;
+const fullCanonicalURL = new URL(canonicalURL, Astro.site || Astro.url.origin);
+const fullImageURL = new URL(ogImage, Astro.site || Astro.url.origin);
 ---
 
 <!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
-    
-    <!-- Firebase se inicializa vía SDK npm en src/lib/firebase.ts -->
-    
+
+    <!-- SEO Meta Tags -->
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={fullCanonicalURL} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
     <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content={Astro.url} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:url" content={fullCanonicalURL} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={new URL(ogImage, Astro.url)} />
+    <meta property="og:image" content={fullImageURL} />
+    <meta property="og:image:alt" content={title} />
+    <meta property="og:locale" content="es_ES" />
 
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content={Astro.url} />
-    <meta property="twitter:title" content={title} />
-    <meta property="twitter:description" content={description} />
-    <meta property="twitter:image" content={new URL(ogImage, Astro.url)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={fullCanonicalURL} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={fullImageURL} />
+    <meta name="twitter:image:alt" content={title} />
 
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>{title}</title>
+
+    <!-- Additional head content (Schema.org, etc.) -->
+    <slot name="head" />
   </head>
   <body class="bg-white min-h-screen">
     <Header client:load />

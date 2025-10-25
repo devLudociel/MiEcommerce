@@ -4,9 +4,48 @@ import HeroCarousel from '../components/sections/HeroCarousel.tsx';
 import FooterComponent from '../components/sections/Footer.tsx';
 import ProductGrid from '../components/sections/ProductGrid.tsx';
 import SpecialOffers from '../components/sections/SpecialOffert.tsx';
+
+// Schema.org Organization data
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "ImprimeArte",
+  "description": "Especialistas en personalización: estampado, bordado, impresión 3D, corte láser y mucho más.",
+  "url": Astro.site?.toString() || "https://tudominio.com",
+  "logo": new URL("/logoFac.png", Astro.site || Astro.url.origin).toString(),
+  "sameAs": [
+    // Añade aquí tus redes sociales cuando las tengas
+    // "https://www.facebook.com/tuempresa",
+    // "https://www.instagram.com/tuempresa",
+    // "https://twitter.com/tuempresa"
+  ],
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "contactType": "customer service",
+    "availableLanguage": ["Spanish"]
+  }
+};
+
+// Schema.org WebSite data for search box
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "ImprimeArte",
+  "url": Astro.site?.toString() || "https://tudominio.com",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": `${Astro.site?.toString() || "https://tudominio.com"}/search?q={search_term_string}`
+    },
+    "query-input": "required name=search_term_string"
+  }
+};
 ---
 
-<BaseLayout title="PersonalizaTodo - Tu idea, nuestra realidad">
+<BaseLayout title="ImprimeArte - Especialistas en personalización">
+  <script type="application/ld+json" set:html={JSON.stringify(organizationSchema)} slot="head" />
+  <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} slot="head" />
   
   <!-- Hero Section -->
   

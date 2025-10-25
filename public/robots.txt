@@ -1,0 +1,33 @@
+# robots.txt para ImprimeArte
+
+# Permitir acceso a todos los bots
+User-agent: *
+Allow: /
+
+# Bloquear áreas privadas y admin
+Disallow: /admin/
+Disallow: /account/
+Disallow: /api/
+Disallow: /checkout
+Disallow: /cart
+
+# Bloquear archivos de sistema
+Disallow: /*.json$
+Disallow: /*.xml$
+Disallow: /*.yml$
+
+# Permitir específicamente el sitemap
+Allow: /sitemap.xml
+
+# Sitemap
+Sitemap: https://tudominio.com/sitemap.xml
+
+# Optimizaciones para bots específicos
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /

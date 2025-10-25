@@ -1,6 +1,8 @@
 ---
 import Layout from '../../layouts/BaseLayout.astro';
-import ProductDetail from '../../components/sections/ProductDetail'; // Ajusta la ruta según dónde esté
+import ProductDetail from '../../components/sections/ProductDetail';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, query, where, getDocs, limit as firestoreLimit } from 'firebase/firestore';
 
 export const prerender = false;
 
@@ -9,8 +11,77 @@ const { slug } = Astro.params;
 if (!slug) {
   return Astro.redirect('/404');
 }
+
+// Fetch product data server-side for SEO
+let productData: any = null;
+let productTitle = 'Producto';
+let productDescription = 'Especialistas en personalización: estampado, bordado, impresión 3D, corte láser y mucho más.';
+let productImage = '/og-image.jpg';
+let productPrice = 0;
+let productAvailability = 'https://schema.org/InStock';
+
+try {
+  const firebaseConfig = {
+    apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY,
+    authDomain: import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.PUBLIC_FIREBASE_APP_ID,
+  };
+
+  const app = initializeApp(firebaseConfig, 'seo-app-' + Math.random());
+  const db = getFirestore(app);
+
+  const productsRef = collection(db, 'products');
+  const q = query(productsRef, where('slug', '==', slug), firestoreLimit(1));
+  const snapshot = await getDocs(q);
+
+  if (!snapshot.empty) {
+    const doc = snapshot.docs[0];
+    productData = { id: doc.id, ...doc.data() };
+    productTitle = productData.name || productTitle;
+    productDescription = productData.description || productData.longDescription || productDescription;
+    productImage = (Array.isArray(productData.images) && productData.images[0]) || productImage;
+    productPrice = productData.basePrice || 0;
+    productAvailability = productData.active === false ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock';
+  }
+} catch (error) {
+  console.error('Error fetching product for SEO:', error);
+}
+
+// Schema.org structured data
+const schemaData = productData ? {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": productData.name,
+  "description": productData.description || productData.longDescription,
+  "image": Array.isArray(productData.images) ? productData.images : [productImage],
+  "brand": {
+    "@type": "Brand",
+    "name": productData.brand || "ImprimeArte"
+  },
+  "offers": {
+    "@type": "Offer",
+    "url": Astro.url.toString(),
+    "priceCurrency": "EUR",
+    "price": productData.basePrice || 0,
+    "availability": productAvailability,
+    "seller": {
+      "@type": "Organization",
+      "name": "ImprimeArte"
+    }
+  }
+} : null;
 ---
 
-<Layout title="Producto">
+<Layout
+  title={`${productTitle} - ImprimeArte`}
+  description={productDescription}
+  ogImage={productImage}
+>
+  {schemaData && (
+    <script type="application/ld+json" set:html={JSON.stringify(schemaData)} slot="head" />
+  )}
   <ProductDetail slug={slug} client:load />
 </Layout>
