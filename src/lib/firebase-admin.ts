@@ -81,7 +81,3 @@ export function getAdminDb(): Firestore {
   }
   return adminDb;
 }
-
-// Exportaciones por defecto
-export const adminApp = getAdminApp();
-export const adminDb = getAdminDb();
