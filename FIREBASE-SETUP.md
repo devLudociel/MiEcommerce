@@ -61,20 +61,41 @@ El archivo `firestore.rules` incluye:
 
 ---
 
-## ⚙️ CAMBIAR EL EMAIL DE ADMIN
+## ⚙️ CONFIGURAR TU EMAIL DE ADMIN
 
-Si quieres usar otro email como admin:
+**IMPORTANTE:** Debes usar el MISMO email en dos lugares:
 
-1. Abre `firestore.rules`
-2. Cambia esta línea:
+### 1. En el archivo `.env` (ya configurado):
+```env
+PUBLIC_ADMIN_EMAILS=ludociel.dev@gmail.com
+```
+
+### 2. En `firestore.rules` antes de subirlo a Firebase:
+
+1. Abre el archivo `firestore.rules`
+2. Busca la línea 8 que dice:
    ```javascript
-   request.auth.token.email == 'ludociel.dev@gmail.com'
+   function isAdmin() {
+     return request.auth != null && request.auth.token.email == 'ludociel.dev@gmail.com';
+   }
    ```
-   Por tu email:
-   ```javascript
-   request.auth.token.email == 'tu@email.com'
-   ```
-3. Vuelve a publicar las reglas
+3. Si tu email es diferente, cámbialo por el que tienes en `.env`
+4. Guarda el archivo
+5. Copia TODO el contenido a Firebase Console y publica
+
+**Si quieres múltiples admins:**
+- En `.env`: Separa los emails por comas
+  ```
+  PUBLIC_ADMIN_EMAILS=admin1@gmail.com,admin2@gmail.com
+  ```
+- En `firestore.rules`: Agrega más condiciones
+  ```javascript
+  function isAdmin() {
+    return request.auth != null &&
+           (request.auth.token.email == 'admin1@gmail.com' ||
+            request.auth.token.email == 'admin2@gmail.com');
+  }
+  ```
 
 ---
 
