@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, query, where, getDocs, orderBy, limit, Timestamp } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { db, auth } from '../../lib/firebase';
 
 interface DashboardStats {
   // Ventas
@@ -31,14 +32,40 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month' | 'year'>('month');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Verificar usuario autenticado
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log('✅ [Dashboard] Usuario autenticado:', {
+          email: user.email,
+          uid: user.uid,
+          emailVerified: user.emailVerified
+        });
+      } else {
+        console.warn('⚠️ [Dashboard] Usuario NO autenticado');
+      }
+    });
+
     loadDashboardData();
+
+    return () => unsubscribe();
   }, [timeRange]);
 
   const loadDashboardData = async () => {
+    console.log('🔵 [Dashboard] Iniciando carga de datos...');
     setLoading(true);
+    setError(null);
+
     try {
+      // Verificar que db esté disponible
+      if (!db) {
+        console.error('🔴 [Dashboard] Error: db is undefined');
+        throw new Error('Firebase no está inicializado');
+      }
+      console.log('✅ [Dashboard] Firebase DB disponible');
+
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -46,8 +73,12 @@ export default function AdminDashboard() {
       const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
       // Obtener todos los pedidos
+      console.log('🔵 [Dashboard] Consultando colección "orders"...');
       const ordersRef = collection(db, 'orders');
+      console.log('🔵 [Dashboard] Referencia creada:', ordersRef.path);
+
       const ordersSnapshot = await getDocs(ordersRef);
+      console.log(`✅ [Dashboard] Pedidos obtenidos: ${ordersSnapshot.size} documentos`);
 
       const allOrders = ordersSnapshot.docs.map(doc => ({
         id: doc.id,
@@ -123,8 +154,10 @@ export default function AdminDashboard() {
         .sort((a, b) => a.date.localeCompare(b.date));
 
       // Obtener total de productos
+      console.log('🔵 [Dashboard] Consultando colección "productos"...');
       const productsRef = collection(db, 'productos');
       const productsSnapshot = await getDocs(productsRef);
+      console.log(`✅ [Dashboard] Productos obtenidos: ${productsSnapshot.size} documentos`);
       const totalProducts = productsSnapshot.size;
 
       // Calcular métricas
@@ -145,8 +178,16 @@ export default function AdminDashboard() {
         conversionRate: 0, // Esto requeriría tracking de visitas
         ordersLastWeek,
       });
-    } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      console.log('✅ [Dashboard] Datos cargados exitosamente');
+    } catch (error: any) {
+      console.error('🔴 [Dashboard] Error loading dashboard data:', error);
+      console.error('🔴 [Dashboard] Error code:', error?.code);
+      console.error('🔴 [Dashboard] Error message:', error?.message);
+      console.error('🔴 [Dashboard] Error stack:', error?.stack);
+
+      const errorMessage = error?.message || 'Error desconocido';
+      const errorCode = error?.code || 'unknown';
+      setError(`${errorCode}: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -163,10 +204,55 @@ export default function AdminDashboard() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="p-6 max-w-3xl mx-auto">
+        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 text-center">
+          <div className="text-5xl mb-4">🚨</div>
+          <h2 className="text-2xl font-bold text-red-800 mb-2">Error al cargar el Dashboard</h2>
+          <p className="text-red-700 mb-4 font-mono text-sm bg-red-100 p-3 rounded">{error}</p>
+          <div className="text-left bg-white p-4 rounded-lg mb-4">
+            <p className="font-semibold text-gray-900 mb-2">Posibles causas:</p>
+            <ul className="list-disc list-inside text-gray-700 space-y-1 text-sm">
+              <li>Las reglas de Firestore no están actualizadas</li>
+              <li>Tu email no está configurado como admin en firestore.rules</li>
+              <li>No estás autenticado o tu sesión expiró</li>
+              <li>Problemas de permisos en Firebase Console</li>
+            </ul>
+          </div>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={loadDashboardData}
+              className="px-6 py-3 bg-red-500 text-white rounded-xl font-semibold hover:bg-red-600 transition-colors"
+            >
+              🔄 Reintentar
+            </button>
+            <a
+              href="/FIREBASE-SETUP.md"
+              target="_blank"
+              className="px-6 py-3 bg-gray-500 text-white rounded-xl font-semibold hover:bg-gray-600 transition-colors"
+            >
+              📖 Ver Guía
+            </a>
+          </div>
+          <p className="text-xs text-gray-500 mt-4">
+            Abre la consola del navegador (F12) para ver logs detallados
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!stats) {
     return (
       <div className="p-6 text-center">
-        <p className="text-red-600">Error al cargar las estadísticas</p>
+        <p className="text-red-600">Error: No hay datos disponibles</p>
+        <button
+          onClick={loadDashboardData}
+          className="mt-4 px-6 py-3 bg-cyan-500 text-white rounded-xl font-semibold hover:bg-cyan-600 transition-colors"
+        >
+          🔄 Reintentar
+        </button>
       </div>
     );
   }
