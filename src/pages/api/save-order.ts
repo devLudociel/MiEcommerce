@@ -1,8 +1,7 @@
 // src/pages/api/save-order.ts
 import type { APIRoute } from 'astro';
-import { addWalletFunds, spendWalletFunds, useCoupon } from '../../lib/firebase';
-import { getAdminDb } from '../../lib/firebase-admin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { db, addWalletFunds, spendWalletFunds, useCoupon } from '../../lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const CASHBACK_PERCENTAGE = 0.05; // 5% de cashback
 
@@ -22,14 +21,13 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    console.log('🔵 API save-order: Intentando guardar en Firestore con Admin SDK...');
+    console.log('🔵 API save-order: Intentando guardar en Firestore...');
 
-    // Guardar pedido en Firestore usando Admin SDK (bypasea reglas de seguridad)
-    const adminDb = getAdminDb();
-    const docRef = await adminDb.collection('orders').add({
+    // Guardar pedido en Firestore
+    const docRef = await addDoc(collection(db, 'orders'), {
       ...orderData,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
       status: orderData.status || 'pending',
     });
 

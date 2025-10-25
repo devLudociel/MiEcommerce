@@ -47,8 +47,8 @@ service cloud.firestore {
     match /orders/{orderId} {
       // El dueño del pedido puede leerlo, o el admin
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      // Solo usuarios autenticados pueden crear pedidos
-      allow create: if isAuthenticated();
+      // Cualquiera puede crear pedidos (incluso sin autenticación para checkout de invitados)
+      allow create: if true;
       // Solo admins pueden actualizar/eliminar pedidos
       allow update, delete: if isAdmin();
     }
