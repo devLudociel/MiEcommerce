@@ -412,6 +412,10 @@ const Header: React.FC<HeaderProps> = () => {
               <div style={{ padding: '0 var(--spacing-3) var(--spacing-2) var(--spacing-3)' }}>
                 <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Admin</h4>
               </div>
+              <a href="/admin" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2" onClick={() => setIsUserMenuOpen(false)}>
+                <span>📊</span>
+                <span>Dashboard</span>
+              </a>
               <a href="/admin/cupones" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsUserMenuOpen(false)}>
                 Gestión de cupones
               </a>
