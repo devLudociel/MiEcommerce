@@ -19,7 +19,16 @@ service cloud.firestore {
     }
 
     // === PRODUCTOS ===
+    // Colección en español
     match /productos/{productId} {
+      // Todos pueden leer productos
+      allow read: if true;
+      // Solo admins pueden crear/actualizar/eliminar
+      allow write: if isAdmin();
+    }
+
+    // Colección en inglés (products)
+    match /products/{productId} {
       // Todos pueden leer productos
       allow read: if true;
       // Solo admins pueden crear/actualizar/eliminar

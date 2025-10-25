@@ -38,6 +38,7 @@ El archivo `firestore.rules` incluye:
 
 ✅ **Admins pueden leer TODO** (email: ludociel.dev@gmail.com)
 ✅ **Productos**: Lectura pública, escritura solo admin
+   - Soporta ambas colecciones: `products` (inglés) y `productos` (español)
 ✅ **Pedidos**: Lectura para dueño o admin
 ✅ **Cupones**: Lectura pública, escritura solo admin
 ✅ **Transacciones Wallet**: Solo dueño o admin
