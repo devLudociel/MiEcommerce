@@ -142,8 +142,9 @@ export default function Checkout() {
         })),
         userId: 'guest', // Cambiar cuando haya autenticación
         customerEmail: shippingInfo.email,
-        shippingAddress: {
+        shippingInfo: {
           fullName: shippingInfo.fullName,
+          email: shippingInfo.email,
           address: shippingInfo.address,
           city: shippingInfo.city,
           state: shippingInfo.state,

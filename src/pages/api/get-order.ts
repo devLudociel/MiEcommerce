@@ -31,7 +31,7 @@ export const GET: APIRoute = async ({ url }) => {
       id: orderSnap.id,
       date: orderData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
       items: orderData.items || [],
-      shippingInfo: orderData.shippingAddress || {},
+      shippingInfo: orderData.shippingInfo || {},
       paymentInfo: { method: orderData.paymentMethod || 'card' },
       subtotal: orderData.subtotal || 0,
       shipping: orderData.shippingCost || 0,
