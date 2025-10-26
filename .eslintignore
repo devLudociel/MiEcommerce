@@ -1,0 +1,44 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+.astro
+.build
+
+# Public assets
+public
+
+# Deployment
+.vercel
+.netlify
+
+# Editor
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+.DS_Store
+.env
+.env.local
+.env.*.local
+.history
+
+# Config files that don't need linting
+tailwind.config.mjs
+postcss.config.js
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
