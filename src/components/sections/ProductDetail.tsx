@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { doc, getDoc, collection, query, where, limit, getDocs } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, getProductReviewStats } from '../../lib/firebase';
 import type { FirebaseProduct } from '../../types/firebase';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { addToCart } from '../../store/cartStore';
 import { useWishlist, toggleWishlist } from '../../store/wishlistStore';
+import ProductReviews from '../products/ProductReviews';
+import AddReviewForm from '../products/AddReviewForm';
 
 interface ProductImage {
   id: number;
@@ -132,6 +134,7 @@ export default function ProductDetail({ id, slug }: Props) {
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const imageRef = useRef<HTMLDivElement>(null);
+  const [reviewStats, setReviewStats] = useState({ averageRating: 0, totalReviews: 0 });
 
   useEffect(() => {
     setMounted(true);
@@ -171,6 +174,17 @@ export default function ProductDetail({ id, slug }: Props) {
         setSelectedVariant(0);
         setSelectedImage(0);
         setQuantity(1);
+
+        // Cargar estadísticas de reseñas
+        try {
+          const stats = await getProductReviewStats(data.id);
+          setReviewStats({
+            averageRating: stats.averageRating,
+            totalReviews: stats.totalReviews,
+          });
+        } catch (reviewError) {
+          console.error('Error cargando estadísticas de reseñas:', reviewError);
+        }
 
         // Cargar productos relacionados
         if (product.categoryId) {
@@ -500,7 +514,7 @@ export default function ProductDetail({ id, slug }: Props) {
                     {[...Array(5)].map((_, i) => (
                       <svg
                         key={i}
-                        className={`w-5 h-5 ${i < Math.floor(product.averageRating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                        className={`w-5 h-5 ${i < Math.floor(reviewStats.averageRating) ? 'text-yellow-400' : 'text-gray-300'}`}
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -509,9 +523,9 @@ export default function ProductDetail({ id, slug }: Props) {
                     ))}
                   </div>
                   <span className="text-lg font-semibold text-gray-800">
-                    {product.averageRating}
+                    {reviewStats.averageRating > 0 ? reviewStats.averageRating.toFixed(1) : 'N/A'}
                   </span>
-                  <span className="text-gray-500">({product.totalReviews} reseñas)</span>
+                  <span className="text-gray-500">({reviewStats.totalReviews} reseñas)</span>
                 </div>
                 <div
                   className={`px-3 py-1 rounded-full text-sm font-medium ${stockStatus.bg} ${stockStatus.color}`}
@@ -838,7 +852,7 @@ export default function ProductDetail({ id, slug }: Props) {
                 >
                   {tab === 'description' && '📝 Descripción'}
                   {tab === 'specifications' && '🔧 Especificaciones'}
-                  {tab === 'reviews' && `⭐ Reseñas (${product.totalReviews})`}
+                  {tab === 'reviews' && `⭐ Reseñas (${reviewStats.totalReviews})`}
                 </button>
               ))}
             </div>
@@ -887,63 +901,23 @@ export default function ProductDetail({ id, slug }: Props) {
 
           {activeTab === 'reviews' && (
             <div className="animate-in slide-in-from-bottom-5 duration-500">
-              <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-200">
-                {product.reviews && product.reviews.length > 0 ? (
-                  <div className="space-y-6">
-                    {product.reviews.map((review) => (
-                      <div
-                        key={review.id}
-                        className="bg-gray-50 rounded-xl p-6 border border-gray-200"
-                      >
-                        <div className="flex items-start gap-4">
-                          <img
-                            src={review.userAvatar}
-                            alt={review.userName}
-                            className="w-12 h-12 rounded-full"
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <div>
-                                <h4 className="font-bold text-gray-800">{review.userName}</h4>
-                                <div className="flex items-center gap-2">
-                                  <div className="flex">
-                                    {[...Array(5)].map((_, i) => (
-                                      <svg
-                                        key={i}
-                                        className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
-                                        fill="currentColor"
-                                        viewBox="0 0 20 20"
-                                      >
-                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                      </svg>
-                                    ))}
-                                  </div>
-                                  {review.verified && (
-                                    <span className="text-xs text-green-500 font-medium">
-                                      ✓ Compra verificada
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <span className="text-sm text-gray-500">{review.date}</span>
-                            </div>
-                            <p className="text-gray-700 mb-3">{review.comment}</p>
-                            <button className="text-sm text-gray-500 hover:text-cyan-500">
-                              👍 Útil ({review.helpful})
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 mb-4">Aún no hay reseñas para este producto.</p>
-                    <button className="px-6 py-3 bg-gradient-primary text-white rounded-xl font-bold hover:shadow-lg transition-all">
-                      Sé el primero en opinar
-                    </button>
-                  </div>
-                )}
+              <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-200 space-y-8">
+                <AddReviewForm
+                  productId={product.id}
+                  onReviewAdded={async () => {
+                    // Recargar estadísticas cuando se agrega una nueva reseña
+                    try {
+                      const stats = await getProductReviewStats(product.id);
+                      setReviewStats({
+                        averageRating: stats.averageRating,
+                        totalReviews: stats.totalReviews,
+                      });
+                    } catch (error) {
+                      console.error('Error recargando estadísticas:', error);
+                    }
+                  }}
+                />
+                <ProductReviews productId={product.id} />
               </div>
             </div>
           )}
