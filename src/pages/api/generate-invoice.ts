@@ -16,15 +16,15 @@ const fonts = {
   },
 };
 
-// Información de la empresa (ideal mover a env)
+// Información de la empresa desde variables de entorno
 const COMPANY_INFO = {
-  name: 'Mi E-commerce',
-  address: 'Calle Principal 123',
-  city: 'Madrid',
-  zipCode: '28001',
-  taxId: 'B12345678',
-  email: 'contacto@miecommerce.com',
-  phone: '+34 912 345 678',
+  name: import.meta.env.COMPANY_NAME || 'ImprimeArte',
+  address: import.meta.env.COMPANY_ADDRESS || 'Calle Principal 123',
+  city: import.meta.env.COMPANY_CITY || 'Madrid',
+  zipCode: import.meta.env.COMPANY_ZIP_CODE || '28001',
+  taxId: import.meta.env.COMPANY_TAX_ID || 'B12345678',
+  email: import.meta.env.COMPANY_EMAIL || 'contacto@imprimearte.es',
+  phone: import.meta.env.COMPANY_PHONE || '+34 912 345 678',
 };
 
 async function getNextInvoiceNumber(): Promise<string> {
