@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import RequireAdmin from '../../../components/auth/RequireAdmin';
+import AdminOrderDetail from '../../../components/admin/AdminOrderDetail';
+---
+
+<BaseLayout title="Detalle del Pedido">
+  <RequireAdmin client:only="react">
+    <AdminOrderDetail client:load />
+  </RequireAdmin>
+</BaseLayout>

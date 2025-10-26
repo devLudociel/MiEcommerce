@@ -1,0 +1,179 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Ofertas y Promociones - ImprimeArte">
+  <div class="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 pt-8 pb-16 px-4">
+    <div class="max-w-7xl mx-auto">
+      {/* Hero Section */}
+      <div class="text-center mb-12">
+        <div class="inline-block bg-red-500 text-white px-6 py-2 rounded-full text-sm font-bold mb-4">
+          🔥 OFERTAS ACTIVAS
+        </div>
+        <h1 class="text-4xl md:text-6xl font-black text-gray-800 mb-4">
+          Ofertas y Promociones
+        </h1>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+          Aprovecha nuestras mejores ofertas en productos personalizados
+        </p>
+      </div>
+
+      {/* Banner Promocional Principal */}
+      <div class="bg-gradient-to-r from-red-500 to-orange-500 rounded-3xl shadow-2xl p-8 md:p-12 text-white mb-12">
+        <div class="grid md:grid-cols-2 gap-8 items-center">
+          <div>
+            <div class="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-bold mb-4">
+              ⏰ HASTA EL 31 DE DICIEMBRE 2025
+            </div>
+            <h2 class="text-3xl md:text-5xl font-black mb-4">
+              Hasta -30€ con el código
+            </h2>
+            <div class="bg-white text-red-600 inline-block px-8 py-4 rounded-xl text-3xl md:text-4xl font-black mb-6 shadow-lg">
+              PROMO
+            </div>
+            <p class="text-lg mb-6 text-white/90">
+              Descuento aplicable a pedidos superiores a 100€
+            </p>
+            <a
+              href="/productos"
+              class="inline-block bg-white text-red-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl"
+            >
+              Ver Productos →
+            </a>
+          </div>
+          <div class="hidden md:block">
+            <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 text-center">
+              <div class="text-6xl font-black mb-2">-30€</div>
+              <div class="text-xl">de descuento</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Categorías en Oferta */}
+      <div class="mb-12">
+        <h2 class="text-3xl font-black text-gray-800 mb-6">Categorías en Oferta</h2>
+        <div class="grid md:grid-cols-3 gap-6">
+          {/* Tarjetas de Visita */}
+          <a href="/categoria/graficos-impresos/tarjetas-visita" class="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all overflow-hidden">
+            <div class="relative">
+              <div class="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-bold z-10">
+                -20%
+              </div>
+              <div class="bg-gradient-to-br from-cyan-400 to-blue-500 h-48 flex items-center justify-center">
+                <span class="text-7xl">🎴</span>
+              </div>
+            </div>
+            <div class="p-6">
+              <h3 class="text-xl font-bold text-gray-800 mb-2 group-hover:text-cyan-600 transition-colors">
+                Tarjetas de Visita
+              </h3>
+              <p class="text-gray-600 text-sm mb-4">
+                Desde 9.99€ el pack de 100 unidades
+              </p>
+              <div class="flex items-center justify-between">
+                <span class="text-red-600 font-bold">-20% de descuento</span>
+                <span class="text-cyan-600 font-bold">Ver más →</span>
+              </div>
+            </div>
+          </a>
+
+          {/* Ropa Personalizada */}
+          <a href="/categoria/textiles/ropa-personalizada" class="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all overflow-hidden">
+            <div class="relative">
+              <div class="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-bold z-10">
+                -15%
+              </div>
+              <div class="bg-gradient-to-br from-purple-400 to-pink-500 h-48 flex items-center justify-center">
+                <span class="text-7xl">👕</span>
+              </div>
+            </div>
+            <div class="p-6">
+              <h3 class="text-xl font-bold text-gray-800 mb-2 group-hover:text-cyan-600 transition-colors">
+                Ropa Personalizada
+              </h3>
+              <p class="text-gray-600 text-sm mb-4">
+                Camisetas, sudaderas y más con DTF
+              </p>
+              <div class="flex items-center justify-between">
+                <span class="text-red-600 font-bold">-15% de descuento</span>
+                <span class="text-cyan-600 font-bold">Ver más →</span>
+              </div>
+            </div>
+          </a>
+
+          {/* Tazas Sublimadas */}
+          <a href="/categoria/sublimados/vajilla-personalizada" class="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all overflow-hidden">
+            <div class="relative">
+              <div class="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-bold z-10">
+                -25%
+              </div>
+              <div class="bg-gradient-to-br from-orange-400 to-red-500 h-48 flex items-center justify-center">
+                <span class="text-7xl">☕</span>
+              </div>
+            </div>
+            <div class="p-6">
+              <h3 class="text-xl font-bold text-gray-800 mb-2 group-hover:text-cyan-600 transition-colors">
+                Tazas Personalizadas
+              </h3>
+              <p class="text-gray-600 text-sm mb-4">
+                Sublimación de alta calidad
+              </p>
+              <div class="flex items-center justify-between">
+                <span class="text-red-600 font-bold">-25% de descuento</span>
+                <span class="text-cyan-600 font-bold">Ver más →</span>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      {/* Cómo usar el cupón */}
+      <div class="bg-white rounded-2xl shadow-lg p-8 mb-12">
+        <h2 class="text-2xl font-black text-gray-800 mb-6 text-center">
+          ¿Cómo usar tu cupón de descuento?
+        </h2>
+        <div class="grid md:grid-cols-4 gap-6">
+          <div class="text-center">
+            <div class="w-16 h-16 bg-cyan-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span class="text-2xl">🛒</span>
+            </div>
+            <h3 class="font-bold text-gray-800 mb-2">1. Añade productos</h3>
+            <p class="text-sm text-gray-600">Selecciona tus productos favoritos</p>
+          </div>
+          <div class="text-center">
+            <div class="w-16 h-16 bg-cyan-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span class="text-2xl">💳</span>
+            </div>
+            <h3 class="font-bold text-gray-800 mb-2">2. Ve al checkout</h3>
+            <p class="text-sm text-gray-600">Procede a finalizar tu compra</p>
+          </div>
+          <div class="text-center">
+            <div class="w-16 h-16 bg-cyan-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span class="text-2xl">🎫</span>
+            </div>
+            <h3 class="font-bold text-gray-800 mb-2">3. Ingresa el código</h3>
+            <p class="text-sm text-gray-600">Escribe PROMO en el campo de cupón</p>
+          </div>
+          <div class="text-center">
+            <div class="w-16 h-16 bg-cyan-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span class="text-2xl">✅</span>
+            </div>
+            <h3 class="font-bold text-gray-800 mb-2">4. ¡Disfruta!</h3>
+            <p class="text-sm text-gray-600">Tu descuento se aplicará automáticamente</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Call to Action */}
+      <div class="text-center">
+        <a
+          href="/productos"
+          class="inline-block bg-gradient-to-r from-cyan-500 to-magenta-500 text-white px-12 py-4 rounded-xl font-bold text-xl hover:shadow-2xl transition-all"
+        >
+          Explorar Todos los Productos →
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

@@ -15,6 +15,7 @@
   "dependencies": {
     "@astrojs/react": "^4.3.0",
     "@nanostores/react": "^1.0.0",
+    "@stripe/stripe-js": "^4.10.0",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "astro": "^5.13.5",
@@ -23,8 +24,11 @@
     "firebase-admin": "^13.5.0",
     "lucide-react": "^0.542.0",
     "nanostores": "^1.0.1",
+    "pdfmake": "^0.2.13",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "resend": "^4.0.1",
+    "stripe": "^17.5.0"
   },
   "devDependencies": {
     "@astrojs/tailwind": "^6.0.2",

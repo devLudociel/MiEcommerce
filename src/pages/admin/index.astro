@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminDashboard from '../../components/admin/AdminDashboard';
+---
+
+<BaseLayout title="Dashboard Admin - ImprimeArte">
+  <div class="min-h-screen bg-gray-50">
+    <AdminDashboard client:load />
+  </div>
+</BaseLayout>
