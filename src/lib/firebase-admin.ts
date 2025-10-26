@@ -1,21 +1,20 @@
-import { initializeApp, cert, getApps, App } from 'firebase-admin/app';
-import { getFirestore, Firestore } from 'firebase-admin/firestore';
+import * as admin from 'firebase-admin';
 
-let adminApp: App | null = null;
-let adminDb: Firestore | null = null;
+let adminApp: admin.app.App | null = null;
+let adminDb: admin.firestore.Firestore | null = null;
 
 /**
  * Inicializa Firebase Admin SDK
  * Admin SDK tiene privilegios completos y bypasea las reglas de seguridad
  */
-export function getAdminApp(): App {
+export function getAdminApp(): admin.app.App {
   // Si ya está inicializado, devolverlo
   if (adminApp) {
     return adminApp;
   }
 
   // Verificar si ya hay una app inicializada
-  const existingApps = getApps();
+  const existingApps = admin.apps;
   if (existingApps.length > 0) {
     adminApp = existingApps[0];
     return adminApp;
@@ -26,8 +25,8 @@ export function getAdminApp(): App {
     // Opción 1: Usar Service Account JSON (RECOMENDADO para producción)
     if (import.meta.env.FIREBASE_SERVICE_ACCOUNT) {
       const serviceAccount = JSON.parse(import.meta.env.FIREBASE_SERVICE_ACCOUNT);
-      adminApp = initializeApp({
-        credential: cert(serviceAccount),
+      adminApp = admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
         projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID,
       });
       console.log('✅ Firebase Admin inicializado con Service Account');
@@ -42,8 +41,8 @@ export function getAdminApp(): App {
     ) {
       const privateKey = import.meta.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
 
-      adminApp = initializeApp({
-        credential: cert({
+      adminApp = admin.initializeApp({
+        credential: admin.credential.cert({
           projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID,
           clientEmail: import.meta.env.FIREBASE_CLIENT_EMAIL,
           privateKey: privateKey,
@@ -57,7 +56,7 @@ export function getAdminApp(): App {
     // Opción 3: Para desarrollo local con emuladores
     // Application Default Credentials (funciona si tienes gcloud configurado)
     console.warn('⚠️ Intentando usar Application Default Credentials');
-    adminApp = initializeApp({
+    adminApp = admin.initializeApp({
       projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID,
     });
     return adminApp;
@@ -73,10 +72,10 @@ export function getAdminApp(): App {
 /**
  * Obtiene la instancia de Firestore con privilegios de Admin
  */
-export function getAdminDb(): Firestore {
+export function getAdminDb(): admin.firestore.Firestore {
   if (!adminDb) {
     const app = getAdminApp();
-    adminDb = getFirestore(app);
+    adminDb = admin.firestore(app);
   }
   return adminDb;
 }
