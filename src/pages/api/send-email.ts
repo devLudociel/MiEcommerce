@@ -1,7 +1,7 @@
 // src/pages/api/send-email.ts
 import type { APIRoute } from 'astro';
 import { Resend } from 'resend';
-import { getOrderById } from '../../lib/firebase';
+import { getAdminDb } from '../../lib/firebase-admin';
 import { orderConfirmationTemplate, orderStatusUpdateTemplate } from '../../lib/emailTemplates';
 
 const resend = new Resend(import.meta.env.RESEND_API_KEY);
@@ -11,10 +11,8 @@ export const POST: APIRoute = async ({ request }) => {
 
   try {
     const { orderId, type, newStatus } = await request.json();
-
     console.log('📧 Datos recibidos:', { orderId, type, newStatus });
 
-    // Validar datos
     if (!orderId || !type) {
       return new Response(JSON.stringify({ error: 'Datos incompletos' }), {
         status: 400,
@@ -22,27 +20,27 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    // Obtener pedido
-    const order = await getOrderById(orderId);
-    if (!order) {
+    // Obtener pedido con Admin SDK
+    const adminDb = getAdminDb();
+    const orderSnap = await adminDb.collection('orders').doc(String(orderId)).get();
+    if (!orderSnap.exists) {
       return new Response(JSON.stringify({ error: 'Pedido no encontrado' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
       });
     }
+    const order: any = { id: orderSnap.id, ...orderSnap.data() };
 
-    let subject: string;
-    let html: string;
-
-    // Generar contenido según tipo
+    let subject = '';
+    let html = '';
     if (type === 'confirmation') {
-      const template = orderConfirmationTemplate(order);
-      subject = template.subject;
-      html = template.html;
+      const t = orderConfirmationTemplate(order);
+      subject = t.subject;
+      html = t.html;
     } else if (type === 'status-update' && newStatus) {
-      const template = orderStatusUpdateTemplate(order, newStatus);
-      subject = template.subject;
-      html = template.html;
+      const t = orderStatusUpdateTemplate(order, String(newStatus));
+      subject = t.subject;
+      html = t.html;
     } else {
       return new Response(JSON.stringify({ error: 'Tipo de email inválido' }), {
         status: 400,
@@ -50,42 +48,26 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    console.log('📧 Enviando email a:', order.shippingInfo.email);
-
-    // Enviar email con Resend
+    console.log('📧 Enviando email a:', order.shippingInfo?.email);
     const response = await resend.emails.send({
       from: import.meta.env.EMAIL_FROM || 'noreply@imprimearte.es',
-      to: [order.shippingInfo.email],
+      to: [order.shippingInfo?.email || ''],
       subject,
       html,
     });
+    console.log('📧 Email enviado correctamente:', response);
 
-    console.log('✅ Email enviado correctamente:', response);
-
-    // Resend v4 retorna { data: {...}, error: null }
-    const emailId = response.data?.id || (response as any).id;
-
+    const emailId = (response as any).data?.id || (response as any).id;
     return new Response(
-      JSON.stringify({
-        success: true,
-        emailId,
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ success: true, emailId }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error: any) {
     console.error('❌ Error enviando email:', error);
     return new Response(
-      JSON.stringify({
-        error: error.message || 'Error enviando email',
-        details: error.stack,
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ error: error?.message || 'Error enviando email', details: error?.stack }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 };
+

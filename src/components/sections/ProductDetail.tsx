@@ -7,6 +7,7 @@ import { addToCart } from '../../store/cartStore';
 import { useWishlist, toggleWishlist } from '../../store/wishlistStore';
 import ProductReviews from '../products/ProductReviews';
 import AddReviewForm from '../products/AddReviewForm';
+import Icon from '../ui/Icon';
 
 interface ProductImage {
   id: number;
@@ -776,19 +777,7 @@ export default function ProductDetail({ id, slug }: Props) {
                     }}
                     className={`py-3 px-6 rounded-xl font-bold transition-all duration-300 ${isInWishlist ? 'bg-gradient-secondary text-white shadow-magenta' : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-magenta-500 hover:text-magenta-500'} transform hover:scale-105 flex items-center justify-center gap-2`}
                   >
-                    <svg
-                      className={`w-5 h-5 ${isInWishlist ? 'fill-current' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                      />
-                    </svg>
+                    <Icon name="heart" className={isInWishlist ? 'w-5 h-5 text-pink-600' : 'w-5 h-5'} />
                     {isInWishlist ? 'En Favoritos' : 'Favoritos'}
                   </button>
 
@@ -796,14 +785,7 @@ export default function ProductDetail({ id, slug }: Props) {
                     onClick={handleShare}
                     className="py-3 px-6 rounded-xl font-bold bg-white border-2 border-gray-200 text-gray-700 hover:border-purple-500 hover:text-purple-500 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 00-5.367 2.684 3 3 0 005.367-2.684z"
-                      />
-                    </svg>
+                    <Icon name="share-2" className="w-5 h-5" />
                     Compartir
                   </button>
                 </div>

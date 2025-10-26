@@ -1,5 +1,6 @@
 // src/components/navigation/Breadcrumbs.tsx
 import React from 'react';
+import Icon from '../ui/Icon';
 
 interface BreadcrumbsProps {
   category?: { id: string; name: string; slug: string } | null;
@@ -27,16 +28,7 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ category, subcategory, produc
 
         {category && (
           <>
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </li>
+            <li><Icon name="chevron-right" className="w-4 h-4" /></li>
             <li>
               <a
                 href={`/categoria/${category.slug}`}
@@ -53,16 +45,7 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ category, subcategory, produc
 
         {subcategory && (
           <>
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </li>
+            <li><Icon name="chevron-right" className="w-4 h-4" /></li>
             <li>
               <a
                 href={`/categoria/${category?.slug}/${subcategory.slug}`}
@@ -79,16 +62,7 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ category, subcategory, produc
 
         {product && (
           <>
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </li>
+            <li><Icon name="chevron-right" className="w-4 h-4" /></li>
             <li style={{ color: 'var(--color-gray-800)', fontWeight: '500' }}>{product.name}</li>
           </>
         )}

@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import Icon from '../ui/Icon';
 import { useSearch } from '../../components/hooks/useSearch';
 import type { SearchResult } from '../../components/hooks/useSearch';
 
@@ -121,14 +122,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
             pointerEvents: 'none',
           }}
         >
-          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="m21 21-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"
-            />
-          </svg>
+          <Icon name="search" className="w-5 h-5" />
         </div>
 
         {/* Botón limpiar */}
@@ -155,14 +149,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
               justifyContent: 'center',
             }}
           >
-            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <Icon name="x" className="w-4 h-4" />
           </button>
         )}
       </div>
@@ -220,7 +207,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                 fontSize: '14px',
               }}
             >
-              <p style={{ margin: 0 }}>❌ {error}</p>
+              <p style={{ margin: 0 }}>⚠️ {error}</p>
             </div>
           )}
 
@@ -247,12 +234,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                 {searchResults.slice(0, 8).map((result) => (
                   <div
                     key={result.id}
-                    onMouseDown={() => {
-                      handleResultClick(result);
-                      onSearchFocus(false);
-                      const t = result.slug || result.id;
-                      window.location.href = `/producto/${t}`;
-                    }}
+                    onMouseDown={() => handleResultClickInternal(result)}
                     style={{
                       padding: '12px 16px',
                       borderBottom: '1px solid var(--color-gray-100)',
@@ -273,12 +255,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                     {result.image && (
                       <img
                         src={result.image}
-                        alt=<a
-                          href={'/producto/' + (result.slug || result.id)}
-                          style={{ color: 'inherit', textDecoration: 'none' }}
-                        >
-                          {result.name}
-                        </a>
+                        alt={result.name}
                         style={{
                           width: '48px',
                           height: '48px',
@@ -288,7 +265,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                           flexShrink: 0,
                         }}
                         onError={(e) => {
-                          e.currentTarget.style.display = 'none';
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
                         }}
                       />
                     )}
@@ -444,7 +421,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
         </div>
       )}
 
-      {/* Estilos para la animaci�n de carga */}
+      {/* Estilos para la animación de carga */}
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -456,3 +433,4 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
 };
 
 export default SearchDropdown;
+

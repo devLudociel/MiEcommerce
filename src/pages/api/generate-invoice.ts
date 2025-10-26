@@ -1,13 +1,12 @@
-// src/pages/api/generate-invoice.ts
-import type { APIRoute } from 'astro';
-import { db } from '../../lib/firebase';
-import { doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
+﻿import type { APIRoute } from 'astro';
+import { getAdminDb } from '../../lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { generateInvoiceDefinition } from '../../lib/invoiceGenerator';
 import type { InvoiceData } from '../../lib/invoiceGenerator';
 import type { OrderData } from '../../lib/firebase';
 import PdfPrinter from 'pdfmake/src/printer';
 
-// Configurar fuentes estándar de PDFKit (no requieren archivos externos)
+// Fuentes estándar de PDFKit (no requieren archivos externos)
 const fonts = {
   Roboto: {
     normal: 'Helvetica',
@@ -17,7 +16,7 @@ const fonts = {
   },
 };
 
-// Información de la empresa (puedes moverla a variables de entorno)
+// Información de la empresa (ideal mover a env)
 const COMPANY_INFO = {
   name: 'Mi E-commerce',
   address: 'Calle Principal 123',
@@ -29,37 +28,28 @@ const COMPANY_INFO = {
 };
 
 async function getNextInvoiceNumber(): Promise<string> {
-  const counterRef = doc(db, 'system', 'invoiceCounter');
-
+  const db = getAdminDb();
+  const counterRef = db.collection('system').doc('invoiceCounter');
   let invoiceNumber = '';
-
-  await runTransaction(db, async (transaction) => {
-    const counterDoc = await transaction.get(counterRef);
-
-    let currentNumber = 1;
-    if (counterDoc.exists()) {
-      currentNumber = (counterDoc.data().current || 0) + 1;
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(counterRef);
+    let current = 1;
+    if (snap.exists) {
+      const data = snap.data() as any;
+      current = Number(data?.current || 0) + 1;
     }
-
-    // Formato: FAC-YYYY-0001
     const year = new Date().getFullYear();
-    const paddedNumber = currentNumber.toString().padStart(4, '0');
-    invoiceNumber = `FAC-${year}-${paddedNumber}`;
-
-    transaction.set(
-      counterRef,
-      { current: currentNumber, lastUpdated: new Date() },
-      { merge: true }
-    );
+    const padded = String(current).padStart(4, '0');
+    invoiceNumber = `FAC-${year}-${padded}`;
+    tx.set(counterRef, { current, lastUpdated: FieldValue.serverTimestamp() }, { merge: true });
   });
-
   return invoiceNumber;
 }
 
-export const GET: APIRoute = async ({ request, url }) => {
+export const GET: APIRoute = async ({ url }) => {
   try {
     const orderId = url.searchParams.get('orderId');
-
+    console.log('[generate-invoice] start', { orderId });
     if (!orderId) {
       return new Response(JSON.stringify({ error: 'Se requiere orderId' }), {
         status: 400,
@@ -67,39 +57,34 @@ export const GET: APIRoute = async ({ request, url }) => {
       });
     }
 
-    // Obtener datos del pedido
-    const orderRef = doc(db, 'orders', orderId);
-    const orderSnap = await getDoc(orderRef);
-
-    if (!orderSnap.exists()) {
+    // Leer pedido (Admin)
+    const db = getAdminDb();
+    const orderRef = db.collection('orders').doc(orderId);
+    const orderSnap = await orderRef.get();
+    console.log('[generate-invoice] order loaded', { exists: orderSnap.exists });
+    if (!orderSnap.exists) {
       return new Response(JSON.stringify({ error: 'Pedido no encontrado' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
       });
     }
-
     const order = { id: orderSnap.id, ...orderSnap.data() } as OrderData;
 
-    // Verificar si ya tiene factura
+    // Asegurar número de factura
     let invoiceNumber = order.invoiceNumber as string | undefined;
-
     if (!invoiceNumber) {
-      // Generar nuevo número de factura
       invoiceNumber = await getNextInvoiceNumber();
-
-      // Actualizar pedido con número de factura
-      await setDoc(
-        orderRef,
+      console.log('[generate-invoice] assigning invoice number', { invoiceNumber });
+      await orderRef.set(
         {
           invoiceNumber,
-          invoiceDate: new Date(),
-          updatedAt: new Date(),
+          invoiceDate: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true }
       );
     }
 
-    // Preparar datos para la factura
     const invoiceData: InvoiceData = {
       invoiceNumber,
       invoiceDate: order.invoiceDate?.toDate ? order.invoiceDate.toDate() : new Date(),
@@ -107,20 +92,18 @@ export const GET: APIRoute = async ({ request, url }) => {
       companyInfo: COMPANY_INFO,
     };
 
-    // Generar definición del PDF
     const docDefinition = generateInvoiceDefinition(invoiceData);
-
-    // Crear el PDF usando PdfPrinter
+    const itemsLen = Array.isArray((order as any).items) ? (order as any).items.length : 0;
+    console.log('[generate-invoice] building pdf', { items: itemsLen, invoiceNumber });
     const printer = new PdfPrinter(fonts);
     const pdfDoc = printer.createPdfKitDocument(docDefinition);
 
-    // Convertir el PDF a buffer
     const chunks: Buffer[] = [];
-
     return new Promise((resolve) => {
       pdfDoc.on('data', (chunk: Buffer) => chunks.push(chunk));
       pdfDoc.on('end', () => {
         const pdfBuffer = Buffer.concat(chunks);
+        console.log('[generate-invoice] pdf ready', { bytes: pdfBuffer.length, invoiceNumber });
         resolve(
           new Response(pdfBuffer, {
             status: 200,
@@ -131,20 +114,16 @@ export const GET: APIRoute = async ({ request, url }) => {
           })
         );
       });
-
       pdfDoc.end();
     });
   } catch (error) {
-    console.error('Error generando factura:', error);
+    console.error('[generate-invoice] error:', error);
     return new Response(
       JSON.stringify({
         error: 'Error generando factura',
         details: error instanceof Error ? error.message : String(error),
       }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 };
