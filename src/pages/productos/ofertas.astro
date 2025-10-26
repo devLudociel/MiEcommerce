@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProductGridOfertas from '../../components/sections/ProductGridOfertas.tsx';
+---
+
+<BaseLayout title="Productos en Oferta - ImprimeArte">
+  <div class="pt-32 pb-16">
+    <ProductGridOfertas client:load />
+  </div>
+</BaseLayout>

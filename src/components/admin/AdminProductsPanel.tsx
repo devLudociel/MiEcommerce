@@ -67,6 +67,8 @@ interface FirebaseProduct {
   attributes: ProductAttributeValue[];
   tags: string[];
   featured: boolean;
+  onSale: boolean;
+  salePrice?: number;
   slug: string;
   active: boolean;
   createdAt?: any;
@@ -88,6 +90,8 @@ const emptyProduct: DraftProduct = {
   attributes: [],
   tags: [],
   featured: false,
+  onSale: false,
+  salePrice: undefined,
   slug: '',
   active: true,
   customizerType: 'default',
@@ -704,6 +708,8 @@ export default function AdminProductsPanel() {
         ],
         tags: ['test'],
         featured: false,
+        onSale: false,
+        salePrice: null,
         slug: 'test-producto-' + Date.now(),
         active: true,
         createdAt,
@@ -835,6 +841,8 @@ export default function AdminProductsPanel() {
           attributes: draft.attributes,
           tags: (draft.tags || []).map((t) => t.trim()).filter(Boolean),
           featured: !!draft.featured,
+          onSale: !!draft.onSale,
+          salePrice: draft.onSale && draft.salePrice ? Number(draft.salePrice) : null,
           slug: draft.slug,
           active: !!draft.active,
           images: nextImages,
@@ -879,6 +887,8 @@ export default function AdminProductsPanel() {
       attributes: p.attributes || [],
       tags: p.tags || [],
       featured: p.featured,
+      onSale: p.onSale || false,
+      salePrice: p.salePrice || undefined,
       slug: p.slug,
       active: p.active,
     });
@@ -1333,7 +1343,47 @@ export default function AdminProductsPanel() {
                 />{' '}
                 Destacado
               </label>
+              <label className="flex items-center" style={{ gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  checked={draft.onSale}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      onSale: e.target.checked,
+                      salePrice: e.target.checked ? draft.salePrice : undefined,
+                    })
+                  }
+                />{' '}
+                🔥 En Oferta
+              </label>
             </div>
+
+            {/* Precio de oferta - solo mostrar si está en oferta */}
+            {draft.onSale && (
+              <div>
+                <label>Precio de Oferta (€)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={draft.salePrice || ''}
+                  onChange={(e) =>
+                    setDraft({ ...draft, salePrice: parseFloat(e.target.value) || undefined })
+                  }
+                  placeholder="Ej: 19.99"
+                />
+                {draft.salePrice && draft.basePrice && draft.salePrice >= draft.basePrice && (
+                  <p style={{ color: 'orange', fontSize: '0.875rem', marginTop: '4px' }}>
+                    ⚠️ El precio de oferta debe ser menor que el precio base (€{draft.basePrice})
+                  </p>
+                )}
+                {draft.salePrice && draft.basePrice && draft.salePrice < draft.basePrice && (
+                  <p style={{ color: 'green', fontSize: '0.875rem', marginTop: '4px' }}>
+                    ✓ Descuento: {Math.round((1 - draft.salePrice / draft.basePrice) * 100)}%
+                  </p>
+                )}
+              </div>
+            )}
 
             <div style={{ gridColumn: '1 / -1' }}>
               <label>Imágenes</label>
