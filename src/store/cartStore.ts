@@ -1,5 +1,6 @@
 // src/store/cartStore.ts
 import { atom } from 'nanostores';
+import { logger } from '../lib/logger';
 
 export interface CartItem {
   id: string;
@@ -45,15 +46,20 @@ const loadCartFromStorage = (): CartState => {
     const stored = localStorage.getItem('cart');
     if (stored) {
       const parsed = JSON.parse(stored);
+      logger.debug('[CartStore] Cart loaded from localStorage', {
+        itemCount: parsed.items?.length || 0,
+        total: parsed.total || 0,
+      });
       return {
         items: parsed.items || [],
         total: parsed.total || 0,
       };
     }
   } catch (e) {
-    console.error('Error loading cart from storage:', e);
+    logger.error('[CartStore] Error loading cart from localStorage', e);
   }
 
+  logger.debug('[CartStore] Initialized empty cart');
   return { items: [], total: 0 };
 };
 
@@ -63,8 +69,13 @@ const saveCartToStorage = (state: CartState): void => {
 
   try {
     localStorage.setItem('cart', JSON.stringify(state));
+    logger.debug('[CartStore] Cart saved to localStorage', {
+      itemCount: state.items.length,
+      total: state.total,
+    });
   } catch (e) {
-    console.error('Error saving cart to storage:', e);
+    logger.error('[CartStore] Error saving cart to localStorage', e);
+    logger.warn('[CartStore] Cart changes will not persist across sessions');
   }
 };
 
@@ -90,9 +101,19 @@ export function addToCart(item: CartItem): void {
     newItems = currentState.items.map((i: CartItem, index: number) =>
       index === existingItemIndex ? { ...i, quantity: i.quantity + item.quantity } : i
     );
+    logger.info('[CartStore] Item quantity updated', {
+      productId: item.id,
+      newQuantity: currentState.items[existingItemIndex].quantity + item.quantity,
+    });
   } else {
     // Si no existe, agregarlo
     newItems = [...currentState.items, item];
+    logger.info('[CartStore] New item added to cart', {
+      productId: item.id,
+      productName: item.name,
+      price: item.price,
+      quantity: item.quantity,
+    });
   }
 
   const newState: CartState = {
