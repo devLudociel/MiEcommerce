@@ -168,6 +168,7 @@ const Header: React.FC<HeaderProps> = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -181,6 +182,19 @@ const Header: React.FC<HeaderProps> = () => {
   }, []);
 
   const { user, email, displayName, isAuthenticated, logout } = useAuth();
+
+  // Check if user is admin
+  useEffect(() => {
+    if (email) {
+      const adminEmails = (import.meta.env.PUBLIC_ADMIN_EMAILS || '')
+        .split(',')
+        .map((s: string) => s.trim().toLowerCase())
+        .filter(Boolean);
+      setIsAdmin(adminEmails.includes(email.toLowerCase()));
+    } else {
+      setIsAdmin(false);
+    }
+  }, [email]);
 
   // Categorías con la estructura actualizada
   const categories: MenuCategory[] = [
@@ -600,6 +614,53 @@ const Header: React.FC<HeaderProps> = () => {
                             Historial de compras y volver a pedir
                           </a>
                         </div>
+
+                        {isAdmin && (
+                          <div
+                            style={{
+                              padding: 'var(--spacing-2) 0',
+                              borderTop: '1px solid var(--color-gray-100)',
+                            }}
+                          >
+                            <div
+                              style={{
+                                padding: '0 var(--spacing-3) var(--spacing-2) var(--spacing-3)',
+                              }}
+                            >
+                              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                Administración
+                              </h4>
+                            </div>
+                            <a
+                              href="/admin"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              Panel de administración
+                            </a>
+                            <a
+                              href="/admin/orders"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              Gestión de pedidos
+                            </a>
+                            <a
+                              href="/admin/cupones"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              Gestión de cupones
+                            </a>
+                            <a
+                              href="/admin/products"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              Gestión de productos
+                            </a>
+                          </div>
+                        )}
 
                         <div
                           style={{
