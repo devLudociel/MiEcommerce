@@ -56,6 +56,9 @@ interface UIProduct {
   productionTime?: string;
   categoryId?: string;
   slug?: string;
+  onSale: boolean;
+  salePrice?: number;
+  basePrice: number;
 }
 
 interface Props {
@@ -64,7 +67,10 @@ interface Props {
 }
 
 function toUIProduct(data: FirebaseProduct & { id: string }): UIProduct {
-  const price = Number((data as any).basePrice) || 0;
+  const basePrice = Number((data as any).basePrice) || 0;
+  const onSale = !!(data as any).onSale;
+  const salePrice = (data as any).salePrice ? Number((data as any).salePrice) : undefined;
+  const currentPrice = onSale && salePrice ? salePrice : basePrice;
   const active = (data as any).active ?? true;
   const images: ProductImage[] = Array.isArray(data.images)
     ? data.images.map((url, i) => ({
@@ -77,7 +83,8 @@ function toUIProduct(data: FirebaseProduct & { id: string }): UIProduct {
     {
       id: 1,
       name: 'Estándar',
-      price,
+      price: currentPrice,
+      originalPrice: onSale && salePrice ? basePrice : undefined,
       color: '#4B5563',
       colorName: 'Estándar',
       stock: active ? 15 : 0,
@@ -114,6 +121,9 @@ function toUIProduct(data: FirebaseProduct & { id: string }): UIProduct {
     productionTime: (data as any).productionTime || '3-5 días hábiles',
     categoryId: (data as any).categoryId,
     slug: (data as any).slug,
+    onSale,
+    salePrice,
+    basePrice,
   };
 }
 
@@ -453,9 +463,21 @@ export default function ProductDetail({ id, slug }: Props) {
                 </button>
               </div>
 
+              {/* Badge de Oferta */}
+              {product.onSale && product.salePrice && (
+                <div className="absolute top-4 left-4 px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-full flex items-center gap-2 shadow-lg z-20">
+                  <span>🔥</span>
+                  <span>
+                    -{Math.round((1 - product.salePrice / product.basePrice) * 100)}% OFERTA
+                  </span>
+                </div>
+              )}
+
               {/* Badge de Personalizable */}
               {product.customizable && (
-                <div className="absolute top-4 left-4 px-4 py-2 bg-gradient-to-r from-purple-600 via-magenta-600 to-pink-600 text-white text-sm font-bold rounded-full flex items-center gap-2 shadow-lg animate-pulse">
+                <div
+                  className={`absolute ${product.onSale ? 'top-16' : 'top-4'} left-4 px-4 py-2 bg-gradient-to-r from-purple-600 via-magenta-600 to-pink-600 text-white text-sm font-bold rounded-full flex items-center gap-2 shadow-lg animate-pulse`}
+                >
                   <span>✨</span>
                   <span>100% Personalizable</span>
                 </div>
@@ -538,11 +560,15 @@ export default function ProductDetail({ id, slug }: Props) {
 
             <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
               <div className="flex items-center gap-6 mb-4">
-                <div className="text-4xl font-black text-cyan-600">${currentVariant.price}</div>
+                <div
+                  className={`text-4xl font-black ${product.onSale ? 'text-red-600' : 'text-cyan-600'}`}
+                >
+                  €{currentVariant.price.toFixed(2)}
+                </div>
                 {currentVariant.originalPrice && (
                   <>
                     <div className="text-xl text-gray-400 line-through">
-                      ${currentVariant.originalPrice}
+                      €{currentVariant.originalPrice.toFixed(2)}
                     </div>
                     <div className="px-3 py-1 bg-red-500 text-white text-sm font-bold rounded-full">
                       -{Math.round((1 - currentVariant.price / currentVariant.originalPrice) * 100)}
@@ -1018,7 +1044,18 @@ export default function ProductDetail({ id, slug }: Props) {
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <div className="text-sm text-gray-500">{currentVariant.colorName}</div>
-            <div className="text-xl font-bold text-cyan-600">${currentVariant.price}</div>
+            <div className="flex items-center gap-2">
+              <div
+                className={`text-xl font-bold ${product.onSale ? 'text-red-600' : 'text-cyan-600'}`}
+              >
+                €{currentVariant.price.toFixed(2)}
+              </div>
+              {currentVariant.originalPrice && (
+                <div className="text-sm text-gray-400 line-through">
+                  €{currentVariant.originalPrice.toFixed(2)}
+                </div>
+              )}
+            </div>
           </div>
           {product.customizable ? (
             <button
