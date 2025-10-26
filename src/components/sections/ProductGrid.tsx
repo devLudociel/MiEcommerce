@@ -18,6 +18,8 @@ interface Product {
   inStock: boolean;
   colors?: string[];
   slug?: string;
+  onSale: boolean;
+  salePrice?: number;
 }
 
 interface ProductsGridProps {
@@ -108,6 +110,9 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
             console.error(`[ProductGrid] Error cargando reseñas para ${d.id}:`, reviewError);
           }
 
+          const onSale = !!data.onSale;
+          const salePrice = data.salePrice ? Number(data.salePrice) : undefined;
+
           return {
             id: d.id,
             name: data.name || 'Producto',
@@ -117,12 +122,14 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
             image: (data.images && data.images[0]) || FALLBACK_IMG_400x300,
             images: data.images || [],
             category: data.category || 'general',
-            badge: data.featured ? 'hot' : undefined,
+            badge: onSale ? 'sale' : data.featured ? 'hot' : undefined,
             rating: reviewStats.averageRating,
             reviews: reviewStats.totalReviews,
             inStock: !!data.active,
             colors: [],
             slug: data.slug || d.id,
+            onSale,
+            salePrice,
           } as Product;
         });
 
@@ -230,11 +237,13 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
                   >
                     {product.badge === 'new'
                       ? 'Nuevo'
-                      : product.badge === 'sale'
-                        ? 'Oferta'
-                        : product.badge === 'hot'
-                          ? 'Popular'
-                          : 'Limitado'}
+                      : product.badge === 'sale' && product.onSale && product.salePrice
+                        ? `-${Math.round((1 - product.salePrice / product.price) * 100)}%`
+                        : product.badge === 'sale'
+                          ? 'Oferta'
+                          : product.badge === 'hot'
+                            ? 'Popular'
+                            : 'Limitado'}
                   </span>
                 </div>
               )}
@@ -341,16 +350,31 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
 
                 {/* Price */}
                 <div className="flex items-center gap-3 mb-4">
-                  <span className="text-2xl font-bold text-cyan-600">${product.price}</span>
-                  {product.originalPrice && (
-                    <span className="text-lg text-gray-400 line-through">
-                      ${product.originalPrice}
-                    </span>
-                  )}
-                  {product.originalPrice && (
-                    <span className="px-2 py-1 text-xs font-bold bg-red-100 text-red-600 rounded">
-                      -{Math.round((1 - product.price / product.originalPrice) * 100)}%
-                    </span>
+                  {product.onSale && product.salePrice ? (
+                    <>
+                      <span className="text-2xl font-bold text-red-600">
+                        €{product.salePrice.toFixed(2)}
+                      </span>
+                      <span className="text-lg text-gray-400 line-through">
+                        €{product.price.toFixed(2)}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-2xl font-bold text-cyan-600">
+                        €{product.price.toFixed(2)}
+                      </span>
+                      {product.originalPrice && (
+                        <>
+                          <span className="text-lg text-gray-400 line-through">
+                            €{product.originalPrice.toFixed(2)}
+                          </span>
+                          <span className="px-2 py-1 text-xs font-bold bg-red-100 text-red-600 rounded">
+                            -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+                          </span>
+                        </>
+                      )}
+                    </>
                   )}
                 </div>
 
