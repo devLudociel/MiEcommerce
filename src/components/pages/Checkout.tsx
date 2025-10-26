@@ -143,7 +143,7 @@ export default function Checkout() {
         userId: 'guest', // Cambiar cuando haya autenticación
         customerEmail: shippingInfo.email,
         shippingInfo: {
-          fullName: shippingInfo.fullName,
+          fullName: `${shippingInfo.firstName} ${shippingInfo.lastName}`,
           email: shippingInfo.email,
           address: shippingInfo.address,
           city: shippingInfo.city,
