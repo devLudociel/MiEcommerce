@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db } from '../../lib/firebase';
+import { db, getProductReviewStats } from '../../lib/firebase';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { collection, query, where, limit, getDocs } from 'firebase/firestore';
 
@@ -91,8 +91,23 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
         setError(null);
         const q = query(collection(db, 'products'), where('active', '==', true), limit(maxItems));
         const snap = await getDocs(q);
-        const list: Product[] = snap.docs.map((d: any) => {
+
+        // Cargar productos básicos
+        const productsPromises = snap.docs.map(async (d: any) => {
           const data = d.data() || {};
+
+          // Cargar estadísticas de reseñas para este producto
+          let reviewStats = { averageRating: 0, totalReviews: 0 };
+          try {
+            const stats = await getProductReviewStats(d.id);
+            reviewStats = {
+              averageRating: stats.averageRating,
+              totalReviews: stats.totalReviews,
+            };
+          } catch (reviewError) {
+            console.error(`[ProductGrid] Error cargando reseñas para ${d.id}:`, reviewError);
+          }
+
           return {
             id: d.id,
             name: data.name || 'Producto',
@@ -103,13 +118,15 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
             images: data.images || [],
             category: data.category || 'general',
             badge: data.featured ? 'hot' : undefined,
-            rating: 5,
-            reviews: 0,
+            rating: reviewStats.averageRating,
+            reviews: reviewStats.totalReviews,
             inStock: !!data.active,
             colors: [],
             slug: data.slug || d.id,
           } as Product;
         });
+
+        const list = await Promise.all(productsPromises);
         setProducts(list);
         setFilteredProducts(list);
       } catch (e: any) {
@@ -300,7 +317,13 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
                       </svg>
                     ))}
                   </div>
-                  <span className="text-sm text-gray-500">({product.reviews})</span>
+                  {product.rating > 0 ? (
+                    <span className="text-sm text-gray-500">
+                      {product.rating.toFixed(1)} ({product.reviews})
+                    </span>
+                  ) : (
+                    <span className="text-sm text-gray-400">Sin reseñas aún</span>
+                  )}
                 </div>
 
                 {/* Category */}
