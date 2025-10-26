@@ -154,8 +154,8 @@ export default function AdminDashboard() {
         .sort((a, b) => a.date.localeCompare(b.date));
 
       // Obtener total de productos
-      console.log('🔵 [Dashboard] Consultando colección "productos"...');
-      const productsRef = collection(db, 'productos');
+      console.log('🔵 [Dashboard] Consultando colección "products"...');
+      const productsRef = collection(db, 'products');
       const productsSnapshot = await getDocs(productsRef);
       console.log(`✅ [Dashboard] Productos obtenidos: ${productsSnapshot.size} documentos`);
       const totalProducts = productsSnapshot.size;
@@ -257,6 +257,38 @@ export default function AdminDashboard() {
     );
   }
 
+  // Determinar qué ingresos mostrar según el rango de tiempo
+  const getRevenueByTimeRange = () => {
+    switch (timeRange) {
+      case 'today':
+        return stats.todayRevenue;
+      case 'week':
+        return stats.ordersLastWeek.reduce((sum, day) => sum + day.revenue, 0);
+      case 'month':
+        return stats.monthRevenue;
+      case 'year':
+        return stats.yearRevenue;
+      default:
+        return stats.monthRevenue;
+    }
+  };
+
+  const displayRevenue = getRevenueByTimeRange();
+  const getTimeRangeLabel = () => {
+    switch (timeRange) {
+      case 'today':
+        return 'Hoy';
+      case 'week':
+        return 'Últimos 7 días';
+      case 'month':
+        return 'Este mes';
+      case 'year':
+        return 'Este año';
+      default:
+        return 'Este mes';
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -321,17 +353,17 @@ export default function AdminDashboard() {
           <p className="text-cyan-100 text-sm">Todos los tiempos</p>
         </div>
 
-        {/* Ingresos del mes */}
+        {/* Ingresos según filtro */}
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-lg">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-green-100 text-sm font-semibold">Este Mes</p>
+            <p className="text-green-100 text-sm font-semibold">{getTimeRangeLabel()}</p>
             <span className="text-2xl">📈</span>
           </div>
-          <p className="text-3xl font-bold mb-1">€{stats.monthRevenue.toFixed(2)}</p>
+          <p className="text-3xl font-bold mb-1">€{displayRevenue.toFixed(2)}</p>
           <p className="text-green-100 text-sm">
-            {stats.monthRevenue > 0
-              ? `${((stats.monthRevenue / stats.totalRevenue) * 100).toFixed(1)}% del total`
-              : 'Sin ventas este mes'}
+            {displayRevenue > 0
+              ? `${((displayRevenue / stats.totalRevenue) * 100).toFixed(1)}% del total`
+              : `Sin ventas ${getTimeRangeLabel().toLowerCase()}`}
           </p>
         </div>
 
