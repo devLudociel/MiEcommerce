@@ -130,7 +130,7 @@ interface MenuSubcategory {
   icon?: string;
 }
 
-interface HeaderProps {}
+type HeaderProps = Record<string, never>;
 
 const Header: React.FC<HeaderProps> = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

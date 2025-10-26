@@ -31,3 +31,6 @@ yarn.lock
 # Cache
 .cache
 .temp
+
+# Astro files (Prettier has issues with Astro directives like client:load)
+**/*.astro
