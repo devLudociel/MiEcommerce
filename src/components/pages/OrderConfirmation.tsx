@@ -25,21 +25,27 @@ export default function OrderConfirmation() {
       return;
     }
 
-    try {
-      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-      const foundOrder = orders.find((o: Order) => o.id === orderId);
+    const loadOrder = async () => {
+      try {
+        // Cargar orden desde Firebase
+        const response = await fetch(`/api/get-order?orderId=${orderId}`);
 
-      if (foundOrder) {
-        setOrder(foundOrder);
-      } else {
+        if (!response.ok) {
+          throw new Error('Orden no encontrada');
+        }
+
+        const orderData = await response.json();
+        setOrder(orderData);
+      } catch (error) {
+        console.error('Error loading order:', error);
+        // Si no se encuentra la orden, redirigir al inicio
         window.location.href = '/';
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error loading order:', error);
-      window.location.href = '/';
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    loadOrder();
   }, []);
 
   if (loading) {

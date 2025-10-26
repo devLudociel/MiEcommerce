@@ -131,23 +131,49 @@ export default function Checkout() {
     }
     setIsProcessing(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      const order = {
-        id: `ORDER-${Date.now()}`,
-        date: new Date().toISOString(),
-        items: cart.items,
-        shippingInfo,
-        paymentInfo: { method: paymentInfo.method },
+      // Preparar datos de la orden para Firebase
+      const orderData = {
+        items: cart.items.map((item) => ({
+          productId: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          image: item.image,
+        })),
+        userId: 'guest', // Cambiar cuando haya autenticación
+        customerEmail: shippingInfo.email,
+        shippingAddress: {
+          fullName: shippingInfo.fullName,
+          address: shippingInfo.address,
+          city: shippingInfo.city,
+          state: shippingInfo.state,
+          zipCode: shippingInfo.zipCode,
+          country: 'España',
+          phone: shippingInfo.phone,
+        },
+        paymentMethod: paymentInfo.method,
         subtotal,
-        shipping: shippingCost,
+        shippingCost,
         total,
         status: 'pending',
       };
-      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-      orders.push(order);
-      localStorage.setItem('orders', JSON.stringify(orders));
+
+      // Guardar orden en Firebase
+      const response = await fetch('/api/save-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al guardar la orden');
+      }
+
+      const { orderId } = await response.json();
+
+      // Limpiar carrito y redirigir
       clearCart();
-      window.location.href = `/confirmacion?orderId=${order.id}`;
+      window.location.href = `/confirmacion?orderId=${orderId}`;
     } catch (error) {
       console.error('Error al procesar el pedido:', error);
       alert('Hubo un error al procesar tu pedido. Por favor, intenta de nuevo.');
