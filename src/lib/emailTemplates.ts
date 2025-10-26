@@ -61,7 +61,9 @@ export function orderConfirmationTemplate(order: OrderData): { subject: string; 
 
                     <!-- Productos -->
                     <h2 style="font-size: 20px; font-weight: bold; color: #1e293b; margin-bottom: 15px;">Productos</h2>
-                    ${order.items.map((item) => `
+                    ${order.items
+                      .map(
+                        (item) => `
                       <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
                         <table width="100%">
                           <tr>
@@ -77,7 +79,9 @@ export function orderConfirmationTemplate(order: OrderData): { subject: string; 
                           </tr>
                         </table>
                       </div>
-                    `).join('')}
+                    `
+                      )
+                      .join('')}
 
                     <!-- Totales -->
                     <table width="100%" cellpadding="8" cellspacing="0" style="margin-top: 20px; border-top: 2px solid #e2e8f0; padding-top: 20px;">
@@ -157,7 +161,10 @@ export function orderStatusUpdateTemplate(
   order: OrderData,
   newStatus: string
 ): { subject: string; html: string } {
-  const statusInfo: Record<string, { title: string; emoji: string; message: string; color: string }> = {
+  const statusInfo: Record<
+    string,
+    { title: string; emoji: string; message: string; color: string }
+  > = {
     paid: {
       title: 'Pago Confirmado',
       emoji: '💳',
@@ -167,7 +174,8 @@ export function orderStatusUpdateTemplate(
     processing: {
       title: 'En Producción',
       emoji: '🔨',
-      message: '¡Estamos trabajando en tu pedido! Nuestro equipo está produciendo tus productos personalizados.',
+      message:
+        '¡Estamos trabajando en tu pedido! Nuestro equipo está produciendo tus productos personalizados.',
       color: '#3b82f6',
     },
     shipped: {

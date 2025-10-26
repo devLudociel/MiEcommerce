@@ -70,8 +70,18 @@ export default function ApplyCoupon({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="w-5 h-5 text-green-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               <span className="font-bold text-green-800">Cupón aplicado</span>
             </div>
@@ -80,19 +90,13 @@ export default function ApplyCoupon({
                 {appliedCoupon.code}
               </span>
               {appliedCoupon.type === 'percentage' && (
-                <span className="text-sm text-green-700">
-                  {appliedCoupon.value}% de descuento
-                </span>
+                <span className="text-sm text-green-700">{appliedCoupon.value}% de descuento</span>
               )}
               {appliedCoupon.type === 'fixed' && (
-                <span className="text-sm text-green-700">
-                  ${appliedCoupon.value} de descuento
-                </span>
+                <span className="text-sm text-green-700">${appliedCoupon.value} de descuento</span>
               )}
               {appliedCoupon.type === 'free_shipping' && (
-                <span className="text-sm text-green-700">
-                  Envío gratis
-                </span>
+                <span className="text-sm text-green-700">Envío gratis</span>
               )}
             </div>
             <p className="text-sm text-green-600 mt-1">{appliedCoupon.description}</p>
@@ -103,7 +107,12 @@ export default function ApplyCoupon({
             aria-label="Quitar cupón"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -115,8 +124,18 @@ export default function ApplyCoupon({
   return (
     <div className="bg-white rounded-xl border-2 border-gray-200 p-4">
       <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-        <svg className="w-5 h-5 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+        <svg
+          className="w-5 h-5 text-cyan-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
+          />
         </svg>
         ¿Tienes un cupón de descuento?
       </h3>
@@ -154,8 +173,18 @@ export default function ApplyCoupon({
 
         {error && (
           <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <p className="text-sm text-red-700">{error}</p>
           </div>
@@ -163,8 +192,18 @@ export default function ApplyCoupon({
 
         {success && (
           <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <p className="text-sm text-green-700">¡Cupón aplicado exitosamente!</p>
           </div>

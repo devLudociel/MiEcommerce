@@ -107,7 +107,8 @@ export default function AdminOrderDetail() {
             Detalle del Pedido #{order.id?.slice(0, 8)}
           </h1>
           <p className="text-gray-600">
-            Realizado el {orderDate.toLocaleDateString('es-ES', {
+            Realizado el{' '}
+            {orderDate.toLocaleDateString('es-ES', {
               day: 'numeric',
               month: 'long',
               year: 'numeric',

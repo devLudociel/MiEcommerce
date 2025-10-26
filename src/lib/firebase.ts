@@ -16,16 +16,10 @@ import {
   limit,
   serverTimestamp,
   setDoc,
-  increment
+  increment,
 } from 'firebase/firestore';
 import type { Firestore, DocumentData, QuerySnapshot } from 'firebase/firestore';
-import { 
-  getStorage, 
-  ref, 
-  uploadBytes, 
-  getDownloadURL, 
-  deleteObject
-} from 'firebase/storage';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import type { FirebaseStorage, StorageReference, UploadResult } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
 import type { Auth } from 'firebase/auth';
@@ -40,7 +34,7 @@ const firebaseConfig = {
   storageBucket: import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.PUBLIC_FIREBASE_APP_ID,
-  measurementId: import.meta.env.PUBLIC_FIREBASE_MEASUREMENT_ID
+  measurementId: import.meta.env.PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase (avoid duplicate-app in HMR / multiple imports)
@@ -50,7 +44,7 @@ const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseCon
 export const db: Firestore = (() => {
   try {
     return initializeFirestore(app, {
-      experimentalAutoDetectLongPolling: true
+      experimentalAutoDetectLongPolling: true,
     });
   } catch (_) {
     return getFirestore(app);
@@ -67,7 +61,9 @@ export const auth: Auth = getAuth(app);
 export const analytics: Analytics | null = typeof window !== 'undefined' ? getAnalytics(app) : null;
 
 // Reduce Firestore console noise
-try { setLogLevel('error'); } catch {}
+try {
+  setLogLevel('error');
+} catch {}
 
 export default app;
 
@@ -116,12 +112,15 @@ export interface ProductData {
  * @param variante - ej: 'blanco', 'rosa', 'azul'
  */
 export async function getProductImageUrl(
-  categoria: string, 
+  categoria: string,
   variante: string
 ): Promise<string | null> {
   try {
     // 🔄 CAMBIO: productos/ → variants/
-    const storageRef: StorageReference = ref(storage, `variants/${categoria}/${variante}/preview.jpg`);
+    const storageRef: StorageReference = ref(
+      storage,
+      `variants/${categoria}/${variante}/preview.jpg`
+    );
     const url: string = await getDownloadURL(storageRef);
     console.log(`✅ Imagen cargada: variants/${categoria}/${variante}/preview.jpg`);
     return url;
@@ -138,24 +137,27 @@ export async function getProductImageUrl(
  * @param productType - Tipo de producto (camiseta, cuadro, resina)
  */
 export async function uploadCustomImage(
-  file: File, 
-  userId: string, 
+  file: File,
+  userId: string,
   productType: string
 ): Promise<CustomImageUpload> {
   try {
     const timestamp: number = Date.now();
     const fileName: string = `${timestamp}_${file.name}`;
-    const storageRef: StorageReference = ref(storage, `personalizaciones/${userId}/${productType}/${fileName}`);
-    
+    const storageRef: StorageReference = ref(
+      storage,
+      `personalizaciones/${userId}/${productType}/${fileName}`
+    );
+
     const snapshot: UploadResult = await uploadBytes(storageRef, file);
     const url: string = await getDownloadURL(snapshot.ref);
-    
+
     console.log('✅ Imagen personalizada subida:', url);
-    
+
     return {
       url,
       path: snapshot.ref.fullPath,
-      name: fileName
+      name: fileName,
     };
   } catch (error) {
     console.error('❌ Error subiendo imagen personalizada:', error);
@@ -186,18 +188,21 @@ export async function deleteCustomImage(imagePath: string): Promise<boolean> {
  * @param variantes - Array de nombres de variantes
  */
 export async function uploadProductImages(
-  files: File[], 
-  categoria: string, 
+  files: File[],
+  categoria: string,
   variantes: string[]
 ): Promise<string[]> {
   try {
     const uploadPromises = files.map((file: File, index: number) => {
       const varianteName: string = variantes[index];
       // 🔄 CAMBIO: productos/ → variants/
-      const storageRef: StorageReference = ref(storage, `variants/${categoria}/${varianteName}/preview.jpg`);
+      const storageRef: StorageReference = ref(
+        storage,
+        `variants/${categoria}/${varianteName}/preview.jpg`
+      );
       return uploadBytes(storageRef, file).then(() => getDownloadURL(storageRef));
     });
-    
+
     const urls: string[] = await Promise.all(uploadPromises);
     console.log(`✅ ${urls.length} imágenes de variantes subidas para ${categoria}`);
     return urls;
@@ -221,9 +226,9 @@ export async function saveCustomization(customizationData: CustomizationData): P
       ...customizationData,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-      status: 'pending'
+      status: 'pending',
     });
-    
+
     console.log('✅ Personalización guardada con ID:', docRef.id);
     return docRef.id;
   } catch (error) {
@@ -238,16 +243,16 @@ export async function saveCustomization(customizationData: CustomizationData): P
  * @param updates - Datos a actualizar
  */
 export async function updateCustomization(
-  customizationId: string, 
+  customizationId: string,
   updates: Partial<CustomizationData>
 ): Promise<boolean> {
   try {
     const docRef = doc(db, 'personalizaciones', customizationId);
     await updateDoc(docRef, {
       ...updates,
-      updatedAt: serverTimestamp()
+      updatedAt: serverTimestamp(),
     });
-    
+
     console.log('✅ Personalización actualizada:', customizationId);
     return true;
   } catch (error) {
@@ -264,7 +269,7 @@ export async function getCustomization(customizationId: string): Promise<Customi
   try {
     const docRef = doc(db, 'personalizaciones', customizationId);
     const docSnap = await getDoc(docRef);
-    
+
     if (docSnap.exists()) {
       return { id: docSnap.id, ...docSnap.data() } as CustomizationDoc;
     } else {
@@ -283,18 +288,15 @@ export async function getCustomization(customizationId: string): Promise<Customi
  */
 export async function getUserCustomizations(userId: string): Promise<CustomizationDoc[]> {
   try {
-    const q = query(
-      collection(db, 'personalizaciones'),
-      where('userId', '==', userId)
-    );
-    
+    const q = query(collection(db, 'personalizaciones'), where('userId', '==', userId));
+
     const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
     const customizations: CustomizationDoc[] = [];
-    
+
     querySnapshot.forEach((doc) => {
       customizations.push({ id: doc.id, ...doc.data() } as CustomizationDoc);
     });
-    
+
     console.log(`✅ ${customizations.length} personalizaciones encontradas para usuario ${userId}`);
     return customizations;
   } catch (error) {
@@ -311,9 +313,9 @@ export async function saveProduct(productData: ProductData): Promise<string> {
   try {
     const docRef = await addDoc(collection(db, 'productos'), {
       ...productData,
-      createdAt: serverTimestamp()
+      createdAt: serverTimestamp(),
     });
-    
+
     console.log('✅ Producto guardado con ID:', docRef.id);
     return docRef.id;
   } catch (error) {
@@ -328,23 +330,20 @@ export async function saveProduct(productData: ProductData): Promise<string> {
  */
 export async function getProductsByCategory(categoria: string): Promise<ProductData[]> {
   try {
-    const q = query(
-      collection(db, 'productos'),
-      where('categoria', '==', categoria)
-    );
-    
+    const q = query(collection(db, 'productos'), where('categoria', '==', categoria));
+
     const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
     const products: ProductData[] = [];
-    
+
     querySnapshot.forEach((doc) => {
       const data = doc.data();
-      products.push({ 
-        id: doc.id, 
+      products.push({
+        id: doc.id,
         categoria: data.categoria || '',
-        ...data 
+        ...data,
       } as ProductData);
     });
-    
+
     console.log(`✅ ${products.length} productos encontrados en categoría ${categoria}`);
     return products;
   } catch (error) {
@@ -366,7 +365,7 @@ export async function getAllProducts(): Promise<ProductData[]> {
       products.push({
         id: doc.id,
         categoria: data.categoria || '',
-        ...data
+        ...data,
       } as ProductData);
     });
 
@@ -423,10 +422,7 @@ export async function getOrderById(orderId: string): Promise<OrderData | null> {
  */
 export async function getUserOrders(userId: string): Promise<OrderData[]> {
   try {
-    const q = query(
-      collection(db, 'orders'),
-      where('shippingInfo.email', '==', userId)
-    );
+    const q = query(collection(db, 'orders'), where('shippingInfo.email', '==', userId));
 
     const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
     const orders: OrderData[] = [];
@@ -446,15 +442,12 @@ export async function getUserOrders(userId: string): Promise<OrderData[]> {
 /**
  * Actualizar estado de pedido
  */
-export async function updateOrderStatus(
-  orderId: string,
-  status: string
-): Promise<boolean> {
+export async function updateOrderStatus(orderId: string, status: string): Promise<boolean> {
   try {
     const docRef = doc(db, 'orders', orderId);
     await updateDoc(docRef, {
       status,
-      updatedAt: serverTimestamp()
+      updatedAt: serverTimestamp(),
     });
 
     console.log('✅ Estado de pedido actualizado:', orderId);
@@ -470,9 +463,7 @@ export async function updateOrderStatus(
  */
 export async function getAllOrders(): Promise<OrderData[]> {
   try {
-    const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(
-      collection(db, 'orders')
-    );
+    const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(collection(db, 'orders'));
     const orders: OrderData[] = [];
 
     querySnapshot.forEach((doc) => {
@@ -499,10 +490,7 @@ export async function getAllOrders(): Promise<OrderData[]> {
  */
 export async function getOrdersByStatus(status: string): Promise<OrderData[]> {
   try {
-    const q = query(
-      collection(db, 'orders'),
-      where('status', '==', status)
-    );
+    const q = query(collection(db, 'orders'), where('status', '==', status));
 
     const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
     const orders: OrderData[] = [];
@@ -529,7 +517,9 @@ export type { Review, ReviewStats } from '../types/firebase';
 /**
  * Agregar una review a un producto
  */
-export async function addReview(reviewData: Omit<Review, 'id' | 'createdAt' | 'updatedAt' | 'helpful'>): Promise<string> {
+export async function addReview(
+  reviewData: Omit<Review, 'id' | 'createdAt' | 'updatedAt' | 'helpful'>
+): Promise<string> {
   try {
     const docRef = await addDoc(collection(db, 'reviews'), {
       ...reviewData,
@@ -551,10 +541,7 @@ export async function addReview(reviewData: Omit<Review, 'id' | 'createdAt' | 'u
  */
 export async function getProductReviews(productId: string): Promise<Review[]> {
   try {
-    const q = query(
-      collection(db, 'reviews'),
-      where('productId', '==', productId)
-    );
+    const q = query(collection(db, 'reviews'), where('productId', '==', productId));
 
     const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
     const reviews: Review[] = [];
@@ -603,7 +590,9 @@ export async function getProductReviewStats(productId: string): Promise<ReviewSt
 
     stats.averageRating = Number((totalRating / reviews.length).toFixed(1));
 
-    console.log(`✅ Stats calculadas: ${stats.averageRating} estrellas (${stats.totalReviews} reviews)`);
+    console.log(
+      `✅ Stats calculadas: ${stats.averageRating} estrellas (${stats.totalReviews} reviews)`
+    );
     return stats;
   } catch (error) {
     console.error('❌ Error obteniendo stats de reviews:', error);
@@ -795,7 +784,10 @@ export async function spendWalletFunds(
 /**
  * Obtener historial de transacciones del wallet
  */
-export async function getWalletTransactions(userId: string, limitCount: number = 50): Promise<WalletTransaction[]> {
+export async function getWalletTransactions(
+  userId: string,
+  limitCount: number = 50
+): Promise<WalletTransaction[]> {
   try {
     const q = query(
       collection(db, 'wallet_transactions'),
@@ -914,9 +906,9 @@ export async function validateCoupon(
 }
 
 /**
- * Aplicar uso de cupón
+ * Registrar uso de cupón
  */
-export async function useCoupon(
+export async function recordCouponUsage(
   couponId: string,
   userId: string,
   orderId: string,
@@ -953,7 +945,9 @@ export async function useCoupon(
 /**
  * Crear nuevo cupón (solo admin)
  */
-export async function createCoupon(couponData: Omit<Coupon, 'id' | 'currentUses' | 'createdAt' | 'updatedAt'>): Promise<string> {
+export async function createCoupon(
+  couponData: Omit<Coupon, 'id' | 'currentUses' | 'createdAt' | 'updatedAt'>
+): Promise<string> {
   try {
     console.log('🔍 [v3-FINAL] Datos recibidos:', couponData);
 
@@ -987,7 +981,10 @@ export async function createCoupon(couponData: Omit<Coupon, 'id' | 'currentUses'
     }, {} as any);
 
     console.log('🧹 [v3-FINAL] Datos limpios:', cleanData);
-    console.log('🔍 [v3-FINAL] Campos undefined restantes:', Object.entries(cleanData).filter(([k, v]) => v === undefined).length);
+    console.log(
+      '🔍 [v3-FINAL] Campos undefined restantes:',
+      Object.entries(cleanData).filter(([k, v]) => v === undefined).length
+    );
 
     const docRef = await addDoc(collection(db, 'coupons'), cleanData);
 
@@ -1004,10 +1001,7 @@ export async function createCoupon(couponData: Omit<Coupon, 'id' | 'currentUses'
  */
 export async function getActiveCoupons(): Promise<Coupon[]> {
   try {
-    const q = query(
-      collection(db, 'coupons'),
-      where('active', '==', true)
-    );
+    const q = query(collection(db, 'coupons'), where('active', '==', true));
 
     const querySnapshot = await getDocs(q);
     const coupons: Coupon[] = [];

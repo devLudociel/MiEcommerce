@@ -16,19 +16,19 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Validar datos
     if (!orderId || !type) {
-      return new Response(
-        JSON.stringify({ error: 'Datos incompletos' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Datos incompletos' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Obtener pedido
     const order = await getOrderById(orderId);
     if (!order) {
-      return new Response(
-        JSON.stringify({ error: 'Pedido no encontrado' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Pedido no encontrado' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     let subject: string;
@@ -44,10 +44,10 @@ export const POST: APIRoute = async ({ request }) => {
       subject = template.subject;
       html = template.html;
     } else {
-      return new Response(
-        JSON.stringify({ error: 'Tipo de email inválido' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Tipo de email inválido' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     console.log('📧 Enviando email a:', order.shippingInfo.email);

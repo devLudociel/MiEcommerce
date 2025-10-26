@@ -61,12 +61,11 @@ export function getAdminApp(): App {
       projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID,
     });
     return adminApp;
-
   } catch (error) {
     console.error('❌ Error inicializando Firebase Admin:', error);
     throw new Error(
       'Firebase Admin no pudo inicializarse. Verifica tus credenciales en .env\n' +
-      'Necesitas configurar FIREBASE_SERVICE_ACCOUNT o (FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY)'
+        'Necesitas configurar FIREBASE_SERVICE_ACCOUNT o (FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY)'
     );
   }
 }

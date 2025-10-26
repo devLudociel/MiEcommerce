@@ -1,6 +1,6 @@
 // src/pages/api/save-order.ts
 import type { APIRoute } from 'astro';
-import { addWalletFunds, spendWalletFunds, useCoupon } from '../../lib/firebase';
+import { addWalletFunds, spendWalletFunds, recordCouponUsage } from '../../lib/firebase';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -16,10 +16,10 @@ export const POST: APIRoute = async ({ request }) => {
     // Validar datos básicos
     if (!orderData.items || !orderData.shippingInfo || !orderData.total) {
       console.error('❌ API save-order: Datos incompletos');
-      return new Response(
-        JSON.stringify({ error: 'Datos de pedido incompletos' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Datos de pedido incompletos' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     console.log('🔵 API save-order: Intentando guardar en Firestore con Admin SDK...');
@@ -56,7 +56,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (orderData.discounts?.coupon && orderData.userId) {
       try {
         console.log('🎟️ API save-order: Procesando cupón...');
-        await useCoupon(
+        await recordCouponUsage(
           orderData.discounts.coupon.id,
           orderData.userId,
           docRef.id,
@@ -112,11 +112,11 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(
       JSON.stringify({
         success: true,
-        orderId: docRef.id
+        orderId: docRef.id,
       }),
       {
         status: 200,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       }
     );
   } catch (error: any) {
@@ -125,11 +125,11 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(
       JSON.stringify({
         error: error.message || 'Error guardando pedido',
-        details: error.stack
+        details: error.stack,
       }),
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       }
     );
   }

@@ -87,8 +87,18 @@ export default function AddReviewForm({ productId, onReviewAdded }: AddReviewFor
   if (!user) {
     return (
       <div className="bg-gray-50 rounded-2xl p-6 border-2 border-dashed border-gray-300 text-center">
-        <svg className="mx-auto w-12 h-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        <svg
+          className="mx-auto w-12 h-12 text-gray-400 mb-3"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+          />
         </svg>
         <h3 className="text-lg font-bold text-gray-800 mb-2">Inicia sesión para dejar tu reseña</h3>
         <p className="text-gray-600 mb-4">Comparte tu experiencia con este producto</p>
@@ -105,8 +115,18 @@ export default function AddReviewForm({ productId, onReviewAdded }: AddReviewFor
   if (hasReviewed) {
     return (
       <div className="bg-green-50 rounded-2xl p-6 border-2 border-green-200 text-center">
-        <svg className="mx-auto w-12 h-12 text-green-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          className="mx-auto w-12 h-12 text-green-500 mb-3"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
         <h3 className="text-lg font-bold text-gray-800 mb-2">Ya dejaste tu reseña</h3>
         <p className="text-gray-600">Gracias por compartir tu opinión sobre este producto</p>
@@ -140,9 +160,7 @@ export default function AddReviewForm({ productId, onReviewAdded }: AddReviewFor
               >
                 <svg
                   className={`w-12 h-12 transition-colors duration-200 ${
-                    star <= (hoveredRating || rating)
-                      ? 'text-yellow-400'
-                      : 'text-gray-300'
+                    star <= (hoveredRating || rating) ? 'text-yellow-400' : 'text-gray-300'
                   }`}
                   fill="currentColor"
                   viewBox="0 0 20 20"
@@ -177,9 +195,7 @@ export default function AddReviewForm({ productId, onReviewAdded }: AddReviewFor
             required
             minLength={10}
           />
-          <p className="text-sm text-gray-500 mt-1">
-            Mínimo 10 caracteres ({comment.length}/10)
-          </p>
+          <p className="text-sm text-gray-500 mt-1">Mínimo 10 caracteres ({comment.length}/10)</p>
         </div>
 
         {/* Botón de enviar */}

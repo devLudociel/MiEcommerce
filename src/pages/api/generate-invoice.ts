@@ -46,7 +46,11 @@ async function getNextInvoiceNumber(): Promise<string> {
     const paddedNumber = currentNumber.toString().padStart(4, '0');
     invoiceNumber = `FAC-${year}-${paddedNumber}`;
 
-    transaction.set(counterRef, { current: currentNumber, lastUpdated: new Date() }, { merge: true });
+    transaction.set(
+      counterRef,
+      { current: currentNumber, lastUpdated: new Date() },
+      { merge: true }
+    );
   });
 
   return invoiceNumber;
@@ -84,11 +88,15 @@ export const GET: APIRoute = async ({ request, url }) => {
       invoiceNumber = await getNextInvoiceNumber();
 
       // Actualizar pedido con número de factura
-      await setDoc(orderRef, {
-        invoiceNumber,
-        invoiceDate: new Date(),
-        updatedAt: new Date()
-      }, { merge: true });
+      await setDoc(
+        orderRef,
+        {
+          invoiceNumber,
+          invoiceDate: new Date(),
+          updatedAt: new Date(),
+        },
+        { merge: true }
+      );
     }
 
     // Preparar datos para la factura
@@ -113,24 +121,25 @@ export const GET: APIRoute = async ({ request, url }) => {
       pdfDoc.on('data', (chunk: Buffer) => chunks.push(chunk));
       pdfDoc.on('end', () => {
         const pdfBuffer = Buffer.concat(chunks);
-        resolve(new Response(pdfBuffer, {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="Factura-${invoiceNumber}.pdf"`,
-          },
-        }));
+        resolve(
+          new Response(pdfBuffer, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `attachment; filename="Factura-${invoiceNumber}.pdf"`,
+            },
+          })
+        );
       });
 
       pdfDoc.end();
     });
-
   } catch (error) {
     console.error('Error generando factura:', error);
     return new Response(
       JSON.stringify({
         error: 'Error generando factura',
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error.message : String(error),
       }),
       {
         status: 500,

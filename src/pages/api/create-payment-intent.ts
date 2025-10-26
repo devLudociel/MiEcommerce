@@ -11,11 +11,12 @@ export const POST: APIRoute = async ({ request }) => {
     const { amount, currency = 'eur' } = await request.json();
 
     // Validar que el monto sea válido
-    if (!amount || amount < 50) { // Mínimo 0.50 EUR
-      return new Response(
-        JSON.stringify({ error: 'Monto inválido. Mínimo €0.50' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+    if (!amount || amount < 50) {
+      // Mínimo 0.50 EUR
+      return new Response(JSON.stringify({ error: 'Monto inválido. Mínimo €0.50' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Crear Payment Intent
@@ -29,22 +30,22 @@ export const POST: APIRoute = async ({ request }) => {
 
     return new Response(
       JSON.stringify({
-        clientSecret: paymentIntent.client_secret
+        clientSecret: paymentIntent.client_secret,
       }),
       {
         status: 200,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       }
     );
   } catch (error: any) {
     console.error('Error creando Payment Intent:', error);
     return new Response(
       JSON.stringify({
-        error: error.message || 'Error procesando pago'
+        error: error.message || 'Error procesando pago',
       }),
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       }
     );
   }

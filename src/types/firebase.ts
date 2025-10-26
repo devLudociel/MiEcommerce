@@ -34,12 +34,12 @@ export interface OptionValue {
   description?: string;
 }
 
-export type ProductCategory = 
-  | 'textil' 
-  | 'impresion-3d' 
-  | 'laser' 
-  | 'eventos' 
-  | 'regalos' 
+export type ProductCategory =
+  | 'textil'
+  | 'impresion-3d'
+  | 'laser'
+  | 'eventos'
+  | 'regalos'
   | 'bordado';
 
 // Para las órdenes/pedidos (futuro)

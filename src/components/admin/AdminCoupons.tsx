@@ -122,9 +122,8 @@ export default function AdminCoupons() {
   const formatDate = (timestamp: any): string => {
     if (!timestamp) return '-';
     try {
-      const date = typeof timestamp?.toDate === 'function'
-        ? timestamp.toDate()
-        : new Date(timestamp);
+      const date =
+        typeof timestamp?.toDate === 'function' ? timestamp.toDate() : new Date(timestamp);
       if (isNaN(date.getTime())) return '-';
       return date.toLocaleDateString('es-ES');
     } catch {
@@ -238,7 +237,9 @@ export default function AdminCoupons() {
                 <input
                   type="number"
                   value={formData.minPurchase}
-                  onChange={(e) => setFormData({ ...formData, minPurchase: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, minPurchase: Number(e.target.value) })
+                  }
                   min="0"
                   step="0.01"
                   className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-cyan-500 outline-none"
@@ -254,7 +255,9 @@ export default function AdminCoupons() {
                   <input
                     type="number"
                     value={formData.maxDiscount}
-                    onChange={(e) => setFormData({ ...formData, maxDiscount: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, maxDiscount: Number(e.target.value) })
+                    }
                     min="0"
                     step="0.01"
                     className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-cyan-500 outline-none"
@@ -286,7 +289,9 @@ export default function AdminCoupons() {
                 <input
                   type="number"
                   value={formData.maxUsesPerUser}
-                  onChange={(e) => setFormData({ ...formData, maxUsesPerUser: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, maxUsesPerUser: Number(e.target.value) })
+                  }
                   min="1"
                   className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-cyan-500 outline-none"
                 />
@@ -337,14 +342,29 @@ export default function AdminCoupons() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {coupons.length === 0 ? (
           <div className="col-span-full text-center py-12">
-            <svg className="mx-auto w-16 h-16 text-gray-300 mb-4" width="64" height="64" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+            <svg
+              className="mx-auto w-16 h-16 text-gray-300 mb-4"
+              width="64"
+              height="64"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
+              />
             </svg>
             <p className="text-gray-600">No hay cupones activos</p>
           </div>
         ) : (
           coupons.map((coupon) => (
-            <div key={coupon.id} className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-200 hover:border-cyan-300 transition-colors">
+            <div
+              key={coupon.id}
+              className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-200 hover:border-cyan-300 transition-colors"
+            >
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="font-mono font-black text-2xl text-cyan-600 mb-1">
@@ -352,11 +372,15 @@ export default function AdminCoupons() {
                   </div>
                   <p className="text-sm text-gray-600">{coupon.description}</p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  coupon.type === 'percentage' ? 'bg-green-100 text-green-700' :
-                  coupon.type === 'fixed' ? 'bg-blue-100 text-blue-700' :
-                  'bg-purple-100 text-purple-700'
-                }`}>
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    coupon.type === 'percentage'
+                      ? 'bg-green-100 text-green-700'
+                      : coupon.type === 'fixed'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-purple-100 text-purple-700'
+                  }`}
+                >
                   {coupon.type === 'percentage' && `${coupon.value}%`}
                   {coupon.type === 'fixed' && `$${coupon.value}`}
                   {coupon.type === 'free_shipping' && 'Envío Gratis'}
@@ -364,13 +388,15 @@ export default function AdminCoupons() {
               </div>
 
               <div className="space-y-2 text-sm text-gray-700 mb-4">
-                {coupon.minPurchase && (
-                  <div>Compra mínima: ${coupon.minPurchase.toFixed(2)}</div>
-                )}
+                {coupon.minPurchase && <div>Compra mínima: ${coupon.minPurchase.toFixed(2)}</div>}
                 {coupon.maxUses && (
-                  <div>Usos: {coupon.currentUses}/{coupon.maxUses}</div>
+                  <div>
+                    Usos: {coupon.currentUses}/{coupon.maxUses}
+                  </div>
                 )}
-                <div>Válido: {formatDate(coupon.startDate)} - {formatDate(coupon.endDate)}</div>
+                <div>
+                  Válido: {formatDate(coupon.startDate)} - {formatDate(coupon.endDate)}
+                </div>
               </div>
 
               <button

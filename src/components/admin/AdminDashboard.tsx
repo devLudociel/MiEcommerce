@@ -41,7 +41,7 @@ export default function AdminDashboard() {
         console.log('✅ [Dashboard] Usuario autenticado:', {
           email: user.email,
           uid: user.uid,
-          emailVerified: user.emailVerified
+          emailVerified: user.emailVerified,
         });
       } else {
         console.warn('⚠️ [Dashboard] Usuario NO autenticado');
@@ -80,10 +80,10 @@ export default function AdminDashboard() {
       const ordersSnapshot = await getDocs(ordersRef);
       console.log(`✅ [Dashboard] Pedidos obtenidos: ${ordersSnapshot.size} documentos`);
 
-      const allOrders = ordersSnapshot.docs.map(doc => ({
+      const allOrders = ordersSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date()
+        createdAt: doc.data().createdAt?.toDate() || new Date(),
       }));
 
       // Calcular estadísticas de ventas
@@ -92,7 +92,7 @@ export default function AdminDashboard() {
       let monthRevenue = 0;
       let yearRevenue = 0;
 
-      let totalOrders = allOrders.length;
+      const totalOrders = allOrders.length;
       let pendingOrders = 0;
       let processingOrders = 0;
       let completedOrders = 0;
@@ -342,9 +342,7 @@ export default function AdminDashboard() {
             <span className="text-2xl">📦</span>
           </div>
           <p className="text-3xl font-bold mb-1">{stats.totalOrders}</p>
-          <p className="text-purple-100 text-sm">
-            {stats.pendingOrders} pendientes
-          </p>
+          <p className="text-purple-100 text-sm">{stats.pendingOrders} pendientes</p>
         </div>
 
         {/* Ticket promedio */}
@@ -422,7 +420,10 @@ export default function AdminDashboard() {
         {stats.topProducts.length > 0 ? (
           <div className="space-y-3">
             {stats.topProducts.map((product, index) => (
-              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div
+                key={index}
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-cyan-500 text-white rounded-full flex items-center justify-center font-bold">
                     {index + 1}
@@ -450,13 +451,17 @@ export default function AdminDashboard() {
         {stats.ordersLastWeek.length > 0 ? (
           <div className="space-y-2">
             {stats.ordersLastWeek.map((day, index) => {
-              const maxRevenue = Math.max(...stats.ordersLastWeek.map(d => d.revenue));
+              const maxRevenue = Math.max(...stats.ordersLastWeek.map((d) => d.revenue));
               const barWidth = maxRevenue > 0 ? (day.revenue / maxRevenue) * 100 : 0;
 
               return (
                 <div key={index} className="flex items-center gap-4">
                   <div className="w-24 text-sm text-gray-600 font-medium">
-                    {new Date(day.date).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
+                    {new Date(day.date).toLocaleDateString('es-ES', {
+                      weekday: 'short',
+                      day: 'numeric',
+                      month: 'short',
+                    })}
                   </div>
                   <div className="flex-1 relative">
                     <div className="bg-gray-200 rounded-full h-8 overflow-hidden">
