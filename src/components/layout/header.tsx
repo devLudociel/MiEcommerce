@@ -158,7 +158,8 @@ interface MenuSubcategory {
   icon?: string;
 }
 
-type HeaderProps = Record<string, never>;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface HeaderProps {}
 
 const Header: React.FC<HeaderProps> = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
