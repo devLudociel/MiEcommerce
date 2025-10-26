@@ -1,44 +1,56 @@
 import { useState } from 'react';
 
 export default function DevolucionesComponent() {
-  const [activeTab, setActiveTab] = useState<'devoluciones' | 'cambios' | 'garantia'>('devoluciones');
+  const [activeTab, setActiveTab] = useState<'devoluciones' | 'cambios' | 'garantia'>(
+    'devoluciones'
+  );
 
   const procesoDevoluciones = [
     {
       paso: '01',
       icon: '📧',
       title: 'Contacta con nosotros',
-      description: 'Envía un email a devoluciones@imprimarte.com o llámanos al 645 341 452 dentro de los 30 días desde la recepción',
-      detalles: 'Indica tu número de pedido y el motivo de la devolución. Te responderemos en menos de 24 horas con las instrucciones.'
+      description:
+        'Envía un email a devoluciones@imprimarte.com o llámanos al 645 341 452 dentro de los 30 días desde la recepción',
+      detalles:
+        'Indica tu número de pedido y el motivo de la devolución. Te responderemos en menos de 24 horas con las instrucciones.',
     },
     {
       paso: '02',
       icon: '📦',
       title: 'Prepara el paquete',
-      description: 'Empaqueta el producto en su embalaje original con todas sus etiquetas y accesorios',
-      detalles: 'El producto debe estar en perfecto estado, sin usar y con todas sus etiquetas originales. Incluye el albarán o factura.'
+      description:
+        'Empaqueta el producto en su embalaje original con todas sus etiquetas y accesorios',
+      detalles:
+        'El producto debe estar en perfecto estado, sin usar y con todas sus etiquetas originales. Incluye el albarán o factura.',
     },
     {
       paso: '03',
       icon: '🚚',
       title: 'Envía el producto',
-      description: 'Te proporcionaremos una etiqueta de devolución prepagada o las instrucciones de envío',
-      detalles: 'Para productos estándar sin personalizar, los gastos de devolución son gratuitos. Guarda el comprobante de envío.'
+      description:
+        'Te proporcionaremos una etiqueta de devolución prepagada o las instrucciones de envío',
+      detalles:
+        'Para productos estándar sin personalizar, los gastos de devolución son gratuitos. Guarda el comprobante de envío.',
     },
     {
       paso: '04',
       icon: '🔍',
       title: 'Revisión del producto',
-      description: 'Una vez recibido, revisaremos que el producto cumple las condiciones de devolución',
-      detalles: 'Este proceso tarda entre 2-3 días hábiles. Te notificaremos por email del estado de la revisión.'
+      description:
+        'Una vez recibido, revisaremos que el producto cumple las condiciones de devolución',
+      detalles:
+        'Este proceso tarda entre 2-3 días hábiles. Te notificaremos por email del estado de la revisión.',
     },
     {
       paso: '05',
       icon: '💰',
       title: 'Reembolso',
-      description: 'Procesaremos el reembolso en un máximo de 14 días desde la aprobación de la devolución',
-      detalles: 'El dinero se abonará al mismo método de pago utilizado en la compra. Recibirás confirmación por email.'
-    }
+      description:
+        'Procesaremos el reembolso en un máximo de 14 días desde la aprobación de la devolución',
+      detalles:
+        'El dinero se abonará al mismo método de pago utilizado en la compra. Recibirás confirmación por email.',
+    },
   ];
 
   const condicionesDevoluciones = [
@@ -50,9 +62,9 @@ export default function DevolucionesComponent() {
         'Artículos con defectos de fabricación o daños en el transporte',
         'Productos que no coinciden con lo descrito en la web',
         'Pedidos incorrectos o incompletos por error nuestro',
-        'Artículos recibidos en mal estado'
+        'Artículos recibidos en mal estado',
       ],
-      color: 'from-green-500 to-green-600'
+      color: 'from-green-500 to-green-600',
     },
     {
       icon: '❌',
@@ -62,10 +74,10 @@ export default function DevolucionesComponent() {
         'Artículos sin embalaje original o etiquetas',
         'Productos usados o lavados',
         'Artículos dañados por mal uso del cliente',
-        'Pedidos con diseño aprobado por el cliente'
+        'Pedidos con diseño aprobado por el cliente',
       ],
-      color: 'from-red-500 to-red-600'
-    }
+      color: 'from-red-500 to-red-600',
+    },
   ];
 
   const tiposGarantia = [
@@ -78,14 +90,14 @@ export default function DevolucionesComponent() {
         'Problemas de adherencia del vinilo',
         'Decoloración prematura por defecto del material',
         'Errores de producción imputables a nosotros',
-        'Productos que no coincidan con el diseño aprobado'
+        'Productos que no coincidan con el diseño aprobado',
       ],
       noCubre: [
         'Desgaste natural por uso',
         'Daños por lavado incorrecto',
         'Modificaciones realizadas por el cliente',
-        'Uso comercial intensivo sin mantenimiento'
-      ]
+        'Uso comercial intensivo sin mantenimiento',
+      ],
     },
     {
       icon: '📦',
@@ -95,15 +107,15 @@ export default function DevolucionesComponent() {
         'Defectos de fabricación del producto base',
         'Roturas o fallos estructurales',
         'Problemas de calidad del material',
-        'Componentes defectuosos'
+        'Componentes defectuosos',
       ],
       noCubre: [
         'Accidentes o caídas',
         'Uso indebido o negligencia',
         'Desgaste estético normal',
-        'Daños por agentes externos'
-      ]
-    }
+        'Daños por agentes externos',
+      ],
+    },
   ];
 
   const motivosRechazo = [
@@ -111,68 +123,72 @@ export default function DevolucionesComponent() {
       icon: '👕',
       motivo: 'Producto usado o lavado',
       descripcion: 'El artículo muestra signos de uso o ha sido lavado',
-      solucion: 'No podemos aceptar devoluciones de productos usados por motivos de higiene'
+      solucion: 'No podemos aceptar devoluciones de productos usados por motivos de higiene',
     },
     {
       icon: '🏷️',
       motivo: 'Sin embalaje o etiquetas',
       descripcion: 'El producto no incluye su embalaje original o le faltan etiquetas',
-      solucion: 'El producto debe devolverse en las mismas condiciones en que se recibió'
+      solucion: 'El producto debe devolverse en las mismas condiciones en que se recibió',
     },
     {
       icon: '⏰',
       motivo: 'Fuera de plazo',
       descripcion: 'Han transcurrido más de 30 días desde la recepción',
-      solucion: 'El derecho de desistimiento es de 30 días naturales desde la entrega'
+      solucion: 'El derecho de desistimiento es de 30 días naturales desde la entrega',
     },
     {
       icon: '🎨',
       motivo: 'Producto personalizado',
       descripcion: 'Es un artículo fabricado bajo demanda según especificaciones del cliente',
-      solucion: 'Solo aceptamos devoluciones de personalizados con defectos de fabricación'
-    }
+      solucion: 'Solo aceptamos devoluciones de personalizados con defectos de fabricación',
+    },
   ];
 
   const casosEspeciales = [
     {
       titulo: '🎁 Regalos',
-      descripcion: 'Si has recibido un producto como regalo, puedes solicitar un cambio o vale de compra del mismo valor. El reembolso se realizará a quien efectuó la compra original.',
-      accion: 'Contacta con nosotros indicando el número de pedido'
+      descripcion:
+        'Si has recibido un producto como regalo, puedes solicitar un cambio o vale de compra del mismo valor. El reembolso se realizará a quien efectuó la compra original.',
+      accion: 'Contacta con nosotros indicando el número de pedido',
     },
     {
       titulo: '💼 Pedidos Corporativos',
-      descripcion: 'Para pedidos de más de 50 unidades personalizadas, contacta con nuestro equipo de atención corporativa. Condiciones especiales según el caso.',
-      accion: 'Email: corporativo@imprimarte.com'
+      descripcion:
+        'Para pedidos de más de 50 unidades personalizadas, contacta con nuestro equipo de atención corporativa. Condiciones especiales según el caso.',
+      accion: 'Email: corporativo@imprimarte.com',
     },
     {
       titulo: '🚚 Producto Dañado en Transporte',
-      descripcion: 'Si recibes un producto dañado, documenta el estado con fotos antes de firmar la recepción. Reemplazaremos el producto sin coste adicional.',
-      accion: 'Contacta en menos de 48h con fotos del daño'
+      descripcion:
+        'Si recibes un producto dañado, documenta el estado con fotos antes de firmar la recepción. Reemplazaremos el producto sin coste adicional.',
+      accion: 'Contacta en menos de 48h con fotos del daño',
     },
     {
       titulo: '📦 Pedido Incorrecto',
-      descripcion: 'Si recibiste un producto diferente al solicitado por error nuestro, lo reemplazaremos inmediatamente y nos haremos cargo de todos los gastos.',
-      accion: 'Notifícanos dentro de las 48h siguientes a la entrega'
-    }
+      descripcion:
+        'Si recibiste un producto diferente al solicitado por error nuestro, lo reemplazaremos inmediatamente y nos haremos cargo de todos los gastos.',
+      accion: 'Notifícanos dentro de las 48h siguientes a la entrega',
+    },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-16 mt-32">
       <div className="container mx-auto px-6">
-        
         {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-rainbow text-white font-bold text-sm rounded-full mb-4">
             <span>↩️</span>
             <span>Devoluciones y Garantías</span>
           </div>
-          
+
           <h1 className="text-4xl md:text-5xl font-black text-gray-800 mb-4">
             Política de Devoluciones
           </h1>
-          
+
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Tu satisfacción es nuestra prioridad. Conoce nuestra política de devoluciones, cambios y garantías
+            Tu satisfacción es nuestra prioridad. Conoce nuestra política de devoluciones, cambios y
+            garantías
           </p>
         </div>
 
@@ -289,7 +305,9 @@ export default function DevolucionesComponent() {
                   key={index}
                   className="bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-lg"
                 >
-                  <div className={`inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r ${condicion.color} text-white font-bold rounded-full mb-6`}>
+                  <div
+                    className={`inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r ${condicion.color} text-white font-bold rounded-full mb-6`}
+                  >
                     <span className="text-xl">{condicion.icon}</span>
                     <span>{condicion.tipo}</span>
                   </div>
@@ -335,17 +353,15 @@ export default function DevolucionesComponent() {
         {activeTab === 'cambios' && (
           <div className="space-y-12">
             <div className="bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-lg">
-              <h2 className="text-2xl font-black text-gray-800 mb-6">
-                Política de Cambios
-              </h2>
+              <h2 className="text-2xl font-black text-gray-800 mb-6">Política de Cambios</h2>
               <div className="space-y-6">
                 <div className="bg-gradient-to-r from-cyan-50 to-purple-50 rounded-xl p-6">
                   <h3 className="font-bold text-lg text-gray-800 mb-3 flex items-center gap-2">
                     <span>🔄</span> Cambio por Talla o Color
                   </h3>
                   <p className="text-gray-700 mb-4">
-                    Si necesitas cambiar la talla o color de un producto estándar (sin personalizar), 
-                    puedes hacerlo dentro de los 30 días desde la recepción.
+                    Si necesitas cambiar la talla o color de un producto estándar (sin
+                    personalizar), puedes hacerlo dentro de los 30 días desde la recepción.
                   </p>
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-center gap-2">
@@ -372,7 +388,8 @@ export default function DevolucionesComponent() {
                     <span>⚠️</span> Cambio de Productos Personalizados
                   </h3>
                   <p className="text-gray-700 mb-4">
-                    Los productos personalizados NO admiten cambios, salvo que presenten defectos de fabricación.
+                    Los productos personalizados NO admiten cambios, salvo que presenten defectos de
+                    fabricación.
                   </p>
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-center gap-2">
@@ -398,14 +415,15 @@ export default function DevolucionesComponent() {
                     <div className="flex items-start gap-3">
                       <span className="font-bold text-cyan-600">1.</span>
                       <p className="text-gray-700">
-                        Contacta con nosotros en <strong>cambios@imprimarte.com</strong> o al 
+                        Contacta con nosotros en <strong>cambios@imprimarte.com</strong> o al
                         <strong> 645 341 452</strong>
                       </p>
                     </div>
                     <div className="flex items-start gap-3">
                       <span className="font-bold text-cyan-600">2.</span>
                       <p className="text-gray-700">
-                        Indica tu número de pedido, el producto a cambiar y la nueva talla/color deseada
+                        Indica tu número de pedido, el producto a cambiar y la nueva talla/color
+                        deseada
                       </p>
                     </div>
                     <div className="flex items-start gap-3">
@@ -427,18 +445,15 @@ export default function DevolucionesComponent() {
 
             {/* Casos Especiales */}
             <div className="bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-lg">
-              <h2 className="text-2xl font-black text-gray-800 mb-6">
-                Casos Especiales
-              </h2>
+              <h2 className="text-2xl font-black text-gray-800 mb-6">Casos Especiales</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {casosEspeciales.map((caso, index) => (
-                  <div key={index} className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200 hover:border-cyan-500 transition-all">
-                    <h3 className="font-bold text-lg text-gray-800 mb-3">
-                      {caso.titulo}
-                    </h3>
-                    <p className="text-gray-700 text-sm mb-4">
-                      {caso.descripcion}
-                    </p>
+                  <div
+                    key={index}
+                    className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200 hover:border-cyan-500 transition-all"
+                  >
+                    <h3 className="font-bold text-lg text-gray-800 mb-3">{caso.titulo}</h3>
+                    <p className="text-gray-700 text-sm mb-4">{caso.descripcion}</p>
                     <div className="bg-cyan-50 border-l-4 border-cyan-500 p-3 rounded">
                       <p className="text-sm font-medium text-cyan-700">
                         <strong>Acción:</strong> {caso.accion}
@@ -459,9 +474,9 @@ export default function DevolucionesComponent() {
                 Nuestro Compromiso de Garantía
               </h2>
               <p className="text-lg text-gray-700 mb-6">
-                Todos nuestros productos están cubiertos por garantía contra defectos de fabricación. 
-                Tu satisfacción es nuestra prioridad y garantizamos la calidad de cada producto que sale 
-                de nuestro taller.
+                Todos nuestros productos están cubiertos por garantía contra defectos de
+                fabricación. Tu satisfacción es nuestra prioridad y garantizamos la calidad de cada
+                producto que sale de nuestro taller.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white rounded-xl p-5">
@@ -491,7 +506,10 @@ export default function DevolucionesComponent() {
             {/* Tipos de Garantía */}
             <div className="space-y-8">
               {tiposGarantia.map((garantia, index) => (
-                <div key={index} className="bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-lg">
+                <div
+                  key={index}
+                  className="bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-lg"
+                >
                   <div className="flex items-center gap-4 mb-6">
                     <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-xl flex items-center justify-center text-4xl">
                       {garantia.icon}
@@ -548,35 +566,45 @@ export default function DevolucionesComponent() {
                       <span className="font-black text-cyan-600 text-xl">1</span>
                       <div>
                         <p className="font-bold text-gray-800 mb-1">Documenta el problema</p>
-                        <p className="text-sm text-gray-600">Toma fotos claras del defecto desde varios ángulos</p>
+                        <p className="text-sm text-gray-600">
+                          Toma fotos claras del defecto desde varios ángulos
+                        </p>
                       </div>
                     </li>
                     <li className="flex gap-3">
                       <span className="font-black text-cyan-600 text-xl">2</span>
                       <div>
                         <p className="font-bold text-gray-800 mb-1">Contacta con nosotros</p>
-                        <p className="text-sm text-gray-600">Email: garantia@imprimarte.com o llama al 645 341 452</p>
+                        <p className="text-sm text-gray-600">
+                          Email: garantia@imprimarte.com o llama al 645 341 452
+                        </p>
                       </div>
                     </li>
                     <li className="flex gap-3">
                       <span className="font-black text-cyan-600 text-xl">3</span>
                       <div>
                         <p className="font-bold text-gray-800 mb-1">Proporciona información</p>
-                        <p className="text-sm text-gray-600">Número de pedido, fotos del producto y descripción del problema</p>
+                        <p className="text-sm text-gray-600">
+                          Número de pedido, fotos del producto y descripción del problema
+                        </p>
                       </div>
                     </li>
                     <li className="flex gap-3">
                       <span className="font-black text-cyan-600 text-xl">4</span>
                       <div>
                         <p className="font-bold text-gray-800 mb-1">Evaluación</p>
-                        <p className="text-sm text-gray-600">Revisaremos tu caso en menos de 24 horas</p>
+                        <p className="text-sm text-gray-600">
+                          Revisaremos tu caso en menos de 24 horas
+                        </p>
                       </div>
                     </li>
                     <li className="flex gap-3">
                       <span className="font-black text-cyan-600 text-xl">5</span>
                       <div>
                         <p className="font-bold text-gray-800 mb-1">Solución</p>
-                        <p className="text-sm text-gray-600">Reemplazo, reparación o reembolso según el caso</p>
+                        <p className="text-sm text-gray-600">
+                          Reemplazo, reparación o reembolso según el caso
+                        </p>
                       </div>
                     </li>
                   </ol>
@@ -646,7 +674,7 @@ export default function DevolucionesComponent() {
           <p className="text-lg text-gray-600 mb-8">
             Nuestro equipo está aquí para ayudarte en cada paso del proceso
           </p>
-          
+
           <div className="flex flex-wrap justify-center gap-4">
             <a
               href="mailto:devoluciones@imprimarte.com"
@@ -681,9 +709,7 @@ export default function DevolucionesComponent() {
             <h3 className="font-bold text-lg text-gray-800 mb-2 group-hover:text-cyan-600">
               Preguntas Frecuentes
             </h3>
-            <p className="text-sm text-gray-600">
-              Encuentra respuestas rápidas sobre devoluciones
-            </p>
+            <p className="text-sm text-gray-600">Encuentra respuestas rápidas sobre devoluciones</p>
           </a>
 
           <a
@@ -694,9 +720,7 @@ export default function DevolucionesComponent() {
             <h3 className="font-bold text-lg text-gray-800 mb-2 group-hover:text-cyan-600">
               Términos y Condiciones
             </h3>
-            <p className="text-sm text-gray-600">
-              Lee nuestras condiciones completas de venta
-            </p>
+            <p className="text-sm text-gray-600">Lee nuestras condiciones completas de venta</p>
           </a>
 
           <a
@@ -707,9 +731,7 @@ export default function DevolucionesComponent() {
             <h3 className="font-bold text-lg text-gray-800 mb-2 group-hover:text-cyan-600">
               Contacto
             </h3>
-            <p className="text-sm text-gray-600">
-              Habla directamente con nuestro equipo
-            </p>
+            <p className="text-sm text-gray-600">Habla directamente con nuestro equipo</p>
           </a>
         </div>
       </div>

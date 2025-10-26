@@ -18,25 +18,37 @@ export default function AddressSelector({ onChange, title = 'Direcciones' }: Pro
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
-      if (!u || !u.email) { setUid(null); setAddresses([]); return; }
+      if (!u || !u.email) {
+        setUid(null);
+        setAddresses([]);
+        return;
+      }
       setUid(u.uid);
       await ensureUserDoc(u.uid, u.email, u.displayName ?? undefined);
       const d = await getUserData(u.uid);
       const list = d?.addresses ?? [];
       setAddresses(list);
-      const defShip = list.find(a => a.isDefaultShipping)?.id;
-      const defBill = list.find(a => a.isDefaultBilling)?.id;
+      const defShip = list.find((a) => a.isDefaultShipping)?.id;
+      const defBill = list.find((a) => a.isDefaultBilling)?.id;
       setShippingId(defShip ?? 'none');
-      setBillingId(defBill ?? (defShip ?? 'none'));
+      setBillingId(defBill ?? defShip ?? 'none');
       setSameAsShipping(!defBill || defBill === defShip);
     });
     return () => unsub();
   }, []);
 
-  const shipping = useMemo(() => addresses.find(a => a.id === shippingId) ?? null, [addresses, shippingId]);
-  const billing = useMemo(() => (sameAsShipping ? shipping : addresses.find(a => a.id === billingId) ?? null), [addresses, billingId, sameAsShipping, shipping]);
+  const shipping = useMemo(
+    () => addresses.find((a) => a.id === shippingId) ?? null,
+    [addresses, shippingId]
+  );
+  const billing = useMemo(
+    () => (sameAsShipping ? shipping : (addresses.find((a) => a.id === billingId) ?? null)),
+    [addresses, billingId, sameAsShipping, shipping]
+  );
 
-  useEffect(() => { onChange?.({ shipping, billing }); }, [shipping, billing]);
+  useEffect(() => {
+    onChange?.({ shipping, billing });
+  }, [shipping, billing]);
 
   if (!uid) return <div className="card p-6">Inicia sesión para seleccionar direcciones.</div>;
 
@@ -51,18 +63,17 @@ export default function AddressSelector({ onChange, title = 'Direcciones' }: Pro
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Dirección de envío
-          </label>
-          <select 
-            className="input" 
-            value={shippingId} 
-            onChange={e => setShippingId(e.target.value)}
+          <label className="block text-sm font-medium text-gray-700 mb-2">Dirección de envío</label>
+          <select
+            className="input"
+            value={shippingId}
+            onChange={(e) => setShippingId(e.target.value)}
           >
             <option value="none">Selecciona una dirección…</option>
-            {addresses.map(a => (
+            {addresses.map((a) => (
               <option key={a.id} value={a.id}>
-                {(a.label || 'Dirección')} — {a.city}{a.state ? `, ${a.state}` : ''}
+                {a.label || 'Dirección'} — {a.city}
+                {a.state ? `, ${a.state}` : ''}
               </option>
             ))}
           </select>
@@ -73,24 +84,25 @@ export default function AddressSelector({ onChange, title = 'Direcciones' }: Pro
             Dirección de facturación
           </label>
           <label className="flex items-center gap-2 mb-3 text-sm text-gray-600">
-            <input 
-              type="checkbox" 
-              checked={sameAsShipping} 
-              onChange={e => setSameAsShipping(e.target.checked)} 
+            <input
+              type="checkbox"
+              checked={sameAsShipping}
+              onChange={(e) => setSameAsShipping(e.target.checked)}
               className="w-4 h-4"
             />
             Igual que dirección de envío
           </label>
-          <select 
-            className="input" 
-            value={sameAsShipping ? (shippingId || 'none') : billingId} 
-            onChange={e => setBillingId(e.target.value)} 
+          <select
+            className="input"
+            value={sameAsShipping ? shippingId || 'none' : billingId}
+            onChange={(e) => setBillingId(e.target.value)}
             disabled={sameAsShipping}
           >
             <option value="none">Selecciona una dirección…</option>
-            {addresses.map(a => (
+            {addresses.map((a) => (
               <option key={a.id} value={a.id}>
-                {(a.label || 'Dirección')} — {a.city}{a.state ? `, ${a.state}` : ''}
+                {a.label || 'Dirección'} — {a.city}
+                {a.state ? `, ${a.state}` : ''}
               </option>
             ))}
           </select>
@@ -100,7 +112,11 @@ export default function AddressSelector({ onChange, title = 'Direcciones' }: Pro
       {addresses.length === 0 && (
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-sm text-yellow-800">
-            No tienes direcciones guardadas. <a href="/account/addresses" className="underline font-medium">Añade una dirección</a> para continuar.
+            No tienes direcciones guardadas.{' '}
+            <a href="/account/addresses" className="underline font-medium">
+              Añade una dirección
+            </a>{' '}
+            para continuar.
           </p>
         </div>
       )}

@@ -25,7 +25,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   onFiltersChange,
   availableAttributes,
   availableTags,
-  priceRange
+  priceRange,
 }) => {
   const updateFilter = (key: keyof FilterState, value: any) => {
     onFiltersChange({ ...filters, [key]: value });
@@ -34,18 +34,18 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   const toggleAttributeValue = (attributeId: string, value: string) => {
     const currentValues = filters.attributes[attributeId] || [];
     const newValues = currentValues.includes(value)
-      ? currentValues.filter(v => v !== value)
+      ? currentValues.filter((v) => v !== value)
       : [...currentValues, value];
-    
+
     updateFilter('attributes', {
       ...filters.attributes,
-      [attributeId]: newValues
+      [attributeId]: newValues,
     });
   };
 
   const toggleTag = (tag: string) => {
     const newTags = filters.tags.includes(tag)
-      ? filters.tags.filter(t => t !== tag)
+      ? filters.tags.filter((t) => t !== tag)
       : [...filters.tags, tag];
     updateFilter('tags', newTags);
   };
@@ -55,28 +55,37 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
       priceRange: priceRange,
       attributes: {},
       tags: [],
-      sortBy: 'featured'
+      sortBy: 'featured',
     });
   };
 
   return (
-    <div style={{ 
-      background: 'white', 
-      borderRadius: '12px', 
-      padding: '1.5rem',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-      border: '1px solid var(--color-gray-200)'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+    <div
+      style={{
+        background: 'white',
+        borderRadius: '12px',
+        padding: '1.5rem',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        border: '1px solid var(--color-gray-200)',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '1.5rem',
+        }}
+      >
         <h3 style={{ fontSize: '1.125rem', fontWeight: '600', margin: 0 }}>Filtros</h3>
-        <button 
+        <button
           onClick={clearFilters}
-          style={{ 
-            fontSize: '0.875rem', 
-            color: 'var(--color-cyan-600)', 
+          style={{
+            fontSize: '0.875rem',
+            color: 'var(--color-cyan-600)',
             background: 'none',
             border: 'none',
-            cursor: 'pointer'
+            cursor: 'pointer',
           }}
         >
           Limpiar
@@ -85,7 +94,14 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
 
       {/* Ordenar por */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+        <label
+          style={{
+            display: 'block',
+            fontWeight: '500',
+            marginBottom: '0.5rem',
+            fontSize: '0.875rem',
+          }}
+        >
           Ordenar por
         </label>
         <select
@@ -96,7 +112,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
             padding: '0.5rem',
             border: '1px solid var(--color-gray-300)',
             borderRadius: '6px',
-            fontSize: '0.875rem'
+            fontSize: '0.875rem',
           }}
         >
           <option value="featured">Destacados</option>
@@ -108,7 +124,14 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
 
       {/* Rango de precio */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+        <label
+          style={{
+            display: 'block',
+            fontWeight: '500',
+            marginBottom: '0.5rem',
+            fontSize: '0.875rem',
+          }}
+        >
           Precio: €{filters.priceRange[0]} - €{filters.priceRange[1]}
         </label>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -116,26 +139,30 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
             type="number"
             placeholder="Min"
             value={filters.priceRange[0]}
-            onChange={(e) => updateFilter('priceRange', [Number(e.target.value), filters.priceRange[1]])}
+            onChange={(e) =>
+              updateFilter('priceRange', [Number(e.target.value), filters.priceRange[1]])
+            }
             style={{
               flex: 1,
               padding: '0.5rem',
               border: '1px solid var(--color-gray-300)',
               borderRadius: '6px',
-              fontSize: '0.875rem'
+              fontSize: '0.875rem',
             }}
           />
           <input
             type="number"
             placeholder="Max"
             value={filters.priceRange[1]}
-            onChange={(e) => updateFilter('priceRange', [filters.priceRange[0], Number(e.target.value)])}
+            onChange={(e) =>
+              updateFilter('priceRange', [filters.priceRange[0], Number(e.target.value)])
+            }
             style={{
               flex: 1,
               padding: '0.5rem',
               border: '1px solid var(--color-gray-300)',
               borderRadius: '6px',
-              fontSize: '0.875rem'
+              fontSize: '0.875rem',
             }}
           />
         </div>
@@ -144,12 +171,22 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
       {/* Atributos */}
       {availableAttributes.map((attribute) => (
         <div key={attribute.id} style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+          <label
+            style={{
+              display: 'block',
+              fontWeight: '500',
+              marginBottom: '0.5rem',
+              fontSize: '0.875rem',
+            }}
+          >
             {attribute.name}
           </label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {attribute.options.map((option) => (
-              <label key={option.value} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <label
+                key={option.value}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+              >
                 <input
                   type="checkbox"
                   checked={(filters.attributes[attribute.id] || []).includes(option.value)}
@@ -166,7 +203,14 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
       {/* Tags */}
       {availableTags.length > 0 && (
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+          <label
+            style={{
+              display: 'block',
+              fontWeight: '500',
+              marginBottom: '0.5rem',
+              fontSize: '0.875rem',
+            }}
+          >
             Etiquetas
           </label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -180,9 +224,11 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                   borderRadius: '20px',
                   border: '1px solid var(--color-gray-300)',
                   background: filters.tags.includes(tag) ? 'var(--color-cyan-100)' : 'white',
-                  color: filters.tags.includes(tag) ? 'var(--color-cyan-800)' : 'var(--color-gray-700)',
+                  color: filters.tags.includes(tag)
+                    ? 'var(--color-cyan-800)'
+                    : 'var(--color-gray-700)',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
                 }}
               >
                 {tag}

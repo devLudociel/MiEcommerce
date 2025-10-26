@@ -26,13 +26,13 @@ export function useRouter() {
 
   const parseCurrentPath = () => {
     const path = currentPath;
-    
+
     // Parsear rutas de categorías: /categoria/textiles/ropa-personalizada
     const categoryMatch = path.match(/^\/categoria\/([^/]+)(?:\/([^/]+))?$/);
     if (categoryMatch) {
       setParams({
         categorySlug: categoryMatch[1],
-        subcategorySlug: categoryMatch[2] || undefined
+        subcategorySlug: categoryMatch[2] || undefined,
       });
       return;
     }
@@ -41,7 +41,7 @@ export function useRouter() {
     const productMatch = path.match(/^\/producto\/([^/]+)$/);
     if (productMatch) {
       setParams({
-        productSlug: productMatch[1]
+        productSlug: productMatch[1],
       });
       return;
     }
@@ -60,6 +60,6 @@ export function useRouter() {
     navigate,
     isCategory: currentPath.startsWith('/categoria'),
     isProduct: currentPath.startsWith('/producto'),
-    isHome: currentPath === '/'
+    isHome: currentPath === '/',
   };
 }

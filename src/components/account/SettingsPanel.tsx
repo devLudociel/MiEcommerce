@@ -7,12 +7,12 @@ export default function SettingsPanel() {
   const [notifications, setNotifications] = useState({
     email: true,
     push: false,
-    sms: false
+    sms: false,
   });
   const [privacy, setPrivacy] = useState({
     profilePublic: true,
     showEmail: false,
-    showActivity: true
+    showActivity: true,
   });
 
   const handleLogout = async () => {
@@ -33,7 +33,9 @@ export default function SettingsPanel() {
   };
 
   const handleDeleteAccount = () => {
-    if (confirm('¿Estás seguro de que quieres eliminar tu cuenta? Esta acción no se puede deshacer.')) {
+    if (
+      confirm('¿Estás seguro de que quieres eliminar tu cuenta? Esta acción no se puede deshacer.')
+    ) {
       alert('Función de eliminar cuenta');
     }
   };
@@ -44,15 +46,13 @@ export default function SettingsPanel() {
 
       {/* Información de la cuenta */}
       <div className="card card-cyan p-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">
-          Información de la cuenta
-        </h3>
+        <h3 className="text-xl font-semibold text-gray-900 mb-4">Información de la cuenta</h3>
         <div className="space-y-4">
           <div>
             <label className="form-label">Correo electrónico</label>
-            <input 
-              type="email" 
-              className="input" 
+            <input
+              type="email"
+              className="input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled
@@ -61,10 +61,7 @@ export default function SettingsPanel() {
               El correo electrónico no puede ser modificado
             </p>
           </div>
-          <button 
-            onClick={handleChangePassword}
-            className="btn btn-outline"
-          >
+          <button onClick={handleChangePassword} className="btn btn-outline">
             Cambiar contraseña
           </button>
         </div>
@@ -72,40 +69,32 @@ export default function SettingsPanel() {
 
       {/* Notificaciones */}
       <div className="card card-magenta p-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">
-          Preferencias de notificaciones
-        </h3>
+        <h3 className="text-xl font-semibold text-gray-900 mb-4">Preferencias de notificaciones</h3>
         <div className="space-y-3">
           <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-            <span className="text-sm font-medium text-gray-700">
-              Notificaciones por email
-            </span>
-            <input 
-              type="checkbox" 
+            <span className="text-sm font-medium text-gray-700">Notificaciones por email</span>
+            <input
+              type="checkbox"
               checked={notifications.email}
-              onChange={(e) => setNotifications({...notifications, email: e.target.checked})}
+              onChange={(e) => setNotifications({ ...notifications, email: e.target.checked })}
               className="w-5 h-5 text-magenta-500 rounded focus:ring-magenta-500"
             />
           </label>
           <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-            <span className="text-sm font-medium text-gray-700">
-              Notificaciones push
-            </span>
-            <input 
-              type="checkbox" 
+            <span className="text-sm font-medium text-gray-700">Notificaciones push</span>
+            <input
+              type="checkbox"
               checked={notifications.push}
-              onChange={(e) => setNotifications({...notifications, push: e.target.checked})}
+              onChange={(e) => setNotifications({ ...notifications, push: e.target.checked })}
               className="w-5 h-5 text-magenta-500 rounded focus:ring-magenta-500"
             />
           </label>
           <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-            <span className="text-sm font-medium text-gray-700">
-              Notificaciones por SMS
-            </span>
-            <input 
-              type="checkbox" 
+            <span className="text-sm font-medium text-gray-700">Notificaciones por SMS</span>
+            <input
+              type="checkbox"
               checked={notifications.sms}
-              onChange={(e) => setNotifications({...notifications, sms: e.target.checked})}
+              onChange={(e) => setNotifications({ ...notifications, sms: e.target.checked })}
               className="w-5 h-5 text-magenta-500 rounded focus:ring-magenta-500"
             />
           </label>
@@ -114,40 +103,32 @@ export default function SettingsPanel() {
 
       {/* Privacidad */}
       <div className="card card-yellow p-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">
-          Configuración de privacidad
-        </h3>
+        <h3 className="text-xl font-semibold text-gray-900 mb-4">Configuración de privacidad</h3>
         <div className="space-y-3">
           <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-            <span className="text-sm font-medium text-gray-700">
-              Perfil público
-            </span>
-            <input 
-              type="checkbox" 
+            <span className="text-sm font-medium text-gray-700">Perfil público</span>
+            <input
+              type="checkbox"
               checked={privacy.profilePublic}
-              onChange={(e) => setPrivacy({...privacy, profilePublic: e.target.checked})}
+              onChange={(e) => setPrivacy({ ...privacy, profilePublic: e.target.checked })}
               className="w-5 h-5 text-yellow-500 rounded focus:ring-yellow-500"
             />
           </label>
           <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-            <span className="text-sm font-medium text-gray-700">
-              Mostrar email público
-            </span>
-            <input 
-              type="checkbox" 
+            <span className="text-sm font-medium text-gray-700">Mostrar email público</span>
+            <input
+              type="checkbox"
               checked={privacy.showEmail}
-              onChange={(e) => setPrivacy({...privacy, showEmail: e.target.checked})}
+              onChange={(e) => setPrivacy({ ...privacy, showEmail: e.target.checked })}
               className="w-5 h-5 text-yellow-500 rounded focus:ring-yellow-500"
             />
           </label>
           <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-            <span className="text-sm font-medium text-gray-700">
-              Mostrar actividad
-            </span>
-            <input 
-              type="checkbox" 
+            <span className="text-sm font-medium text-gray-700">Mostrar actividad</span>
+            <input
+              type="checkbox"
               checked={privacy.showActivity}
-              onChange={(e) => setPrivacy({...privacy, showActivity: e.target.checked})}
+              onChange={(e) => setPrivacy({ ...privacy, showActivity: e.target.checked })}
               className="w-5 h-5 text-yellow-500 rounded focus:ring-yellow-500"
             />
           </label>
@@ -155,27 +136,20 @@ export default function SettingsPanel() {
       </div>
 
       {/* Guardar cambios */}
-      <button 
-        onClick={handleSaveSettings}
-        className="btn btn-primary w-full"
-      >
+      <button onClick={handleSaveSettings} className="btn btn-primary w-full">
         Guardar cambios
       </button>
 
       {/* Zona de peligro */}
       <div className="card border-2 border-red-300 bg-red-50 p-6">
-        <h3 className="text-xl font-semibold text-red-900 mb-4">
-          Zona de peligro
-        </h3>
+        <h3 className="text-xl font-semibold text-red-900 mb-4">Zona de peligro</h3>
         <div className="space-y-3">
           <div className="flex items-center justify-between p-3 bg-white rounded-lg">
             <div>
               <p className="font-medium text-gray-900">Cerrar sesión</p>
-              <p className="text-sm text-gray-600">
-                Cerrar sesión en todos los dispositivos
-              </p>
+              <p className="text-sm text-gray-600">Cerrar sesión en todos los dispositivos</p>
             </div>
-            <button 
+            <button
               onClick={handleLogout}
               className="btn btn-outline text-red-600 border-red-300 hover:bg-red-50"
             >
@@ -189,7 +163,7 @@ export default function SettingsPanel() {
                 Eliminar permanentemente tu cuenta y todos tus datos
               </p>
             </div>
-            <button 
+            <button
               onClick={handleDeleteAccount}
               className="btn bg-red-600 text-white hover:bg-red-700"
             >

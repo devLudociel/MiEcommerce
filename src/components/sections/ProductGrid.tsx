@@ -29,10 +29,10 @@ interface ProductsGridProps {
 }
 
 const ProductsGrid: React.FC<ProductsGridProps> = ({
-  title = "Productos Destacados",
-  subtitle = "Descubre nuestra selección premium con la mejor calidad y diseño",
+  title = 'Productos Destacados',
+  subtitle = 'Descubre nuestra selección premium con la mejor calidad y diseño',
   maxItems = 8,
-  showFilters = false
+  showFilters = false,
 }) => {
   const [hoveredProduct, setHoveredProduct] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -41,7 +41,6 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
   useEffect(() => {
@@ -49,7 +48,7 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
 
     // Filter by category
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(product => product.category === selectedCategory);
+      filtered = filtered.filter((product) => product.category === selectedCategory);
     }
 
     // Sort products
@@ -72,7 +71,7 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
       new: 'badge-new bg-gradient-to-r from-green-500 to-green-600',
       sale: 'badge-sale bg-gradient-to-r from-magenta-500 to-magenta-600',
       hot: 'badge-hot bg-gradient-to-r from-orange-500 to-orange-600',
-      limited: 'badge-limited bg-gradient-to-r from-purple-500 to-purple-600'
+      limited: 'badge-limited bg-gradient-to-r from-purple-500 to-purple-600',
     };
     return badgeClasses[badge as keyof typeof badgeClasses] || '';
   };
@@ -81,20 +80,16 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
     { value: 'all', label: 'Todos' },
     { value: 'tech', label: 'Tecnología' },
     { value: 'fashion', label: 'Moda' },
-    { value: 'photography', label: 'Fotografía' }
+    { value: 'photography', label: 'Fotografía' },
   ];
-  
+
   // Cargar productos de Firestore
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
         setError(null);
-        const q = query(
-          collection(db, 'products'),
-          where('active', '==', true),
-          limit(maxItems)
-        );
+        const q = query(collection(db, 'products'), where('active', '==', true), limit(maxItems));
         const snap = await getDocs(q);
         const list: Product[] = snap.docs.map((d: any) => {
           const data = d.data() || {};
@@ -145,14 +140,12 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
               Productos Premium
             </span>
           </div>
-          
+
           <h2 className="text-5xl md:text-7xl font-black mb-6">
             <span className="text-gradient-rainbow">{title}</span>
           </h2>
-          
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            {subtitle}
-          </p>
+
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">{subtitle}</p>
 
           {/* Filters */}
           {showFilters && (
@@ -165,9 +158,10 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
                     onClick={() => setSelectedCategory(category.value)}
                     className={`
                       px-4 py-2 rounded-full text-sm font-medium transition-all
-                      ${selectedCategory === category.value
-                        ? 'bg-gradient-primary text-white shadow-cyan'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      ${
+                        selectedCategory === category.value
+                          ? 'bg-gradient-primary text-white shadow-cyan'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }
                     `}
                   >
@@ -204,20 +198,26 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
               onMouseEnter={() => setHoveredProduct(product.id)}
               onMouseLeave={() => setHoveredProduct(null)}
               style={{
-                animationDelay: `${index * 100}ms`
+                animationDelay: `${index * 100}ms`,
               }}
               aria-label={`Ver detalle de ${product.name}`}
             >
               {/* Badge */}
               {product.badge && (
                 <div className="absolute top-4 left-4 z-30">
-                  <span className={`
+                  <span
+                    className={`
                     px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full
                     text-white shadow-lg ${getBadgeClasses(product.badge)}
-                  `}>
-                    {product.badge === 'new' ? 'Nuevo' : 
-                     product.badge === 'sale' ? 'Oferta' :
-                     product.badge === 'hot' ? 'Popular' : 'Limitado'}
+                  `}
+                  >
+                    {product.badge === 'new'
+                      ? 'Nuevo'
+                      : product.badge === 'sale'
+                        ? 'Oferta'
+                        : product.badge === 'hot'
+                          ? 'Popular'
+                          : 'Limitado'}
                   </span>
                 </div>
               )}
@@ -241,26 +241,31 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
                     ${hoveredProduct === product.id ? 'scale-110 rotate-2' : 'scale-100'}
                   `}
                 />
-                
+
                 {/* Gradient Overlay */}
-                <div className={`
+                <div
+                  className={`
                   absolute inset-0 bg-gradient-to-t from-black/50 to-transparent
                   transition-opacity duration-300
                   ${hoveredProduct === product.id ? 'opacity-70' : 'opacity-0'}
-                `} />
+                `}
+                />
 
                 {/* Quick Actions Overlay eliminado para evitar iconos superpuestos */}
 
                 {/* Color Options */}
                 {product.colors && product.colors.length > 0 && (
-                  <div className={`
+                  <div
+                    className={`
                     absolute bottom-4 left-4 flex gap-2
                     transition-all duration-300
-                    ${hoveredProduct === product.id 
-                      ? 'opacity-100 translate-y-0' 
-                      : 'opacity-0 translate-y-4'
+                    ${
+                      hoveredProduct === product.id
+                        ? 'opacity-100 translate-y-0'
+                        : 'opacity-0 translate-y-4'
                     }
-                  `}>
+                  `}
+                  >
                     {product.colors.slice(0, 3).map((color, colorIndex) => (
                       <div
                         key={colorIndex}
@@ -270,7 +275,9 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
                     ))}
                     {product.colors.length > 3 && (
                       <div className="w-6 h-6 rounded-full bg-white/20 border-2 border-white/50 flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">+{product.colors.length - 3}</span>
+                        <span className="text-white text-xs font-bold">
+                          +{product.colors.length - 3}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -307,15 +314,11 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
                 </h3>
 
                 {/* Description */}
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                  {product.description}
-                </p>
+                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
 
                 {/* Price */}
                 <div className="flex items-center gap-3 mb-4">
-                  <span className="text-2xl font-bold text-cyan-600">
-                    ${product.price}
-                  </span>
+                  <span className="text-2xl font-bold text-cyan-600">${product.price}</span>
                   {product.originalPrice && (
                     <span className="text-lg text-gray-400 line-through">
                       ${product.originalPrice}

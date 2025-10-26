@@ -31,15 +31,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
   };
 
   return (
-    <article 
-      style={{ 
+    <article
+      style={{
         background: 'white',
         borderRadius: '12px',
         overflow: 'hidden',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
         border: '1px solid var(--color-gray-200)',
         transition: 'all 0.3s ease',
-        cursor: 'pointer'
+        cursor: 'pointer',
       }}
       onClick={handleClick}
       onMouseEnter={(e) => {
@@ -62,7 +62,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
             left: 0,
             width: '100%',
             height: '100%',
-            objectFit: 'cover'
+            objectFit: 'cover',
           }}
           onError={(e) => {
             const img = e.currentTarget as HTMLImageElement;
@@ -70,19 +70,21 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
             img.src = FALLBACK_IMG_400x300;
           }}
         />
-        
+
         {product.featured && (
-          <div style={{
-            position: 'absolute',
-            top: '0.5rem',
-            right: '0.5rem',
-            background: 'var(--color-cyan-600)',
-            color: 'white',
-            padding: '0.25rem 0.5rem',
-            borderRadius: '4px',
-            fontSize: '0.75rem',
-            fontWeight: '500'
-          }}>
+          <div
+            style={{
+              position: 'absolute',
+              top: '0.5rem',
+              right: '0.5rem',
+              background: 'var(--color-cyan-600)',
+              color: 'white',
+              padding: '0.25rem 0.5rem',
+              borderRadius: '4px',
+              fontSize: '0.75rem',
+              fontWeight: '500',
+            }}
+          >
             Destacado
           </div>
         )}
@@ -90,26 +92,30 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
 
       {/* Contenido del producto */}
       <div style={{ padding: '1rem' }}>
-        <h3 style={{ 
-          fontSize: '1.1rem', 
-          fontWeight: '600', 
-          marginBottom: '0.5rem',
-          color: 'var(--color-gray-800)',
-          lineHeight: '1.3'
-        }}>
+        <h3
+          style={{
+            fontSize: '1.1rem',
+            fontWeight: '600',
+            marginBottom: '0.5rem',
+            color: 'var(--color-gray-800)',
+            lineHeight: '1.3',
+          }}
+        >
           {product.name}
         </h3>
-        
-        <p style={{ 
-          fontSize: '0.875rem', 
-          color: 'var(--color-gray-600)', 
-          marginBottom: '0.75rem',
-          lineHeight: '1.4',
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden'
-        }}>
+
+        <p
+          style={{
+            fontSize: '0.875rem',
+            color: 'var(--color-gray-600)',
+            marginBottom: '0.75rem',
+            lineHeight: '1.4',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
           {product.description}
         </p>
 
@@ -118,25 +124,27 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
           <div style={{ marginBottom: '0.75rem' }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
               {product.attributes.slice(0, 3).map((attr, index) => (
-                <span 
+                <span
                   key={index}
                   style={{
                     fontSize: '0.75rem',
                     background: 'var(--color-gray-100)',
                     color: 'var(--color-gray-700)',
                     padding: '0.125rem 0.5rem',
-                    borderRadius: '12px'
+                    borderRadius: '12px',
                   }}
                 >
                   {attr.value}
                 </span>
               ))}
               {product.attributes.length > 3 && (
-                <span style={{
-                  fontSize: '0.75rem',
-                  color: 'var(--color-gray-500)',
-                  padding: '0.125rem 0.5rem'
-                }}>
+                <span
+                  style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--color-gray-500)',
+                    padding: '0.125rem 0.5rem',
+                  }}
+                >
                   +{product.attributes.length - 3} más
                 </span>
               )}
@@ -149,7 +157,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
           <div style={{ marginBottom: '0.75rem' }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
               {product.tags.slice(0, 2).map((tag) => (
-                <span 
+                <span
                   key={tag}
                   style={{
                     fontSize: '0.75rem',
@@ -157,7 +165,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
                     color: 'var(--color-cyan-700)',
                     padding: '0.125rem 0.5rem',
                     borderRadius: '12px',
-                    border: '1px solid var(--color-cyan-200)'
+                    border: '1px solid var(--color-cyan-200)',
                   }}
                 >
                   #{tag}
@@ -170,23 +178,27 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
         {/* Precio y botón */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <span style={{ 
-              fontSize: '1.25rem', 
-              fontWeight: '700', 
-              color: 'var(--color-gray-900)' 
-            }}>
+            <span
+              style={{
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                color: 'var(--color-gray-900)',
+              }}
+            >
               €{product.basePrice.toFixed(2)}
             </span>
-            <span style={{ 
-              fontSize: '0.75rem', 
-              color: 'var(--color-gray-500)',
-              marginLeft: '0.25rem'
-            }}>
+            <span
+              style={{
+                fontSize: '0.75rem',
+                color: 'var(--color-gray-500)',
+                marginLeft: '0.25rem',
+              }}
+            >
               desde
             </span>
           </div>
-          
-          <button 
+
+          <button
             style={{
               background: 'var(--color-cyan-600)',
               color: 'white',
@@ -196,7 +208,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
               fontSize: '0.875rem',
               fontWeight: '500',
               cursor: 'pointer',
-              transition: 'background-color 0.2s ease'
+              transition: 'background-color 0.2s ease',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--color-cyan-700)';

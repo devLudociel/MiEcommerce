@@ -9,12 +9,8 @@ import ImageCustomizer from '../../components/account/ImageCustomizer.tsx';
   <section class="py-8 lg:py-16">
     <div class="container">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
-        
         <!-- Sidebar - 1 columna -->
-        <aside 
-          id="account-sidebar"
-          class="lg:col-span-1 hidden lg:block"
-        >
+        <aside id="account-sidebar" class="lg:col-span-1 hidden lg:block">
           <div class="sticky top-56" style="max-height: calc(100vh - 300px); overflow-y: auto;">
             <div class="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
               <AccountMenu client:load />
@@ -28,42 +24,40 @@ import ImageCustomizer from '../../components/account/ImageCustomizer.tsx';
             <ImageCustomizer client:load />
           </RequireAuth>
         </main>
-
       </div>
     </div>
   </section>
 
   <!-- Header con título y botón móvil (solo móvil) -->
   <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40">
-    <button 
-      id="mobile-menu-toggle"
-      class="btn btn-outline w-full"
-    >
+    <button id="mobile-menu-toggle" class="btn btn-outline w-full">
       <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 6h16M4 12h16M4 18h16"></path>
       </svg>
       Menú de navegación
     </button>
   </div>
 
   <!-- Overlay para móvil -->
-  <div 
-    id="mobile-menu-overlay" 
-    class="fixed inset-0 bg-black/50 z-40 hidden"
-  ></div>
+  <div id="mobile-menu-overlay" class="fixed inset-0 bg-black/50 z-40 hidden"></div>
 
   <!-- Menú móvil -->
-  <div 
-    id="mobile-menu"
-    class="fixed inset-0 bg-white z-50 hidden overflow-y-auto"
-  >
+  <div id="mobile-menu" class="fixed inset-0 bg-white z-50 hidden overflow-y-auto">
     <div class="p-6">
-      <button 
+      <button
         id="mobile-menu-close"
         class="absolute top-4 right-4 text-gray-500 hover:text-gray-900"
       >
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"></path>
         </svg>
       </button>
       <div class="mt-8">

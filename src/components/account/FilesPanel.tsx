@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react';
-import { ref, listAll, getMetadata, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
+import {
+  ref,
+  listAll,
+  getMetadata,
+  deleteObject,
+  uploadBytes,
+  getDownloadURL,
+} from 'firebase/storage';
 import { storage, auth } from '../../lib/firebase';
 
 interface File {
@@ -18,7 +25,7 @@ export default function FilesPanel() {
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
+  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
 
   // Cargar archivos al montar
   useEffect(() => {
@@ -39,7 +46,7 @@ export default function FilesPanel() {
       for (const fileRef of filesList.items) {
         const metadata = await getMetadata(fileRef);
         const downloadUrl = await getDownloadURL(fileRef);
-        
+
         // Extraer nombre sin timestamp: "1234567890-foto.png" -> "foto.png"
         const displayName = fileRef.name.replace(/^\d+-/, '');
 
@@ -52,13 +59,15 @@ export default function FilesPanel() {
           uploadedAt: metadata.timeCreated || new Date().toISOString(),
           url: fileRef.fullPath,
           downloadUrl: downloadUrl,
-          path: fileRef.fullPath
+          path: fileRef.fullPath,
         });
       }
 
-      setFiles(filesData.sort((a, b) => 
-        new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
-      ));
+      setFiles(
+        filesData.sort(
+          (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+        )
+      );
     } catch (error) {
       console.error('Error cargando archivos:', error);
     } finally {
@@ -91,14 +100,14 @@ export default function FilesPanel() {
         const timestamp = Date.now();
         const uniqueName = `${timestamp}-${file.name}`;
         const fileRef = ref(storage, `users/${user.uid}/files/${uniqueName}`);
-        
+
         await uploadBytes(fileRef, file);
         console.log(`Archivo subido: ${file.name}`);
       }
 
       // Recargar la lista después de subir
       await loadFiles();
-      
+
       // Limpiar el input
       event.target.value = '';
     } catch (error) {
@@ -113,7 +122,7 @@ export default function FilesPanel() {
     try {
       const fileRef = ref(storage, filePath);
       await deleteObject(fileRef);
-      setFiles(files.filter(f => f.path !== filePath));
+      setFiles(files.filter((f) => f.path !== filePath));
     } catch (error) {
       console.error('Error eliminando archivo:', error);
     }
@@ -145,21 +154,31 @@ export default function FilesPanel() {
 
   const getFileTypeColor = (type: string) => {
     switch (type) {
-      case 'image': return 'text-cyan-500';
-      case 'document': return 'text-magenta-500';
-      case 'video': return 'text-purple';
-      case 'other': return 'text-gray-500';
-      default: return 'text-gray-500';
+      case 'image':
+        return 'text-cyan-500';
+      case 'document':
+        return 'text-magenta-500';
+      case 'video':
+        return 'text-purple';
+      case 'other':
+        return 'text-gray-500';
+      default:
+        return 'text-gray-500';
     }
   };
 
   const getFileTypeIcon = (type: string) => {
     switch (type) {
-      case 'image': return '🖼️';
-      case 'document': return '📄';
-      case 'video': return '🎥';
-      case 'other': return '📦';
-      default: return '📄';
+      case 'image':
+        return '🖼️';
+      case 'document':
+        return '📄';
+      case 'video':
+        return '🎥';
+      case 'other':
+        return '📦';
+      default:
+        return '📄';
     }
   };
 
@@ -180,7 +199,10 @@ export default function FilesPanel() {
     <div className="space-y-8">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-gradient-primary">Mis Archivos</h2>
-        <label className="btn btn-primary cursor-pointer" style={{ cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1 }}>
+        <label
+          className="btn btn-primary cursor-pointer"
+          style={{ cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1 }}
+        >
           {uploading ? 'Subiendo...' : '+ Subir Archivo'}
           <input
             type="file"
@@ -203,15 +225,13 @@ export default function FilesPanel() {
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3">
-            <div 
+            <div
               className="bg-gradient-primary h-3 rounded-full transition-all"
               style={{ width: `${Math.min(storagePercentage, 100)}%` }}
             />
           </div>
         </div>
-        <p className="text-xs text-gray-500">
-          {(100 - storagePercentage).toFixed(1)}% disponible
-        </p>
+        <p className="text-xs text-gray-500">{(100 - storagePercentage).toFixed(1)}% disponible</p>
       </div>
 
       {/* Files list */}
@@ -223,8 +243,8 @@ export default function FilesPanel() {
                 {/* Miniatura o icono */}
                 <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
                   {file.type === 'image' ? (
-                    <img 
-                      src={file.downloadUrl} 
+                    <img
+                      src={file.downloadUrl}
                       alt={file.displayName}
                       className="w-full h-full object-cover"
                     />
@@ -234,15 +254,11 @@ export default function FilesPanel() {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 mb-1 truncate">
-                    {file.displayName}
-                  </h3>
+                  <h3 className="font-semibold text-gray-900 mb-1 truncate">{file.displayName}</h3>
                   <div className="flex items-center gap-3 text-sm text-gray-500 flex-wrap">
-                    <span className={getFileTypeColor(file.type)}>
-                      {file.type}
-                    </span>
+                    <span className={getFileTypeColor(file.type)}>{file.type}</span>
                     <span>•</span>
                     <span>{formatFileSize(file.size)}</span>
                     <span>•</span>
@@ -251,13 +267,13 @@ export default function FilesPanel() {
                 </div>
 
                 <div className="flex gap-2 flex-shrink-0">
-                  <button 
+                  <button
                     className="btn btn-outline btn-sm"
                     onClick={() => handleDownload(file.downloadUrl, file.displayName)}
                   >
                     Descargar
                   </button>
-                  <button 
+                  <button
                     className="btn btn-ghost btn-sm text-red-500"
                     onClick={() => handleDelete(file.path)}
                   >
@@ -274,7 +290,9 @@ export default function FilesPanel() {
                 <div className="w-12 h-12 rounded-full border-4 border-gray-200 border-t-cyan-500 animate-spin flex-shrink-0"></div>
                 <div className="flex-1">
                   <h4 className="font-semibold text-gray-900">Subiendo archivo...</h4>
-                  <p className="text-sm text-gray-600 mt-1">Por favor espera, no cierres esta ventana</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Por favor espera, no cierres esta ventana
+                  </p>
                 </div>
               </div>
             </div>

@@ -6,8 +6,5 @@ const { slug } = Astro.params;
 ---
 
 <Layout title={`Personalizar Producto - ${slug}`}>
-  <ProductCustomizer 
-    client:load 
-    slug={slug}
-  />
+  <ProductCustomizer client:load slug={slug} />
 </Layout>

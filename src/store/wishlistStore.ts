@@ -67,4 +67,3 @@ export function useWishlist() {
     clear: clearWishlist,
   } as const;
 }
-

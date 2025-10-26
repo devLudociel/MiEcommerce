@@ -41,7 +41,7 @@ const SHIRT_COLORS = {
   azul: { color: '#3B82F6', name: 'Azul' },
   verde: { color: '#10B981', name: 'Verde' },
   rosa: { color: '#EC4899', name: 'Rosa' },
-  gris: { color: '#6B7280', name: 'Gris' }
+  gris: { color: '#6B7280', name: 'Gris' },
 };
 
 export default function ShirtCustomizer({ product }: Props) {
@@ -53,7 +53,7 @@ export default function ShirtCustomizer({ product }: Props) {
     position: { x: 50, y: 40 },
     size: 30,
     rotation: 0,
-    attributes: []
+    attributes: [],
   });
 
   const [isDragging, setIsDragging] = useState(false);
@@ -62,20 +62,20 @@ export default function ShirtCustomizer({ product }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [productImages, setProductImages] = useState<Record<string, string>>({});
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const availableAttributes = product.subcategoryId 
+  const availableAttributes = product.subcategoryId
     ? subcategoryAttributes
-        .filter(sa => sa.subcategoryId === product.subcategoryId)
-        .map(sa => attributes.find(attr => attr.id === sa.attributeId))
+        .filter((sa) => sa.subcategoryId === product.subcategoryId)
+        .map((sa) => attributes.find((attr) => attr.id === sa.attributeId))
         .filter(Boolean)
     : [];
 
   useEffect(() => {
     async function loadProductImages() {
       const imageUrls: Record<string, string> = {};
-      
+
       for (const colorKey of Object.keys(SHIRT_COLORS)) {
         try {
           const url = await getProductImageUrl('camisetas', colorKey);
@@ -86,25 +86,27 @@ export default function ShirtCustomizer({ product }: Props) {
           console.log(`No se encontró imagen para color ${colorKey}`);
         }
       }
-      
+
       setProductImages(imageUrls);
     }
 
     loadProductImages();
 
     if (product.subcategoryId && availableAttributes.length > 0) {
-      const defaultAttrs = availableAttributes.map(attr => {
-        if (!attr) return null;
-        let defaultValue = '';
-        if (attr.type === 'select' && attr.options?.length) {
-          defaultValue = attr.options[0].value;
-        } else if (attr.type === 'number') {
-          defaultValue = '1';
-        }
-        return { attributeId: attr.id, value: defaultValue };
-      }).filter(Boolean) as ProductAttributeValue[];
-      
-      setConfig(prev => ({ ...prev, attributes: defaultAttrs }));
+      const defaultAttrs = availableAttributes
+        .map((attr) => {
+          if (!attr) return null;
+          let defaultValue = '';
+          if (attr.type === 'select' && attr.options?.length) {
+            defaultValue = attr.options[0].value;
+          } else if (attr.type === 'number') {
+            defaultValue = '1';
+          }
+          return { attributeId: attr.id, value: defaultValue };
+        })
+        .filter(Boolean) as ProductAttributeValue[];
+
+      setConfig((prev) => ({ ...prev, attributes: defaultAttrs }));
     }
   }, [product.subcategoryId]);
 
@@ -128,12 +130,12 @@ export default function ShirtCustomizer({ product }: Props) {
       }
 
       const base64 = await fileToBase64(file);
-      setConfig(prev => ({ ...prev, customImage: base64 }));
+      setConfig((prev) => ({ ...prev, customImage: base64 }));
 
       const compressedFile = await compressImage(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
       const { url, path } = await uploadCustomImage(compressedFile, user.uid, 'camiseta');
 
-      setConfig(prev => ({ ...prev, imageUrl: url, imagePath: path }));
+      setConfig((prev) => ({ ...prev, imageUrl: url, imagePath: path }));
       setIsLoading(false);
     } catch (err: any) {
       console.error('Error subiendo imagen:', err);
@@ -154,55 +156,55 @@ export default function ShirtCustomizer({ product }: Props) {
       const rect = e.currentTarget.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 100;
       const y = ((e.clientY - rect.top) / rect.height) * 100;
-      
-      setConfig(prev => ({
+
+      setConfig((prev) => ({
         ...prev,
         position: {
           x: Math.max(0, Math.min(100, x)),
-          y: Math.max(0, Math.min(100, y))
-        }
+          y: Math.max(0, Math.min(100, y)),
+        },
       }));
     }
   };
 
   const adjustImageSize = (increment: number) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
-      size: Math.max(10, Math.min(80, prev.size + increment))
+      size: Math.max(10, Math.min(80, prev.size + increment)),
     }));
   };
 
   const updateAttributeValue = (attributeId: string, value: string) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
-      attributes: prev.attributes.map(attr => 
+      attributes: prev.attributes.map((attr) =>
         attr.attributeId === attributeId ? { ...attr, value } : attr
-      )
+      ),
     }));
   };
 
   const calculatePrice = () => {
     let total = Number(product.basePrice) || 0;
-    
-    config.attributes.forEach(attrValue => {
-      const attribute = attributes.find(attr => attr.id === attrValue.attributeId);
+
+    config.attributes.forEach((attrValue) => {
+      const attribute = attributes.find((attr) => attr.id === attrValue.attributeId);
       if (attribute?.options) {
-        const option = attribute.options.find(opt => opt.value === attrValue.value);
+        const option = attribute.options.find((opt) => opt.value === attrValue.value);
         if (option) {
           total += option.priceModifier;
         }
       }
     });
-    
-    const cantidadAttr = config.attributes.find(attr => attr.attributeId === '13');
+
+    const cantidadAttr = config.attributes.find((attr) => attr.attributeId === '13');
     const cantidad = cantidadAttr ? parseInt(cantidadAttr.value) || 1 : 1;
-    
+
     if (config.imageUrl) {
       total *= 1.1;
     }
-    
+
     total *= cantidad;
-    
+
     return Math.round(total * 100) / 100;
   };
 
@@ -211,11 +213,11 @@ export default function ShirtCustomizer({ product }: Props) {
       setIsAddingToCart(true);
       setError(null);
 
-      const requiredAttributes = availableAttributes.filter(attr => attr?.required);
+      const requiredAttributes = availableAttributes.filter((attr) => attr?.required);
       for (const reqAttr of requiredAttributes) {
         if (!reqAttr) continue;
-        const hasValue = config.attributes.some(attr => 
-          attr.attributeId === reqAttr.id && attr.value.trim() !== ''
+        const hasValue = config.attributes.some(
+          (attr) => attr.attributeId === reqAttr.id && attr.value.trim() !== ''
         );
         if (!hasValue) {
           setError(`El campo "${reqAttr.name}" es obligatorio`);
@@ -232,7 +234,7 @@ export default function ShirtCustomizer({ product }: Props) {
 
       const user = auth.currentUser;
       const userId = user?.uid || 'guest';
-      const cantidadAttr = config.attributes.find(attr => attr.attributeId === '13');
+      const cantidadAttr = config.attributes.find((attr) => attr.attributeId === '13');
       const cantidad = cantidadAttr ? parseInt(cantidadAttr.value) || 1 : 1;
 
       const customizationData = {
@@ -249,15 +251,15 @@ export default function ShirtCustomizer({ product }: Props) {
         attributes: config.attributes,
         basePrice: product.basePrice,
         totalPrice: calculatePrice(),
-        cantidad
+        cantidad,
       };
 
       const customizationId = await saveCustomization(customizationData);
       console.log('Personalización guardada:', customizationId);
 
       const customDetails = config.attributes
-        .map(attrValue => {
-          const attribute = attributes.find(a => a.id === attrValue.attributeId);
+        .map((attrValue) => {
+          const attribute = attributes.find((a) => a.id === attrValue.attributeId);
           if (!attribute) return null;
           return `${attribute.name}: ${attrValue.value}`;
         })
@@ -273,8 +275,8 @@ export default function ShirtCustomizer({ product }: Props) {
         variantName: customDetails.join(' • '),
         customization: {
           customizationId,
-          ...customizationData
-        }
+          ...customizationData,
+        },
       });
 
       setSuccess(true);
@@ -295,9 +297,13 @@ export default function ShirtCustomizer({ product }: Props) {
         <div className="flex items-center justify-between">
           <div>
             <nav className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-              <a href="/" className="hover:text-cyan-500">Inicio</a>
+              <a href="/" className="hover:text-cyan-500">
+                Inicio
+              </a>
               <span>›</span>
-              <a href={`/producto/${product.slug || product.id}`} className="hover:text-cyan-500">{product.name}</a>
+              <a href={`/producto/${product.slug || product.id}`} className="hover:text-cyan-500">
+                {product.name}
+              </a>
               <span>›</span>
               <span className="text-gray-800 font-medium">Personalizar Camiseta</span>
             </nav>
@@ -306,7 +312,7 @@ export default function ShirtCustomizer({ product }: Props) {
             </h1>
           </div>
           <button
-            onClick={() => window.location.href = `/producto/${product.slug || product.id}`}
+            onClick={() => (window.location.href = `/producto/${product.slug || product.id}`)}
             className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
           >
             ← Volver
@@ -333,10 +339,12 @@ export default function ShirtCustomizer({ product }: Props) {
         <div className="grid md:grid-cols-2 gap-8">
           <div className="bg-white rounded-2xl shadow-2xl p-8">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Vista Previa</h2>
-            
+
             <div
               className="relative aspect-square rounded-xl overflow-hidden cursor-move select-none"
-              style={{ backgroundColor: SHIRT_COLORS[config.color as keyof typeof SHIRT_COLORS].color }}
+              style={{
+                backgroundColor: SHIRT_COLORS[config.color as keyof typeof SHIRT_COLORS].color,
+              }}
               onMouseDown={() => config.customImage && setIsDragging(true)}
               onMouseMove={handleMouseMove}
               onMouseUp={() => setIsDragging(false)}
@@ -353,12 +361,30 @@ export default function ShirtCustomizer({ product }: Props) {
               {!currentProductImage && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-3/4 h-5/6 relative">
-                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-20 h-8 rounded-b-full"
-                         style={{ backgroundColor: SHIRT_COLORS[config.color as keyof typeof SHIRT_COLORS].color, filter: 'brightness(0.9)' }} />
-                    <div className="absolute top-8 -left-8 w-24 h-32 rounded-l-full"
-                         style={{ backgroundColor: SHIRT_COLORS[config.color as keyof typeof SHIRT_COLORS].color, filter: 'brightness(0.95)' }} />
-                    <div className="absolute top-8 -right-8 w-24 h-32 rounded-r-full"
-                         style={{ backgroundColor: SHIRT_COLORS[config.color as keyof typeof SHIRT_COLORS].color, filter: 'brightness(0.95)' }} />
+                    <div
+                      className="absolute top-0 left-1/2 transform -translate-x-1/2 w-20 h-8 rounded-b-full"
+                      style={{
+                        backgroundColor:
+                          SHIRT_COLORS[config.color as keyof typeof SHIRT_COLORS].color,
+                        filter: 'brightness(0.9)',
+                      }}
+                    />
+                    <div
+                      className="absolute top-8 -left-8 w-24 h-32 rounded-l-full"
+                      style={{
+                        backgroundColor:
+                          SHIRT_COLORS[config.color as keyof typeof SHIRT_COLORS].color,
+                        filter: 'brightness(0.95)',
+                      }}
+                    />
+                    <div
+                      className="absolute top-8 -right-8 w-24 h-32 rounded-r-full"
+                      style={{
+                        backgroundColor:
+                          SHIRT_COLORS[config.color as keyof typeof SHIRT_COLORS].color,
+                        filter: 'brightness(0.95)',
+                      }}
+                    />
                   </div>
                 </div>
               )}
@@ -375,7 +401,7 @@ export default function ShirtCustomizer({ product }: Props) {
                     width: `${config.size}%`,
                     height: 'auto',
                     maxHeight: `${config.size}%`,
-                    objectFit: 'contain'
+                    objectFit: 'contain',
                   }}
                 />
               )}
@@ -399,17 +425,23 @@ export default function ShirtCustomizer({ product }: Props) {
             {config.customImage && (
               <div className="mt-6 bg-gray-50 rounded-xl p-6 space-y-4">
                 <h3 className="font-bold text-gray-800">Ajustar Diseño</h3>
-                
+
                 <div>
                   <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
                     <span>Tamaño</span>
                     <span className="text-purple-600">{config.size}%</span>
                   </label>
                   <div className="flex gap-2">
-                    <button onClick={() => adjustImageSize(-5)} className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-lg">
+                    <button
+                      onClick={() => adjustImageSize(-5)}
+                      className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-lg"
+                    >
                       <ZoomOut size={20} className="mx-auto" />
                     </button>
-                    <button onClick={() => adjustImageSize(5)} className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-lg">
+                    <button
+                      onClick={() => adjustImageSize(5)}
+                      className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-lg"
+                    >
                       <ZoomIn size={20} className="mx-auto" />
                     </button>
                   </div>
@@ -425,7 +457,9 @@ export default function ShirtCustomizer({ product }: Props) {
                     min="0"
                     max="360"
                     value={config.rotation}
-                    onChange={(e) => setConfig(prev => ({ ...prev, rotation: parseInt(e.target.value) }))}
+                    onChange={(e) =>
+                      setConfig((prev) => ({ ...prev, rotation: parseInt(e.target.value) }))
+                    }
                     className="w-full"
                   />
                 </div>
@@ -440,7 +474,7 @@ export default function ShirtCustomizer({ product }: Props) {
                 {Object.entries(SHIRT_COLORS).map(([key, { color, name }]) => (
                   <button
                     key={key}
-                    onClick={() => setConfig(prev => ({ ...prev, color: key }))}
+                    onClick={() => setConfig((prev) => ({ ...prev, color: key }))}
                     className={`aspect-square rounded-xl border-4 transition-all hover:scale-105 ${
                       config.color === key ? 'border-purple-500 shadow-lg' : 'border-gray-300'
                     }`}
@@ -453,7 +487,7 @@ export default function ShirtCustomizer({ product }: Props) {
 
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h3 className="text-xl font-bold mb-4 text-gray-800">Subir Diseño</h3>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button
                   onClick={() => fileInputRef.current?.click()}
@@ -494,14 +528,17 @@ export default function ShirtCustomizer({ product }: Props) {
                 <h3 className="text-xl font-bold mb-4 text-gray-800">Opciones</h3>
                 {availableAttributes.map((attribute) => {
                   if (!attribute) return null;
-                  const currentValue = config.attributes.find(attr => attr.attributeId === attribute.id);
-                  
+                  const currentValue = config.attributes.find(
+                    (attr) => attr.attributeId === attribute.id
+                  );
+
                   return (
                     <div key={attribute.id} className="mb-4">
                       <label className="block text-sm font-bold text-gray-700 mb-2">
-                        {attribute.name} {attribute.required && <span className="text-red-500">*</span>}
+                        {attribute.name}{' '}
+                        {attribute.required && <span className="text-red-500">*</span>}
                       </label>
-                      
+
                       {attribute.type === 'select' && attribute.options ? (
                         <select
                           value={currentValue?.value || ''}
@@ -511,7 +548,8 @@ export default function ShirtCustomizer({ product }: Props) {
                           <option value="">Seleccionar...</option>
                           {attribute.options.map((option) => (
                             <option key={option.id} value={option.value}>
-                              {option.value} {option.priceModifier !== 0 && `(+€${option.priceModifier})`}
+                              {option.value}{' '}
+                              {option.priceModifier !== 0 && `(+€${option.priceModifier})`}
                             </option>
                           ))}
                         </select>

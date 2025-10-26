@@ -22,16 +22,13 @@ interface ValidationResult {
 /**
  * Comprimir imagen antes de subirla a Firebase
  */
-export async function compressImage(
-  file: File, 
-  options: CompressionOptions = {}
-): Promise<File> {
+export async function compressImage(file: File, options: CompressionOptions = {}): Promise<File> {
   const defaultOptions: CompressionOptions = {
     maxSizeMB: 1,
     maxWidthOrHeight: 1920,
     useWebWorker: true,
     fileType: 'image/jpeg',
-    initialQuality: 0.8
+    initialQuality: 0.8,
   };
 
   const finalOptions = { ...defaultOptions, ...options };
@@ -39,11 +36,11 @@ export async function compressImage(
   try {
     console.log('Comprimiendo imagen...');
     console.log('Tamaño original:', (file.size / 1024 / 1024).toFixed(2), 'MB');
-    
+
     const compressedFile = await imageCompression(file, finalOptions);
-    
+
     console.log('Tamaño comprimido:', (compressedFile.size / 1024 / 1024).toFixed(2), 'MB');
-    
+
     return compressedFile;
   } catch (error) {
     console.error('Error comprimiendo imagen:', error);
@@ -55,18 +52,16 @@ export async function compressImage(
  * Validar archivo de imagen
  */
 export function validateImageFile(
-  file: File, 
+  file: File,
   constraints: ValidationConstraints = {}
 ): ValidationResult {
-  const {
-    maxSizeMB = 10,
-    allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp']
-  } = constraints;
+  const { maxSizeMB = 10, allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'] } =
+    constraints;
 
   if (!allowedTypes.includes(file.type)) {
     return {
       valid: false,
-      error: `Tipo de archivo no permitido. Usa: ${allowedTypes.join(', ')}`
+      error: `Tipo de archivo no permitido. Usa: ${allowedTypes.join(', ')}`,
     };
   }
 
@@ -74,7 +69,7 @@ export function validateImageFile(
   if (fileSizeMB > maxSizeMB) {
     return {
       valid: false,
-      error: `El archivo es muy grande (${fileSizeMB.toFixed(2)}MB). Máximo: ${maxSizeMB}MB`
+      error: `El archivo es muy grande (${fileSizeMB.toFixed(2)}MB). Máximo: ${maxSizeMB}MB`,
     };
   }
 
@@ -89,6 +84,6 @@ export function fileToBase64(file: File): Promise<string> {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
+    reader.onerror = (error) => reject(error);
   });
 }

@@ -1,17 +1,65 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useStore } from '@nanostores/react';
-import { cartStore, updateCartItemQuantity, removeFromCart, clearCart } from '../../store/cartStore';
+import {
+  cartStore,
+  updateCartItemQuantity,
+  removeFromCart,
+  clearCart,
+} from '../../store/cartStore';
 import { autocompleteStreetES, debounce, lookupZipES } from '../../utils/address';
 
 type Provincia =
-  | 'Álava' | 'Albacete' | 'Alicante' | 'Almería' | 'Asturias' | 'Ávila' | 'Badajoz'
-  | 'Barcelona' | 'Burgos' | 'Cáceres' | 'Cádiz' | 'Cantabria' | 'Castellón'
-  | 'Ciudad Real' | 'Córdoba' | 'La Coruña' | 'Cuenca' | 'Girona' | 'Granada'
-  | 'Guadalajara' | 'Guipúzcoa' | 'Huelva' | 'Huesca' | 'Islas Baleares'
-  | 'Jaén' | 'León' | 'Lérida' | 'Lugo' | 'Madrid' | 'Málaga' | 'Murcia'
-  | 'Navarra' | 'Ourense' | 'Palencia' | 'Las Palmas' | 'Pontevedra' | 'La Rioja'
-  | 'Salamanca' | 'Segovia' | 'Sevilla' | 'Soria' | 'Tarragona' | 'Santa Cruz de Tenerife'
-  | 'Teruel' | 'Toledo' | 'Valencia' | 'Valladolid' | 'Vizcaya' | 'Zamora' | 'Zaragoza' | '';
+  | 'Álava'
+  | 'Albacete'
+  | 'Alicante'
+  | 'Almería'
+  | 'Asturias'
+  | 'Ávila'
+  | 'Badajoz'
+  | 'Barcelona'
+  | 'Burgos'
+  | 'Cáceres'
+  | 'Cádiz'
+  | 'Cantabria'
+  | 'Castellón'
+  | 'Ciudad Real'
+  | 'Córdoba'
+  | 'La Coruña'
+  | 'Cuenca'
+  | 'Girona'
+  | 'Granada'
+  | 'Guadalajara'
+  | 'Guipúzcoa'
+  | 'Huelva'
+  | 'Huesca'
+  | 'Islas Baleares'
+  | 'Jaén'
+  | 'León'
+  | 'Lérida'
+  | 'Lugo'
+  | 'Madrid'
+  | 'Málaga'
+  | 'Murcia'
+  | 'Navarra'
+  | 'Ourense'
+  | 'Palencia'
+  | 'Las Palmas'
+  | 'Pontevedra'
+  | 'La Rioja'
+  | 'Salamanca'
+  | 'Segovia'
+  | 'Sevilla'
+  | 'Soria'
+  | 'Tarragona'
+  | 'Santa Cruz de Tenerife'
+  | 'Teruel'
+  | 'Toledo'
+  | 'Valencia'
+  | 'Valladolid'
+  | 'Vizcaya'
+  | 'Zamora'
+  | 'Zaragoza'
+  | '';
 
 interface DirBase {
   nombre: string;
@@ -25,8 +73,12 @@ interface DirBase {
   codigoPostal: string;
 }
 
-interface Facturacion extends DirBase { nif: string; }
-interface Envio extends DirBase { telefono: string; }
+interface Facturacion extends DirBase {
+  nif: string;
+}
+interface Envio extends DirBase {
+  telefono: string;
+}
 
 interface FormData {
   email: string;
@@ -48,7 +100,57 @@ type Errors = Record<string, string>;
 type CheckoutStep = 1 | 2 | 3;
 
 const provinciasEspana: Provincia[] = [
-  'Álava','Albacete','Alicante','Almería','Asturias','Ávila','Badajoz','Barcelona','Burgos','Cáceres','Cádiz','Cantabria','Castellón','Ciudad Real','Córdoba','La Coruña','Cuenca','Girona','Granada','Guadalajara','Guipúzcoa','Huelva','Huesca','Islas Baleares','Jaén','León','Lérida','Lugo','Madrid','Málaga','Murcia','Navarra','Ourense','Palencia','Las Palmas','Pontevedra','La Rioja','Salamanca','Segovia','Sevilla','Soria','Tarragona','Santa Cruz de Tenerife','Teruel','Toledo','Valencia','Valladolid','Vizcaya','Zamora','Zaragoza','',
+  'Álava',
+  'Albacete',
+  'Alicante',
+  'Almería',
+  'Asturias',
+  'Ávila',
+  'Badajoz',
+  'Barcelona',
+  'Burgos',
+  'Cáceres',
+  'Cádiz',
+  'Cantabria',
+  'Castellón',
+  'Ciudad Real',
+  'Córdoba',
+  'La Coruña',
+  'Cuenca',
+  'Girona',
+  'Granada',
+  'Guadalajara',
+  'Guipúzcoa',
+  'Huelva',
+  'Huesca',
+  'Islas Baleares',
+  'Jaén',
+  'León',
+  'Lérida',
+  'Lugo',
+  'Madrid',
+  'Málaga',
+  'Murcia',
+  'Navarra',
+  'Ourense',
+  'Palencia',
+  'Las Palmas',
+  'Pontevedra',
+  'La Rioja',
+  'Salamanca',
+  'Segovia',
+  'Sevilla',
+  'Soria',
+  'Tarragona',
+  'Santa Cruz de Tenerife',
+  'Teruel',
+  'Toledo',
+  'Valencia',
+  'Valladolid',
+  'Vizcaya',
+  'Zamora',
+  'Zaragoza',
+  '',
 ];
 
 export default function CheckoutPage() {
@@ -60,10 +162,28 @@ export default function CheckoutPage() {
     email: '',
     telefono: '',
     facturacion: {
-      nombre: '', apellidos: '', empresa: '', pais: 'España', direccion: '', apartamento: '', ciudad: '', provincia: '', codigoPostal: '', nif: ''
+      nombre: '',
+      apellidos: '',
+      empresa: '',
+      pais: 'España',
+      direccion: '',
+      apartamento: '',
+      ciudad: '',
+      provincia: '',
+      codigoPostal: '',
+      nif: '',
     },
     envio: {
-      nombre: '', apellidos: '', empresa: '', pais: 'España', direccion: '', apartamento: '', ciudad: '', provincia: '', codigoPostal: '', telefono: ''
+      nombre: '',
+      apellidos: '',
+      empresa: '',
+      pais: 'España',
+      direccion: '',
+      apartamento: '',
+      ciudad: '',
+      provincia: '',
+      codigoPostal: '',
+      telefono: '',
     },
     mismasDirecciones: true,
     guardarInfo: false,
@@ -74,12 +194,21 @@ export default function CheckoutPage() {
     cardExpiry: '',
     cardCVV: '',
   });
-  
+
   const [errors, setErrors] = useState<Errors>({});
   const [loading, setLoading] = useState(false);
-  const [citySuggestions, setCitySuggestions] = useState<{ facturacion: string[]; envio: string[] }>({ facturacion: [], envio: [] });
-  const [streetSuggestions, setStreetSuggestions] = useState<{ facturacion: any[]; envio: any[] }>({ facturacion: [], envio: [] });
-  const [zipLoading, setZipLoading] = useState<{ facturacion: boolean; envio: boolean }>({ facturacion: false, envio: false });
+  const [citySuggestions, setCitySuggestions] = useState<{
+    facturacion: string[];
+    envio: string[];
+  }>({ facturacion: [], envio: [] });
+  const [streetSuggestions, setStreetSuggestions] = useState<{ facturacion: any[]; envio: any[] }>({
+    facturacion: [],
+    envio: [],
+  });
+  const [zipLoading, setZipLoading] = useState<{ facturacion: boolean; envio: boolean }>({
+    facturacion: false,
+    envio: false,
+  });
 
   // Redirigir si el carrito está vacío
   useEffect(() => {
@@ -88,18 +217,22 @@ export default function CheckoutPage() {
     }
   }, [cart.items.length]);
 
-  const handleInputChange = (section: 'facturacion' | 'envio', field: keyof (Facturacion & Envio), value: string) => {
-    setFormData(prev => ({
+  const handleInputChange = (
+    section: 'facturacion' | 'envio',
+    field: keyof (Facturacion & Envio),
+    value: string
+  ) => {
+    setFormData((prev) => ({
       ...prev,
       [section]: {
         ...(prev as any)[section],
         [field]: value,
-      }
+      },
     }));
   };
 
   const handleGeneralChange = (field: keyof FormData, value: any) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const next: FormData = { ...prev, [field]: value } as any;
       if (field === 'mismasDirecciones' && value) {
         next.envio = { ...prev.envio, ...prev.facturacion, telefono: prev.telefono } as Envio;
@@ -181,19 +314,29 @@ export default function CheckoutPage() {
     }
     let cancelled = false;
     setZipLoading((z) => ({ ...z, facturacion: true }));
-    lookupZipES(zip).then((info) => {
-      if (cancelled || !info) return;
-      if (info.province && !formData.facturacion.provincia) {
-        setFormData((prev) => ({ ...prev, facturacion: { ...prev.facturacion, provincia: info.province || '' } }));
-      }
-      if (info.cities.length === 1) {
-        setFormData((prev) => ({ ...prev, facturacion: { ...prev.facturacion, ciudad: info.cities[0] } }));
-        setCitySuggestions((s) => ({ ...s, facturacion: [] }));
-      } else if (info.cities.length > 1) {
-        setCitySuggestions((s) => ({ ...s, facturacion: info.cities }));
-      }
-    }).finally(() => setZipLoading((z) => ({ ...z, facturacion: false })));
-    return () => { cancelled = true; };
+    lookupZipES(zip)
+      .then((info) => {
+        if (cancelled || !info) return;
+        if (info.province && !formData.facturacion.provincia) {
+          setFormData((prev) => ({
+            ...prev,
+            facturacion: { ...prev.facturacion, provincia: info.province || '' },
+          }));
+        }
+        if (info.cities.length === 1) {
+          setFormData((prev) => ({
+            ...prev,
+            facturacion: { ...prev.facturacion, ciudad: info.cities[0] },
+          }));
+          setCitySuggestions((s) => ({ ...s, facturacion: [] }));
+        } else if (info.cities.length > 1) {
+          setCitySuggestions((s) => ({ ...s, facturacion: info.cities }));
+        }
+      })
+      .finally(() => setZipLoading((z) => ({ ...z, facturacion: false })));
+    return () => {
+      cancelled = true;
+    };
   }, [formData.facturacion.codigoPostal, formData.facturacion.provincia]);
 
   useEffect(() => {
@@ -205,19 +348,26 @@ export default function CheckoutPage() {
     }
     let cancelled = false;
     setZipLoading((z) => ({ ...z, envio: true }));
-    lookupZipES(zip).then((info) => {
-      if (cancelled || !info) return;
-      if (info.province && !formData.envio.provincia) {
-        setFormData((prev) => ({ ...prev, envio: { ...prev.envio, provincia: info.province || '' } }));
-      }
-      if (info.cities.length === 1) {
-        setFormData((prev) => ({ ...prev, envio: { ...prev.envio, ciudad: info.cities[0] } }));
-        setCitySuggestions((s) => ({ ...s, envio: [] }));
-      } else if (info.cities.length > 1) {
-        setCitySuggestions((s) => ({ ...s, envio: info.cities }));
-      }
-    }).finally(() => setZipLoading((z) => ({ ...z, envio: false })));
-    return () => { cancelled = true; };
+    lookupZipES(zip)
+      .then((info) => {
+        if (cancelled || !info) return;
+        if (info.province && !formData.envio.provincia) {
+          setFormData((prev) => ({
+            ...prev,
+            envio: { ...prev.envio, provincia: info.province || '' },
+          }));
+        }
+        if (info.cities.length === 1) {
+          setFormData((prev) => ({ ...prev, envio: { ...prev.envio, ciudad: info.cities[0] } }));
+          setCitySuggestions((s) => ({ ...s, envio: [] }));
+        } else if (info.cities.length > 1) {
+          setCitySuggestions((s) => ({ ...s, envio: info.cities }));
+        }
+      })
+      .finally(() => setZipLoading((z) => ({ ...z, envio: false })));
+    return () => {
+      cancelled = true;
+    };
   }, [formData.envio.codigoPostal, formData.envio.provincia, formData.mismasDirecciones]);
 
   const applyAddressSuggestion = (section: 'facturacion' | 'envio', s: any) => {
@@ -239,7 +389,8 @@ export default function CheckoutPage() {
   };
 
   const debouncedStreet = debounce(async (section: 'facturacion' | 'envio', text: string) => {
-    const ctxZip = section === 'facturacion' ? formData.facturacion.codigoPostal : formData.envio.codigoPostal;
+    const ctxZip =
+      section === 'facturacion' ? formData.facturacion.codigoPostal : formData.envio.codigoPostal;
     const ctxCity = section === 'facturacion' ? formData.facturacion.ciudad : formData.envio.ciudad;
     const list = await autocompleteStreetES(text, { postcode: ctxZip, city: ctxCity });
     setStreetSuggestions((st) => ({ ...st, [section]: list }));
@@ -282,7 +433,7 @@ export default function CheckoutPage() {
     }
     setLoading(true);
     try {
-      await new Promise(r => setTimeout(r, 2000));
+      await new Promise((r) => setTimeout(r, 2000));
       const order = {
         id: `ORDER-${Date.now()}`,
         date: new Date().toISOString(),
@@ -325,15 +476,21 @@ export default function CheckoutPage() {
             ].map((item, index) => (
               <div key={item.step} className="flex items-center flex-1">
                 <div className="flex items-center">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all duration-300 ${currentStep >= item.step ? 'bg-gradient-primary text-white shadow-lg scale-110' : 'bg-gray-200 text-gray-500'}`}>
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all duration-300 ${currentStep >= item.step ? 'bg-gradient-primary text-white shadow-lg scale-110' : 'bg-gray-200 text-gray-500'}`}
+                  >
                     {currentStep > item.step ? '✓' : item.step}
                   </div>
-                  <span className={`ml-2 font-bold text-sm ${currentStep >= item.step ? 'text-cyan-600' : 'text-gray-400'}`}>
+                  <span
+                    className={`ml-2 font-bold text-sm ${currentStep >= item.step ? 'text-cyan-600' : 'text-gray-400'}`}
+                  >
                     {item.label}
                   </span>
                 </div>
                 {index < 2 && (
-                  <div className={`flex-1 h-1 mx-4 rounded transition-all duration-300 ${currentStep > item.step ? 'bg-gradient-primary' : 'bg-gray-200'}`} />
+                  <div
+                    className={`flex-1 h-1 mx-4 rounded transition-all duration-300 ${currentStep > item.step ? 'bg-gradient-primary' : 'bg-gray-200'}`}
+                  />
                 )}
               </div>
             ))}
@@ -344,7 +501,6 @@ export default function CheckoutPage() {
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Columna izquierda - Formulario */}
         <div className="lg:col-span-2 space-y-6">
-          
           {/* PASO 1: Información y Envío */}
           {currentStep === 1 && (
             <>
@@ -354,12 +510,24 @@ export default function CheckoutPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">Email *</label>
-                    <input type="email" className={`input ${errors.email ? 'border-red-400' : ''}`} value={formData.email} onChange={e => handleGeneralChange('email', e.target.value)} placeholder="tu@email.com" />
+                    <input
+                      type="email"
+                      className={`input ${errors.email ? 'border-red-400' : ''}`}
+                      value={formData.email}
+                      onChange={(e) => handleGeneralChange('email', e.target.value)}
+                      placeholder="tu@email.com"
+                    />
                     {errors.email && <span className="text-red-500 text-xs">{errors.email}</span>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Teléfono</label>
-                    <input type="tel" className="input" value={formData.telefono} onChange={e => handleGeneralChange('telefono', e.target.value)} placeholder="+34 600 000 000" />
+                    <input
+                      type="tel"
+                      className="input"
+                      value={formData.telefono}
+                      onChange={(e) => handleGeneralChange('telefono', e.target.value)}
+                      placeholder="+34 600 000 000"
+                    />
                   </div>
                 </div>
               </section>
@@ -370,27 +538,59 @@ export default function CheckoutPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">Nombre *</label>
-                    <input className={`input ${errors['facturacion.nombre'] ? 'border-red-400' : ''}`} value={formData.facturacion.nombre} onChange={e => handleInputChange('facturacion','nombre', e.target.value)} />
-                    {errors['facturacion.nombre'] && <span className="text-red-500 text-xs">{errors['facturacion.nombre']}</span>}
+                    <input
+                      className={`input ${errors['facturacion.nombre'] ? 'border-red-400' : ''}`}
+                      value={formData.facturacion.nombre}
+                      onChange={(e) => handleInputChange('facturacion', 'nombre', e.target.value)}
+                    />
+                    {errors['facturacion.nombre'] && (
+                      <span className="text-red-500 text-xs">{errors['facturacion.nombre']}</span>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Apellidos *</label>
-                    <input className={`input ${errors['facturacion.apellidos'] ? 'border-red-400' : ''}`} value={formData.facturacion.apellidos} onChange={e => handleInputChange('facturacion','apellidos', e.target.value)} />
-                    {errors['facturacion.apellidos'] && <span className="text-red-500 text-xs">{errors['facturacion.apellidos']}</span>}
+                    <input
+                      className={`input ${errors['facturacion.apellidos'] ? 'border-red-400' : ''}`}
+                      value={formData.facturacion.apellidos}
+                      onChange={(e) =>
+                        handleInputChange('facturacion', 'apellidos', e.target.value)
+                      }
+                    />
+                    {errors['facturacion.apellidos'] && (
+                      <span className="text-red-500 text-xs">
+                        {errors['facturacion.apellidos']}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Empresa (opcional)</label>
-                  <input className="input" value={formData.facturacion.empresa} onChange={e => handleInputChange('facturacion','empresa', e.target.value)} />
+                  <input
+                    className="input"
+                    value={formData.facturacion.empresa}
+                    onChange={(e) => handleInputChange('facturacion', 'empresa', e.target.value)}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Dirección *</label>
-                  <input className={`input ${errors['facturacion.direccion'] ? 'border-red-400' : ''}`} placeholder="Calle, número" value={formData.facturacion.direccion} onChange={e => handleInputChange('facturacion','direccion', e.target.value)} />
-                  {errors['facturacion.direccion'] && <span className="text-red-500 text-xs">{errors['facturacion.direccion']}</span>}
+                  <input
+                    className={`input ${errors['facturacion.direccion'] ? 'border-red-400' : ''}`}
+                    placeholder="Calle, número"
+                    value={formData.facturacion.direccion}
+                    onChange={(e) => handleInputChange('facturacion', 'direccion', e.target.value)}
+                  />
+                  {errors['facturacion.direccion'] && (
+                    <span className="text-red-500 text-xs">{errors['facturacion.direccion']}</span>
+                  )}
                   {streetSuggestions.facturacion.length > 0 && (
                     <div className="mt-1 border rounded-lg bg-white shadow-sm max-h-48 overflow-auto">
                       {streetSuggestions.facturacion.map((s, idx) => (
-                        <button type="button" key={idx} className="w-full text-left px-3 py-2 hover:bg-gray-50" onClick={() => applyAddressSuggestion('facturacion', s)}>
+                        <button
+                          type="button"
+                          key={idx}
+                          className="w-full text-left px-3 py-2 hover:bg-gray-50"
+                          onClick={() => applyAddressSuggestion('facturacion', s)}
+                        >
                           {s.label}
                         </button>
                       ))}
@@ -398,18 +598,46 @@ export default function CheckoutPage() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Apartamento, local, etc. (opcional)</label>
-                  <input className="input" placeholder="Piso, puerta" value={formData.facturacion.apartamento} onChange={e => handleInputChange('facturacion','apartamento', e.target.value)} />
+                  <label className="block text-sm font-medium mb-1">
+                    Apartamento, local, etc. (opcional)
+                  </label>
+                  <input
+                    className="input"
+                    placeholder="Piso, puerta"
+                    value={formData.facturacion.apartamento}
+                    onChange={(e) =>
+                      handleInputChange('facturacion', 'apartamento', e.target.value)
+                    }
+                  />
                 </div>
                 <div className="grid md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">Ciudad *</label>
-                    <input className={`input ${errors['facturacion.ciudad'] ? 'border-red-400' : ''}`} value={formData.facturacion.ciudad} onChange={e => handleInputChange('facturacion','ciudad', e.target.value)} />
-                    {zipLoading.facturacion && <div className="text-xs text-gray-500 mt-1">Buscando por codigo postal...</div>}
+                    <input
+                      className={`input ${errors['facturacion.ciudad'] ? 'border-red-400' : ''}`}
+                      value={formData.facturacion.ciudad}
+                      onChange={(e) => handleInputChange('facturacion', 'ciudad', e.target.value)}
+                    />
+                    {zipLoading.facturacion && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Buscando por codigo postal...
+                      </div>
+                    )}
                     {citySuggestions.facturacion.length > 1 && (
                       <div className="mt-1 border rounded-lg bg-white shadow-sm max-h-40 overflow-auto">
                         {citySuggestions.facturacion.map((c) => (
-                          <button type="button" key={c} className="w-full text-left px-3 py-2 hover:bg-gray-50" onClick={() => { setFormData(prev => ({ ...prev, facturacion: { ...prev.facturacion, ciudad: c } })); setCitySuggestions(s => ({ ...s, facturacion: [] })); }}>
+                          <button
+                            type="button"
+                            key={c}
+                            className="w-full text-left px-3 py-2 hover:bg-gray-50"
+                            onClick={() => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                facturacion: { ...prev.facturacion, ciudad: c },
+                              }));
+                              setCitySuggestions((s) => ({ ...s, facturacion: [] }));
+                            }}
+                          >
                             {c}
                           </button>
                         ))}
@@ -418,26 +646,56 @@ export default function CheckoutPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Provincia</label>
-                    <select className="input" value={formData.facturacion.provincia} onChange={e => handleInputChange('facturacion','provincia', e.target.value)}>
+                    <select
+                      className="input"
+                      value={formData.facturacion.provincia}
+                      onChange={(e) =>
+                        handleInputChange('facturacion', 'provincia', e.target.value)
+                      }
+                    >
                       <option value="">Seleccionar provincia</option>
-                      {provinciasEspana.map(p => (<option key={p} value={p}>{p}</option>))}
+                      {provinciasEspana.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Código postal *</label>
-                    <input className={`input ${errors['facturacion.codigoPostal'] ? 'border-red-400' : ''}`} placeholder="28001" value={formData.facturacion.codigoPostal} onChange={e => handleInputChange('facturacion','codigoPostal', e.target.value.replace(/[^\d]/g, '').slice(0,5))} />
+                    <input
+                      className={`input ${errors['facturacion.codigoPostal'] ? 'border-red-400' : ''}`}
+                      placeholder="28001"
+                      value={formData.facturacion.codigoPostal}
+                      onChange={(e) =>
+                        handleInputChange(
+                          'facturacion',
+                          'codigoPostal',
+                          e.target.value.replace(/[^\d]/g, '').slice(0, 5)
+                        )
+                      }
+                    />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">NIF/CIF (opcional)</label>
-                  <input className="input" placeholder="12345678Z" value={formData.facturacion.nif} onChange={e => handleInputChange('facturacion','nif', e.target.value)} />
+                  <input
+                    className="input"
+                    placeholder="12345678Z"
+                    value={formData.facturacion.nif}
+                    onChange={(e) => handleInputChange('facturacion', 'nif', e.target.value)}
+                  />
                 </div>
               </section>
 
               {/* Checkbox misma dirección */}
               <div className="bg-white rounded-2xl border p-6">
                 <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" checked={formData.mismasDirecciones} onChange={e => handleGeneralChange('mismasDirecciones', e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={formData.mismasDirecciones}
+                    onChange={(e) => handleGeneralChange('mismasDirecciones', e.target.checked)}
+                  />
                   <span>La dirección de envío es la misma que la de facturación</span>
                 </label>
               </div>
@@ -449,25 +707,52 @@ export default function CheckoutPage() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-1">Nombre *</label>
-                      <input className={`input ${errors['envio.nombre'] ? 'border-red-400' : ''}`} value={formData.envio.nombre} onChange={e => handleInputChange('envio','nombre', e.target.value)} />
+                      <input
+                        className={`input ${errors['envio.nombre'] ? 'border-red-400' : ''}`}
+                        value={formData.envio.nombre}
+                        onChange={(e) => handleInputChange('envio', 'nombre', e.target.value)}
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Apellidos *</label>
-                      <input className={`input ${errors['envio.apellidos'] ? 'border-red-400' : ''}`} value={formData.envio.apellidos} onChange={e => handleInputChange('envio','apellidos', e.target.value)} />
+                      <input
+                        className={`input ${errors['envio.apellidos'] ? 'border-red-400' : ''}`}
+                        value={formData.envio.apellidos}
+                        onChange={(e) => handleInputChange('envio', 'apellidos', e.target.value)}
+                      />
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Dirección *</label>
-                    <input className={`input ${errors['envio.direccion'] ? 'border-red-400' : ''}`} placeholder="Calle, número" value={formData.envio.direccion} onChange={e => handleInputChange('envio','direccion', e.target.value)} />
+                    <input
+                      className={`input ${errors['envio.direccion'] ? 'border-red-400' : ''}`}
+                      placeholder="Calle, número"
+                      value={formData.envio.direccion}
+                      onChange={(e) => handleInputChange('envio', 'direccion', e.target.value)}
+                    />
                   </div>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-1">Ciudad *</label>
-                      <input className={`input ${errors['envio.ciudad'] ? 'border-red-400' : ''}`} value={formData.envio.ciudad} onChange={e => handleInputChange('envio','ciudad', e.target.value)} />
+                      <input
+                        className={`input ${errors['envio.ciudad'] ? 'border-red-400' : ''}`}
+                        value={formData.envio.ciudad}
+                        onChange={(e) => handleInputChange('envio', 'ciudad', e.target.value)}
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Código postal *</label>
-                      <input className={`input ${errors['envio.codigoPostal'] ? 'border-red-400' : ''}`} value={formData.envio.codigoPostal} onChange={e => handleInputChange('envio','codigoPostal', e.target.value.replace(/[^\d]/g, '').slice(0,5))} />
+                      <input
+                        className={`input ${errors['envio.codigoPostal'] ? 'border-red-400' : ''}`}
+                        value={formData.envio.codigoPostal}
+                        onChange={(e) =>
+                          handleInputChange(
+                            'envio',
+                            'codigoPostal',
+                            e.target.value.replace(/[^\d]/g, '').slice(0, 5)
+                          )
+                        }
+                      />
                     </div>
                   </div>
                 </section>
@@ -478,12 +763,30 @@ export default function CheckoutPage() {
                 <h2 className="text-xl font-bold">Método de envío</h2>
                 <div className="space-y-3">
                   {[
-                    { id: 'estandar', name: 'Envío Estándar', time: '5-7 días laborables', price: 'Gratis' },
-                    { id: 'express', name: 'Envío Express', time: '2-3 días laborables', price: '€4.95' },
+                    {
+                      id: 'estandar',
+                      name: 'Envío Estándar',
+                      time: '5-7 días laborables',
+                      price: 'Gratis',
+                    },
+                    {
+                      id: 'express',
+                      name: 'Envío Express',
+                      time: '2-3 días laborables',
+                      price: '€4.95',
+                    },
                     { id: 'urgente', name: 'Envío Urgente', time: '24h', price: '€9.95' },
-                  ].map(opt => (
-                    <label key={opt.id} className={`flex gap-3 items-start p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.metodoEnvio === opt.id ? 'border-cyan-500 bg-cyan-50' : 'border-gray-200 hover:bg-gray-50'}`}>
-                      <input type="radio" name="metodoEnvio" checked={formData.metodoEnvio === (opt.id as any)} onChange={() => handleGeneralChange('metodoEnvio', opt.id)} />
+                  ].map((opt) => (
+                    <label
+                      key={opt.id}
+                      className={`flex gap-3 items-start p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.metodoEnvio === opt.id ? 'border-cyan-500 bg-cyan-50' : 'border-gray-200 hover:bg-gray-50'}`}
+                    >
+                      <input
+                        type="radio"
+                        name="metodoEnvio"
+                        checked={formData.metodoEnvio === (opt.id as any)}
+                        onChange={() => handleGeneralChange('metodoEnvio', opt.id)}
+                      />
                       <div className="flex-1">
                         <div className="font-semibold">{opt.name}</div>
                         <div className="text-sm text-gray-600">{opt.time}</div>
@@ -494,7 +797,11 @@ export default function CheckoutPage() {
                 </div>
               </section>
 
-              <button type="button" onClick={handleNextStep} className="w-full py-4 bg-gradient-rainbow text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
+              <button
+                type="button"
+                onClick={handleNextStep}
+                className="w-full py-4 bg-gradient-rainbow text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
+              >
                 Continuar al Pago →
               </button>
             </>
@@ -507,12 +814,37 @@ export default function CheckoutPage() {
                 <h2 className="text-xl font-bold">Método de Pago</h2>
                 <div className="space-y-3">
                   {[
-                    { method: 'tarjeta', icon: '💳', label: 'Tarjeta de Crédito/Débito', description: 'Pago seguro con tarjeta' },
-                    { method: 'paypal', icon: '🅿️', label: 'PayPal', description: 'Pago rápido y seguro' },
-                    { method: 'transferencia', icon: '🏦', label: 'Transferencia Bancaria', description: 'Te enviaremos los datos' },
-                    { method: 'contra-reembolso', icon: '💵', label: 'Contra Reembolso', description: 'Paga al recibir (+3€)' },
+                    {
+                      method: 'tarjeta',
+                      icon: '💳',
+                      label: 'Tarjeta de Crédito/Débito',
+                      description: 'Pago seguro con tarjeta',
+                    },
+                    {
+                      method: 'paypal',
+                      icon: '🅿️',
+                      label: 'PayPal',
+                      description: 'Pago rápido y seguro',
+                    },
+                    {
+                      method: 'transferencia',
+                      icon: '🏦',
+                      label: 'Transferencia Bancaria',
+                      description: 'Te enviaremos los datos',
+                    },
+                    {
+                      method: 'contra-reembolso',
+                      icon: '💵',
+                      label: 'Contra Reembolso',
+                      description: 'Paga al recibir (+3€)',
+                    },
                   ].map((option) => (
-                    <button type="button" key={option.method} onClick={() => handleGeneralChange('metodoPago', option.method)} className={`w-full p-4 rounded-xl border-2 transition-all duration-300 text-left ${formData.metodoPago === option.method ? 'border-cyan-500 bg-cyan-50 shadow-lg' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}>
+                    <button
+                      type="button"
+                      key={option.method}
+                      onClick={() => handleGeneralChange('metodoPago', option.method)}
+                      className={`w-full p-4 rounded-xl border-2 transition-all duration-300 text-left ${formData.metodoPago === option.method ? 'border-cyan-500 bg-cyan-50 shadow-lg' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
+                    >
                       <div className="flex items-center gap-4">
                         <div className="text-3xl">{option.icon}</div>
                         <div className="flex-1">
@@ -520,7 +852,9 @@ export default function CheckoutPage() {
                           <div className="text-sm text-gray-500">{option.description}</div>
                         </div>
                         {formData.metodoPago === option.method && (
-                          <div className="w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-white">✓</div>
+                          <div className="w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-white">
+                            ✓
+                          </div>
                         )}
                       </div>
                     </button>
@@ -532,25 +866,81 @@ export default function CheckoutPage() {
                   <div className="space-y-4 mt-6 p-6 bg-gray-50 rounded-2xl border-2 border-gray-200">
                     <h3 className="font-bold text-gray-800 mb-4">Datos de la Tarjeta</h3>
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">Número de Tarjeta *</label>
-                      <input type="text" value={formData.cardNumber} onChange={(e) => handleGeneralChange('cardNumber', formatCardNumber(e.target.value))} className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${errors.cardNumber ? 'border-red-500' : 'border-gray-300'}`} placeholder="1234 5678 9012 3456" maxLength={19} />
-                      {errors.cardNumber && <p className="text-red-500 text-sm mt-1">{errors.cardNumber}</p>}
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Número de Tarjeta *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.cardNumber}
+                        onChange={(e) =>
+                          handleGeneralChange('cardNumber', formatCardNumber(e.target.value))
+                        }
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${errors.cardNumber ? 'border-red-500' : 'border-gray-300'}`}
+                        placeholder="1234 5678 9012 3456"
+                        maxLength={19}
+                      />
+                      {errors.cardNumber && (
+                        <p className="text-red-500 text-sm mt-1">{errors.cardNumber}</p>
+                      )}
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">Nombre en la Tarjeta *</label>
-                      <input type="text" value={formData.cardName} onChange={(e) => handleGeneralChange('cardName', e.target.value.toUpperCase())} className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${errors.cardName ? 'border-red-500' : 'border-gray-300'}`} placeholder="JUAN GARCIA" />
-                      {errors.cardName && <p className="text-red-500 text-sm mt-1">{errors.cardName}</p>}
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Nombre en la Tarjeta *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.cardName}
+                        onChange={(e) =>
+                          handleGeneralChange('cardName', e.target.value.toUpperCase())
+                        }
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${errors.cardName ? 'border-red-500' : 'border-gray-300'}`}
+                        placeholder="JUAN GARCIA"
+                      />
+                      {errors.cardName && (
+                        <p className="text-red-500 text-sm mt-1">{errors.cardName}</p>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Fecha de Vencimiento *</label>
-                        <input type="text" value={formData.cardExpiry} onChange={(e) => { let value = e.target.value.replace(/\D/g, ''); if (value.length >= 2) { value = value.slice(0, 2) + '/' + value.slice(2, 4); } handleGeneralChange('cardExpiry', value); }} className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${errors.cardExpiry ? 'border-red-500' : 'border-gray-300'}`} placeholder="MM/AA" maxLength={5} />
-                        {errors.cardExpiry && <p className="text-red-500 text-sm mt-1">{errors.cardExpiry}</p>}
+                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                          Fecha de Vencimiento *
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.cardExpiry}
+                          onChange={(e) => {
+                            let value = e.target.value.replace(/\D/g, '');
+                            if (value.length >= 2) {
+                              value = value.slice(0, 2) + '/' + value.slice(2, 4);
+                            }
+                            handleGeneralChange('cardExpiry', value);
+                          }}
+                          className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${errors.cardExpiry ? 'border-red-500' : 'border-gray-300'}`}
+                          placeholder="MM/AA"
+                          maxLength={5}
+                        />
+                        {errors.cardExpiry && (
+                          <p className="text-red-500 text-sm mt-1">{errors.cardExpiry}</p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-bold text-gray-700 mb-2">CVV *</label>
-                        <input type="text" value={formData.cardCVV} onChange={(e) => handleGeneralChange('cardCVV', e.target.value.replace(/\D/g, '').slice(0, 4))} className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${errors.cardCVV ? 'border-red-500' : 'border-gray-300'}`} placeholder="123" maxLength={4} />
-                        {errors.cardCVV && <p className="text-red-500 text-sm mt-1">{errors.cardCVV}</p>}
+                        <input
+                          type="text"
+                          value={formData.cardCVV}
+                          onChange={(e) =>
+                            handleGeneralChange(
+                              'cardCVV',
+                              e.target.value.replace(/\D/g, '').slice(0, 4)
+                            )
+                          }
+                          className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${errors.cardCVV ? 'border-red-500' : 'border-gray-300'}`}
+                          placeholder="123"
+                          maxLength={4}
+                        />
+                        {errors.cardCVV && (
+                          <p className="text-red-500 text-sm mt-1">{errors.cardCVV}</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -558,8 +948,20 @@ export default function CheckoutPage() {
               </section>
 
               <div className="flex gap-4">
-                <button type="button" onClick={handlePreviousStep} className="flex-1 py-4 bg-gray-200 text-gray-700 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all duration-300">← Volver</button>
-                <button type="button" onClick={handleNextStep} className="flex-1 py-4 bg-gradient-rainbow text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300">Revisar Pedido →</button>
+                <button
+                  type="button"
+                  onClick={handlePreviousStep}
+                  className="flex-1 py-4 bg-gray-200 text-gray-700 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all duration-300"
+                >
+                  ← Volver
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextStep}
+                  className="flex-1 py-4 bg-gradient-rainbow text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
+                >
+                  Revisar Pedido →
+                </button>
               </div>
             </>
           )}
@@ -569,16 +971,27 @@ export default function CheckoutPage() {
             <>
               <section className="bg-white rounded-2xl border p-6 space-y-4">
                 <h2 className="text-xl font-bold">Revisar Pedido</h2>
-                
+
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-bold">📦 Envío a:</h3>
-                    <button type="button" onClick={() => setCurrentStep(1)} className="text-cyan-600 hover:text-cyan-700 font-bold text-sm">Editar</button>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(1)}
+                      className="text-cyan-600 hover:text-cyan-700 font-bold text-sm"
+                    >
+                      Editar
+                    </button>
                   </div>
                   <div className="space-y-1 text-sm text-gray-700">
-                    <p className="font-bold">{formData.facturacion.nombre} {formData.facturacion.apellidos}</p>
+                    <p className="font-bold">
+                      {formData.facturacion.nombre} {formData.facturacion.apellidos}
+                    </p>
                     <p>{formData.facturacion.direccion}</p>
-                    <p>{formData.facturacion.codigoPostal} {formData.facturacion.ciudad}, {formData.facturacion.provincia}</p>
+                    <p>
+                      {formData.facturacion.codigoPostal} {formData.facturacion.ciudad},{' '}
+                      {formData.facturacion.provincia}
+                    </p>
                     <p>{formData.email}</p>
                   </div>
                 </div>
@@ -586,7 +999,13 @@ export default function CheckoutPage() {
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-bold">💳 Método de Pago:</h3>
-                    <button type="button" onClick={() => setCurrentStep(2)} className="text-cyan-600 hover:text-cyan-700 font-bold text-sm">Editar</button>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(2)}
+                      className="text-cyan-600 hover:text-cyan-700 font-bold text-sm"
+                    >
+                      Editar
+                    </button>
                   </div>
                   <p className="text-sm text-gray-700 font-medium">
                     {formData.metodoPago === 'tarjeta' && '💳 Tarjeta de Crédito/Débito'}
@@ -607,16 +1026,47 @@ export default function CheckoutPage() {
 
                 <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
                   <label className="flex items-start gap-3 cursor-pointer">
-                    <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} className="mt-1 w-5 h-5 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500" />
-                    <span className="text-sm text-gray-700">He leído y acepto los <a href="/terminos" className="text-cyan-600 hover:underline font-bold">términos y condiciones</a> y la <a href="/privacidad" className="text-cyan-600 hover:underline font-bold">política de privacidad</a></span>
+                    <input
+                      type="checkbox"
+                      checked={acceptTerms}
+                      onChange={(e) => setAcceptTerms(e.target.checked)}
+                      className="mt-1 w-5 h-5 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500"
+                    />
+                    <span className="text-sm text-gray-700">
+                      He leído y acepto los{' '}
+                      <a href="/terminos" className="text-cyan-600 hover:underline font-bold">
+                        términos y condiciones
+                      </a>{' '}
+                      y la{' '}
+                      <a href="/privacidad" className="text-cyan-600 hover:underline font-bold">
+                        política de privacidad
+                      </a>
+                    </span>
                   </label>
                 </div>
               </section>
 
               <div className="flex gap-4">
-                <button type="button" onClick={handlePreviousStep} className="flex-1 py-4 bg-gray-200 text-gray-700 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all duration-300">← Volver</button>
-                <button type="submit" disabled={!acceptTerms || loading} className={`flex-1 py-4 rounded-2xl font-black text-lg transition-all duration-300 ${!acceptTerms || loading ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-gradient-rainbow text-white shadow-lg hover:shadow-2xl transform hover:scale-105'}`}>
-                  {loading ? <span className="flex items-center justify-center gap-2"><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />Procesando...</span> : `✓ Realizar Pedido - €${total.toFixed(2)}`}
+                <button
+                  type="button"
+                  onClick={handlePreviousStep}
+                  className="flex-1 py-4 bg-gray-200 text-gray-700 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all duration-300"
+                >
+                  ← Volver
+                </button>
+                <button
+                  type="submit"
+                  disabled={!acceptTerms || loading}
+                  className={`flex-1 py-4 rounded-2xl font-black text-lg transition-all duration-300 ${!acceptTerms || loading ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-gradient-rainbow text-white shadow-lg hover:shadow-2xl transform hover:scale-105'}`}
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Procesando...
+                    </span>
+                  ) : (
+                    `✓ Realizar Pedido - €${total.toFixed(2)}`
+                  )}
                 </button>
               </div>
             </>
@@ -628,27 +1078,83 @@ export default function CheckoutPage() {
           <h3 className="text-xl font-bold">Resumen del pedido</h3>
           <div className="space-y-3 max-h-80 overflow-y-auto">
             {cart.items.map((item) => (
-              <div key={`${item.id}-${item.variantId ?? 'v'}`} className="flex gap-3 p-3 bg-gray-50 rounded-xl">
-                <img src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover" onError={(e) => { const img = e.currentTarget as HTMLImageElement; img.onerror = null; img.src = 'https://placehold.co/400x300/e2e8f0/94a3b8?text=Sin+Imagen'; }} />
+              <div
+                key={`${item.id}-${item.variantId ?? 'v'}`}
+                className="flex gap-3 p-3 bg-gray-50 rounded-xl"
+              >
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-16 h-16 rounded-lg object-cover"
+                  onError={(e) => {
+                    const img = e.currentTarget as HTMLImageElement;
+                    img.onerror = null;
+                    img.src = 'https://placehold.co/400x300/e2e8f0/94a3b8?text=Sin+Imagen';
+                  }}
+                />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm truncate">{item.name}</div>
-                  {item.variantName && <div className="text-xs text-gray-500 truncate">{item.variantName}</div>}
+                  {item.variantName && (
+                    <div className="text-xs text-gray-500 truncate">{item.variantName}</div>
+                  )}
                   <div className="flex items-center gap-2 mt-2">
-                    <button type="button" className="w-6 h-6 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center justify-center" onClick={() => updateCartItemQuantity(item.id, item.variantId, Math.max(1, item.quantity - 1))}>−</button>
+                    <button
+                      type="button"
+                      className="w-6 h-6 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center justify-center"
+                      onClick={() =>
+                        updateCartItemQuantity(
+                          item.id,
+                          item.variantId,
+                          Math.max(1, item.quantity - 1)
+                        )
+                      }
+                    >
+                      −
+                    </button>
                     <span className="text-sm text-gray-700 w-8 text-center">{item.quantity}</span>
-                    <button type="button" className="w-6 h-6 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center justify-center" onClick={() => updateCartItemQuantity(item.id, item.variantId, item.quantity + 1)}>+</button>
-                    <button type="button" className="ml-auto text-xs text-red-600 hover:underline" onClick={() => removeFromCart(item.id, item.variantId)}>Eliminar</button>
+                    <button
+                      type="button"
+                      className="w-6 h-6 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center justify-center"
+                      onClick={() =>
+                        updateCartItemQuantity(item.id, item.variantId, item.quantity + 1)
+                      }
+                    >
+                      +
+                    </button>
+                    <button
+                      type="button"
+                      className="ml-auto text-xs text-red-600 hover:underline"
+                      onClick={() => removeFromCart(item.id, item.variantId)}
+                    >
+                      Eliminar
+                    </button>
                   </div>
-                  <div className="font-bold text-cyan-600 text-sm text-right mt-1">€{(item.price * item.quantity).toFixed(2)}</div>
+                  <div className="font-bold text-cyan-600 text-sm text-right mt-1">
+                    €{(item.price * item.quantity).toFixed(2)}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
           <div className="space-y-2 pt-4 border-t">
-            <div className="flex justify-between text-sm"><span>Subtotal</span><span className="font-bold">€{subtotal.toFixed(2)}</span></div>
-            <div className="flex justify-between text-sm"><span>Envío</span><span className="font-bold">{shippingCost === 0 ? 'Gratis' : `€${shippingCost.toFixed(2)}`}</span></div>
-            <div className="flex justify-between text-sm"><span>IVA (21%)</span><span className="font-bold">€{iva.toFixed(2)}</span></div>
-            <div className="flex justify-between font-black text-xl pt-2 border-t"><span>Total</span><span className="text-cyan-600">€{total.toFixed(2)}</span></div>
+            <div className="flex justify-between text-sm">
+              <span>Subtotal</span>
+              <span className="font-bold">€{subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Envío</span>
+              <span className="font-bold">
+                {shippingCost === 0 ? 'Gratis' : `€${shippingCost.toFixed(2)}`}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>IVA (21%)</span>
+              <span className="font-bold">€{iva.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between font-black text-xl pt-2 border-t">
+              <span>Total</span>
+              <span className="text-cyan-600">€{total.toFixed(2)}</span>
+            </div>
           </div>
         </aside>
       </form>

@@ -21,15 +21,24 @@ interface ProductGridProps {
 const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
   if (products.length === 0) {
     return (
-      <div style={{ 
-        textAlign: 'center', 
-        padding: '3rem',
-        background: 'var(--color-gray-50)',
-        borderRadius: '12px',
-        border: '2px dashed var(--color-gray-300)'
-      }}>
+      <div
+        style={{
+          textAlign: 'center',
+          padding: '3rem',
+          background: 'var(--color-gray-50)',
+          borderRadius: '12px',
+          border: '2px dashed var(--color-gray-300)',
+        }}
+      >
         <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--color-gray-800)' }}>
+        <h3
+          style={{
+            fontSize: '1.25rem',
+            fontWeight: '600',
+            marginBottom: '0.5rem',
+            color: 'var(--color-gray-800)',
+          }}
+        >
           No se encontraron productos
         </h3>
         <p style={{ color: 'var(--color-gray-600)' }}>
@@ -40,11 +49,13 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
   }
 
   return (
-    <div style={{ 
-      display: 'grid', 
-      gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-      gap: '1.5rem' 
-    }}>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+        gap: '1.5rem',
+      }}
+    >
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}

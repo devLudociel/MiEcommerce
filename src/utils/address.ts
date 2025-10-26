@@ -18,7 +18,7 @@ export async function lookupZipES(zip: string): Promise<ZipLookup | null> {
     const citiesSet = new Set<string>();
     if (Array.isArray(data?.places)) {
       for (const p of data.places) {
-        const name = (p["place name"] || p?.place || '').toString();
+        const name = (p['place name'] || p?.place || '').toString();
         if (name) citiesSet.add(name);
       }
     }
@@ -38,10 +38,15 @@ export type AddressSuggestion = {
   country?: string;
 };
 
-export async function autocompleteStreetES(query: string, opts?: { postcode?: string; city?: string }): Promise<AddressSuggestion[]> {
+export async function autocompleteStreetES(
+  query: string,
+  opts?: { postcode?: string; city?: string }
+): Promise<AddressSuggestion[]> {
   const q = (query || '').trim();
   if (q.length < 3) return [];
-  const apiKey = (import.meta as any)?.env?.VITE_GEOAPIFY_API_KEY || (import.meta as any)?.env?.PUBLIC_GEOAPIFY_KEY;
+  const apiKey =
+    (import.meta as any)?.env?.VITE_GEOAPIFY_API_KEY ||
+    (import.meta as any)?.env?.PUBLIC_GEOAPIFY_KEY;
   if (!apiKey) return [];
   const parts = [q];
   if (opts?.postcode) parts.push(opts.postcode);
@@ -82,4 +87,3 @@ export function debounce<T extends (...args: any[]) => any>(fn: T, wait = 300) {
     t = setTimeout(() => fn(...args), wait);
   };
 }
-

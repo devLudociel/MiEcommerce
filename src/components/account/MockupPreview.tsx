@@ -6,12 +6,16 @@ interface MockupPreviewProps {
 
 // URLs de los mockups en Firebase
 const MOCKUP_IMAGES = {
-  'shirt-black': 'https://firebasestorage.googleapis.com/v0/b/ecommerce-ia-2ecf4.firebasestorage.app/o/mockups%2Fshirt-black.png?alt=media&token=4ca44117-4c33-4824-8970-5548ea8a6e28',
-  'shirt-white': 'https://firebasestorage.googleapis.com/v0/b/ecommerce-ia-2ecf4.firebasestorage.app/o/mockups%2Fshirt-white.png?alt=media&token=7ce932a5-a8d8-4990-8cb3-e8624f02d641',
-  'hoodie': 'https://firebasestorage.googleapis.com/v0/b/ecommerce-ia-2ecf4.firebasestorage.app/o/mockups%2Fhoodie.png?alt=media&token=656e2b56-8805-4aab-89c2-4868c1de0e2f',
-  'mug': 'https://firebasestorage.googleapis.com/v0/b/ecommerce-ia-2ecf4.firebasestorage.app/o/mockups%2Fmug.png?alt=media&token=e338d6aa-34e1-4ffe-9fdc-7603df90030a',
-  'canvas': 'https://firebasestorage.googleapis.com/v0/b/ecommerce-ia-2ecf4.firebasestorage.app/o/mockups%2Fcanvas.png?alt=media&token=6ad4015d-cfb9-404d-a3b4-c7d62768c484',
-  'cap': 'https://firebasestorage.googleapis.com/v0/b/ecommerce-ia-2ecf4.firebasestorage.app/o/mockups%2Fcap.png?alt=media&token=1ef31e3a-de4c-4159-9904-669abdb9f71e'
+  'shirt-black':
+    'https://firebasestorage.googleapis.com/v0/b/ecommerce-ia-2ecf4.firebasestorage.app/o/mockups%2Fshirt-black.png?alt=media&token=4ca44117-4c33-4824-8970-5548ea8a6e28',
+  'shirt-white':
+    'https://firebasestorage.googleapis.com/v0/b/ecommerce-ia-2ecf4.firebasestorage.app/o/mockups%2Fshirt-white.png?alt=media&token=7ce932a5-a8d8-4990-8cb3-e8624f02d641',
+  hoodie:
+    'https://firebasestorage.googleapis.com/v0/b/ecommerce-ia-2ecf4.firebasestorage.app/o/mockups%2Fhoodie.png?alt=media&token=656e2b56-8805-4aab-89c2-4868c1de0e2f',
+  mug: 'https://firebasestorage.googleapis.com/v0/b/ecommerce-ia-2ecf4.firebasestorage.app/o/mockups%2Fmug.png?alt=media&token=e338d6aa-34e1-4ffe-9fdc-7603df90030a',
+  canvas:
+    'https://firebasestorage.googleapis.com/v0/b/ecommerce-ia-2ecf4.firebasestorage.app/o/mockups%2Fcanvas.png?alt=media&token=6ad4015d-cfb9-404d-a3b4-c7d62768c484',
+  cap: 'https://firebasestorage.googleapis.com/v0/b/ecommerce-ia-2ecf4.firebasestorage.app/o/mockups%2Fcap.png?alt=media&token=1ef31e3a-de4c-4159-9904-669abdb9f71e',
 };
 
 export default function MockupPreview({ imageUrl, mockupType, mockupName }: MockupPreviewProps) {
@@ -50,7 +54,7 @@ export default function MockupPreview({ imageUrl, mockupType, mockupName }: Mock
           backgroundPosition: 'center',
           borderRadius: '8px',
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          overflow: 'hidden'
+          overflow: 'hidden',
         }}
       >
         {/* Contenedor fijo para la imagen */}
@@ -62,7 +66,7 @@ export default function MockupPreview({ imageUrl, mockupType, mockupName }: Mock
             width: positioning.width,
             height: positioning.height,
             overflow: 'hidden',
-            borderRadius: '2px'
+            borderRadius: '2px',
           }}
         >
           {/* Imagen que se ajusta al contenedor */}
@@ -74,7 +78,7 @@ export default function MockupPreview({ imageUrl, mockupType, mockupName }: Mock
               height: '100%',
               objectFit: 'cover',
               objectPosition: 'center',
-              display: 'block'
+              display: 'block',
             }}
           />
         </div>

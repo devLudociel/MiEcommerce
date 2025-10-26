@@ -7,44 +7,51 @@ const HeroCarousel = () => {
   const slides = [
     {
       id: 1,
-      title: "Tecnología del Futuro",
-      subtitle: "Nueva Colección 2025",
-      description: "Descubre los productos más innovadores con diseño futurista y calidad premium",
-      ctaPrimary: "Explorar Ahora",
-      ctaSecondary: "Ver Catálogo",
-      backgroundImage: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=1920&h=1080&fit=crop",
-      accentColor: 'cyan'
+      title: 'Tecnología del Futuro',
+      subtitle: 'Nueva Colección 2025',
+      description: 'Descubre los productos más innovadores con diseño futurista y calidad premium',
+      ctaPrimary: 'Explorar Ahora',
+      ctaSecondary: 'Ver Catálogo',
+      backgroundImage:
+        'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=1920&h=1080&fit=crop',
+      accentColor: 'cyan',
     },
     {
       id: 2,
-      title: "Estilo Único",
-      subtitle: "Edición Limitada",
-      description: "Productos exclusivos que combinan elegancia, funcionalidad y diseño vanguardista",
-      ctaPrimary: "Comprar Ya",
-      ctaSecondary: "Más Info",
-      backgroundImage: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&h=1080&fit=crop",
-      accentColor: 'magenta'
+      title: 'Estilo Único',
+      subtitle: 'Edición Limitada',
+      description:
+        'Productos exclusivos que combinan elegancia, funcionalidad y diseño vanguardista',
+      ctaPrimary: 'Comprar Ya',
+      ctaSecondary: 'Más Info',
+      backgroundImage:
+        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&h=1080&fit=crop',
+      accentColor: 'magenta',
     },
     {
       id: 3,
-      title: "Ofertas Increíbles",
-      subtitle: "Hasta 70% de Descuento",
-      description: "No te pierdas nuestras ofertas especiales en los mejores productos seleccionados",
-      ctaPrimary: "Ver Ofertas",
-      ctaSecondary: "Suscribirse",
-      backgroundImage: "https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=1920&h=1080&fit=crop",
-      accentColor: 'yellow'
+      title: 'Ofertas Increíbles',
+      subtitle: 'Hasta 70% de Descuento',
+      description:
+        'No te pierdas nuestras ofertas especiales en los mejores productos seleccionados',
+      ctaPrimary: 'Ver Ofertas',
+      ctaSecondary: 'Suscribirse',
+      backgroundImage:
+        'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=1920&h=1080&fit=crop',
+      accentColor: 'yellow',
     },
     {
       id: 4,
-      title: "Experiencia Premium",
-      subtitle: "Calidad Garantizada",
-      description: "Productos premium con la mejor calidad, diseño excepcional y servicio al cliente 24/7",
-      ctaPrimary: "Descubrir",
-      ctaSecondary: "Contactar",
-      backgroundImage: "https://images.unsplash.com/photo-1560472355-536de3962603?w=1920&h=1080&fit=crop",
-      accentColor: 'rainbow'
-    }
+      title: 'Experiencia Premium',
+      subtitle: 'Calidad Garantizada',
+      description:
+        'Productos premium con la mejor calidad, diseño excepcional y servicio al cliente 24/7',
+      ctaPrimary: 'Descubrir',
+      ctaSecondary: 'Contactar',
+      backgroundImage:
+        'https://images.unsplash.com/photo-1560472355-536de3962603?w=1920&h=1080&fit=crop',
+      accentColor: 'rainbow',
+    },
   ];
 
   const nextSlide = () => {
@@ -70,7 +77,7 @@ const HeroCarousel = () => {
       cyan: 'bg-gradient-primary',
       magenta: 'bg-gradient-secondary',
       yellow: 'bg-gradient-accent',
-      rainbow: 'bg-gradient-rainbow'
+      rainbow: 'bg-gradient-rainbow',
     };
     return gradients[color as keyof typeof gradients] || gradients.cyan;
   };
@@ -80,13 +87,16 @@ const HeroCarousel = () => {
       cyan: 'text-cyan',
       magenta: 'text-magenta',
       yellow: 'text-yellow',
-      rainbow: 'text-gradient'
+      rainbow: 'text-gradient',
     };
     return textColors[color as keyof typeof textColors] || textColors.cyan;
   };
 
   return (
-    <section className="relative overflow-hidden" style={{ height: '65vh', minHeight: '500px', maxHeight: '700px' }}>
+    <section
+      className="relative overflow-hidden"
+      style={{ height: '65vh', minHeight: '500px', maxHeight: '700px' }}
+    >
       {/* Slides Container */}
       <div className="relative h-full">
         {slides.map((slide, index) => {
@@ -101,19 +111,19 @@ const HeroCarousel = () => {
               style={{
                 opacity: isActive ? 1 : 0,
                 zIndex: isActive ? 20 : 10,
-                pointerEvents: isActive ? 'auto' : 'none'
+                pointerEvents: isActive ? 'auto' : 'none',
               }}
             >
               {/* Background Image */}
-              <div 
+              <div
                 className="absolute inset-0 bg-cover bg-center"
                 style={{
                   backgroundImage: `url(${slide.backgroundImage})`,
                   transform: isActive ? 'scale(1)' : 'scale(1.1)',
-                  transition: 'transform 1000ms ease-out'
+                  transition: 'transform 1000ms ease-out',
                 }}
               />
-              
+
               {/* Overlay */}
               <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
 
@@ -122,12 +132,12 @@ const HeroCarousel = () => {
                 <div className="container mx-auto px-6">
                   <div style={{ maxWidth: '48rem' }}>
                     {/* Subtitle */}
-                    <div 
+                    <div
                       className="transform transition-all duration-1000"
                       style={{
                         opacity: isActive ? 1 : 0,
                         transform: isActive ? 'translateY(0)' : 'translateY(2rem)',
-                        transitionDelay: '200ms'
+                        transitionDelay: '200ms',
                       }}
                     >
                       <span className="inline-block px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-white/20 backdrop-blur-sm border border-white/30 text-white mb-4">
@@ -136,19 +146,22 @@ const HeroCarousel = () => {
                     </div>
 
                     {/* Title */}
-                    <h1 
+                    <h1
                       className="font-black mb-4 leading-tight text-white drop-shadow-2xl transform transition-all duration-1000"
                       style={{
                         fontSize: 'clamp(2rem, 5vw, 3.5rem)',
                         opacity: isActive ? 1 : 0,
                         transform: isActive ? 'translateY(0)' : 'translateY(3rem)',
-                        transitionDelay: '400ms'
+                        transitionDelay: '400ms',
                       }}
                     >
                       {slide.title.split(' ').map((word, i) => {
                         const isLastWord = i === slide.title.split(' ').length - 1;
                         return (
-                          <span key={i} className={`inline-block mr-3 ${isLastWord ? textClass : ''}`}>
+                          <span
+                            key={i}
+                            className={`inline-block mr-3 ${isLastWord ? textClass : ''}`}
+                          >
                             {word}
                           </span>
                         );
@@ -156,29 +169,31 @@ const HeroCarousel = () => {
                     </h1>
 
                     {/* Description */}
-                    <p 
+                    <p
                       className="text-white/90 mb-6 leading-relaxed transform transition-all duration-1000"
                       style={{
                         fontSize: 'clamp(0.875rem, 2vw, 1.125rem)',
                         maxWidth: '36rem',
                         opacity: isActive ? 1 : 0,
                         transform: isActive ? 'translateY(0)' : 'translateY(2rem)',
-                        transitionDelay: '600ms'
+                        transitionDelay: '600ms',
                       }}
                     >
                       {slide.description}
                     </p>
 
                     {/* Call to Actions */}
-                    <div 
+                    <div
                       className="flex flex-col sm:flex-row gap-4 transform transition-all duration-1000"
                       style={{
                         opacity: isActive ? 1 : 0,
                         transform: isActive ? 'translateY(0)' : 'translateY(2rem)',
-                        transitionDelay: '800ms'
+                        transitionDelay: '800ms',
                       }}
                     >
-                      <button className={`px-6 py-3 text-white font-bold rounded-xl ${gradientClass} hover:scale-105 transform transition-all shadow-lg hover:shadow-2xl`}>
+                      <button
+                        className={`px-6 py-3 text-white font-bold rounded-xl ${gradientClass} hover:scale-105 transform transition-all shadow-lg hover:shadow-2xl`}
+                      >
                         {slide.ctaPrimary}
                       </button>
                       <button className="px-6 py-3 text-white font-bold rounded-xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white hover:text-gray-800 transition-all transform hover:scale-105">
@@ -216,11 +231,11 @@ const HeroCarousel = () => {
           >
             {isAutoPlaying ? (
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M5 4h3v12H5V4zm7 0h3v12h-3V4z"/>
+                <path d="M5 4h3v12H5V4zm7 0h3v12h-3V4z" />
               </svg>
             ) : (
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+                <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
               </svg>
             )}
           </button>
@@ -249,8 +264,6 @@ const HeroCarousel = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
       </button>
-
-      
     </section>
   );
 };

@@ -68,12 +68,32 @@ const subcategories = [
 const attributes = [
   { id: '1', name: 'Forma', options: [{ value: 'Standard' }, { value: 'Cuadrada' }] },
   { id: '2', name: 'Acabado', options: [{ value: 'Mate' }, { value: 'Brillo' }] },
-  { id: '3', name: 'Tipo de Prenda', options: [{ value: 'Camiseta' }, { value: 'Sudadera' }, { value: 'Polo' }] },
-  { id: '4', name: 'Técnica', options: [{ value: 'DTF' }, { value: 'Vinilo' }, { value: 'Bordado' }] },
-  { id: '6', name: 'Material', options: [{ value: 'Papel' }, { value: 'Vinilo' }, { value: 'UV DTF' }] },
-  { id: '8', name: 'Producto', options: [{ value: 'Taza' }, { value: 'Vaso' }, { value: 'Termo' }] },
+  {
+    id: '3',
+    name: 'Tipo de Prenda',
+    options: [{ value: 'Camiseta' }, { value: 'Sudadera' }, { value: 'Polo' }],
+  },
+  {
+    id: '4',
+    name: 'Técnica',
+    options: [{ value: 'DTF' }, { value: 'Vinilo' }, { value: 'Bordado' }],
+  },
+  {
+    id: '6',
+    name: 'Material',
+    options: [{ value: 'Papel' }, { value: 'Vinilo' }, { value: 'UV DTF' }],
+  },
+  {
+    id: '8',
+    name: 'Producto',
+    options: [{ value: 'Taza' }, { value: 'Vaso' }, { value: 'Termo' }],
+  },
   { id: '10', name: 'Material Base', options: [{ value: 'Madera' }, { value: 'Metal' }] },
-  { id: '11', name: 'Material Impresión', options: [{ value: 'Resina' }, { value: 'PLA' }, { value: 'ABS' }] },
+  {
+    id: '11',
+    name: 'Material Impresión',
+    options: [{ value: 'Resina' }, { value: 'PLA' }, { value: 'ABS' }],
+  },
 ];
 
 const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySlug }) => {
@@ -84,13 +104,13 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySl
     priceRange: [0, 1000],
     attributes: {},
     tags: [],
-    sortBy: 'featured'
+    sortBy: 'featured',
   });
 
   // Encontrar categoría y subcategoría actuales
-  const currentCategory = categories.find(cat => cat.slug === categorySlug);
-  const currentSubcategory = subcategories.find(sub => 
-    sub.slug === subcategorySlug && sub.categoryId === currentCategory?.id
+  const currentCategory = categories.find((cat) => cat.slug === categorySlug);
+  const currentSubcategory = subcategories.find(
+    (sub) => sub.slug === subcategorySlug && sub.categoryId === currentCategory?.id
   );
 
   // Cargar productos desde Firebase
@@ -121,11 +141,14 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySl
     const unsubscribe = onSnapshot(
       productQuery,
       (snapshot) => {
-        const productList: Product[] = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as Product));
-        
+        const productList: Product[] = snapshot.docs.map(
+          (doc) =>
+            ({
+              id: doc.id,
+              ...doc.data(),
+            }) as Product
+        );
+
         setProducts(productList);
         setLoading(false);
       },
@@ -141,7 +164,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySl
 
   // Filtrar y ordenar productos
   const filteredProducts = useMemo(() => {
-    let filtered = products.filter((product: Product) => {
+    const filtered = products.filter((product: Product) => {
       // Filtro por rango de precio
       if (product.basePrice < filters.priceRange[0] || product.basePrice > filters.priceRange[1]) {
         return false;
@@ -150,7 +173,9 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySl
       // Filtro por atributos
       for (const [attributeId, selectedValues] of Object.entries(filters.attributes)) {
         if (selectedValues.length > 0) {
-          const productAttribute = product.attributes.find((attr: any) => attr.attributeId === attributeId);
+          const productAttribute = product.attributes.find(
+            (attr: any) => attr.attributeId === attributeId
+          );
           if (!productAttribute || !selectedValues.includes(productAttribute.value)) {
             return false;
           }
@@ -196,7 +221,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySl
       });
     });
 
-    return attributes.filter(attr => productAttributes.has(attr.id));
+    return attributes.filter((attr) => productAttributes.has(attr.id));
   }, [products]);
 
   // Obtener tags disponibles
@@ -213,7 +238,9 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySl
       <div style={{ padding: '2rem', textAlign: 'center', marginTop: '200px' }}>
         <h2>Error</h2>
         <p>{error}</p>
-        <a href="/" style={{ color: 'var(--color-cyan-600)' }}>Volver al inicio</a>
+        <a href="/" style={{ color: 'var(--color-cyan-600)' }}>
+          Volver al inicio
+        </a>
       </div>
     );
   }
@@ -221,26 +248,29 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySl
   return (
     <div style={{ marginTop: '200px', minHeight: '100vh' }}>
       <div className="container" style={{ padding: '2rem 1rem' }}>
-        
         {/* Breadcrumbs */}
-        <Breadcrumbs 
-          category={currentCategory} 
-          subcategory={currentSubcategory} 
-        />
+        <Breadcrumbs category={currentCategory} subcategory={currentSubcategory} />
 
         {/* Encabezado de la página */}
         <div style={{ marginBottom: '2rem' }}>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--color-gray-800)' }}>
+          <h1
+            style={{
+              fontSize: '2.5rem',
+              fontWeight: 'bold',
+              marginBottom: '0.5rem',
+              color: 'var(--color-gray-800)',
+            }}
+          >
             {currentSubcategory ? currentSubcategory.name : currentCategory?.name}
           </h1>
           <p style={{ color: 'var(--color-gray-600)', fontSize: '1.1rem' }}>
-            {filteredProducts.length} producto{filteredProducts.length !== 1 ? 's' : ''} disponible{filteredProducts.length !== 1 ? 's' : ''}
+            {filteredProducts.length} producto{filteredProducts.length !== 1 ? 's' : ''} disponible
+            {filteredProducts.length !== 1 ? 's' : ''}
           </p>
         </div>
 
         {/* Layout responsive */}
         <div className="lg:grid lg:grid-cols-4 lg:gap-8">
-          
           {/* Panel de filtros - Desktop */}
           <aside className="lg:block hidden">
             <ProductFilters
@@ -250,7 +280,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySl
               availableTags={availableTags}
               priceRange={[
                 Math.min(...products.map((p: Product) => p.basePrice)),
-                Math.max(...products.map((p: Product) => p.basePrice))
+                Math.max(...products.map((p: Product) => p.basePrice)),
               ]}
             />
           </aside>
@@ -276,7 +306,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySl
             availableTags={availableTags}
             priceRange={[
               Math.min(...products.map((p: Product) => p.basePrice)),
-              Math.max(...products.map((p: Product) => p.basePrice))
+              Math.max(...products.map((p: Product) => p.basePrice)),
             ]}
           />
         </div>

@@ -64,12 +64,15 @@ export default function OrderConfirmation() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-cyan-50 py-16 mt-32">
       <div className="container mx-auto px-6 max-w-4xl">
-        
         {/* Mensaje de éxito */}
         <div className="text-center mb-12 animate-in slide-in-from-top duration-500">
           <div className="inline-block p-6 bg-green-500 rounded-full mb-6 shadow-2xl animate-bounce">
             <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
             </svg>
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-gray-800 mb-4">
@@ -95,10 +98,10 @@ export default function OrderConfirmation() {
               <div className="text-3xl mb-2">📅</div>
               <div className="text-sm text-gray-600">Fecha de Pedido</div>
               <div className="font-black text-purple-600 text-lg">
-                {orderDate.toLocaleDateString('es-ES', { 
-                  day: 'numeric', 
-                  month: 'long', 
-                  year: 'numeric' 
+                {orderDate.toLocaleDateString('es-ES', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
                 })}
               </div>
             </div>
@@ -106,9 +109,9 @@ export default function OrderConfirmation() {
               <div className="text-3xl mb-2">🚚</div>
               <div className="text-sm text-gray-600">Entrega Estimada</div>
               <div className="font-black text-green-600 text-lg">
-                {estimatedDelivery.toLocaleDateString('es-ES', { 
-                  day: 'numeric', 
-                  month: 'long' 
+                {estimatedDelivery.toLocaleDateString('es-ES', {
+                  day: 'numeric',
+                  month: 'long',
                 })}
               </div>
             </div>
@@ -119,7 +122,7 @@ export default function OrderConfirmation() {
             <h3 className="text-xl font-black text-gray-800 mb-6">Estado del Pedido</h3>
             <div className="relative">
               <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200" />
-              
+
               {[
                 { status: 'confirmed', label: 'Pedido Confirmado', icon: '✓', active: true },
                 { status: 'processing', label: 'En Producción', icon: '🔨', active: false },
@@ -127,11 +130,13 @@ export default function OrderConfirmation() {
                 { status: 'delivered', label: 'Entregado', icon: '🏠', active: false },
               ].map((step) => (
                 <div key={step.status} className="relative flex items-center mb-6 last:mb-0">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold z-10 transition-all ${
-                    step.active 
-                      ? 'bg-green-500 text-white shadow-lg scale-110' 
-                      : 'bg-gray-200 text-gray-400'
-                  }`}>
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center font-bold z-10 transition-all ${
+                      step.active
+                        ? 'bg-green-500 text-white shadow-lg scale-110'
+                        : 'bg-gray-200 text-gray-400'
+                    }`}
+                  >
                     {step.icon}
                   </div>
                   <div className="ml-6">
@@ -140,11 +145,11 @@ export default function OrderConfirmation() {
                     </div>
                     {step.active && (
                       <div className="text-sm text-green-600 font-medium">
-                        {orderDate.toLocaleString('es-ES', { 
-                          day: 'numeric', 
-                          month: 'short', 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
+                        {orderDate.toLocaleString('es-ES', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
                         })}
                       </div>
                     )}
@@ -175,7 +180,9 @@ export default function OrderConfirmation() {
                     )}
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-sm text-gray-600">Cantidad: {item.quantity}</span>
-                      <span className="font-bold text-cyan-600">€{(item.price * item.quantity).toFixed(2)}</span>
+                      <span className="font-bold text-cyan-600">
+                        €{(item.price * item.quantity).toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -212,9 +219,13 @@ export default function OrderConfirmation() {
               Dirección de Envío
             </h3>
             <div className="space-y-1 text-gray-700">
-              <p className="font-bold">{order.shippingInfo.firstName} {order.shippingInfo.lastName}</p>
+              <p className="font-bold">
+                {order.shippingInfo.firstName} {order.shippingInfo.lastName}
+              </p>
               <p>{order.shippingInfo.address}</p>
-              <p>{order.shippingInfo.zipCode} {order.shippingInfo.city}, {order.shippingInfo.state}</p>
+              <p>
+                {order.shippingInfo.zipCode} {order.shippingInfo.city}, {order.shippingInfo.state}
+              </p>
               <p>{order.shippingInfo.country}</p>
               <p className="pt-2 text-sm">{order.shippingInfo.phone}</p>
             </div>
@@ -280,9 +291,7 @@ export default function OrderConfirmation() {
 
         {/* Soporte */}
         <div className="mt-8 text-center">
-          <p className="text-gray-600 mb-2">
-            ¿Necesitas ayuda con tu pedido?
-          </p>
+          <p className="text-gray-600 mb-2">¿Necesitas ayuda con tu pedido?</p>
           <a
             href="/contacto"
             className="text-cyan-600 hover:text-cyan-700 font-bold hover:underline"

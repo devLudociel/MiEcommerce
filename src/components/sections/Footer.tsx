@@ -17,49 +17,49 @@ const Footer: React.FC = () => {
 
   const footerSections: FooterSection[] = [
     {
-      title: "Categorías Populares",
+      title: 'Categorías Populares',
       links: [
-        { name: "Productos Gráficos", href: "/categoria/graficos-impresos" },
-        { name: "Textiles Personalizados", href: "/categoria/textiles" },
-        { name: "Sublimación", href: "/categoria/sublimados" },
-        { name: "Corte y Grabado Láser", href: "/categoria/corte-grabado" },
-        { name: "Impresión 3D", href: "/categoria/impresion-3d" },
-        { name: "Papelería Corporativa", href: "/categoria/papeleria" }
-      ]
+        { name: 'Productos Gráficos', href: '/categoria/graficos-impresos' },
+        { name: 'Textiles Personalizados', href: '/categoria/textiles' },
+        { name: 'Sublimación', href: '/categoria/sublimados' },
+        { name: 'Corte y Grabado Láser', href: '/categoria/corte-grabado' },
+        { name: 'Impresión 3D', href: '/categoria/impresion-3d' },
+        { name: 'Papelería Corporativa', href: '/categoria/papeleria' },
+      ],
     },
     {
-      title: "Información",
+      title: 'Información',
       links: [
-        { name: "Sobre Nosotros", href: "/sobre-nosotros" },
-        { name: "Cómo Personalizar", href: "/como-personalizar" },
-        { name: "Guía de Materiales", href: "/guia-materiales" },
-        { name: "Tiempos de Producción", href: "/tiempos-produccion" },
-        { name: "Galería de Trabajos", href: "/galeria" },
-        { name: "Blog", href: "/blog" }
-      ]
+        { name: 'Sobre Nosotros', href: '/sobre-nosotros' },
+        { name: 'Cómo Personalizar', href: '/como-personalizar' },
+        { name: 'Guía de Materiales', href: '/guia-materiales' },
+        { name: 'Tiempos de Producción', href: '/tiempos-produccion' },
+        { name: 'Galería de Trabajos', href: '/galeria' },
+        { name: 'Blog', href: '/blog' },
+      ],
     },
     {
-      title: "Ayuda y Soporte",
+      title: 'Ayuda y Soporte',
       links: [
-        { name: "Preguntas Frecuentes", href: "/faq" },
-        { name: "Contacto", href: "/contacto" },
-        { name: "Envíos", href: "/envios" },
-        { name: "Devoluciones", href: "/devoluciones" },
-        { name: "Política de Privacidad", href: "/privacidad" },
-        { name: "Términos y Condiciones", href: "/terminos-condiciones" }
-      ]
+        { name: 'Preguntas Frecuentes', href: '/faq' },
+        { name: 'Contacto', href: '/contacto' },
+        { name: 'Envíos', href: '/envios' },
+        { name: 'Devoluciones', href: '/devoluciones' },
+        { name: 'Política de Privacidad', href: '/privacidad' },
+        { name: 'Términos y Condiciones', href: '/terminos-condiciones' },
+      ],
     },
     {
-      title: "Mi Cuenta",
+      title: 'Mi Cuenta',
       links: [
-        { name: "Mis Pedidos", href: "/account/orders" },
-        { name: "Mis Diseños", href: "/account/design" },
-        { name: "Mis Favoritos", href: "/account/wishlist" },
-        { name: "Mis Direcciones", href: "/account/addresses" },
-        { name: "Configuración", href: "/account/settings" },
-        { name: "Cerrar Sesión", href: "/logout" }
-      ]
-    }
+        { name: 'Mis Pedidos', href: '/account/orders' },
+        { name: 'Mis Diseños', href: '/account/design' },
+        { name: 'Mis Favoritos', href: '/account/wishlist' },
+        { name: 'Mis Direcciones', href: '/account/addresses' },
+        { name: 'Configuración', href: '/account/settings' },
+        { name: 'Cerrar Sesión', href: '/logout' },
+      ],
+    },
   ];
 
   const handleSubscribe = async (e: React.FormEvent) => {
@@ -67,12 +67,12 @@ const Footer: React.FC = () => {
     if (!email) return;
 
     setIsSubscribing(true);
-    
+
     setTimeout(() => {
       setIsSubscribing(false);
       setIsSubscribed(true);
       setEmail('');
-      
+
       setTimeout(() => {
         setIsSubscribed(false);
       }, 3000);
@@ -89,13 +89,14 @@ const Footer: React.FC = () => {
               <span>📧</span>
               <span>Newsletter</span>
             </div>
-            
+
             <h2 className="text-3xl md:text-4xl font-black text-gray-800 mb-4">
               ¡No te pierdas nuestras ofertas!
             </h2>
-            
+
             <p className="text-lg text-gray-600 mb-8">
-              Suscríbete y recibe descuentos exclusivos, nuevos productos y consejos de personalización
+              Suscríbete y recibe descuentos exclusivos, nuevos productos y consejos de
+              personalización
             </p>
 
             <form onSubmit={handleSubscribe} className="max-w-md mx-auto mb-6">
@@ -108,14 +109,14 @@ const Footer: React.FC = () => {
                   className="flex-1 px-6 py-4 bg-white border-2 border-gray-300 rounded-xl text-gray-800 placeholder-gray-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all"
                   disabled={isSubscribing || isSubscribed}
                 />
-                
+
                 <button
                   type="submit"
                   disabled={isSubscribing || isSubscribed || !email}
                   className={`px-8 py-4 font-bold rounded-xl transition-all duration-300 ${
-                    isSubscribed 
-                      ? 'bg-green-500 text-white' 
-                      : isSubscribing 
+                    isSubscribed
+                      ? 'bg-green-500 text-white'
+                      : isSubscribing
                         ? 'bg-gray-400 text-white cursor-not-allowed'
                         : 'bg-gradient-rainbow text-white hover:shadow-lg transform hover:scale-105'
                   } disabled:opacity-50`}
@@ -147,7 +148,6 @@ const Footer: React.FC = () => {
       <div className="bg-gray-900 text-white">
         <div className="container mx-auto px-6 py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
-            
             {/* Company Info */}
             <div className="lg:col-span-1">
               <a href="/" className="inline-flex items-center gap-3 mb-6 group">
@@ -163,7 +163,8 @@ const Footer: React.FC = () => {
               </a>
 
               <p className="text-gray-400 mb-6 leading-relaxed text-sm">
-                Especialistas en impresión y personalización. Damos vida a tus ideas con la más alta calidad y tecnología.
+                Especialistas en impresión y personalización. Damos vida a tus ideas con la más alta
+                calidad y tecnología.
               </p>
 
               <div className="space-y-3">
@@ -189,7 +190,7 @@ const Footer: React.FC = () => {
                   {section.title}
                   <div className="absolute -bottom-2 left-0 w-8 h-0.5 bg-gradient-rainbow" />
                 </h4>
-                
+
                 <ul className="space-y-3">
                   {section.links.map((link) => (
                     <li key={link.name}>
@@ -250,15 +251,45 @@ const Footer: React.FC = () => {
             <h4 className="text-center text-lg font-bold text-white mb-6">
               Síguenos en redes sociales
             </h4>
-            
+
             <div className="flex justify-center gap-4">
               {[
-                { name: 'Instagram', icon: '📷', href: 'https://instagram.com/imprimarte', color: '#E1306C' },
-                { name: 'Facebook', icon: '👍', href: 'https://facebook.com/imprimarte', color: '#1877F2' },
-                { name: 'TikTok', icon: '🎵', href: 'https://tiktok.com/@imprimarte', color: '#000000' },
-                { name: 'WhatsApp', icon: '💬', href: 'https://wa.me/34645341452', color: '#25D366' },
-                { name: 'YouTube', icon: '📺', href: 'https://youtube.com/@imprimarte', color: '#FF0000' },
-                { name: 'Pinterest', icon: '📌', href: 'https://pinterest.com/imprimarte', color: '#BD081C' }
+                {
+                  name: 'Instagram',
+                  icon: '📷',
+                  href: 'https://instagram.com/imprimarte',
+                  color: '#E1306C',
+                },
+                {
+                  name: 'Facebook',
+                  icon: '👍',
+                  href: 'https://facebook.com/imprimarte',
+                  color: '#1877F2',
+                },
+                {
+                  name: 'TikTok',
+                  icon: '🎵',
+                  href: 'https://tiktok.com/@imprimarte',
+                  color: '#000000',
+                },
+                {
+                  name: 'WhatsApp',
+                  icon: '💬',
+                  href: 'https://wa.me/34645341452',
+                  color: '#25D366',
+                },
+                {
+                  name: 'YouTube',
+                  icon: '📺',
+                  href: 'https://youtube.com/@imprimarte',
+                  color: '#FF0000',
+                },
+                {
+                  name: 'Pinterest',
+                  icon: '📌',
+                  href: 'https://pinterest.com/imprimarte',
+                  color: '#BD081C',
+                },
               ].map((social) => (
                 <a
                   key={social.name}
@@ -285,12 +316,11 @@ const Footer: React.FC = () => {
       <div className="bg-black text-white">
         <div className="container mx-auto px-6 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            
             {/* Copyright */}
             <div className="text-center md:text-left">
               <p className="text-sm text-gray-400">
-                © 2025 <span className="text-cyan-400 font-semibold">ImprimeArte</span>. 
-                Todos los derechos reservados.
+                © 2025 <span className="text-cyan-400 font-semibold">ImprimeArte</span>. Todos los
+                derechos reservados.
               </p>
             </div>
 
@@ -305,7 +335,10 @@ const Footer: React.FC = () => {
               <a href="/cookies" className="text-gray-400 hover:text-cyan-400 transition-colors">
                 Cookies
               </a>
-              <a href="/devoluciones" className="text-gray-400 hover:text-cyan-400 transition-colors">
+              <a
+                href="/devoluciones"
+                className="text-gray-400 hover:text-cyan-400 transition-colors"
+              >
                 Devoluciones
               </a>
             </div>
@@ -336,7 +369,12 @@ const Footer: React.FC = () => {
         aria-label="Volver arriba"
       >
         <svg className="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M5 10l7-7m0 0l7 7m-7-7v18"
+          />
         </svg>
       </button>
     </footer>

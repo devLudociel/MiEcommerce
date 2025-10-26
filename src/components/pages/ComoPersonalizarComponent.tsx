@@ -13,15 +13,15 @@ export default function ComoPersonalizarComponent() {
         'Navega por categorías: textil, hogar, tecnología, regalos',
         'Filtra por precio, material o técnica de impresión',
         'Lee las especificaciones y opciones disponibles',
-        'Selecciona color, talla y cantidad del producto base'
+        'Selecciona color, talla y cantidad del producto base',
       ],
       tips: [
         'Revisa la guía de tallas antes de elegir',
         'Verifica qué técnicas de impresión están disponibles',
         'Lee las opiniones de otros clientes',
-        'Consulta los tiempos de producción estimados'
+        'Consulta los tiempos de producción estimados',
       ],
-      color: 'from-cyan-500 to-cyan-600'
+      color: 'from-cyan-500 to-cyan-600',
     },
     {
       numero: '02',
@@ -32,15 +32,15 @@ export default function ComoPersonalizarComponent() {
         'Se abrirá el editor visual con el producto seleccionado',
         'Verás una previsualización en tiempo real',
         'Panel de herramientas a la izquierda',
-        'Opciones de diseño en el panel superior'
+        'Opciones de diseño en el panel superior',
       ],
       tips: [
         'El editor funciona mejor en pantallas grandes',
         'Usa zoom para trabajar con más precisión',
         'Guarda tu diseño frecuentemente',
-        'Puedes editar tanto la parte frontal como trasera'
+        'Puedes editar tanto la parte frontal como trasera',
       ],
-      color: 'from-magenta-500 to-magenta-600'
+      color: 'from-magenta-500 to-magenta-600',
     },
     {
       numero: '03',
@@ -51,15 +51,15 @@ export default function ComoPersonalizarComponent() {
         'Haz clic en "Subir imagen" o arrastra el archivo',
         'Formatos aceptados: PNG, JPG, PDF, SVG, AI, PSD',
         'Resolución recomendada: mínimo 300 DPI',
-        'Tamaño máximo: 50 MB por archivo'
+        'Tamaño máximo: 50 MB por archivo',
       ],
       tips: [
         'Usa imágenes con fondo transparente (PNG) para mejores resultados',
         'Asegúrate de que tu imagen tenga buena calidad',
         'Vectores (SVG, AI) son ideales para logos',
-        'Evita imágenes pixeladas o de baja resolución'
+        'Evita imágenes pixeladas o de baja resolución',
       ],
-      color: 'from-yellow-500 to-yellow-600'
+      color: 'from-yellow-500 to-yellow-600',
     },
     {
       numero: '04',
@@ -70,15 +70,15 @@ export default function ComoPersonalizarComponent() {
         'Haz clic en "Añadir texto" en el panel de herramientas',
         'Escribe tu mensaje en el cuadro de texto',
         'Selecciona entre más de 100 fuentes disponibles',
-        'Ajusta tamaño, color y alineación'
+        'Ajusta tamaño, color y alineación',
       ],
       tips: [
         'Las fuentes bold son más legibles en productos pequeños',
         'Usa colores que contrasten con el fondo',
         'Evita textos muy largos en espacios reducidos',
-        'Puedes añadir múltiples capas de texto'
+        'Puedes añadir múltiples capas de texto',
       ],
-      color: 'from-purple-500 to-purple-600'
+      color: 'from-purple-500 to-purple-600',
     },
     {
       numero: '05',
@@ -89,15 +89,15 @@ export default function ComoPersonalizarComponent() {
         'Arrastra el diseño a la posición deseada',
         'Usa los tiradores de las esquinas para redimensionar',
         'Mantén proporciones bloqueadas para evitar distorsión',
-        'Gira el diseño con el icono de rotación'
+        'Gira el diseño con el icono de rotación',
       ],
       tips: [
         'Usa las guías de alineación para centrar perfectamente',
         'Respeta el área de impresión marcada',
         'Deja margen suficiente en los bordes',
-        'Previsualiza en diferentes vistas (frontal/trasera)'
+        'Previsualiza en diferentes vistas (frontal/trasera)',
       ],
-      color: 'from-green-500 to-green-600'
+      color: 'from-green-500 to-green-600',
     },
     {
       numero: '06',
@@ -108,15 +108,15 @@ export default function ComoPersonalizarComponent() {
         'Haz clic en el elemento que quieres recolorear',
         'Usa el selector de color o introduce código HEX',
         'Aplica filtros y efectos especiales',
-        'Ajusta brillo, contraste y saturación'
+        'Ajusta brillo, contraste y saturación',
       ],
       tips: [
         'Ten en cuenta el color del producto base',
         'Los colores claros destacan en fondos oscuros',
         'Usa nuestra paleta de colores recomendados',
-        'Ten en cuenta que pueden existir ligeras variaciones'
+        'Ten en cuenta que pueden existir ligeras variaciones',
       ],
-      color: 'from-blue-500 to-blue-600'
+      color: 'from-blue-500 to-blue-600',
     },
     {
       numero: '07',
@@ -127,15 +127,15 @@ export default function ComoPersonalizarComponent() {
         'Activa la vista 3D para ver el producto en contexto',
         'Cambia entre vista frontal, trasera y lateral',
         'Comprueba cómo se ve en diferentes colores de producto',
-        'Verifica todos los detalles antes de continuar'
+        'Verifica todos los detalles antes de continuar',
       ],
       tips: [
         'Revisa que no haya elementos cortados',
         'Comprueba la legibilidad del texto',
         'Verifica que los colores contrasten bien',
-        'Solicita una muestra si tienes dudas'
+        'Solicita una muestra si tienes dudas',
       ],
-      color: 'from-orange-500 to-orange-600'
+      color: 'from-orange-500 to-orange-600',
     },
     {
       numero: '08',
@@ -146,16 +146,16 @@ export default function ComoPersonalizarComponent() {
         'Haz clic en "Guardar diseño" para guardarlo en tu cuenta',
         'Selecciona cantidad y opciones finales',
         'Haz clic en "Añadir al carrito"',
-        'Continúa comprando o procede al pago'
+        'Continúa comprando o procede al pago',
       ],
       tips: [
         'Guarda tu diseño para reutilizarlo después',
         'Revisa el resumen antes de añadir al carrito',
         'Aprovecha descuentos por cantidad',
-        'Podrás revisar todo antes del pago final'
+        'Podrás revisar todo antes del pago final',
       ],
-      color: 'from-pink-500 to-pink-600'
-    }
+      color: 'from-pink-500 to-pink-600',
+    },
   ];
 
   const herramientas = [
@@ -163,38 +163,38 @@ export default function ComoPersonalizarComponent() {
       icon: '📤',
       nombre: 'Subir Imagen',
       descripcion: 'Carga tu logo, foto o diseño desde tu ordenador',
-      formatos: 'PNG, JPG, PDF, SVG, AI, PSD'
+      formatos: 'PNG, JPG, PDF, SVG, AI, PSD',
     },
     {
       icon: '✏️',
       nombre: 'Añadir Texto',
       descripcion: 'Inserta frases, nombres o mensajes personalizados',
-      formatos: '100+ fuentes disponibles'
+      formatos: '100+ fuentes disponibles',
     },
     {
       icon: '🎨',
       nombre: 'Colores',
       descripcion: 'Cambia colores, aplica filtros y ajusta tonalidades',
-      formatos: 'Selector HEX, RGB, HSL'
+      formatos: 'Selector HEX, RGB, HSL',
     },
     {
       icon: '🔲',
       nombre: 'Formas',
       descripcion: 'Añade círculos, cuadrados y formas geométricas',
-      formatos: 'Biblioteca de formas'
+      formatos: 'Biblioteca de formas',
     },
     {
       icon: '🖼️',
       nombre: 'Plantillas',
       descripcion: 'Usa diseños prediseñados listos para personalizar',
-      formatos: '500+ plantillas'
+      formatos: '500+ plantillas',
     },
     {
       icon: '📐',
       nombre: 'Alineación',
       descripcion: 'Centra, alinea y distribuye elementos perfectamente',
-      formatos: 'Guías inteligentes'
-    }
+      formatos: 'Guías inteligentes',
+    },
   ];
 
   const formatosArchivo = [
@@ -204,7 +204,7 @@ export default function ComoPersonalizarComponent() {
       calidad: '⭐⭐⭐⭐⭐',
       descripcion: 'Ideal para logos con fondo transparente',
       recomendado: true,
-      caracteristicas: ['Admite transparencia', 'Sin pérdida de calidad', 'Perfecto para logos']
+      caracteristicas: ['Admite transparencia', 'Sin pérdida de calidad', 'Perfecto para logos'],
     },
     {
       formato: 'JPG',
@@ -212,7 +212,7 @@ export default function ComoPersonalizarComponent() {
       calidad: '⭐⭐⭐⭐',
       descripcion: 'Bueno para fotografías y diseños complejos',
       recomendado: true,
-      caracteristicas: ['Tamaño de archivo pequeño', 'Bueno para fotos', 'Sin transparencia']
+      caracteristicas: ['Tamaño de archivo pequeño', 'Bueno para fotos', 'Sin transparencia'],
     },
     {
       formato: 'SVG / AI',
@@ -220,7 +220,7 @@ export default function ComoPersonalizarComponent() {
       calidad: '⭐⭐⭐⭐⭐',
       descripcion: 'Vector escalable, calidad infinita',
       recomendado: true,
-      caracteristicas: ['Calidad infinita', 'Redimensionable', 'Ideal para logos']
+      caracteristicas: ['Calidad infinita', 'Redimensionable', 'Ideal para logos'],
     },
     {
       formato: 'PDF',
@@ -228,99 +228,105 @@ export default function ComoPersonalizarComponent() {
       calidad: '⭐⭐⭐⭐',
       descripcion: 'Documento universal, preserva diseño',
       recomendado: false,
-      caracteristicas: ['Universal', 'Múltiples páginas', 'Preserva formato']
-    }
+      caracteristicas: ['Universal', 'Múltiples páginas', 'Preserva formato'],
+    },
   ];
 
   const erroresComunes = [
     {
       error: '❌ Imagen de baja calidad',
       problema: 'La imagen está pixelada o borrosa',
-      solucion: 'Usa imágenes de mínimo 300 DPI. Si tu imagen se ve borrosa en el editor, probablemente también lo estará impresa.',
-      icono: '📉'
+      solucion:
+        'Usa imágenes de mínimo 300 DPI. Si tu imagen se ve borrosa en el editor, probablemente también lo estará impresa.',
+      icono: '📉',
     },
     {
       error: '❌ Fondo no transparente',
       problema: 'El logo tiene un cuadrado blanco alrededor',
-      solucion: 'Usa formato PNG con fondo transparente. Podemos ayudarte a eliminar el fondo gratuitamente.',
-      icono: '⬜'
+      solucion:
+        'Usa formato PNG con fondo transparente. Podemos ayudarte a eliminar el fondo gratuitamente.',
+      icono: '⬜',
     },
     {
       error: '❌ Texto muy pequeño',
       problema: 'El texto es ilegible en el producto',
       solucion: 'Usa un tamaño mínimo de 8pt. Prueba fuentes bold para mejor legibilidad.',
-      icono: '🔍'
+      icono: '🔍',
     },
     {
       error: '❌ Diseño fuera del área',
       problema: 'Parte del diseño se corta',
-      solucion: 'Respeta el área de impresión marcada. Deja al menos 0.5cm de margen en los bordes.',
-      icono: '✂️'
+      solucion:
+        'Respeta el área de impresión marcada. Deja al menos 0.5cm de margen en los bordes.',
+      icono: '✂️',
     },
     {
       error: '❌ Colores que no contrastan',
       problema: 'El diseño no se ve bien en el color del producto',
-      solucion: 'Elige colores que contrasten con el fondo. Usa nuestra herramienta de vista previa.',
-      icono: '🎨'
+      solucion:
+        'Elige colores que contrasten con el fondo. Usa nuestra herramienta de vista previa.',
+      icono: '🎨',
     },
     {
       error: '❌ Derechos de autor',
       problema: 'Uso de imágenes o logos protegidos',
-      solucion: 'Solo usa imágenes de tu propiedad o con licencia. No podemos imprimir marcas registradas sin autorización.',
-      icono: '©️'
-    }
+      solucion:
+        'Solo usa imágenes de tu propiedad o con licencia. No podemos imprimir marcas registradas sin autorización.',
+      icono: '©️',
+    },
   ];
 
   const consejosPro = [
     {
       titulo: '🎯 Diseño Minimalista',
-      descripcion: 'Menos es más. Un diseño simple y limpio suele tener más impacto que uno recargado.',
-      ejemplo: 'Un logo centrado en una camiseta destaca más que múltiples elementos'
+      descripcion:
+        'Menos es más. Un diseño simple y limpio suele tener más impacto que uno recargado.',
+      ejemplo: 'Un logo centrado en una camiseta destaca más que múltiples elementos',
     },
     {
       titulo: '🎨 Contraste es Clave',
       descripcion: 'Asegúrate de que tu diseño contraste bien con el color del producto base.',
-      ejemplo: 'Colores claros en productos oscuros, colores oscuros en productos claros'
+      ejemplo: 'Colores claros en productos oscuros, colores oscuros en productos claros',
     },
     {
       titulo: '📏 Tamaño Importa',
       descripcion: 'No hagas el diseño demasiado grande ni demasiado pequeño. Busca el equilibrio.',
-      ejemplo: 'En camisetas: 25-30cm de ancho para diseños centrales'
+      ejemplo: 'En camisetas: 25-30cm de ancho para diseños centrales',
     },
     {
       titulo: '✨ Calidad ante Todo',
       descripcion: 'Una imagen de alta calidad es fundamental para un resultado profesional.',
-      ejemplo: 'Usa vectores cuando sea posible, o PNG de alta resolución'
+      ejemplo: 'Usa vectores cuando sea posible, o PNG de alta resolución',
     },
     {
       titulo: '🔤 Fuentes Legibles',
       descripcion: 'Elige fuentes que sean fáciles de leer, especialmente en tamaños pequeños.',
-      ejemplo: 'Evita fuentes muy decorativas para textos largos'
+      ejemplo: 'Evita fuentes muy decorativas para textos largos',
     },
     {
       titulo: '💡 Menos Colores, Mejor',
       descripcion: 'Limita tu paleta de colores para un diseño más cohesivo y profesional.',
-      ejemplo: '2-3 colores principales suelen ser suficientes'
-    }
+      ejemplo: '2-3 colores principales suelen ser suficientes',
+    },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-16 mt-32">
       <div className="container mx-auto px-6">
-        
         {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-rainbow text-white font-bold text-sm rounded-full mb-4">
             <span>🎨</span>
             <span>Tutorial Completo</span>
           </div>
-          
+
           <h1 className="text-4xl md:text-5xl font-black text-gray-800 mb-4">
             Cómo Personalizar tus Productos
           </h1>
-          
+
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Guía paso a paso para crear diseños increíbles con nuestra herramienta de personalización
+            Guía paso a paso para crear diseños increíbles con nuestra herramienta de
+            personalización
           </p>
         </div>
 
@@ -330,9 +336,7 @@ export default function ComoPersonalizarComponent() {
             <div className="bg-black/20 backdrop-blur-lg rounded-2xl p-12 mb-6">
               <div className="text-8xl mb-4">▶️</div>
               <h2 className="text-2xl font-black mb-2">Video Tutorial</h2>
-              <p className="text-white/90">
-                Aprende a usar nuestro personalizador en 5 minutos
-              </p>
+              <p className="text-white/90">Aprende a usar nuestro personalizador en 5 minutos</p>
             </div>
             <div className="flex flex-wrap justify-center gap-4">
               <button className="px-6 py-3 bg-white text-cyan-600 font-bold rounded-xl hover:shadow-2xl transform hover:scale-105 transition-all">
@@ -352,12 +356,17 @@ export default function ComoPersonalizarComponent() {
           </h2>
           <div className="space-y-6">
             {pasos.map((paso, index) => (
-              <div key={index} className="bg-white rounded-3xl border-2 border-gray-200 shadow-lg overflow-hidden">
+              <div
+                key={index}
+                className="bg-white rounded-3xl border-2 border-gray-200 shadow-lg overflow-hidden"
+              >
                 <button
                   onClick={() => setActiveTutorial(activeTutorial === index ? null : index)}
                   className="w-full p-6 flex items-center gap-6 hover:bg-gray-50 transition-all"
                 >
-                  <div className={`w-20 h-20 flex-shrink-0 bg-gradient-to-br ${paso.color} rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg`}>
+                  <div
+                    className={`w-20 h-20 flex-shrink-0 bg-gradient-to-br ${paso.color} rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg`}
+                  >
                     {paso.numero}
                   </div>
                   <div className="flex-1 text-left">
@@ -375,7 +384,12 @@ export default function ComoPersonalizarComponent() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </button>
 
@@ -423,17 +437,14 @@ export default function ComoPersonalizarComponent() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {herramientas.map((herramienta, index) => (
-              <div key={index} className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 border-2 border-gray-200 hover:border-cyan-500 transition-all">
+              <div
+                key={index}
+                className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 border-2 border-gray-200 hover:border-cyan-500 transition-all"
+              >
                 <div className="text-5xl mb-4">{herramienta.icon}</div>
-                <h3 className="font-bold text-lg text-gray-800 mb-2">
-                  {herramienta.nombre}
-                </h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  {herramienta.descripcion}
-                </p>
-                <div className="text-xs text-cyan-600 font-medium">
-                  {herramienta.formatos}
-                </div>
+                <h3 className="font-bold text-lg text-gray-800 mb-2">{herramienta.nombre}</h3>
+                <p className="text-sm text-gray-600 mb-3">{herramienta.descripcion}</p>
+                <div className="text-xs text-cyan-600 font-medium">{herramienta.formatos}</div>
               </div>
             ))}
           </div>
@@ -511,13 +522,12 @@ export default function ComoPersonalizarComponent() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {consejosPro.map((consejo, index) => (
-              <div key={index} className="bg-gradient-to-br from-cyan-50 to-purple-50 rounded-2xl p-6 border-2 border-cyan-200 hover:shadow-xl transition-all">
-                <h3 className="font-bold text-lg text-gray-800 mb-3">
-                  {consejo.titulo}
-                </h3>
-                <p className="text-sm text-gray-700 mb-4">
-                  {consejo.descripcion}
-                </p>
+              <div
+                key={index}
+                className="bg-gradient-to-br from-cyan-50 to-purple-50 rounded-2xl p-6 border-2 border-cyan-200 hover:shadow-xl transition-all"
+              >
+                <h3 className="font-bold text-lg text-gray-800 mb-3">{consejo.titulo}</h3>
+                <p className="text-sm text-gray-700 mb-4">{consejo.descripcion}</p>
                 <div className="bg-white rounded-lg p-3 border border-cyan-200">
                   <p className="text-xs text-gray-600">
                     <strong>Ejemplo:</strong> {consejo.ejemplo}
@@ -534,8 +544,8 @@ export default function ComoPersonalizarComponent() {
             <div className="text-5xl mb-4">🎨</div>
             <h3 className="text-2xl font-black mb-4">Servicio de Diseño</h3>
             <p className="mb-6 text-white/90">
-              ¿No tienes tiempo o experiencia? Nuestro equipo de diseñadores profesionales 
-              puede crear tu diseño por ti desde 15€.
+              ¿No tienes tiempo o experiencia? Nuestro equipo de diseñadores profesionales puede
+              crear tu diseño por ti desde 15€.
             </p>
             <a
               href="/servicios-diseno"
@@ -549,8 +559,8 @@ export default function ComoPersonalizarComponent() {
             <div className="text-5xl mb-4">💬</div>
             <h3 className="text-2xl font-black mb-4">Ayuda en Vivo</h3>
             <p className="mb-6 text-white/90">
-              ¿Tienes dudas mientras personalizas? Nuestro equipo está disponible por chat, 
-              WhatsApp o teléfono para ayudarte en tiempo real.
+              ¿Tienes dudas mientras personalizas? Nuestro equipo está disponible por chat, WhatsApp
+              o teléfono para ayudarte en tiempo real.
             </p>
             <div className="flex gap-3">
               <a
@@ -573,13 +583,11 @@ export default function ComoPersonalizarComponent() {
 
         {/* CTA Final */}
         <div className="bg-gradient-to-r from-cyan-50 via-purple-50 to-pink-50 rounded-3xl p-8 md:p-12 text-center border-2 border-cyan-200 mb-12">
-          <h2 className="text-3xl font-black text-gray-800 mb-4">
-            ¿Listo para Empezar?
-          </h2>
+          <h2 className="text-3xl font-black text-gray-800 mb-4">¿Listo para Empezar?</h2>
           <p className="text-lg text-gray-600 mb-8">
             Explora nuestro catálogo y empieza a crear tus productos personalizados ahora
           </p>
-          
+
           <div className="flex flex-wrap justify-center gap-4">
             <a
               href="/productos"
@@ -606,9 +614,7 @@ export default function ComoPersonalizarComponent() {
             <h3 className="font-bold text-lg text-gray-800 mb-2 group-hover:text-cyan-600">
               Preguntas Frecuentes
             </h3>
-            <p className="text-sm text-gray-600">
-              Resuelve todas tus dudas sobre personalización
-            </p>
+            <p className="text-sm text-gray-600">Resuelve todas tus dudas sobre personalización</p>
           </a>
 
           <a
@@ -632,9 +638,7 @@ export default function ComoPersonalizarComponent() {
             <h3 className="font-bold text-lg text-gray-800 mb-2 group-hover:text-cyan-600">
               Contacto
             </h3>
-            <p className="text-sm text-gray-600">
-              Habla con nuestro equipo de expertos
-            </p>
+            <p className="text-sm text-gray-600">Habla con nuestro equipo de expertos</p>
           </a>
         </div>
       </div>

@@ -7,4 +7,3 @@ export const FALLBACK_IMG_400x300 =
       fill="#666666" font-family="sans-serif" font-size="24">Sin Imagen</text>
   </svg>
 `);
-

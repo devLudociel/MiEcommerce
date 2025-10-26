@@ -13,7 +13,11 @@ export default function ProfilePanel() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
-      if (!u || !u.email) { setUid(null); setLoaded(true); return; }
+      if (!u || !u.email) {
+        setUid(null);
+        setLoaded(true);
+        return;
+      }
       setUid(u.uid);
       setEmail(u.email);
       await ensureUserDoc(u.uid, u.email, u.displayName ?? undefined);
@@ -32,8 +36,11 @@ export default function ProfilePanel() {
     e.preventDefault();
     if (!uid) return;
     setSaving(true);
-    try { await upsertProfile(uid, profile); }
-    finally { setSaving(false); }
+    try {
+      await upsertProfile(uid, profile);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (!loaded) return <div className="card p-6">Cargando…</div>;
@@ -51,19 +58,19 @@ export default function ProfilePanel() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="form-label">Nombre</label>
-            <input 
-              className="input" 
-              value={profile.firstName || ''} 
-              onChange={e => setProfile({ ...profile, firstName: e.target.value })} 
+            <input
+              className="input"
+              value={profile.firstName || ''}
+              onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
               placeholder="Tu nombre"
             />
           </div>
           <div>
             <label className="form-label">Apellidos</label>
-            <input 
-              className="input" 
-              value={profile.lastName || ''} 
-              onChange={e => setProfile({ ...profile, lastName: e.target.value })} 
+            <input
+              className="input"
+              value={profile.lastName || ''}
+              onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
               placeholder="Tus apellidos"
             />
           </div>
@@ -75,19 +82,15 @@ export default function ProfilePanel() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="form-label">Correo electrónico</label>
-            <input 
-              className="input" 
-              value={email} 
-              disabled 
-            />
+            <input className="input" value={email} disabled />
             <p className="text-xs text-gray-500 mt-1">El correo no se puede modificar</p>
           </div>
           <div>
             <label className="form-label">Teléfono</label>
-            <input 
-              className="input" 
-              value={profile.phone || ''} 
-              onChange={e => setProfile({ ...profile, phone: e.target.value })} 
+            <input
+              className="input"
+              value={profile.phone || ''}
+              onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
               placeholder="+34 600 000 000"
             />
           </div>
@@ -95,17 +98,10 @@ export default function ProfilePanel() {
       </div>
 
       <div className="flex gap-3">
-        <button 
-          type="submit"
-          disabled={saving} 
-          className="btn btn-primary"
-        >
+        <button type="submit" disabled={saving} className="btn btn-primary">
           {saving ? 'Guardando…' : 'Guardar cambios'}
         </button>
-        <button 
-          type="button"
-          className="btn btn-ghost"
-        >
+        <button type="button" className="btn btn-ghost">
           Cancelar
         </button>
       </div>

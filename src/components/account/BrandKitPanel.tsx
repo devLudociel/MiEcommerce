@@ -41,9 +41,23 @@ interface BrandKitData {
 }
 
 const GOOGLE_FONTS = [
-  'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins', 
-  'Raleway', 'Playfair Display', 'Merriweather', 'Oswald', 'Source Sans Pro',
-  'PT Sans', 'Nunito', 'Ubuntu', 'Quicksand', 'Rubik', 'Work Sans'
+  'Inter',
+  'Roboto',
+  'Open Sans',
+  'Lato',
+  'Montserrat',
+  'Poppins',
+  'Raleway',
+  'Playfair Display',
+  'Merriweather',
+  'Oswald',
+  'Source Sans Pro',
+  'PT Sans',
+  'Nunito',
+  'Ubuntu',
+  'Quicksand',
+  'Rubik',
+  'Work Sans',
 ];
 
 export default function BrandKitPanel() {
@@ -55,10 +69,10 @@ export default function BrandKitPanel() {
     fonts: [
       { id: '1', name: 'Título', type: 'title', fontFamily: 'Inter' },
       { id: '2', name: 'Subtítulo', type: 'subtitle', fontFamily: 'Inter' },
-      { id: '3', name: 'Cuerpo', type: 'body', fontFamily: 'Inter' }
+      { id: '3', name: 'Cuerpo', type: 'body', fontFamily: 'Inter' },
     ],
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -88,7 +102,7 @@ export default function BrandKitPanel() {
       setIsLoading(true);
       const docRef = doc(db, 'users', uid, 'brandKit', 'data');
       const docSnap = await getDoc(docRef);
-      
+
       if (docSnap.exists()) {
         const data = docSnap.data() as BrandKitData;
         setBrandKit(data);
@@ -107,23 +121,23 @@ export default function BrandKitPanel() {
   // Guardar Brand Kit en Firestore
   async function saveBrandKit() {
     if (!userId) return;
-    
+
     try {
       setIsSaving(true);
       setError(null);
-      
+
       const updatedKit = {
         ...brandKit,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
-      
+
       const docRef = doc(db, 'users', userId, 'brandKit', 'data');
       await setDoc(docRef, updatedKit);
-      
+
       setBrandKit(updatedKit);
       setSuccess('✅ Brand Kit guardado correctamente');
       setTimeout(() => setSuccess(null), 3000);
-      
+
       console.log('✅ Brand Kit guardado en Firestore');
     } catch (err: any) {
       console.error('❌ Error guardando Brand Kit:', err);
@@ -136,7 +150,7 @@ export default function BrandKitPanel() {
   // Subir logo
   async function handleLogoUpload(file: File) {
     if (!userId) return;
-    
+
     try {
       setIsLoading(true);
       setError(null);
@@ -159,28 +173,27 @@ export default function BrandKitPanel() {
       const fileName = `${timestamp}_${file.name.replace(/\s+/g, '_')}`;
       const storagePath = `brand-kit/${userId}/logos/${fileName}`;
       const storageRef = ref(storage, storagePath);
-      
+
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
-      
+
       // Añadir a la lista
       const newLogo: BrandLogo = {
         id: timestamp.toString(),
         name: file.name,
         url,
         path: storagePath,
-        type: file.type
+        type: file.type,
       };
-      
-      setBrandKit(prev => ({
+
+      setBrandKit((prev) => ({
         ...prev,
-        logos: [...prev.logos, newLogo]
+        logos: [...prev.logos, newLogo],
       }));
-      
+
       console.log('✅ Logo subido correctamente');
       setSuccess('✅ Logo añadido');
       setTimeout(() => setSuccess(null), 2000);
-      
     } catch (err: any) {
       console.error('❌ Error subiendo logo:', err);
       setError('Error al subir el logo');
@@ -192,24 +205,23 @@ export default function BrandKitPanel() {
   // Eliminar logo
   async function deleteLogo(logo: BrandLogo) {
     if (!confirm('¿Eliminar este logo?')) return;
-    
+
     try {
       setIsLoading(true);
-      
+
       // Eliminar de Storage
       const storageRef = ref(storage, logo.path);
       await deleteObject(storageRef);
-      
+
       // Eliminar de la lista
-      setBrandKit(prev => ({
+      setBrandKit((prev) => ({
         ...prev,
-        logos: prev.logos.filter(l => l.id !== logo.id)
+        logos: prev.logos.filter((l) => l.id !== logo.id),
       }));
-      
+
       console.log('✅ Logo eliminado');
       setSuccess('✅ Logo eliminado');
       setTimeout(() => setSuccess(null), 2000);
-      
     } catch (err: any) {
       console.error('❌ Error eliminando logo:', err);
       setError('Error al eliminar el logo');
@@ -230,7 +242,7 @@ export default function BrandKitPanel() {
       setError('Máximo 10 colores');
       return;
     }
-    
+
     if (!newColorName.trim()) {
       setError('Escribe un nombre para el color');
       return;
@@ -238,32 +250,32 @@ export default function BrandKitPanel() {
 
     if (editingColorId) {
       // Editar color existente
-      setBrandKit(prev => ({
+      setBrandKit((prev) => ({
         ...prev,
-        colors: prev.colors.map(c => 
-          c.id === editingColorId 
+        colors: prev.colors.map((c) =>
+          c.id === editingColorId
             ? { ...c, hex: newColorHex.toUpperCase(), name: newColorName.trim() }
             : c
-        )
+        ),
       }));
-      
+
       setSuccess('✅ Color actualizado');
     } else {
       // Añadir nuevo color
       const newColor: BrandColor = {
         id: Date.now().toString(),
         hex: newColorHex.toUpperCase(),
-        name: newColorName.trim()
+        name: newColorName.trim(),
       };
-      
-      setBrandKit(prev => ({
+
+      setBrandKit((prev) => ({
         ...prev,
-        colors: [...prev.colors, newColor]
+        colors: [...prev.colors, newColor],
       }));
-      
+
       setSuccess('✅ Color añadido');
     }
-    
+
     // Reset modal
     setEditingColorId(null);
     setNewColorName('');
@@ -283,33 +295,29 @@ export default function BrandKitPanel() {
   // Eliminar color
   function deleteColor(colorId: string) {
     if (!confirm('¿Eliminar este color?')) return;
-    
-    setBrandKit(prev => ({
+
+    setBrandKit((prev) => ({
       ...prev,
-      colors: prev.colors.filter(c => c.id !== colorId)
+      colors: prev.colors.filter((c) => c.id !== colorId),
     }));
-    
+
     setSuccess('✅ Color eliminado');
     setTimeout(() => setSuccess(null), 2000);
   }
 
   // Editar nombre del color
   function updateColorName(colorId: string, newName: string) {
-    setBrandKit(prev => ({
+    setBrandKit((prev) => ({
       ...prev,
-      colors: prev.colors.map(c => 
-        c.id === colorId ? { ...c, name: newName } : c
-      )
+      colors: prev.colors.map((c) => (c.id === colorId ? { ...c, name: newName } : c)),
     }));
   }
 
   // Actualizar fuente
   function updateFont(fontId: string, fontFamily: string) {
-    setBrandKit(prev => ({
+    setBrandKit((prev) => ({
       ...prev,
-      fonts: prev.fonts.map(f => 
-        f.id === fontId ? { ...f, fontFamily } : f
-      )
+      fonts: prev.fonts.map((f) => (f.id === fontId ? { ...f, fontFamily } : f)),
     }));
   }
 
@@ -324,10 +332,10 @@ export default function BrandKitPanel() {
   async function deleteBrandKit() {
     if (!userId) return;
     if (!confirm('⚠️ ¿Eliminar todo el Brand Kit? Esta acción no se puede deshacer.')) return;
-    
+
     try {
       setIsLoading(true);
-      
+
       // Eliminar todos los logos de Storage
       for (const logo of brandKit.logos) {
         try {
@@ -337,11 +345,11 @@ export default function BrandKitPanel() {
           console.warn('Error eliminando logo:', err);
         }
       }
-      
+
       // Eliminar documento de Firestore
       const docRef = doc(db, 'users', userId, 'brandKit', 'data');
       await deleteDoc(docRef);
-      
+
       // Reset estado
       setBrandKit({
         identity: { brandName: '', description: '', guidelines: '' },
@@ -350,14 +358,13 @@ export default function BrandKitPanel() {
         fonts: [
           { id: '1', name: 'Título', type: 'title', fontFamily: 'Inter' },
           { id: '2', name: 'Subtítulo', type: 'subtitle', fontFamily: 'Inter' },
-          { id: '3', name: 'Cuerpo', type: 'body', fontFamily: 'Inter' }
+          { id: '3', name: 'Cuerpo', type: 'body', fontFamily: 'Inter' },
         ],
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       });
-      
+
       setSuccess('✅ Brand Kit eliminado completamente');
-      
     } catch (err: any) {
       console.error('❌ Error eliminando Brand Kit:', err);
       setError('Error al eliminar el Brand Kit');
@@ -376,7 +383,7 @@ export default function BrandKitPanel() {
     link.download = `brand-kit-${brandKit.identity.brandName || 'mi-marca'}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    
+
     setSuccess('✅ Brand Kit descargado');
     setTimeout(() => setSuccess(null), 2000);
   }
@@ -402,11 +409,7 @@ export default function BrandKitPanel() {
             Almacena tu marca en un solo lugar: colores, logos, fuentes
           </p>
         </div>
-        <button 
-          onClick={saveBrandKit}
-          disabled={isSaving}
-          className="btn btn-primary"
-        >
+        <button onClick={saveBrandKit} disabled={isSaving} className="btn btn-primary">
           {isSaving ? '⏳ Guardando...' : '💾 Guardar Kit'}
         </button>
       </div>
@@ -441,16 +444,16 @@ export default function BrandKitPanel() {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              Nombre de la marca
-            </label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Nombre de la marca</label>
             <input
               type="text"
               value={brandKit.identity.brandName}
-              onChange={(e) => setBrandKit(prev => ({
-                ...prev,
-                identity: { ...prev.identity, brandName: e.target.value }
-              }))}
+              onChange={(e) =>
+                setBrandKit((prev) => ({
+                  ...prev,
+                  identity: { ...prev.identity, brandName: e.target.value },
+                }))
+              }
               placeholder="Ej: Mi Empresa SL"
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-cyan-500 outline-none"
             />
@@ -462,10 +465,12 @@ export default function BrandKitPanel() {
             </label>
             <textarea
               value={brandKit.identity.description}
-              onChange={(e) => setBrandKit(prev => ({
-                ...prev,
-                identity: { ...prev.identity, description: e.target.value }
-              }))}
+              onChange={(e) =>
+                setBrandKit((prev) => ({
+                  ...prev,
+                  identity: { ...prev.identity, description: e.target.value },
+                }))
+              }
               placeholder="Ej: Somos una empresa dedicada a..."
               rows={3}
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-cyan-500 outline-none resize-none"
@@ -479,10 +484,12 @@ export default function BrandKitPanel() {
             <input
               type="text"
               value={brandKit.identity.guidelines}
-              onChange={(e) => setBrandKit(prev => ({
-                ...prev,
-                identity: { ...prev.identity, guidelines: e.target.value }
-              }))}
+              onChange={(e) =>
+                setBrandKit((prev) => ({
+                  ...prev,
+                  identity: { ...prev.identity, guidelines: e.target.value },
+                }))
+              }
               placeholder="Ej: Persona de contacto, email, teléfono..."
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-cyan-500 outline-none"
             />
@@ -497,15 +504,11 @@ export default function BrandKitPanel() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {brandKit.logos.map((logo) => (
-            <div 
+            <div
               key={logo.id}
               className="relative aspect-square bg-gray-50 rounded-xl border-2 border-gray-200 p-4 group hover:border-cyan-500 transition-all"
             >
-              <img 
-                src={logo.url} 
-                alt={logo.name}
-                className="w-full h-full object-contain"
-              />
+              <img src={logo.url} alt={logo.name} className="w-full h-full object-contain" />
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
                 <button
                   onClick={() => deleteLogo(logo)}
@@ -555,9 +558,7 @@ export default function BrandKitPanel() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="text-xl font-bold text-gray-900">Colores</h3>
-            <p className="text-sm text-gray-600 mt-1">
-              Guarda los colores de tu marca (máximo 10)
-            </p>
+            <p className="text-sm text-gray-600 mt-1">Guarda los colores de tu marca (máximo 10)</p>
           </div>
           <button
             onClick={() => setShowColorModal(true)}
@@ -571,17 +572,14 @@ export default function BrandKitPanel() {
         {brandKit.colors.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
             <p className="text-gray-500 mb-4">Aún no has añadido colores</p>
-            <button
-              onClick={() => setShowColorModal(true)}
-              className="btn btn-primary"
-            >
+            <button onClick={() => setShowColorModal(true)} className="btn btn-primary">
               Añadir tu primer color
             </button>
           </div>
         ) : (
           <div className="space-y-4">
             {brandKit.colors.map((color, index) => (
-              <div 
+              <div
                 key={color.id}
                 className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border-2 border-gray-200 hover:border-cyan-500 transition-all group"
               >
@@ -592,17 +590,19 @@ export default function BrandKitPanel() {
                   style={{ backgroundColor: color.hex }}
                   title={`Copiar ${color.hex}`}
                 />
-                
+
                 {/* Info del color */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
-                    <span style={{ 
-                      fontSize: '12px', 
-                      fontWeight: 'bold', 
-                      color: '#6b7280', 
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
+                    <span
+                      style={{
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        color: '#6b7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                      }}
+                    >
                       Color {index + 1}
                     </span>
                   </div>
@@ -621,35 +621,37 @@ export default function BrandKitPanel() {
                       padding: '10px 12px',
                       width: '100%',
                       marginBottom: '12px',
-                      outline: 'none'
+                      outline: 'none',
                     }}
-                    onFocus={(e) => e.target.style.borderColor = '#06b6d4'}
-                    onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                    onFocus={(e) => (e.target.style.borderColor = '#06b6d4')}
+                    onBlur={(e) => (e.target.style.borderColor = '#d1d5db')}
                   />
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {/* Círculo de color pequeño */}
-                    <div 
-                      style={{ 
-                        width: '32px', 
-                        height: '32px', 
+                    <div
+                      style={{
+                        width: '32px',
+                        height: '32px',
                         borderRadius: '50%',
                         border: '3px solid #9ca3af',
                         backgroundColor: color.hex,
                         flexShrink: 0,
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                       }}
                       title={color.hex}
                     />
-                    <code style={{ 
-                      fontSize: '14px', 
-                      fontFamily: 'monospace',
-                      fontWeight: 'bold',
-                      color: '#111827',
-                      backgroundColor: '#ffffff',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      border: '2px solid #d1d5db'
-                    }}>
+                    <code
+                      style={{
+                        fontSize: '14px',
+                        fontFamily: 'monospace',
+                        fontWeight: 'bold',
+                        color: '#111827',
+                        backgroundColor: '#ffffff',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        border: '2px solid #d1d5db',
+                      }}
+                    >
                       {color.hex}
                     </code>
                     <button
@@ -663,10 +665,10 @@ export default function BrandKitPanel() {
                         borderRadius: '8px',
                         border: 'none',
                         cursor: 'pointer',
-                        transition: 'background-color 0.2s'
+                        transition: 'background-color 0.2s',
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#111827'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1f2937'}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#111827')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#1f2937')}
                     >
                       Copiar
                     </button>
@@ -674,10 +676,12 @@ export default function BrandKitPanel() {
                 </div>
 
                 {/* Botones de acción */}
-                <div style={{ 
-                  display: 'flex', 
-                  gap: '8px'
-                }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '8px',
+                  }}
+                >
                   <button
                     onClick={() => openEditColorModal(color)}
                     style={{
@@ -689,10 +693,10 @@ export default function BrandKitPanel() {
                       borderRadius: '8px',
                       border: 'none',
                       cursor: 'pointer',
-                      transition: 'background-color 0.2s'
+                      transition: 'background-color 0.2s',
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0891b2'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#06b6d4'}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#0891b2')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#06b6d4')}
                     title="Editar color"
                   >
                     Editar
@@ -708,10 +712,10 @@ export default function BrandKitPanel() {
                       borderRadius: '8px',
                       border: 'none',
                       cursor: 'pointer',
-                      transition: 'background-color 0.2s'
+                      transition: 'background-color 0.2s',
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#b91c1c')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#dc2626')}
                     title="Eliminar color"
                   >
                     Eliminar
@@ -726,7 +730,7 @@ export default function BrandKitPanel() {
       {/* Modal para añadir/editar color */}
       {showColorModal && (
         <>
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 z-50"
             onClick={() => {
               setShowColorModal(false);
@@ -736,7 +740,7 @@ export default function BrandKitPanel() {
             }}
           />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div 
+            <div
               className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8"
               onClick={(e) => e.stopPropagation()}
             >
@@ -746,16 +750,14 @@ export default function BrandKitPanel() {
 
               <div className="space-y-6">
                 {/* Preview del color */}
-                <div 
+                <div
                   className="w-full h-32 rounded-xl border-4 border-gray-200"
                   style={{ backgroundColor: newColorHex }}
                 />
 
                 {/* Selector de color */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Color HEX
-                  </label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Color HEX</label>
                   <div className="flex gap-3">
                     <input
                       type="color"
@@ -792,19 +794,24 @@ export default function BrandKitPanel() {
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-cyan-500 outline-none"
                     maxLength={30}
                   />
-                  <p className="text-xs text-gray-500 mt-2">
-                    {newColorName.length}/30 caracteres
-                  </p>
+                  <p className="text-xs text-gray-500 mt-2">{newColorName.length}/30 caracteres</p>
                 </div>
 
                 {/* Sugerencias */}
                 {!editingColorId && (
                   <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                    <p className="text-xs font-bold text-blue-900 mb-2">
-                      Sugerencias de nombres:
-                    </p>
+                    <p className="text-xs font-bold text-blue-900 mb-2">Sugerencias de nombres:</p>
                     <div className="flex flex-wrap gap-2">
-                      {['Principal', 'Secundario', 'Acento', 'Texto', 'Fondo', 'Éxito', 'Error', 'Advertencia'].map(name => (
+                      {[
+                        'Principal',
+                        'Secundario',
+                        'Acento',
+                        'Texto',
+                        'Fondo',
+                        'Éxito',
+                        'Error',
+                        'Advertencia',
+                      ].map((name) => (
                         <button
                           key={name}
                           onClick={() => setNewColorName(name)}
@@ -854,9 +861,7 @@ export default function BrandKitPanel() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {brandKit.fonts.map((font) => (
             <div key={font.id} className="space-y-3">
-              <label className="block text-sm font-bold text-gray-700">
-                {font.name}
-              </label>
+              <label className="block text-sm font-bold text-gray-700">{font.name}</label>
               <select
                 value={font.fontFamily}
                 onChange={(e) => updateFont(font.id, e.target.value)}
@@ -868,7 +873,7 @@ export default function BrandKitPanel() {
                   </option>
                 ))}
               </select>
-              <div 
+              <div
                 className="h-20 bg-gray-50 rounded-xl border-2 border-gray-200 flex items-center justify-center px-4"
                 style={{ fontFamily: font.fontFamily }}
               >
@@ -885,18 +890,14 @@ export default function BrandKitPanel() {
 
       {/* Footer con acciones */}
       <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl border-2 border-gray-200 p-8">
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">
-          ✨ Aquí tienes un título potente
-        </h3>
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">✨ Aquí tienes un título potente</h3>
         <p className="text-gray-600 mb-6">
-          Y un subtitulo igualmente de impacto donde puedas subir archivos que complementen tu marca y requieras a la hora de encargar tus servicios de diseño para negocios o algo así
+          Y un subtitulo igualmente de impacto donde puedas subir archivos que complementen tu marca
+          y requieras a la hora de encargar tus servicios de diseño para negocios o algo así
         </p>
 
         <div className="flex flex-wrap gap-4">
-          <button
-            onClick={downloadBrandKit}
-            className="btn btn-primary btn-lg"
-          >
+          <button onClick={downloadBrandKit} className="btn btn-primary btn-lg">
             📥 Descargar el kit de marca
           </button>
 

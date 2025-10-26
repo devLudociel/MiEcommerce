@@ -11,9 +11,5 @@ const subcategorySlug = slugArray[1];
 ---
 
 <Layout title={`Categoría`}>
-  <CategoryPage 
-    categorySlug={categorySlug} 
-    subcategorySlug={subcategorySlug}
-    client:load
-  />
+  <CategoryPage categorySlug={categorySlug} subcategorySlug={subcategorySlug} client:load />
 </Layout>

@@ -21,7 +21,7 @@ export default function SubscriptionsPanel() {
       billingCycle: 'monthly',
       status: 'active',
       nextBilling: '2024-02-15',
-      features: ['Proyectos ilimitados', 'Soporte prioritario', '50 GB almacenamiento']
+      features: ['Proyectos ilimitados', 'Soporte prioritario', '50 GB almacenamiento'],
     },
     {
       id: '2',
@@ -31,34 +31,46 @@ export default function SubscriptionsPanel() {
       billingCycle: 'monthly',
       status: 'cancelled',
       nextBilling: '2024-01-30',
-      features: ['5 proyectos', 'Soporte estándar', '10 GB almacenamiento']
-    }
+      features: ['5 proyectos', 'Soporte estándar', '10 GB almacenamiento'],
+    },
   ]);
 
   const getPlanColor = (plan: string) => {
     switch (plan) {
-      case 'basic': return 'border-gray-300';
-      case 'pro': return 'border-cyan-300';
-      case 'premium': return 'border-magenta-300';
-      default: return 'border-gray-300';
+      case 'basic':
+        return 'border-gray-300';
+      case 'pro':
+        return 'border-cyan-300';
+      case 'premium':
+        return 'border-magenta-300';
+      default:
+        return 'border-gray-300';
     }
   };
 
   const getPlanGradient = (plan: string) => {
     switch (plan) {
-      case 'basic': return 'bg-gray-100';
-      case 'pro': return 'bg-gradient-to-r from-cyan-50 to-cyan-100';
-      case 'premium': return 'bg-gradient-to-r from-magenta-50 to-magenta-100';
-      default: return 'bg-gray-100';
+      case 'basic':
+        return 'bg-gray-100';
+      case 'pro':
+        return 'bg-gradient-to-r from-cyan-50 to-cyan-100';
+      case 'premium':
+        return 'bg-gradient-to-r from-magenta-50 to-magenta-100';
+      default:
+        return 'bg-gray-100';
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'active': return 'badge-new';
-      case 'cancelled': return 'badge-hot';
-      case 'expired': return 'text-gray-400';
-      default: return '';
+      case 'active':
+        return 'badge-new';
+      case 'cancelled':
+        return 'badge-hot';
+      case 'expired':
+        return 'text-gray-400';
+      default:
+        return '';
     }
   };
 
@@ -66,35 +78,24 @@ export default function SubscriptionsPanel() {
     <div className="space-y-8">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-gradient-secondary">Suscripciones</h2>
-        <button className="btn btn-secondary">
-          Explorar Planes
-        </button>
+        <button className="btn btn-secondary">Explorar Planes</button>
       </div>
 
       <div className="space-y-8">
         {subscriptions.map((sub) => (
-          <div 
-            key={sub.id} 
-            className={`card border-2 ${getPlanColor(sub.plan)} p-6`}
-          >
+          <div key={sub.id} className={`card border-2 ${getPlanColor(sub.plan)} p-6`}>
             <div className="flex justify-between items-start mb-4">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-2xl font-bold text-gray-900">
-                    {sub.name}
-                  </h3>
-                  <span className={`badge ${getStatusBadge(sub.status)}`}>
-                    {sub.status}
-                  </span>
+                  <h3 className="text-2xl font-bold text-gray-900">{sub.name}</h3>
+                  <span className={`badge ${getStatusBadge(sub.status)}`}>{sub.status}</span>
                 </div>
                 <p className="text-sm text-gray-500">
                   Facturación {sub.billingCycle === 'monthly' ? 'mensual' : 'anual'}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-3xl font-bold text-magenta-500">
-                  ${sub.price}
-                </p>
+                <p className="text-3xl font-bold text-magenta-500">${sub.price}</p>
                 <p className="text-sm text-gray-500">
                   /{sub.billingCycle === 'monthly' ? 'mes' : 'año'}
                 </p>
@@ -114,9 +115,7 @@ export default function SubscriptionsPanel() {
             </div>
 
             <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">
-                Próxima facturación
-              </p>
+              <p className="text-sm text-gray-600">Próxima facturación</p>
               <p className="text-sm font-semibold text-gray-900">
                 {new Date(sub.nextBilling).toLocaleDateString()}
               </p>
@@ -145,12 +144,8 @@ export default function SubscriptionsPanel() {
 
       <div className="card bg-gradient-rainbow text-white p-8">
         <h3 className="text-xl font-bold mb-2">Ahorra con el plan anual</h3>
-        <p className="text-white/90 mb-4">
-          Obtén 2 meses gratis al cambiar a facturación anual
-        </p>
-        <button className="btn bg-white text-gray-900 hover:bg-gray-100">
-          Ver oferta
-        </button>
+        <p className="text-white/90 mb-4">Obtén 2 meses gratis al cambiar a facturación anual</p>
+        <button className="btn bg-white text-gray-900 hover:bg-gray-100">Ver oferta</button>
       </div>
     </div>
   );

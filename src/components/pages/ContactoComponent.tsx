@@ -14,29 +14,31 @@ export default function ContactoComponent() {
     email: '',
     telefono: '',
     asunto: '',
-    mensaje: ''
+    mensaje: '',
   });
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     // Simular envío - Aquí conectarías con tu backend
     setTimeout(() => {
       setIsSubmitting(false);
       setSubmitStatus('success');
       setFormData({ nombre: '', email: '', telefono: '', asunto: '', mensaje: '' });
-      
+
       setTimeout(() => setSubmitStatus('idle'), 5000);
     }, 1500);
   };
@@ -47,59 +49,58 @@ export default function ContactoComponent() {
       title: 'Teléfono',
       content: '+34 645 341 452',
       action: 'tel:+34645341452',
-      color: 'from-cyan-500 to-cyan-600'
+      color: 'from-cyan-500 to-cyan-600',
     },
     {
       icon: '📧',
       title: 'Email',
       content: 'info@imprimarte.com',
       action: 'mailto:info@imprimarte.com',
-      color: 'from-magenta-500 to-magenta-600'
+      color: 'from-magenta-500 to-magenta-600',
     },
     {
       icon: '💬',
       title: 'WhatsApp',
       content: 'Chatea con nosotros',
       action: 'https://wa.me/34645341452',
-      color: 'from-green-500 to-green-600'
+      color: 'from-green-500 to-green-600',
     },
     {
       icon: '📍',
       title: 'Dirección',
       content: 'Santa Cruz de Tenerife, Canarias',
       action: null,
-      color: 'from-purple-500 to-purple-600'
-    }
+      color: 'from-purple-500 to-purple-600',
+    },
   ];
 
   const schedule = [
     { day: 'Lunes - Viernes', hours: '9:00 - 20:00' },
     { day: 'Sábados', hours: '10:00 - 14:00' },
-    { day: 'Domingos', hours: 'Cerrado' }
+    { day: 'Domingos', hours: 'Cerrado' },
   ];
 
   const socialLinks = [
     { icon: '📘', name: 'Facebook', url: '#', color: 'hover:bg-blue-500' },
     { icon: '📸', name: 'Instagram', url: '#', color: 'hover:bg-pink-500' },
     { icon: '🐦', name: 'Twitter', url: '#', color: 'hover:bg-sky-500' },
-    { icon: '💼', name: 'LinkedIn', url: '#', color: 'hover:bg-blue-700' }
+    { icon: '💼', name: 'LinkedIn', url: '#', color: 'hover:bg-blue-700' },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-16 mt-32">
       <div className="container mx-auto px-6">
-        
         {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-rainbow text-white font-bold text-sm rounded-full mb-4">
             <span>📧</span>
             <span>Contacto</span>
           </div>
-          
+
           <h1 className="text-4xl md:text-5xl font-black text-gray-800 mb-4">
             ¿Cómo podemos ayudarte?
           </h1>
-          
+
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Estamos aquí para responder todas tus preguntas y ayudarte con tu proyecto
           </p>
@@ -107,12 +108,9 @@ export default function ContactoComponent() {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
-          
           {/* Contact Form */}
           <div className="bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-lg">
-            <h2 className="text-2xl font-black text-gray-800 mb-6">
-              Envíanos un mensaje
-            </h2>
+            <h2 className="text-2xl font-black text-gray-800 mb-6">Envíanos un mensaje</h2>
 
             {submitStatus === 'success' && (
               <div className="mb-6 p-4 bg-green-50 border-2 border-green-500 rounded-xl flex items-center gap-3">
@@ -141,9 +139,7 @@ export default function ContactoComponent() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Email *
-                </label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Email *</label>
                 <input
                   type="email"
                   name="email"
@@ -156,9 +152,7 @@ export default function ContactoComponent() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Teléfono
-                </label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Teléfono</label>
                 <input
                   type="tel"
                   name="telefono"
@@ -170,9 +164,7 @@ export default function ContactoComponent() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Asunto *
-                </label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Asunto *</label>
                 <select
                   name="asunto"
                   value={formData.asunto}
@@ -191,9 +183,7 @@ export default function ContactoComponent() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Mensaje *
-                </label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Mensaje *</label>
                 <textarea
                   name="mensaje"
                   value={formData.mensaje}
@@ -217,7 +207,6 @@ export default function ContactoComponent() {
 
           {/* Contact Info & Schedule */}
           <div className="space-y-8">
-            
             {/* Contact Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {contactInfo.map((info, index) => (
@@ -243,7 +232,10 @@ export default function ContactoComponent() {
               </h3>
               <div className="space-y-4">
                 {schedule.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                  <div
+                    key={index}
+                    className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0"
+                  >
                     <span className="font-bold text-gray-700">{item.day}</span>
                     <span className="text-cyan-600 font-bold">{item.hours}</span>
                   </div>
@@ -253,9 +245,7 @@ export default function ContactoComponent() {
 
             {/* Social Media */}
             <div className="bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-lg">
-              <h3 className="text-2xl font-black text-gray-800 mb-6">
-                Síguenos en redes
-              </h3>
+              <h3 className="text-2xl font-black text-gray-800 mb-6">Síguenos en redes</h3>
               <div className="grid grid-cols-4 gap-3">
                 {socialLinks.map((social, index) => (
                   <a
@@ -280,7 +270,10 @@ export default function ContactoComponent() {
             <span>🗺️</span>
             Encuéntranos
           </h2>
-          <div className="bg-gradient-to-br from-cyan-100 to-purple-100 rounded-2xl overflow-hidden" style={{ height: '400px' }}>
+          <div
+            className="bg-gradient-to-br from-cyan-100 to-purple-100 rounded-2xl overflow-hidden"
+            style={{ height: '400px' }}
+          >
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d111551.9926778267!2d-16.402524!3d28.463888!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xc41ccfda44fc0fd%3A0x10340f3be4bc8c0!2sSanta%20Cruz%20de%20Tenerife!5e0!3m2!1ses!2ses!4v1234567890"
               width="100%"
@@ -302,7 +295,7 @@ export default function ContactoComponent() {
           <p className="text-lg text-gray-600 mb-8">
             Llámanos o escríbenos por WhatsApp para una atención más rápida
           </p>
-          
+
           <div className="flex flex-wrap justify-center gap-4">
             <a
               href="https://wa.me/34645341452"

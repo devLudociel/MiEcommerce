@@ -40,7 +40,7 @@ const loadCartFromStorage = (): CartState => {
   if (typeof window === 'undefined') {
     return { items: [], total: 0 };
   }
-  
+
   try {
     const stored = localStorage.getItem('cart');
     if (stored) {
@@ -53,14 +53,14 @@ const loadCartFromStorage = (): CartState => {
   } catch (e) {
     console.error('Error loading cart from storage:', e);
   }
-  
+
   return { items: [], total: 0 };
 };
 
 // Guardar carrito en localStorage
 const saveCartToStorage = (state: CartState): void => {
   if (typeof window === 'undefined') return;
-  
+
   try {
     localStorage.setItem('cart', JSON.stringify(state));
   } catch (e) {
@@ -88,9 +88,7 @@ export function addToCart(item: CartItem): void {
   if (existingItemIndex > -1) {
     // Si el item ya existe, aumentar cantidad
     newItems = currentState.items.map((i: CartItem, index: number) =>
-      index === existingItemIndex
-        ? { ...i, quantity: i.quantity + item.quantity }
-        : i
+      index === existingItemIndex ? { ...i, quantity: i.quantity + item.quantity } : i
     );
   } else {
     // Si no existe, agregarlo
@@ -107,9 +105,13 @@ export function addToCart(item: CartItem): void {
 }
 
 // Actualizar cantidad de un item
-export function updateCartItemQuantity(itemId: string, variantId: number | undefined, quantity: number): void {
+export function updateCartItemQuantity(
+  itemId: string,
+  variantId: number | undefined,
+  quantity: number
+): void {
   const currentState = cartStore.get();
-  
+
   const newItems = currentState.items.map((item: CartItem) =>
     item.id === itemId && item.variantId === variantId
       ? { ...item, quantity: Math.max(1, quantity) }
@@ -128,7 +130,7 @@ export function updateCartItemQuantity(itemId: string, variantId: number | undef
 // Remover item del carrito
 export function removeFromCart(itemId: string, variantId?: number): void {
   const currentState = cartStore.get();
-  
+
   const newItems = currentState.items.filter(
     (item: CartItem) => !(item.id === itemId && item.variantId === variantId)
   );

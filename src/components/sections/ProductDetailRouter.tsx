@@ -3,15 +3,15 @@ import ProductDetail from './ProductDetail';
 
 export default function ProductDetailRouter() {
   const [mounted, setMounted] = useState(false);
-  const [params, setParams] = useState<{ id?: string; slug?: string }>({ 
-    id: undefined, 
-    slug: undefined 
+  const [params, setParams] = useState<{ id?: string; slug?: string }>({
+    id: undefined,
+    slug: undefined,
   });
 
   useEffect(() => {
     // Solo ejecutar en el cliente después de montar
     setMounted(true);
-    
+
     try {
       const url = new URL(window.location.href);
       const id = url.searchParams.get('id') || undefined;
@@ -46,7 +46,9 @@ export default function ProductDetailRouter() {
             <div className="error-box mb-4">
               Falta parámetro <strong>id</strong> o <strong>slug</strong> en la URL
             </div>
-            <a href="/" className="btn btn-primary">Volver al inicio</a>
+            <a href="/" className="btn btn-primary">
+              Volver al inicio
+            </a>
           </div>
         </div>
       </section>

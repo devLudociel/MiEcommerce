@@ -11,27 +11,40 @@ export default function PoliticaPrivacidadComponent() {
       content: (
         <div className="space-y-4">
           <p>
-            De conformidad con el Reglamento (UE) 2016/679 del Parlamento Europeo y del Consejo de 27 de abril 
-            de 2016 (RGPD) y la Ley Orgánica 3/2018, de 5 de diciembre, de Protección de Datos Personales y 
-            garantía de los derechos digitales (LOPDGDD), le informamos que:
+            De conformidad con el Reglamento (UE) 2016/679 del Parlamento Europeo y del Consejo de
+            27 de abril de 2016 (RGPD) y la Ley Orgánica 3/2018, de 5 de diciembre, de Protección de
+            Datos Personales y garantía de los derechos digitales (LOPDGDD), le informamos que:
           </p>
           <div className="bg-gradient-to-br from-cyan-50 to-purple-50 rounded-xl p-6 border-2 border-cyan-200">
             <h3 className="font-bold text-lg mb-4 text-gray-800">📋 Datos del Responsable</h3>
             <ul className="space-y-2">
-              <li><strong>Identidad:</strong> ImprimeArte S.L.</li>
-              <li><strong>CIF:</strong> B12345678</li>
-              <li><strong>Dirección:</strong> Calle Principal 123, Santa Cruz de Tenerife, España</li>
-              <li><strong>Email:</strong> privacidad@imprimarte.com</li>
-              <li><strong>Teléfono:</strong> +34 645 341 452</li>
-              <li><strong>Delegado de Protección de Datos:</strong> dpo@imprimarte.com</li>
+              <li>
+                <strong>Identidad:</strong> ImprimeArte S.L.
+              </li>
+              <li>
+                <strong>CIF:</strong> B12345678
+              </li>
+              <li>
+                <strong>Dirección:</strong> Calle Principal 123, Santa Cruz de Tenerife, España
+              </li>
+              <li>
+                <strong>Email:</strong> privacidad@imprimarte.com
+              </li>
+              <li>
+                <strong>Teléfono:</strong> +34 645 341 452
+              </li>
+              <li>
+                <strong>Delegado de Protección de Datos:</strong> dpo@imprimarte.com
+              </li>
             </ul>
           </div>
           <p>
-            ImprimeArte S.L. es el responsable del tratamiento de los datos personales que nos facilite y 
-            se compromete a garantizar su confidencialidad y seguridad conforme a la normativa vigente.
+            ImprimeArte S.L. es el responsable del tratamiento de los datos personales que nos
+            facilite y se compromete a garantizar su confidencialidad y seguridad conforme a la
+            normativa vigente.
           </p>
         </div>
-      )
+      ),
     },
     {
       id: 'datos',
@@ -40,10 +53,10 @@ export default function PoliticaPrivacidadComponent() {
       content: (
         <div className="space-y-4">
           <p>
-            Recopilamos y tratamos diferentes tipos de datos personales según la finalidad y relación con 
-            nuestros servicios:
+            Recopilamos y tratamos diferentes tipos de datos personales según la finalidad y
+            relación con nuestros servicios:
           </p>
-          
+
           <div className="space-y-4">
             <div className="bg-white border-l-4 border-cyan-500 p-4 rounded">
               <h4 className="font-bold text-gray-800 mb-2">🛒 Datos de Clientes y Pedidos</h4>
@@ -90,12 +103,12 @@ export default function PoliticaPrivacidadComponent() {
           </div>
 
           <p className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-            <strong>📌 Importante:</strong> Solo recopilamos los datos estrictamente necesarios para 
-            cada finalidad. No solicitamos información sensible ni tratamos datos de menores sin el 
+            <strong>📌 Importante:</strong> Solo recopilamos los datos estrictamente necesarios para
+            cada finalidad. No solicitamos información sensible ni tratamos datos de menores sin el
             consentimiento parental correspondiente.
           </p>
         </div>
-      )
+      ),
     },
     {
       id: 'finalidad',
@@ -104,7 +117,8 @@ export default function PoliticaPrivacidadComponent() {
       content: (
         <div className="space-y-4">
           <p>
-            Tratamos sus datos personales para las siguientes finalidades, con su correspondiente base legal:
+            Tratamos sus datos personales para las siguientes finalidades, con su correspondiente
+            base legal:
           </p>
 
           <div className="space-y-4">
@@ -112,9 +126,11 @@ export default function PoliticaPrivacidadComponent() {
               <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
                 <span>🛍️</span> Gestión de Pedidos y Ventas
               </h4>
-              <p className="text-sm mb-2"><strong>Base legal:</strong> Ejecución de contrato</p>
+              <p className="text-sm mb-2">
+                <strong>Base legal:</strong> Ejecución de contrato
+              </p>
               <p className="text-sm">
-                Procesamiento de pedidos, gestión de pagos, fabricación de productos personalizados, 
+                Procesamiento de pedidos, gestión de pagos, fabricación de productos personalizados,
                 envío y entrega, gestión de devoluciones y garantías, atención al cliente.
               </p>
             </div>
@@ -123,9 +139,11 @@ export default function PoliticaPrivacidadComponent() {
               <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
                 <span>📄</span> Obligaciones Legales
               </h4>
-              <p className="text-sm mb-2"><strong>Base legal:</strong> Cumplimiento legal</p>
+              <p className="text-sm mb-2">
+                <strong>Base legal:</strong> Cumplimiento legal
+              </p>
               <p className="text-sm">
-                Emisión de facturas, obligaciones fiscales y contables, prevención de fraude, 
+                Emisión de facturas, obligaciones fiscales y contables, prevención de fraude,
                 respuesta a requerimientos judiciales o administrativos.
               </p>
             </div>
@@ -134,9 +152,11 @@ export default function PoliticaPrivacidadComponent() {
               <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
                 <span>📧</span> Marketing y Comunicaciones
               </h4>
-              <p className="text-sm mb-2"><strong>Base legal:</strong> Consentimiento expreso</p>
+              <p className="text-sm mb-2">
+                <strong>Base legal:</strong> Consentimiento expreso
+              </p>
               <p className="text-sm">
-                Envío de newsletter, ofertas personalizadas, información sobre nuevos productos, 
+                Envío de newsletter, ofertas personalizadas, información sobre nuevos productos,
                 promociones exclusivas. Puedes darte de baja en cualquier momento.
               </p>
             </div>
@@ -145,9 +165,11 @@ export default function PoliticaPrivacidadComponent() {
               <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
                 <span>📊</span> Análisis y Mejora
               </h4>
-              <p className="text-sm mb-2"><strong>Base legal:</strong> Interés legítimo</p>
+              <p className="text-sm mb-2">
+                <strong>Base legal:</strong> Interés legítimo
+              </p>
               <p className="text-sm">
-                Análisis de uso de la web, mejora de servicios, desarrollo de nuevos productos, 
+                Análisis de uso de la web, mejora de servicios, desarrollo de nuevos productos,
                 estadísticas internas, optimización de la experiencia de usuario.
               </p>
             </div>
@@ -156,15 +178,17 @@ export default function PoliticaPrivacidadComponent() {
               <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
                 <span>🔒</span> Seguridad
               </h4>
-              <p className="text-sm mb-2"><strong>Base legal:</strong> Interés legítimo</p>
+              <p className="text-sm mb-2">
+                <strong>Base legal:</strong> Interés legítimo
+              </p>
               <p className="text-sm">
-                Prevención de fraude, detección de actividades sospechosas, protección de sistemas, 
+                Prevención de fraude, detección de actividades sospechosas, protección de sistemas,
                 cumplimiento de políticas internas de seguridad.
               </p>
             </div>
           </div>
         </div>
-      )
+      ),
     },
     {
       id: 'conservacion',
@@ -173,8 +197,8 @@ export default function PoliticaPrivacidadComponent() {
       content: (
         <div className="space-y-4">
           <p>
-            Conservamos sus datos personales durante el tiempo necesario para cumplir con las finalidades 
-            para las que fueron recabados:
+            Conservamos sus datos personales durante el tiempo necesario para cumplir con las
+            finalidades para las que fueron recabados:
           </p>
 
           <div className="space-y-3">
@@ -184,8 +208,10 @@ export default function PoliticaPrivacidadComponent() {
                 <h4 className="font-bold text-gray-800">Datos de Pedidos</h4>
               </div>
               <p className="text-sm text-gray-700">
-                <strong>Durante la relación comercial</strong> y posteriormente durante <strong>6 años</strong> 
-                para cumplir con obligaciones fiscales y contables (según normativa mercantil y tributaria).
+                <strong>Durante la relación comercial</strong> y posteriormente durante{' '}
+                <strong>6 años</strong>
+                para cumplir con obligaciones fiscales y contables (según normativa mercantil y
+                tributaria).
               </p>
             </div>
 
@@ -195,7 +221,7 @@ export default function PoliticaPrivacidadComponent() {
                 <h4 className="font-bold text-gray-800">Cuenta de Usuario</h4>
               </div>
               <p className="text-sm text-gray-700">
-                Hasta que solicite su baja o <strong>2 años de inactividad</strong>. Podrá reactivar 
+                Hasta que solicite su baja o <strong>2 años de inactividad</strong>. Podrá reactivar
                 su cuenta en cualquier momento.
               </p>
             </div>
@@ -206,7 +232,7 @@ export default function PoliticaPrivacidadComponent() {
                 <h4 className="font-bold text-gray-800">Newsletter y Marketing</h4>
               </div>
               <p className="text-sm text-gray-700">
-                Hasta que retire su consentimiento dándose de baja. Eliminamos automáticamente tras 
+                Hasta que retire su consentimiento dándose de baja. Eliminamos automáticamente tras
                 <strong>3 años sin interacción</strong> con nuestras comunicaciones.
               </p>
             </div>
@@ -217,19 +243,19 @@ export default function PoliticaPrivacidadComponent() {
                 <h4 className="font-bold text-gray-800">Datos de Navegación</h4>
               </div>
               <p className="text-sm text-gray-700">
-                Las cookies se conservan según los plazos especificados en nuestra política de cookies. 
-                Generalmente entre <strong>1 mes y 2 años</strong> según el tipo.
+                Las cookies se conservan según los plazos especificados en nuestra política de
+                cookies. Generalmente entre <strong>1 mes y 2 años</strong> según el tipo.
               </p>
             </div>
           </div>
 
           <p className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
-            <strong>⚠️ Nota:</strong> Transcurridos estos plazos, procedemos a la eliminación segura 
-            de los datos o a su anonimización para fines estadísticos, salvo obligación legal de 
+            <strong>⚠️ Nota:</strong> Transcurridos estos plazos, procedemos a la eliminación segura
+            de los datos o a su anonimización para fines estadísticos, salvo obligación legal de
             conservación.
           </p>
         </div>
-      )
+      ),
     },
     {
       id: 'destinatarios',
@@ -238,14 +264,15 @@ export default function PoliticaPrivacidadComponent() {
       content: (
         <div className="space-y-4">
           <p>
-            Sus datos personales pueden ser comunicados a terceros únicamente en los siguientes casos:
+            Sus datos personales pueden ser comunicados a terceros únicamente en los siguientes
+            casos:
           </p>
 
           <div className="space-y-3">
             <div className="bg-cyan-50 border-l-4 border-cyan-500 p-4 rounded">
               <h4 className="font-bold mb-2">🚚 Empresas de Transporte</h4>
               <p className="text-sm">
-                Compartimos nombre, dirección y teléfono con empresas de mensajería para la entrega 
+                Compartimos nombre, dirección y teléfono con empresas de mensajería para la entrega
                 de pedidos (SEUR, Correos, MRW, etc.).
               </p>
             </div>
@@ -253,7 +280,7 @@ export default function PoliticaPrivacidadComponent() {
             <div className="bg-magenta-50 border-l-4 border-magenta-500 p-4 rounded">
               <h4 className="font-bold mb-2">💳 Pasarelas de Pago</h4>
               <p className="text-sm">
-                Utilizamos servicios de pago seguros (Stripe, PayPal) que procesan los datos de pago 
+                Utilizamos servicios de pago seguros (Stripe, PayPal) que procesan los datos de pago
                 según sus propias políticas de privacidad. No almacenamos datos de tarjetas.
               </p>
             </div>
@@ -261,7 +288,7 @@ export default function PoliticaPrivacidadComponent() {
             <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
               <h4 className="font-bold mb-2">📧 Servicios de Email Marketing</h4>
               <p className="text-sm">
-                Utilizamos plataformas de email marketing (Mailchimp, SendGrid) para gestionar 
+                Utilizamos plataformas de email marketing (Mailchimp, SendGrid) para gestionar
                 newsletters, siempre bajo nuestras instrucciones y con garantías de seguridad.
               </p>
             </div>
@@ -269,7 +296,7 @@ export default function PoliticaPrivacidadComponent() {
             <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded">
               <h4 className="font-bold mb-2">☁️ Servicios Cloud</h4>
               <p className="text-sm">
-                Utilizamos servicios de alojamiento y almacenamiento en la nube (AWS, Google Cloud) 
+                Utilizamos servicios de alojamiento y almacenamiento en la nube (AWS, Google Cloud)
                 con servidores ubicados en la UE que cumplen con el RGPD.
               </p>
             </div>
@@ -277,24 +304,25 @@ export default function PoliticaPrivacidadComponent() {
             <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
               <h4 className="font-bold mb-2">⚖️ Autoridades y Organismos</h4>
               <p className="text-sm">
-                Podemos comunicar datos a autoridades competentes cuando sea legalmente requerido 
+                Podemos comunicar datos a autoridades competentes cuando sea legalmente requerido
                 (Hacienda, Fuerzas de Seguridad, tribunales).
               </p>
             </div>
           </div>
 
           <p className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-            <strong>🔒 Garantía:</strong> Todos nuestros proveedores están sujetos a acuerdos de 
-            confidencialidad y tratamiento de datos que garantizan la seguridad de su información 
+            <strong>🔒 Garantía:</strong> Todos nuestros proveedores están sujetos a acuerdos de
+            confidencialidad y tratamiento de datos que garantizan la seguridad de su información
             conforme al RGPD.
           </p>
 
           <p className="text-sm text-gray-600">
-            <strong>Transferencias Internacionales:</strong> En caso de transferencias fuera del EEE, 
-            nos aseguramos de que existan garantías adecuadas (Cláusulas Contractuales Tipo, Privacy Shield, etc.).
+            <strong>Transferencias Internacionales:</strong> En caso de transferencias fuera del
+            EEE, nos aseguramos de que existan garantías adecuadas (Cláusulas Contractuales Tipo,
+            Privacy Shield, etc.).
           </p>
         </div>
-      )
+      ),
     },
     {
       id: 'derechos',
@@ -302,9 +330,7 @@ export default function PoliticaPrivacidadComponent() {
       title: 'Tus Derechos',
       content: (
         <div className="space-y-4">
-          <p>
-            Tienes derecho a ejercer los siguientes derechos sobre tus datos personales:
-          </p>
+          <p>Tienes derecho a ejercer los siguientes derechos sobre tus datos personales:</p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-white border-2 border-cyan-200 rounded-xl p-5">
@@ -318,9 +344,7 @@ export default function PoliticaPrivacidadComponent() {
             <div className="bg-white border-2 border-magenta-200 rounded-xl p-5">
               <div className="text-3xl mb-2">✏️</div>
               <h4 className="font-bold text-gray-800 mb-2">Derecho de Rectificación</h4>
-              <p className="text-sm text-gray-700">
-                Modificar datos incorrectos o incompletos.
-              </p>
+              <p className="text-sm text-gray-700">Modificar datos incorrectos o incompletos.</p>
             </div>
 
             <div className="bg-white border-2 border-yellow-200 rounded-xl p-5">
@@ -374,17 +398,18 @@ export default function PoliticaPrivacidadComponent() {
               </li>
             </ul>
             <p className="text-sm mt-4 text-gray-700">
-              Deberás acreditar tu identidad adjuntando copia del DNI. Responderemos en un plazo 
+              Deberás acreditar tu identidad adjuntando copia del DNI. Responderemos en un plazo
               máximo de <strong>1 mes</strong> desde la recepción de la solicitud.
             </p>
           </div>
 
           <p className="text-sm text-gray-600">
-            Si consideras que no hemos atendido correctamente tus derechos, puedes presentar una 
-            reclamación ante la <strong>Agencia Española de Protección de Datos</strong> (www.aepd.es).
+            Si consideras que no hemos atendido correctamente tus derechos, puedes presentar una
+            reclamación ante la <strong>Agencia Española de Protección de Datos</strong>{' '}
+            (www.aepd.es).
           </p>
         </div>
-      )
+      ),
     },
     {
       id: 'seguridad',
@@ -393,8 +418,8 @@ export default function PoliticaPrivacidadComponent() {
       content: (
         <div className="space-y-4">
           <p>
-            En ImprimeArte implementamos medidas técnicas y organizativas para garantizar la seguridad 
-            de tus datos personales:
+            En ImprimeArte implementamos medidas técnicas y organizativas para garantizar la
+            seguridad de tus datos personales:
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -402,7 +427,8 @@ export default function PoliticaPrivacidadComponent() {
               <div className="text-4xl mb-3">🔒</div>
               <h4 className="font-bold mb-2">Encriptación SSL/TLS</h4>
               <p className="text-sm text-white/90">
-                Toda la comunicación está cifrada con certificados SSL para proteger la transmisión de datos.
+                Toda la comunicación está cifrada con certificados SSL para proteger la transmisión
+                de datos.
               </p>
             </div>
 
@@ -448,12 +474,12 @@ export default function PoliticaPrivacidadComponent() {
           </div>
 
           <p className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-            <strong>⚠️ Importante:</strong> A pesar de nuestras medidas de seguridad, ningún sistema 
-            es 100% infalible. En caso de brecha de seguridad que afecte a tus datos, te notificaremos 
-            en un plazo máximo de 72 horas conforme al RGPD.
+            <strong>⚠️ Importante:</strong> A pesar de nuestras medidas de seguridad, ningún sistema
+            es 100% infalible. En caso de brecha de seguridad que afecte a tus datos, te
+            notificaremos en un plazo máximo de 72 horas conforme al RGPD.
           </p>
         </div>
-      )
+      ),
     },
     {
       id: 'cookies',
@@ -462,7 +488,7 @@ export default function PoliticaPrivacidadComponent() {
       content: (
         <div className="space-y-4">
           <p>
-            Utilizamos cookies y tecnologías similares para mejorar tu experiencia de navegación. 
+            Utilizamos cookies y tecnologías similares para mejorar tu experiencia de navegación.
             Puedes gestionar tus preferencias en cualquier momento.
           </p>
 
@@ -484,7 +510,8 @@ export default function PoliticaPrivacidadComponent() {
                 <span>📊</span> Cookies Analíticas
               </h4>
               <p className="text-sm text-gray-700 mb-2">
-                Nos permiten analizar el uso de la web para mejorar su rendimiento. Requieren consentimiento.
+                Nos permiten analizar el uso de la web para mejorar su rendimiento. Requieren
+                consentimiento.
               </p>
               <p className="text-xs text-gray-500">
                 Ejemplos: Google Analytics (anonimizado), Hotjar, estadísticas internas
@@ -524,10 +551,14 @@ export default function PoliticaPrivacidadComponent() {
           </div>
 
           <p className="text-sm text-gray-600">
-            Para más información, consulta nuestra <a href="/politica-cookies" className="text-cyan-600 font-bold hover:underline">Política de Cookies</a> completa.
+            Para más información, consulta nuestra{' '}
+            <a href="/politica-cookies" className="text-cyan-600 font-bold hover:underline">
+              Política de Cookies
+            </a>{' '}
+            completa.
           </p>
         </div>
-      )
+      ),
     },
     {
       id: 'menores',
@@ -536,27 +567,27 @@ export default function PoliticaPrivacidadComponent() {
       content: (
         <div className="space-y-4">
           <p>
-            Nuestros servicios están dirigidos a mayores de 18 años. No recopilamos intencionadamente 
-            datos personales de menores de edad.
+            Nuestros servicios están dirigidos a mayores de 18 años. No recopilamos
+            intencionadamente datos personales de menores de edad.
           </p>
           <p>
-            <strong>Si eres menor de 18 años:</strong> Necesitas el consentimiento de tus padres o 
+            <strong>Si eres menor de 18 años:</strong> Necesitas el consentimiento de tus padres o
             tutores legales para utilizar nuestros servicios y proporcionarnos tus datos personales.
           </p>
           <p>
-            <strong>Si eres padre/madre/tutor:</strong> Si descubres que tu hijo menor de 18 años 
-            ha proporcionado datos personales sin tu consentimiento, contáctanos inmediatamente y 
+            <strong>Si eres padre/madre/tutor:</strong> Si descubres que tu hijo menor de 18 años ha
+            proporcionado datos personales sin tu consentimiento, contáctanos inmediatamente y
             procederemos a eliminarlos.
           </p>
           <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
             <p className="text-sm">
-              <strong>⚠️ Compromiso:</strong> Si detectamos que hemos recopilado datos de un menor 
-              sin el consentimiento parental adecuado, eliminaremos dicha información de nuestros 
+              <strong>⚠️ Compromiso:</strong> Si detectamos que hemos recopilado datos de un menor
+              sin el consentimiento parental adecuado, eliminaremos dicha información de nuestros
               sistemas de forma inmediata.
             </p>
           </div>
         </div>
-      )
+      ),
     },
     {
       id: 'cambios',
@@ -565,7 +596,7 @@ export default function PoliticaPrivacidadComponent() {
       content: (
         <div className="space-y-4">
           <p>
-            Nos reservamos el derecho de modificar esta Política de Privacidad en cualquier momento 
+            Nos reservamos el derecho de modificar esta Política de Privacidad en cualquier momento
             para adaptarla a cambios legislativos o en nuestros servicios.
           </p>
           <p>
@@ -577,14 +608,14 @@ export default function PoliticaPrivacidadComponent() {
             <li>Actualización de la fecha de "Última actualización"</li>
           </ul>
           <p>
-            Te recomendamos revisar periódicamente esta política para estar informado sobre cómo 
+            Te recomendamos revisar periódicamente esta política para estar informado sobre cómo
             protegemos tus datos.
           </p>
           <p className="text-sm text-gray-600">
             <strong>Última actualización:</strong> Octubre 2024
           </p>
         </div>
-      )
+      ),
     },
     {
       id: 'contacto',
@@ -593,45 +624,79 @@ export default function PoliticaPrivacidadComponent() {
       content: (
         <div className="space-y-4">
           <p>
-            Para cualquier consulta sobre esta Política de Privacidad o sobre cómo tratamos tus datos, 
-            puedes contactar con nosotros o con nuestro Delegado de Protección de Datos:
+            Para cualquier consulta sobre esta Política de Privacidad o sobre cómo tratamos tus
+            datos, puedes contactar con nosotros o con nuestro Delegado de Protección de Datos:
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 p-6 rounded-xl border-2 border-cyan-200">
               <h4 className="font-bold text-gray-800 mb-4">📞 Contacto General</h4>
               <ul className="space-y-2 text-sm">
-                <li><strong>Email:</strong> privacidad@imprimarte.com</li>
-                <li><strong>Teléfono:</strong> +34 645 341 452</li>
-                <li><strong>Dirección:</strong> Calle Principal 123, Santa Cruz de Tenerife</li>
+                <li>
+                  <strong>Email:</strong> privacidad@imprimarte.com
+                </li>
+                <li>
+                  <strong>Teléfono:</strong> +34 645 341 452
+                </li>
+                <li>
+                  <strong>Dirección:</strong> Calle Principal 123, Santa Cruz de Tenerife
+                </li>
               </ul>
             </div>
 
             <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border-2 border-purple-200">
-              <h4 className="font-bold text-gray-800 mb-4">👤 Delegado de Protección de Datos (DPO)</h4>
+              <h4 className="font-bold text-gray-800 mb-4">
+                👤 Delegado de Protección de Datos (DPO)
+              </h4>
               <ul className="space-y-2 text-sm">
-                <li><strong>Email:</strong> dpo@imprimarte.com</li>
-                <li><strong>Horario:</strong> Lunes a Viernes, 9:00 - 18:00</li>
-                <li><strong>Respuesta:</strong> Máximo 30 días hábiles</li>
+                <li>
+                  <strong>Email:</strong> dpo@imprimarte.com
+                </li>
+                <li>
+                  <strong>Horario:</strong> Lunes a Viernes, 9:00 - 18:00
+                </li>
+                <li>
+                  <strong>Respuesta:</strong> Máximo 30 días hábiles
+                </li>
               </ul>
             </div>
           </div>
 
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
             <p className="text-sm">
-              <strong>📋 Autoridad de Control:</strong> Si consideras que no hemos atendido 
-              correctamente tus derechos, puedes presentar una reclamación ante la Agencia Española 
+              <strong>📋 Autoridad de Control:</strong> Si consideras que no hemos atendido
+              correctamente tus derechos, puedes presentar una reclamación ante la Agencia Española
               de Protección de Datos (AEPD):
             </p>
             <ul className="mt-2 space-y-1 text-sm">
-              <li>Web: <a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer" className="text-cyan-600 font-bold hover:underline">www.aepd.es</a></li>
-              <li>Sede electrónica: <a href="https://sedeagpd.gob.es" target="_blank" rel="noopener noreferrer" className="text-cyan-600 font-bold hover:underline">sedeagpd.gob.es</a></li>
+              <li>
+                Web:{' '}
+                <a
+                  href="https://www.aepd.es"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cyan-600 font-bold hover:underline"
+                >
+                  www.aepd.es
+                </a>
+              </li>
+              <li>
+                Sede electrónica:{' '}
+                <a
+                  href="https://sedeagpd.gob.es"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cyan-600 font-bold hover:underline"
+                >
+                  sedeagpd.gob.es
+                </a>
+              </li>
               <li>Dirección: C/ Jorge Juan, 6, 28001 Madrid</li>
             </ul>
           </div>
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   const scrollToSection = (id: string) => {
@@ -643,7 +708,7 @@ export default function PoliticaPrivacidadComponent() {
       const offsetPosition = elementPosition + window.pageYOffset - offset;
       window.scrollTo({
         top: offsetPosition,
-        behavior: 'smooth'
+        behavior: 'smooth',
       });
     }
   };
@@ -651,22 +716,22 @@ export default function PoliticaPrivacidadComponent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-16 mt-32">
       <div className="container mx-auto px-6">
-        
         {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-rainbow text-white font-bold text-sm rounded-full mb-4">
             <span>🔒</span>
             <span>RGPD Compliant</span>
           </div>
-          
+
           <h1 className="text-4xl md:text-5xl font-black text-gray-800 mb-4">
             Política de Privacidad
           </h1>
-          
+
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Tu privacidad es importante para nosotros. Conoce cómo protegemos y utilizamos tus datos personales
+            Tu privacidad es importante para nosotros. Conoce cómo protegemos y utilizamos tus datos
+            personales
           </p>
-          
+
           <p className="text-sm text-gray-500 mt-4">
             Última actualización: Octubre 2024 | Conforme al RGPD (UE) 2016/679
           </p>
@@ -674,9 +739,7 @@ export default function PoliticaPrivacidadComponent() {
 
         {/* Navigation Index */}
         <div className="bg-white rounded-3xl p-6 border-2 border-gray-200 shadow-lg mb-12">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
-            📑 Índice de Contenidos
-          </h2>
+          <h2 className="text-xl font-bold text-gray-800 mb-4">📑 Índice de Contenidos</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {sections.map((section) => (
               <button
@@ -705,26 +768,21 @@ export default function PoliticaPrivacidadComponent() {
             >
               <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
                 <span className="text-4xl">{section.icon}</span>
-                <h2 className="text-2xl font-black text-gray-800">
-                  {section.title}
-                </h2>
+                <h2 className="text-2xl font-black text-gray-800">{section.title}</h2>
               </div>
-              <div className="text-gray-700 leading-relaxed">
-                {section.content}
-              </div>
+              <div className="text-gray-700 leading-relaxed">{section.content}</div>
             </div>
           ))}
         </div>
 
         {/* Contact Section */}
         <div className="bg-gradient-to-r from-cyan-50 via-purple-50 to-pink-50 rounded-3xl p-8 md:p-12 text-center border-2 border-cyan-200 mb-12">
-          <h2 className="text-3xl font-black text-gray-800 mb-4">
-            ¿Dudas sobre tu privacidad?
-          </h2>
+          <h2 className="text-3xl font-black text-gray-800 mb-4">¿Dudas sobre tu privacidad?</h2>
           <p className="text-lg text-gray-600 mb-8">
-            Estamos comprometidos con la protección de tus datos. Contáctanos para cualquier consulta
+            Estamos comprometidos con la protección de tus datos. Contáctanos para cualquier
+            consulta
           </p>
-          
+
           <div className="flex flex-wrap justify-center gap-4">
             <a
               href="mailto:privacidad@imprimarte.com"
@@ -751,9 +809,7 @@ export default function PoliticaPrivacidadComponent() {
             <h3 className="font-bold text-lg text-gray-800 mb-2 group-hover:text-cyan-600">
               Términos y Condiciones
             </h3>
-            <p className="text-sm text-gray-600">
-              Consulta nuestras condiciones de uso y servicio
-            </p>
+            <p className="text-sm text-gray-600">Consulta nuestras condiciones de uso y servicio</p>
           </a>
 
           <a
@@ -764,9 +820,7 @@ export default function PoliticaPrivacidadComponent() {
             <h3 className="font-bold text-lg text-gray-800 mb-2 group-hover:text-cyan-600">
               Política de Cookies
             </h3>
-            <p className="text-sm text-gray-600">
-              Información detallada sobre el uso de cookies
-            </p>
+            <p className="text-sm text-gray-600">Información detallada sobre el uso de cookies</p>
           </a>
 
           <a
@@ -777,9 +831,7 @@ export default function PoliticaPrivacidadComponent() {
             <h3 className="font-bold text-lg text-gray-800 mb-2 group-hover:text-cyan-600">
               Devoluciones
             </h3>
-            <p className="text-sm text-gray-600">
-              Política de cambios y devoluciones
-            </p>
+            <p className="text-sm text-gray-600">Política de cambios y devoluciones</p>
           </a>
         </div>
       </div>

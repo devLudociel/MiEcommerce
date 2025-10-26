@@ -17,7 +17,7 @@ export default function DesignPanel() {
       type: 'branding',
       status: 'in-progress',
       price: 1500,
-      deliveryDate: '2024-02-20'
+      deliveryDate: '2024-02-20',
     },
     {
       id: '2',
@@ -25,26 +25,35 @@ export default function DesignPanel() {
       type: 'logo',
       status: 'completed',
       price: 500,
-      deliveryDate: '2024-01-15'
-    }
+      deliveryDate: '2024-01-15',
+    },
   ]);
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'logo': return 'text-cyan-500';
-      case 'branding': return 'text-magenta-500';
-      case 'ui/ux': return 'text-purple';
-      case 'illustration': return 'text-yellow-500';
-      default: return 'text-gray-500';
+      case 'logo':
+        return 'text-cyan-500';
+      case 'branding':
+        return 'text-magenta-500';
+      case 'ui/ux':
+        return 'text-purple';
+      case 'illustration':
+        return 'text-yellow-500';
+      default:
+        return 'text-gray-500';
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending': return 'badge-hot';
-      case 'in-progress': return 'badge-new';
-      case 'completed': return 'badge-sale';
-      default: return '';
+      case 'pending':
+        return 'badge-hot';
+      case 'in-progress':
+        return 'badge-new';
+      case 'completed':
+        return 'badge-sale';
+      default:
+        return '';
     }
   };
 
@@ -52,9 +61,7 @@ export default function DesignPanel() {
     <div className="space-y-8">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-gradient-secondary">Servicios de Diseño</h2>
-        <button className="btn btn-secondary">
-          + Solicitar Servicio
-        </button>
+        <button className="btn btn-secondary">+ Solicitar Servicio</button>
       </div>
 
       <div className="space-y-6">
@@ -62,24 +69,18 @@ export default function DesignPanel() {
           <div key={service.id} className="card card-magenta p-6">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  {service.name}
-                </h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">{service.name}</h3>
                 <p className={`text-sm font-medium ${getTypeColor(service.type)}`}>
                   {service.type.toUpperCase()}
                 </p>
               </div>
-              <span className={`badge ${getStatusBadge(service.status)}`}>
-                {service.status}
-              </span>
+              <span className={`badge ${getStatusBadge(service.status)}`}>{service.status}</span>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <p className="text-sm text-gray-500">Precio</p>
-                <p className="text-lg font-bold text-magenta-500">
-                  ${service.price}
-                </p>
+                <p className="text-lg font-bold text-magenta-500">${service.price}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Entrega estimada</p>

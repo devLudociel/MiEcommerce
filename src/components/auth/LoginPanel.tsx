@@ -74,19 +74,31 @@ export default function LoginPanel() {
           <p className="text-gray-600 mb-6">Accede al panel de administración</p>
 
           {error && (
-            <div className="error-box mb-4"><strong>Error:</strong> {error}</div>
+            <div className="error-box mb-4">
+              <strong>Error:</strong> {error}
+            </div>
           )}
 
           {userEmail ? (
             <div>
-              <p className="text-gray-700 mb-4">Sesión actual: <strong>{userEmail}</strong></p>
+              <p className="text-gray-700 mb-4">
+                Sesión actual: <strong>{userEmail}</strong>
+              </p>
               <div className="flex" style={{ gap: 12 }}>
-                <button className="btn btn-primary" onClick={redirectAfterLogin} disabled={loading}>Continuar</button>
-                <button className="btn btn-ghost" onClick={changeAccount} disabled={loading}>Cambiar de cuenta</button>
+                <button className="btn btn-primary" onClick={redirectAfterLogin} disabled={loading}>
+                  Continuar
+                </button>
+                <button className="btn btn-ghost" onClick={changeAccount} disabled={loading}>
+                  Cambiar de cuenta
+                </button>
               </div>
             </div>
           ) : (
-            <button className="btn btn-primary" onClick={() => signInWithGoogle(true)} disabled={loading}>
+            <button
+              className="btn btn-primary"
+              onClick={() => signInWithGoogle(true)}
+              disabled={loading}
+            >
               {loading ? 'Conectando...' : 'Continuar con Google'}
             </button>
           )}

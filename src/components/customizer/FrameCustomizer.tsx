@@ -27,47 +27,47 @@ interface CustomConfig {
 }
 
 const FLOWER_COLORS = {
-  rosa: { 
-    primary: '#EC4899', 
+  rosa: {
+    primary: '#EC4899',
     secondary: '#FCA5A5',
-    name: 'Rosas'
+    name: 'Rosas',
   },
-  rojo: { 
-    primary: '#DC2626', 
+  rojo: {
+    primary: '#DC2626',
     secondary: '#F87171',
-    name: 'Rojas'
+    name: 'Rojas',
   },
-  morado: { 
-    primary: '#9333EA', 
+  morado: {
+    primary: '#9333EA',
     secondary: '#C084FC',
-    name: 'Moradas'
+    name: 'Moradas',
   },
-  amarillo: { 
-    primary: '#FACC15', 
+  amarillo: {
+    primary: '#FACC15',
     secondary: '#FDE047',
-    name: 'Amarillas'
+    name: 'Amarillas',
   },
-  blanco: { 
-    primary: '#F3F4F6', 
+  blanco: {
+    primary: '#F3F4F6',
     secondary: '#E5E7EB',
-    name: 'Blancas'
+    name: 'Blancas',
   },
-  azul: { 
-    primary: '#3B82F6', 
+  azul: {
+    primary: '#3B82F6',
     secondary: '#93C5FD',
-    name: 'Azules'
+    name: 'Azules',
   },
-  naranja: { 
-    primary: '#F97316', 
+  naranja: {
+    primary: '#F97316',
     secondary: '#FDBA74',
-    name: 'Naranjas'
-  }
+    name: 'Naranjas',
+  },
 };
 
 export default function FrameCustomizer({ product }: Props) {
   const [config, setConfig] = useState<CustomConfig>({
     flowerColor: 'rosa',
-    attributes: []
+    attributes: [],
   });
 
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -75,10 +75,10 @@ export default function FrameCustomizer({ product }: Props) {
   const [success, setSuccess] = useState(false);
   const [frameImages, setFrameImages] = useState<Record<string, string>>({});
 
-  const availableAttributes = product.subcategoryId 
+  const availableAttributes = product.subcategoryId
     ? subcategoryAttributes
-        .filter(sa => sa.subcategoryId === product.subcategoryId)
-        .map(sa => attributes.find(attr => attr.id === sa.attributeId))
+        .filter((sa) => sa.subcategoryId === product.subcategoryId)
+        .map((sa) => attributes.find((attr) => attr.id === sa.attributeId))
         .filter(Boolean)
     : [];
 
@@ -86,7 +86,7 @@ export default function FrameCustomizer({ product }: Props) {
   useEffect(() => {
     async function loadFrameImages() {
       const imageUrls: Record<string, string> = {};
-      
+
       for (const colorKey of Object.keys(FLOWER_COLORS)) {
         try {
           const url = await getProductImageUrl('cuadros', `flores-${colorKey}`);
@@ -97,7 +97,7 @@ export default function FrameCustomizer({ product }: Props) {
           console.log(`No se encontró imagen para flores ${colorKey}`);
         }
       }
-      
+
       setFrameImages(imageUrls);
     }
 
@@ -105,47 +105,49 @@ export default function FrameCustomizer({ product }: Props) {
 
     // Inicializar atributos
     if (product.subcategoryId && availableAttributes.length > 0) {
-      const defaultAttrs = availableAttributes.map(attr => {
-        if (!attr) return null;
-        let defaultValue = '';
-        if (attr.type === 'select' && attr.options?.length) {
-          defaultValue = attr.options[0].value;
-        } else if (attr.type === 'number') {
-          defaultValue = '1';
-        }
-        return { attributeId: attr.id, value: defaultValue };
-      }).filter(Boolean) as ProductAttributeValue[];
-      
-      setConfig(prev => ({ ...prev, attributes: defaultAttrs }));
+      const defaultAttrs = availableAttributes
+        .map((attr) => {
+          if (!attr) return null;
+          let defaultValue = '';
+          if (attr.type === 'select' && attr.options?.length) {
+            defaultValue = attr.options[0].value;
+          } else if (attr.type === 'number') {
+            defaultValue = '1';
+          }
+          return { attributeId: attr.id, value: defaultValue };
+        })
+        .filter(Boolean) as ProductAttributeValue[];
+
+      setConfig((prev) => ({ ...prev, attributes: defaultAttrs }));
     }
   }, [product.subcategoryId]);
 
   const updateAttributeValue = (attributeId: string, value: string) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
-      attributes: prev.attributes.map(attr => 
+      attributes: prev.attributes.map((attr) =>
         attr.attributeId === attributeId ? { ...attr, value } : attr
-      )
+      ),
     }));
   };
 
   const calculatePrice = () => {
     let total = Number(product.basePrice) || 0;
-    
-    config.attributes.forEach(attrValue => {
-      const attribute = attributes.find(attr => attr.id === attrValue.attributeId);
+
+    config.attributes.forEach((attrValue) => {
+      const attribute = attributes.find((attr) => attr.id === attrValue.attributeId);
       if (attribute?.options) {
-        const option = attribute.options.find(opt => opt.value === attrValue.value);
+        const option = attribute.options.find((opt) => opt.value === attrValue.value);
         if (option) {
           total += option.priceModifier;
         }
       }
     });
-    
-    const cantidadAttr = config.attributes.find(attr => attr.attributeId === '13');
+
+    const cantidadAttr = config.attributes.find((attr) => attr.attributeId === '13');
     const cantidad = cantidadAttr ? parseInt(cantidadAttr.value) || 1 : 1;
     total *= cantidad;
-    
+
     return Math.round(total * 100) / 100;
   };
 
@@ -155,11 +157,11 @@ export default function FrameCustomizer({ product }: Props) {
       setError(null);
 
       // Validar campos requeridos
-      const requiredAttributes = availableAttributes.filter(attr => attr?.required);
+      const requiredAttributes = availableAttributes.filter((attr) => attr?.required);
       for (const reqAttr of requiredAttributes) {
         if (!reqAttr) continue;
-        const hasValue = config.attributes.some(attr => 
-          attr.attributeId === reqAttr.id && attr.value.trim() !== ''
+        const hasValue = config.attributes.some(
+          (attr) => attr.attributeId === reqAttr.id && attr.value.trim() !== ''
         );
         if (!hasValue) {
           setError(`El campo "${reqAttr.name}" es obligatorio`);
@@ -169,7 +171,7 @@ export default function FrameCustomizer({ product }: Props) {
       }
 
       const userId = 'guest';
-      const cantidadAttr = config.attributes.find(attr => attr.attributeId === '13');
+      const cantidadAttr = config.attributes.find((attr) => attr.attributeId === '13');
       const cantidad = cantidadAttr ? parseInt(cantidadAttr.value) || 1 : 1;
 
       // Guardar en Firestore
@@ -182,16 +184,18 @@ export default function FrameCustomizer({ product }: Props) {
         attributes: config.attributes,
         basePrice: product.basePrice,
         totalPrice: calculatePrice(),
-        cantidad
+        cantidad,
       };
 
       const customizationId = await saveCustomization(customizationData);
       console.log('✅ Personalización guardada:', customizationId);
 
       // Añadir al carrito
-      const customDetails = [`Flores ${FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].name}`];
-      config.attributes.forEach(attrValue => {
-        const attribute = attributes.find(a => a.id === attrValue.attributeId);
+      const customDetails = [
+        `Flores ${FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].name}`,
+      ];
+      config.attributes.forEach((attrValue) => {
+        const attribute = attributes.find((a) => a.id === attrValue.attributeId);
         if (attribute) {
           customDetails.push(`${attribute.name}: ${attrValue.value}`);
         }
@@ -207,8 +211,8 @@ export default function FrameCustomizer({ product }: Props) {
         variantName: customDetails.join(' • '),
         customization: {
           customizationId,
-          ...customizationData
-        }
+          ...customizationData,
+        },
       });
 
       setSuccess(true);
@@ -229,9 +233,13 @@ export default function FrameCustomizer({ product }: Props) {
         <div className="flex items-center justify-between">
           <div>
             <nav className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-              <a href="/" className="hover:text-cyan-500">Inicio</a>
+              <a href="/" className="hover:text-cyan-500">
+                Inicio
+              </a>
               <span>›</span>
-              <a href={`/producto/${product.slug || product.id}`} className="hover:text-cyan-500">{product.name}</a>
+              <a href={`/producto/${product.slug || product.id}`} className="hover:text-cyan-500">
+                {product.name}
+              </a>
               <span>›</span>
               <span className="text-gray-800 font-medium">Personalizar Cuadro</span>
             </nav>
@@ -240,7 +248,7 @@ export default function FrameCustomizer({ product }: Props) {
             </h1>
           </div>
           <button
-            onClick={() => window.location.href = `/producto/${product.slug || product.id}`}
+            onClick={() => (window.location.href = `/producto/${product.slug || product.id}`)}
             className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
           >
             ← Volver
@@ -269,19 +277,20 @@ export default function FrameCustomizer({ product }: Props) {
           {/* Vista Previa */}
           <div className="bg-white rounded-2xl shadow-2xl p-8">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Vista Previa del Cuadro</h2>
-            
+
             <div className="aspect-square rounded-xl overflow-hidden shadow-inner bg-gray-50 p-4">
               {/* Marco */}
-              <div className="w-full h-full border-8 rounded-lg relative overflow-hidden"
-                   style={{ 
-                     borderColor: '#92400E',
-                     boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2), 0 4px 6px rgba(0,0,0,0.1)'
-                   }}>
-                
+              <div
+                className="w-full h-full border-8 rounded-lg relative overflow-hidden"
+                style={{
+                  borderColor: '#92400E',
+                  boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2), 0 4px 6px rgba(0,0,0,0.1)',
+                }}
+              >
                 {/* Si hay imagen real desde Firebase, mostrarla */}
                 {currentFrame ? (
-                  <img 
-                    src={currentFrame} 
+                  <img
+                    src={currentFrame}
                     alt={`Cuadro de flores ${config.flowerColor}`}
                     className="w-full h-full object-cover"
                   />
@@ -292,31 +301,151 @@ export default function FrameCustomizer({ product }: Props) {
                       <svg viewBox="0 0 200 200" className="w-full h-full">
                         {/* Flor grande 1 */}
                         <g>
-                          <circle cx="60" cy="60" r="15" fill={FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].primary} />
-                          <circle cx="50" cy="50" r="8" fill={FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].secondary} />
-                          <circle cx="70" cy="50" r="8" fill={FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].secondary} />
-                          <circle cx="50" cy="70" r="8" fill={FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].secondary} />
-                          <circle cx="70" cy="70" r="8" fill={FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].secondary} />
+                          <circle
+                            cx="60"
+                            cy="60"
+                            r="15"
+                            fill={
+                              FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS]
+                                .primary
+                            }
+                          />
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="8"
+                            fill={
+                              FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS]
+                                .secondary
+                            }
+                          />
+                          <circle
+                            cx="70"
+                            cy="50"
+                            r="8"
+                            fill={
+                              FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS]
+                                .secondary
+                            }
+                          />
+                          <circle
+                            cx="50"
+                            cy="70"
+                            r="8"
+                            fill={
+                              FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS]
+                                .secondary
+                            }
+                          />
+                          <circle
+                            cx="70"
+                            cy="70"
+                            r="8"
+                            fill={
+                              FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS]
+                                .secondary
+                            }
+                          />
                           <circle cx="60" cy="60" r="6" fill="#FCD34D" />
                         </g>
-                        
+
                         {/* Flor grande 2 */}
                         <g>
-                          <circle cx="140" cy="80" r="18" fill={FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].primary} />
-                          <circle cx="128" cy="68" r="10" fill={FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].secondary} />
-                          <circle cx="152" cy="68" r="10" fill={FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].secondary} />
-                          <circle cx="128" cy="92" r="10" fill={FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].secondary} />
-                          <circle cx="152" cy="92" r="10" fill={FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].secondary} />
+                          <circle
+                            cx="140"
+                            cy="80"
+                            r="18"
+                            fill={
+                              FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS]
+                                .primary
+                            }
+                          />
+                          <circle
+                            cx="128"
+                            cy="68"
+                            r="10"
+                            fill={
+                              FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS]
+                                .secondary
+                            }
+                          />
+                          <circle
+                            cx="152"
+                            cy="68"
+                            r="10"
+                            fill={
+                              FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS]
+                                .secondary
+                            }
+                          />
+                          <circle
+                            cx="128"
+                            cy="92"
+                            r="10"
+                            fill={
+                              FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS]
+                                .secondary
+                            }
+                          />
+                          <circle
+                            cx="152"
+                            cy="92"
+                            r="10"
+                            fill={
+                              FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS]
+                                .secondary
+                            }
+                          />
                           <circle cx="140" cy="80" r="7" fill="#FCD34D" />
                         </g>
-                        
+
                         {/* Flor grande 3 */}
                         <g>
-                          <circle cx="100" cy="140" r="20" fill={FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].primary} />
-                          <circle cx="86" cy="126" r="11" fill={FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].secondary} />
-                          <circle cx="114" cy="126" r="11" fill={FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].secondary} />
-                          <circle cx="86" cy="154" r="11" fill={FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].secondary} />
-                          <circle cx="114" cy="154" r="11" fill={FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS].secondary} />
+                          <circle
+                            cx="100"
+                            cy="140"
+                            r="20"
+                            fill={
+                              FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS]
+                                .primary
+                            }
+                          />
+                          <circle
+                            cx="86"
+                            cy="126"
+                            r="11"
+                            fill={
+                              FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS]
+                                .secondary
+                            }
+                          />
+                          <circle
+                            cx="114"
+                            cy="126"
+                            r="11"
+                            fill={
+                              FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS]
+                                .secondary
+                            }
+                          />
+                          <circle
+                            cx="86"
+                            cy="154"
+                            r="11"
+                            fill={
+                              FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS]
+                                .secondary
+                            }
+                          />
+                          <circle
+                            cx="114"
+                            cy="154"
+                            r="11"
+                            fill={
+                              FLOWER_COLORS[config.flowerColor as keyof typeof FLOWER_COLORS]
+                                .secondary
+                            }
+                          />
                           <circle cx="100" cy="140" r="8" fill="#FCD34D" />
                         </g>
 
@@ -324,10 +453,24 @@ export default function FrameCustomizer({ product }: Props) {
                         <rect x="58" y="75" width="4" height="40" fill="#22C55E" rx="2" />
                         <rect x="138" y="98" width="4" height="35" fill="#22C55E" rx="2" />
                         <rect x="98" y="160" width="4" height="30" fill="#22C55E" rx="2" />
-                        
+
                         {/* Hojas */}
-                        <ellipse cx="55" cy="95" rx="8" ry="12" fill="#16A34A" transform="rotate(-30 55 95)" />
-                        <ellipse cx="145" cy="115" rx="8" ry="12" fill="#16A34A" transform="rotate(20 145 115)" />
+                        <ellipse
+                          cx="55"
+                          cy="95"
+                          rx="8"
+                          ry="12"
+                          fill="#16A34A"
+                          transform="rotate(-30 55 95)"
+                        />
+                        <ellipse
+                          cx="145"
+                          cy="115"
+                          rx="8"
+                          ry="12"
+                          fill="#16A34A"
+                          transform="rotate(20 145 115)"
+                        />
                       </svg>
                     </div>
                   </div>
@@ -346,13 +489,16 @@ export default function FrameCustomizer({ product }: Props) {
                 {Object.entries(FLOWER_COLORS).map(([key, { primary, secondary, name }]) => (
                   <button
                     key={key}
-                    onClick={() => setConfig(prev => ({ ...prev, flowerColor: key }))}
+                    onClick={() => setConfig((prev) => ({ ...prev, flowerColor: key }))}
                     className={`aspect-square rounded-xl border-4 transition-all hover:scale-105 flex flex-col items-center justify-center ${
                       config.flowerColor === key ? 'border-purple-500 shadow-lg' : 'border-gray-300'
                     }`}
                     style={{ backgroundColor: primary }}
                   >
-                    <div className="w-8 h-8 rounded-full" style={{ backgroundColor: secondary }}></div>
+                    <div
+                      className="w-8 h-8 rounded-full"
+                      style={{ backgroundColor: secondary }}
+                    ></div>
                     <span className="text-xs mt-2 text-white font-semibold">{name}</span>
                   </button>
                 ))}
@@ -365,14 +511,17 @@ export default function FrameCustomizer({ product }: Props) {
                 <h3 className="text-xl font-bold mb-4 text-gray-800">Opciones del Cuadro</h3>
                 {availableAttributes.map((attribute) => {
                   if (!attribute) return null;
-                  const currentValue = config.attributes.find(attr => attr.attributeId === attribute.id);
-                  
+                  const currentValue = config.attributes.find(
+                    (attr) => attr.attributeId === attribute.id
+                  );
+
                   return (
                     <div key={attribute.id} className="mb-4">
                       <label className="block text-sm font-bold text-gray-700 mb-2">
-                        {attribute.name} {attribute.required && <span className="text-red-500">*</span>}
+                        {attribute.name}{' '}
+                        {attribute.required && <span className="text-red-500">*</span>}
                       </label>
-                      
+
                       {attribute.type === 'select' && attribute.options ? (
                         <select
                           value={currentValue?.value || ''}
@@ -382,7 +531,8 @@ export default function FrameCustomizer({ product }: Props) {
                           <option value="">Seleccionar...</option>
                           {attribute.options.map((option) => (
                             <option key={option.id} value={option.value}>
-                              {option.value} {option.priceModifier !== 0 && `(+€${option.priceModifier})`}
+                              {option.value}{' '}
+                              {option.priceModifier !== 0 && `(+€${option.priceModifier})`}
                             </option>
                           ))}
                         </select>

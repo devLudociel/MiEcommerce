@@ -22,12 +22,12 @@ export interface Address {
   isDefaultShipping?: boolean;
   isDefaultBilling?: boolean;
   // Campos detallados (opcionales) para UX local
-  street?: string;      // Calle
-  number?: string;      // Número
-  floor?: string;       // Piso
-  apartment?: string;   // Depto/Puerta
-  locality?: string;    // Población / Localidad
-  notes?: string;       // Notas de entrega
+  street?: string; // Calle
+  number?: string; // Número
+  floor?: string; // Piso
+  apartment?: string; // Depto/Puerta
+  locality?: string; // Población / Localidad
+  notes?: string; // Notas de entrega
 }
 
 export interface TaxId {
@@ -94,10 +94,12 @@ export async function getAddresses(uid: string): Promise<Address[]> {
   return d?.addresses ?? [];
 }
 
-export async function getDefaultAddresses(uid: string): Promise<{ shipping: Address | null; billing: Address | null }>{
+export async function getDefaultAddresses(
+  uid: string
+): Promise<{ shipping: Address | null; billing: Address | null }> {
   const list = await getAddresses(uid);
-  const shipping = list.find(a => a.isDefaultShipping) || null;
-  const billing = list.find(a => a.isDefaultBilling) || null;
+  const shipping = list.find((a) => a.isDefaultShipping) || null;
+  const billing = list.find((a) => a.isDefaultBilling) || null;
   return { shipping, billing };
 }
 

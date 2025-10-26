@@ -8,17 +8,21 @@ interface Props {
   ogImage?: string;
 }
 
-const { title, description = "Especialistas en personalización: estampado, bordado, impresión 3D, corte láser y mucho más.", ogImage = "/og-image.jpg" } = Astro.props;
+const {
+  title,
+  description = 'Especialistas en personalización: estampado, bordado, impresión 3D, corte láser y mucho más.',
+  ogImage = '/og-image.jpg',
+} = Astro.props;
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
-    
+
     <meta property="og:type" content="website" />
     <meta property="og:url" content={Astro.url} />
     <meta property="og:title" content={title} />
@@ -38,18 +42,18 @@ const { title, description = "Especialistas en personalización: estampado, bord
       :root {
         --header-height: 208px;
       }
-      
+
       main {
         padding-top: var(--header-height);
       }
-      
+
       /* Breakpoints responsivos si es necesario */
       @media (max-width: 1024px) {
         :root {
           --header-height: 208px;
         }
       }
-      
+
       @media (max-width: 768px) {
         :root {
           --header-height: 220px; /* Puede ser más en móvil si tienes más elementos */

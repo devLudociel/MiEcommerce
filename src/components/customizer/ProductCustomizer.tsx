@@ -29,16 +29,16 @@ interface Props {
 // Mapeo de categorías/subcategorías a tipos de personalizador
 const CUSTOMIZER_TYPE_MAP: Record<string, 'shirt' | 'frame' | 'resin' | 'default'> = {
   // Por subcategoryId
-  'ropa': 'shirt',
-  'camisetas': 'shirt',
-  'sudaderas': 'shirt',
-  'polos': 'shirt',
-  'cuadros': 'frame',
-  'marcos': 'frame',
-  'arte': 'frame',
-  'figuras': 'resin',
-  'resina': 'resin',
-  'esculturas': 'resin',
+  ropa: 'shirt',
+  camisetas: 'shirt',
+  sudaderas: 'shirt',
+  polos: 'shirt',
+  cuadros: 'frame',
+  marcos: 'frame',
+  arte: 'frame',
+  figuras: 'resin',
+  resina: 'resin',
+  esculturas: 'resin',
   // Añade más según tus subcategorías
 };
 
@@ -58,7 +58,7 @@ function detectCustomizerType(product: FirebaseProduct): 'shirt' | 'frame' | 're
   }
 
   // 3. Buscar en tags
-  const tags = product.tags?.map(t => t.toLowerCase()) || [];
+  const tags = product.tags?.map((t) => t.toLowerCase()) || [];
   for (const tag of tags) {
     if (CUSTOMIZER_TYPE_MAP[tag]) {
       return CUSTOMIZER_TYPE_MAP[tag];
@@ -81,14 +81,16 @@ export default function ProductCustomizer({ slug }: Props) {
   const [product, setProduct] = useState<FirebaseProduct | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [customizerType, setCustomizerType] = useState<'shirt' | 'frame' | 'resin' | 'default'>('default');
+  const [customizerType, setCustomizerType] = useState<'shirt' | 'frame' | 'resin' | 'default'>(
+    'default'
+  );
 
   useEffect(() => {
     async function loadProduct() {
       try {
         setLoading(true);
         setError(null);
-        
+
         if (!slug) {
           setError('No se especificó el producto');
           return;
@@ -97,7 +99,7 @@ export default function ProductCustomizer({ slug }: Props) {
         // Intentar buscar por slug
         const q = query(collection(db, 'products'), where('slug', '==', slug), limit(1));
         const snap = await getDocs(q);
-        
+
         let productData: FirebaseProduct | null = null;
         if (!snap.empty) {
           const docSnap = snap.docs[0];
@@ -119,13 +121,12 @@ export default function ProductCustomizer({ slug }: Props) {
         }
 
         setProduct(productData);
-        
+
         // Detectar automáticamente el tipo de personalizador
         const type = detectCustomizerType(productData);
         setCustomizerType(type);
-        
+
         console.log('🎨 Tipo de personalizador detectado:', type);
-        
       } catch (e: any) {
         setError(e?.message || 'Error cargando producto');
       } finally {
@@ -154,7 +155,10 @@ export default function ProductCustomizer({ slug }: Props) {
           <div className="text-6xl mb-4">😢</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Producto no encontrado</h2>
           <p className="text-gray-600 mb-6">{error || 'No se pudo cargar el producto'}</p>
-          <a href="/" className="px-6 py-3 bg-gradient-primary text-white rounded-xl font-bold hover:shadow-lg transition-all">
+          <a
+            href="/"
+            className="px-6 py-3 bg-gradient-primary text-white rounded-xl font-bold hover:shadow-lg transition-all"
+          >
             Volver al inicio
           </a>
         </div>
@@ -166,13 +170,13 @@ export default function ProductCustomizer({ slug }: Props) {
   switch (customizerType) {
     case 'shirt':
       return <ShirtCustomizer product={product} />;
-    
+
     case 'frame':
       return <FrameCustomizer product={product} />;
-    
+
     case 'resin':
       return <ResinCustomizer product={product} />;
-    
+
     default:
       return <ShirtCustomizer product={product} />;
   }

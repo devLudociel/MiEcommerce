@@ -6,8 +6,5 @@ const { categorySlug } = Astro.params;
 ---
 
 <Layout title={`Categoría - ${categorySlug}`}>
-  <CategoryPage 
-    client:load 
-    categorySlug={categorySlug}
-  />
+  <CategoryPage client:load categorySlug={categorySlug} />
 </Layout>

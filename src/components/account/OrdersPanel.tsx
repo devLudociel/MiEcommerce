@@ -15,7 +15,11 @@ export default function OrdersPanel() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
-      if (!u) { setUid(null); setOrders([]); return; }
+      if (!u) {
+        setUid(null);
+        setOrders([]);
+        return;
+      }
       setUid(u.uid);
       // TODO: fetch orders from Firestore
       setOrders([]);
@@ -27,23 +31,35 @@ export default function OrdersPanel() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending': return 'badge-hot';
-      case 'paid': return 'badge-new';
-      case 'shipped': return 'badge-new';
-      case 'delivered': return 'badge-sale';
-      case 'cancelled': return 'text-gray-400';
-      default: return '';
+      case 'pending':
+        return 'badge-hot';
+      case 'paid':
+        return 'badge-new';
+      case 'shipped':
+        return 'badge-new';
+      case 'delivered':
+        return 'badge-sale';
+      case 'cancelled':
+        return 'text-gray-400';
+      default:
+        return '';
     }
   };
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'pending': return 'Pendiente';
-      case 'paid': return 'Pagado';
-      case 'shipped': return 'Enviado';
-      case 'delivered': return 'Entregado';
-      case 'cancelled': return 'Cancelado';
-      default: return status;
+      case 'pending':
+        return 'Pendiente';
+      case 'paid':
+        return 'Pagado';
+      case 'shipped':
+        return 'Enviado';
+      case 'delivered':
+        return 'Entregado';
+      case 'cancelled':
+        return 'Cancelado';
+      default:
+        return status;
     }
   };
 
@@ -57,8 +73,18 @@ export default function OrdersPanel() {
       {orders.length === 0 ? (
         <div className="card p-8 text-center">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            <svg
+              className="w-8 h-8 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+              />
             </svg>
           </div>
           <p className="text-gray-600 mb-4">Todavía no tienes pedidos.</p>

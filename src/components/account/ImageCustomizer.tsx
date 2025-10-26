@@ -17,50 +17,54 @@ const MOCKUPS: Mockup[] = [
     name: 'Camiseta Negra',
     category: 'apparel',
     image: '👕',
-    color: 'bg-black'
+    color: 'bg-black',
   },
   {
     id: 'shirt-white',
     name: 'Camiseta Blanca',
     category: 'apparel',
     image: '👕',
-    color: 'bg-white border-2 border-gray-300'
+    color: 'bg-white border-2 border-gray-300',
   },
   {
     id: 'hoodie',
     name: 'Sudadera',
     category: 'apparel',
     image: '🧥',
-    color: 'bg-gray-800'
+    color: 'bg-gray-800',
   },
   {
     id: 'mug',
     name: 'Taza',
     category: 'home',
     image: '☕',
-    color: 'bg-white border-2 border-gray-300'
+    color: 'bg-white border-2 border-gray-300',
   },
   {
     id: 'canvas',
     name: 'Cuadro',
     category: 'home',
     image: '🖼️',
-    color: 'bg-gray-100 border-4 border-gray-400'
+    color: 'bg-gray-100 border-4 border-gray-400',
   },
   {
     id: 'cap',
     name: 'Gorra',
     category: 'accessories',
     image: '🧢',
-    color: 'bg-blue-600'
-  }
+    color: 'bg-blue-600',
+  },
 ];
 
 export default function ImageCustomizer() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [selectedMockups, setSelectedMockups] = useState<string[]>(['shirt-black', 'mug', 'canvas']);
+  const [selectedMockups, setSelectedMockups] = useState<string[]>([
+    'shirt-black',
+    'mug',
+    'canvas',
+  ]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,10 +97,10 @@ export default function ImageCustomizer() {
       const timestamp = Date.now();
       const uniqueName = `${timestamp}-${file.name}`;
       const fileRef = ref(storage, `users/${user.uid}/customizer-designs/${uniqueName}`);
-      
+
       await uploadBytes(fileRef, file);
       const downloadUrl = await getDownloadURL(fileRef);
-      
+
       setImageUrl(downloadUrl);
       console.log('Imagen subida exitosamente:', downloadUrl);
     } catch (err) {
@@ -108,15 +112,13 @@ export default function ImageCustomizer() {
   };
 
   const toggleMockup = (mockupId: string) => {
-    setSelectedMockups(prev =>
-      prev.includes(mockupId)
-        ? prev.filter(id => id !== mockupId)
-        : [...prev, mockupId]
+    setSelectedMockups((prev) =>
+      prev.includes(mockupId) ? prev.filter((id) => id !== mockupId) : [...prev, mockupId]
     );
   };
 
   const getMockupsByCategory = (category: 'apparel' | 'home' | 'accessories') => {
-    return MOCKUPS.filter(m => m.category === category);
+    return MOCKUPS.filter((m) => m.category === category);
   };
 
   return (
@@ -131,8 +133,11 @@ export default function ImageCustomizer() {
           <div className="mb-4 text-4xl">🖼️</div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">Sube tu diseño</h3>
           <p className="text-gray-600 mb-6">PNG, JPG o WebP (máximo 10MB)</p>
-          
-          <label className="btn btn-primary cursor-pointer inline-block" style={{ opacity: uploading ? 0.6 : 1, cursor: uploading ? 'not-allowed' : 'pointer' }}>
+
+          <label
+            className="btn btn-primary cursor-pointer inline-block"
+            style={{ opacity: uploading ? 0.6 : 1, cursor: uploading ? 'not-allowed' : 'pointer' }}
+          >
             {uploading ? 'Subiendo...' : 'Seleccionar imagen'}
             <input
               type="file"
@@ -144,16 +149,10 @@ export default function ImageCustomizer() {
           </label>
 
           {selectedImage && (
-            <p className="text-sm text-cyan-600 mt-4">
-              ✓ {selectedImage.name} cargado
-            </p>
+            <p className="text-sm text-cyan-600 mt-4">✓ {selectedImage.name} cargado</p>
           )}
 
-          {error && (
-            <p className="text-sm text-red-600 mt-4">
-              ✗ {error}
-            </p>
-          )}
+          {error && <p className="text-sm text-red-600 mt-4">✗ {error}</p>}
         </div>
       </div>
 
@@ -182,7 +181,7 @@ export default function ImageCustomizer() {
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 uppercase mb-3">Ropa</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  {getMockupsByCategory('apparel').map(mockup => (
+                  {getMockupsByCategory('apparel').map((mockup) => (
                     <button
                       key={mockup.id}
                       onClick={() => toggleMockup(mockup.id)}
@@ -206,7 +205,7 @@ export default function ImageCustomizer() {
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 uppercase mb-3">Hogar</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  {getMockupsByCategory('home').map(mockup => (
+                  {getMockupsByCategory('home').map((mockup) => (
                     <button
                       key={mockup.id}
                       onClick={() => toggleMockup(mockup.id)}
@@ -230,7 +229,7 @@ export default function ImageCustomizer() {
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 uppercase mb-3">Accesorios</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  {getMockupsByCategory('accessories').map(mockup => (
+                  {getMockupsByCategory('accessories').map((mockup) => (
                     <button
                       key={mockup.id}
                       onClick={() => toggleMockup(mockup.id)}
@@ -257,11 +256,19 @@ export default function ImageCustomizer() {
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">Vista Previa</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {MOCKUPS.filter(m => selectedMockups.includes(m.id)).map(mockup => (
+                {MOCKUPS.filter((m) => selectedMockups.includes(m.id)).map((mockup) => (
                   <MockupPreview
                     key={mockup.id}
                     imageUrl={imageUrl}
-                    mockupType={mockup.id as 'shirt-black' | 'shirt-white' | 'hoodie' | 'mug' | 'canvas' | 'cap'}
+                    mockupType={
+                      mockup.id as
+                        | 'shirt-black'
+                        | 'shirt-white'
+                        | 'hoodie'
+                        | 'mug'
+                        | 'canvas'
+                        | 'cap'
+                    }
                     mockupName={mockup.name}
                   />
                 ))}
