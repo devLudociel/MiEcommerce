@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { db, getProductReviewStats } from '../../lib/firebase';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { collection, query, where, limit, getDocs } from 'firebase/firestore';
+import { ProductGridSkeleton } from '../ui/SkeletonLoader';
+import ErrorMessage from '../errors/ErrorMessage';
+import { logger } from '../../lib/logger';
 
 interface Product {
   id: string;
@@ -91,6 +94,8 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
       try {
         setLoading(true);
         setError(null);
+        logger.debug('[ProductGrid] Loading products', { maxItems });
+
         const q = query(collection(db, 'products'), where('active', '==', true), limit(maxItems));
         const snap = await getDocs(q);
 
@@ -107,7 +112,7 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
               totalReviews: stats.totalReviews,
             };
           } catch (reviewError) {
-            console.error(`[ProductGrid] Error cargando reseñas para ${d.id}:`, reviewError);
+            logger.warn(`[ProductGrid] Error loading reviews for product ${d.id}`, reviewError);
           }
 
           const onSale = !!data.onSale;
@@ -136,8 +141,9 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
         const list = await Promise.all(productsPromises);
         setProducts(list);
         setFilteredProducts(list);
+        logger.info('[ProductGrid] Products loaded successfully', { count: list.length });
       } catch (e: any) {
-        console.error('[ProductGrid] load error:', e?.code, e?.message);
+        logger.error('[ProductGrid] Error loading products', e);
         setError(e?.message || 'Error cargando productos');
         setProducts([]);
         setFilteredProducts([]);
@@ -208,9 +214,26 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
           )}
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <ProductGridSkeleton count={maxItems} />
+        )}
+
+        {/* Error State */}
+        {!loading && error && (
+          <div className="max-w-2xl mx-auto">
+            <ErrorMessage
+              error={error}
+              onRetry={() => window.location.reload()}
+              variant="card"
+            />
+          </div>
+        )}
+
         {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-8">
-          {filteredProducts.map((product, index) => (
+        {!loading && !error && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-8">
+            {filteredProducts.map((product, index) => (
             <a
               key={product.id}
               href={`/producto?${product.slug ? 'slug=' + product.slug : 'id=' + product.id}`}
@@ -382,10 +405,11 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
               </div>
             </a>
           ))}
-        </div>
+          </div>
+        )}
 
         {/* Load More Button */}
-        {filteredProducts.length >= maxItems && (
+        {!loading && !error && filteredProducts.length >= maxItems && (
           <div className="text-center mt-16">
             <button className="btn btn-lg bg-gradient-rainbow text-white px-12 py-4 shadow-lg hover:shadow-xl transform hover:scale-105">
               Ver Más Productos

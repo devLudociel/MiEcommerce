@@ -1,6 +1,7 @@
 // src/store/cartStore.ts
 import { atom } from 'nanostores';
 import { logger } from '../lib/logger';
+import { notify } from '../lib/notifications';
 
 export interface CartItem {
   id: string;
@@ -57,6 +58,7 @@ const loadCartFromStorage = (): CartState => {
     }
   } catch (e) {
     logger.error('[CartStore] Error loading cart from localStorage', e);
+    // No mostrar notificación aquí para no molestar al usuario al cargar la página
   }
 
   logger.debug('[CartStore] Initialized empty cart');
@@ -76,6 +78,8 @@ const saveCartToStorage = (state: CartState): void => {
   } catch (e) {
     logger.error('[CartStore] Error saving cart to localStorage', e);
     logger.warn('[CartStore] Cart changes will not persist across sessions');
+    // Mostrar advertencia al usuario si falla el guardado
+    notify.warning('No se pudo guardar el carrito. Los cambios pueden perderse.');
   }
 };
 
@@ -105,6 +109,7 @@ export function addToCart(item: CartItem): void {
       productId: item.id,
       newQuantity: currentState.items[existingItemIndex].quantity + item.quantity,
     });
+    notify.success(`Cantidad actualizada: ${item.name}`);
   } else {
     // Si no existe, agregarlo
     newItems = [...currentState.items, item];
@@ -114,6 +119,7 @@ export function addToCart(item: CartItem): void {
       price: item.price,
       quantity: item.quantity,
     });
+    notify.success(`¡${item.name} agregado al carrito!`);
   }
 
   const newState: CartState = {
@@ -152,6 +158,10 @@ export function updateCartItemQuantity(
 export function removeFromCart(itemId: string, variantId?: number): void {
   const currentState = cartStore.get();
 
+  const removedItem = currentState.items.find(
+    (item: CartItem) => item.id === itemId && item.variantId === variantId
+  );
+
   const newItems = currentState.items.filter(
     (item: CartItem) => !(item.id === itemId && item.variantId === variantId)
   );
@@ -163,13 +173,26 @@ export function removeFromCart(itemId: string, variantId?: number): void {
 
   cartStore.set(newState);
   saveCartToStorage(newState);
+
+  if (removedItem) {
+    logger.info('[CartStore] Item removed from cart', { productId: itemId });
+    notify.info(`${removedItem.name} eliminado del carrito`);
+  }
 }
 
 // Limpiar carrito
 export function clearCart(): void {
+  const currentState = cartStore.get();
+  const itemCount = currentState.items.length;
+
   const newState: CartState = { items: [], total: 0 };
   cartStore.set(newState);
   saveCartToStorage(newState);
+
+  if (itemCount > 0) {
+    logger.info('[CartStore] Cart cleared', { itemCount });
+    notify.info('Carrito vaciado');
+  }
 }
 
 // Hook para usar el carrito en React

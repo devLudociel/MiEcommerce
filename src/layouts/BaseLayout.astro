@@ -1,5 +1,7 @@
 ---
 import Header from '../components/layout/header.tsx';
+import { Toaster } from '../lib/notifications';
+import { toasterConfig } from '../lib/notifications';
 import '../styles/global.css';
 
 interface Props {
@@ -66,5 +68,7 @@ const {
     <main>
       <slot />
     </main>
+    <!-- Toast Notifications Container -->
+    <Toaster {...toasterConfig} client:load />
   </body>
 </html>
