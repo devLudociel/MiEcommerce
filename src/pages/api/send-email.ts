@@ -53,19 +53,22 @@ export const POST: APIRoute = async ({ request }) => {
     console.log('📧 Enviando email a:', order.shippingInfo.email);
 
     // Enviar email con Resend
-    const data = await resend.emails.send({
+    const response = await resend.emails.send({
       from: import.meta.env.EMAIL_FROM || 'noreply@imprimearte.es',
       to: [order.shippingInfo.email],
       subject,
       html,
     });
 
-    console.log('✅ Email enviado correctamente:', data);
+    console.log('✅ Email enviado correctamente:', response);
+
+    // Resend v4 retorna { data: {...}, error: null }
+    const emailId = response.data?.id || (response as any).id;
 
     return new Response(
       JSON.stringify({
         success: true,
-        emailId: data.id,
+        emailId,
       }),
       {
         status: 200,
