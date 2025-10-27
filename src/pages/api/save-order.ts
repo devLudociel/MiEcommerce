@@ -64,102 +64,141 @@ export const POST: APIRoute = async ({ request }) => {
 
     console.log('API save-order: Pedido guardado con ID:', docRef.id);
 
-    // Procesar wallet (admin) si se usó saldo
-    if (orderData.discounts?.wallet && orderData.userId) {
+    // Procesar wallet debit si se usó saldo (nueva estructura del checkout)
+    if (orderData.usedWallet && orderData.walletDiscount && orderData.userId && orderData.userId !== 'guest') {
       try {
-        console.log('API save-order: Procesando gasto de wallet (admin)...');
+        console.log('[save-order] Processing wallet debit...');
         const userId: string = String(orderData.userId);
-        const walletAmount: number = Number(orderData.discounts.wallet.amount) || 0;
-        const walletRef = adminDb.collection('wallets').doc(userId);
-        const snap = await walletRef.get();
-        const current = snap.exists ? (snap.data() as any) : { balance: 0, totalEarned: 0, totalSpent: 0, userId };
-        const newBalance = Math.max(0, Number(current.balance || 0) - walletAmount);
-        await walletRef.set(
-          {
+        const walletAmount: number = Number(orderData.walletDiscount) || 0;
+
+        if (walletAmount > 0) {
+          const walletRef = adminDb.collection('wallets').doc(userId);
+          const snap = await walletRef.get();
+
+          if (!snap.exists) {
+            console.warn('[save-order] Wallet document does not exist for user, creating...');
+          }
+
+          const current = snap.exists ? (snap.data() as any) : { balance: 0, totalEarned: 0, totalSpent: 0, userId };
+          const currentBalance = Number(current.balance || 0);
+
+          // Ensure we don't go negative
+          if (currentBalance < walletAmount) {
+            console.error(`[save-order] Insufficient wallet balance. Current: €${currentBalance}, Required: €${walletAmount}`);
+            throw new Error('Saldo insuficiente en el monedero');
+          }
+
+          const newBalance = currentBalance - walletAmount;
+
+          await walletRef.set(
+            {
+              userId,
+              balance: newBalance,
+              totalSpent: Number(current.totalSpent || 0) + walletAmount,
+              totalEarned: Number(current.totalEarned || 0),
+              updatedAt: FieldValue.serverTimestamp(),
+              ...(snap.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
+            },
+            { merge: true }
+          );
+
+          await adminDb.collection('wallet_transactions').add({
             userId,
-            balance: newBalance,
-            totalSpent: Number(current.totalSpent || 0) + walletAmount,
-            totalEarned: Number(current.totalEarned || 0),
-            updatedAt: FieldValue.serverTimestamp(),
-            ...(snap.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
-          },
-          { merge: true }
-        );
-        await adminDb.collection('wallet_transactions').add({
-          userId,
-          type: 'spend',
-          amount: walletAmount,
-          balance: newBalance,
-          orderId: docRef.id,
-          description: `Compra - Pedido ${docRef.id}`,
-          createdAt: FieldValue.serverTimestamp(),
-        });
-        console.log('API save-order: Wallet procesado correctamente (admin)');
+            type: 'debit',
+            amount: walletAmount,
+            description: `Pago de pedido #${docRef.id}`,
+            orderId: docRef.id,
+            createdAt: FieldValue.serverTimestamp(),
+          });
+
+          console.log(`[save-order] Wallet debited: €${walletAmount.toFixed(2)}, New balance: €${newBalance.toFixed(2)}`);
+        }
       } catch (walletError) {
-        console.error('API save-order: Error procesando wallet (admin, no crítico):', walletError);
+        console.error('[save-order] Error processing wallet debit:', walletError);
+        // Don't throw - log and continue
       }
     }
 
-    // Procesar cupón (admin) si se usó
-    if (orderData.discounts?.coupon && orderData.userId) {
+    // Procesar cupón si se usó (actualizado con nueva estructura)
+    if (orderData.couponCode && orderData.couponId && orderData.userId && orderData.userId !== 'guest') {
       try {
-        console.log('API save-order: Procesando cupón (admin)...');
-        const couponId: string = String(orderData.discounts.coupon.id);
-        const couponCode: string = String(orderData.discounts.coupon.code || '');
-        const discountAmount: number = Number(orderData.discounts.coupon.amount) || 0;
+        console.log('[save-order] Processing coupon usage...');
+        const couponId: string = String(orderData.couponId);
+        const couponCode: string = String(orderData.couponCode);
+        const discountAmount: number = Number(orderData.couponDiscount) || 0;
         const userId: string = String(orderData.userId);
+
         const couponRef = adminDb.collection('coupons').doc(couponId);
         await couponRef.set(
-          { currentUses: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() },
+          {
+            timesUsed: FieldValue.increment(1),
+            currentUses: FieldValue.increment(1),
+            updatedAt: FieldValue.serverTimestamp()
+          },
           { merge: true }
         );
+
         await adminDb.collection('coupon_usage').add({
           couponId,
           couponCode,
           userId,
           orderId: docRef.id,
           discountAmount,
+          createdAt: FieldValue.serverTimestamp(),
           usedAt: FieldValue.serverTimestamp(),
         });
-        console.log('API save-order: Cupón procesado correctamente (admin)');
+
+        console.log(`[save-order] Coupon processed: ${couponCode} (-€${discountAmount.toFixed(2)})`);
       } catch (couponError) {
-        console.error('API save-order: Error procesando cupón (admin, no crítico):', couponError);
+        console.error('[save-order] Error processing coupon:', couponError);
+        // Don't throw - log and continue
       }
     }
 
-    // Agregar cashback al wallet (solo si hay userId)
-    if (orderData.userId && orderData.subtotal) {
+    // Agregar cashback al wallet (5% del subtotal después de descuentos, solo para usuarios autenticados)
+    if (orderData.userId && orderData.userId !== 'guest' && orderData.subtotal) {
       try {
-        console.log('API save-order: Calculando cashback...');
-        const cashbackAmount = orderData.subtotal * CASHBACK_PERCENTAGE;
-        const userId: string = String(orderData.userId);
-        const walletRef = adminDb.collection('wallets').doc(userId);
-        const snap = await walletRef.get();
-        const current = snap.exists ? (snap.data() as any) : { balance: 0, totalEarned: 0, totalSpent: 0, userId };
-        const newBalance = Number(current.balance || 0) + Number(cashbackAmount);
-        await walletRef.set(
-          {
+        console.log('[save-order] Calculating cashback...');
+
+        // Calculate cashback on subtotal after coupon discount, before shipping and IVA
+        const subtotal = Number(orderData.subtotal) || 0;
+        const couponDiscount = Number(orderData.couponDiscount) || 0;
+        const subtotalAfterDiscount = subtotal - couponDiscount;
+        const cashbackAmount = subtotalAfterDiscount * CASHBACK_PERCENTAGE;
+
+        if (cashbackAmount > 0) {
+          const userId: string = String(orderData.userId);
+          const walletRef = adminDb.collection('wallets').doc(userId);
+          const snap = await walletRef.get();
+          const current = snap.exists ? (snap.data() as any) : { balance: 0, totalEarned: 0, totalSpent: 0, userId };
+          const newBalance = Number(current.balance || 0) + cashbackAmount;
+
+          await walletRef.set(
+            {
+              userId,
+              balance: newBalance,
+              totalEarned: Number(current.totalEarned || 0) + cashbackAmount,
+              totalSpent: Number(current.totalSpent || 0),
+              updatedAt: FieldValue.serverTimestamp(),
+              ...(snap.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
+            },
+            { merge: true }
+          );
+
+          await adminDb.collection('wallet_transactions').add({
             userId,
-            balance: newBalance,
-            totalEarned: Number(current.totalEarned || 0) + Number(cashbackAmount),
-            totalSpent: Number(current.totalSpent || 0),
-            updatedAt: FieldValue.serverTimestamp(),
-            ...(snap.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
-          },
-          { merge: true }
-        );
-        await adminDb.collection('wallet_transactions').add({
-          userId,
-          type: 'earn',
-          amount: Number(cashbackAmount),
-          balance: newBalance,
-          orderId: docRef.id,
-          description: `Cashback 5% - Pedido ${docRef.id}`,
-          createdAt: FieldValue.serverTimestamp(),
-        });
-        console.log(`API save-order: Cashback de €${Number(cashbackAmount).toFixed(2)} agregado (admin)`);
+            type: 'cashback',
+            amount: cashbackAmount,
+            description: `Cashback 5% del pedido #${docRef.id}`,
+            orderId: docRef.id,
+            createdAt: FieldValue.serverTimestamp(),
+          });
+
+          console.log(`[save-order] Cashback added: €${cashbackAmount.toFixed(2)} (5% of €${subtotalAfterDiscount.toFixed(2)})`);
+        }
       } catch (cashbackError) {
-        console.error('API save-order: Error agregando cashback (admin, no crítico):', cashbackError);
+        console.error('[save-order] Error adding cashback:', cashbackError);
+        // Don't throw - log and continue
       }
     }
 
