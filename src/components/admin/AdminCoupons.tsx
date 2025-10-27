@@ -4,25 +4,34 @@ import { getActiveCoupons, deactivateCoupon, createCoupon } from '../../lib/fire
 import type { Coupon } from '../../types/firebase';
 import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '../hooks/useAuth';
+import { logger } from '../../lib/logger';
+import { notify } from '../../lib/notifications';
+import { useSimpleFormValidation } from '../../hooks/useFormValidation';
+import { couponSchema } from '../../lib/validation/schemas';
+import LoadingButton from '../ui/LoadingButton';
 
 export default function AdminCoupons() {
   const { user } = useAuth();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Estados del formulario
+  // Validation hook
+  const { errors, validate } = useSimpleFormValidation(couponSchema);
+
+  // Form state - aligned with Zod schema
   const [formData, setFormData] = useState({
     code: '',
     description: '',
     type: 'percentage' as 'percentage' | 'fixed' | 'free_shipping',
     value: 10,
-    minPurchase: 0,
-    maxDiscount: 0,
-    maxUses: 0,
-    maxUsesPerUser: 1,
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    usageLimit: undefined as number | undefined,
+    timesUsed: 0,
+    active: true,
+    minPurchase: undefined as number | undefined,
+    userSpecific: [] as string[],
   });
 
   useEffect(() => {
@@ -32,10 +41,13 @@ export default function AdminCoupons() {
   const loadCoupons = async () => {
     try {
       setLoading(true);
+      logger.info('[AdminCoupons] Loading coupons');
       const data = await getActiveCoupons();
       setCoupons(data);
+      logger.info('[AdminCoupons] Loaded coupons', { count: data.length });
     } catch (error) {
-      console.error('Error cargando cupones:', error);
+      logger.error('[AdminCoupons] Error loading coupons', error);
+      notify.error('Error al cargar los cupones');
     } finally {
       setLoading(false);
     }
@@ -45,64 +57,65 @@ export default function AdminCoupons() {
     e.preventDefault();
 
     if (!user) {
-      alert('Debes estar autenticado');
+      notify.error('Debes estar autenticado');
       return;
     }
 
+    setSubmitting(true);
+    logger.info('[AdminCoupons] Submitting coupon form', formData);
+
     try {
-      const code = formData.code.trim().toUpperCase();
-      const description = formData.description.trim();
+      // Validate with Zod
+      const validationResult = await validate(formData);
 
-      if (!code || !description) {
-        alert('Completa el código y la descripción');
+      if (!validationResult.success) {
+        logger.warn('[AdminCoupons] Validation failed', validationResult.errors);
         return;
       }
 
-      if (formData.type === 'percentage' && (formData.value < 1 || formData.value > 100)) {
-        alert('El porcentaje debe estar entre 1 y 100');
-        return;
-      }
+      const validatedData = validationResult.data;
 
-      if (formData.type === 'fixed' && formData.value < 1) {
-        alert('El descuento fijo debe ser mayor a 0');
-        return;
-      }
-
+      // Create coupon payload for Firebase
       const payload: Omit<Coupon, 'id' | 'currentUses' | 'createdAt' | 'updatedAt'> = {
-        code,
-        description,
-        type: formData.type,
-        value: formData.type === 'free_shipping' ? 0 : formData.value,
-        startDate: Timestamp.fromDate(new Date(formData.startDate)) as any,
-        endDate: Timestamp.fromDate(new Date(formData.endDate)) as any,
-        active: true,
+        code: validatedData.code,
+        description: validatedData.description,
+        type: validatedData.type,
+        value: validatedData.value,
+        startDate: Timestamp.fromDate(new Date()) as any,
+        endDate: validatedData.expirationDate ? Timestamp.fromDate(validatedData.expirationDate) as any : undefined,
+        active: validatedData.active,
         createdBy: user.uid,
-        minPurchase: formData.minPurchase > 0 ? formData.minPurchase : undefined,
-        maxDiscount: formData.maxDiscount > 0 ? formData.maxDiscount : undefined,
-        maxUses: formData.maxUses > 0 ? formData.maxUses : undefined,
-        maxUsesPerUser: formData.maxUsesPerUser > 0 ? formData.maxUsesPerUser : undefined,
+        minPurchase: validatedData.minPurchase,
+        maxDiscount: undefined, // Not in our schema
+        maxUses: validatedData.usageLimit,
+        maxUsesPerUser: undefined, // Not in our schema
       };
 
       await createCoupon(payload);
-      alert('Cupón creado exitosamente');
+      logger.info('[AdminCoupons] Coupon created successfully', { code: validatedData.code });
+      notify.success(`Cupón ${validatedData.code} creado exitosamente`);
+
       setShowForm(false);
       loadCoupons();
 
+      // Reset form
       setFormData({
         code: '',
         description: '',
         type: 'percentage',
         value: 10,
-        minPurchase: 0,
-        maxDiscount: 0,
-        maxUses: 0,
-        maxUsesPerUser: 1,
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        usageLimit: undefined,
+        timesUsed: 0,
+        active: true,
+        minPurchase: undefined,
+        userSpecific: [],
       });
     } catch (error) {
-      console.error('Error creando cupón:', error);
-      alert('Error al crear el cupón: ' + (error as Error).message);
+      logger.error('[AdminCoupons] Error creating coupon', error);
+      notify.error('Error al crear el cupón: ' + (error as Error).message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -110,12 +123,13 @@ export default function AdminCoupons() {
     if (!confirm(`¿Desactivar el cupón ${code}?`)) return;
 
     try {
+      logger.info('[AdminCoupons] Deactivating coupon', { couponId, code });
       await deactivateCoupon(couponId);
-      alert('Cupón desactivado');
+      notify.success(`Cupón ${code} desactivado`);
       loadCoupons();
     } catch (error) {
-      console.error('Error desactivando cupón:', error);
-      alert('Error al desactivar cupón');
+      logger.error('[AdminCoupons] Error deactivating coupon', error);
+      notify.error('Error al desactivar cupón');
     }
   };
 
@@ -210,12 +224,12 @@ export default function AdminCoupons() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Valor */}
               {formData.type !== 'free_shipping' && (
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Valor {formData.type === 'percentage' ? '(%)' : '($)'} *
+                    Valor {formData.type === 'percentage' ? '(%)' : '(€)'} *
                   </label>
                   <input
                     type="number"
@@ -223,117 +237,107 @@ export default function AdminCoupons() {
                     onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })}
                     min="1"
                     max={formData.type === 'percentage' ? 100 : undefined}
-                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-cyan-500 outline-none"
+                    step="0.01"
+                    className={`w-full px-4 py-2 border-2 rounded-xl outline-none ${
+                      errors.value ? 'border-red-500' : 'border-gray-200 focus:border-cyan-500'
+                    }`}
                     required
                   />
+                  {errors.value && <p className="text-red-500 text-sm mt-1">{errors.value}</p>}
                 </div>
               )}
 
               {/* Compra mínima */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Compra Mínima ($)
+                  Compra Mínima (€) <span className="text-gray-400 font-normal">(opcional)</span>
                 </label>
                 <input
                   type="number"
-                  value={formData.minPurchase}
+                  value={formData.minPurchase || ''}
                   onChange={(e) =>
-                    setFormData({ ...formData, minPurchase: Number(e.target.value) })
+                    setFormData({
+                      ...formData,
+                      minPurchase: e.target.value ? Number(e.target.value) : undefined,
+                    })
                   }
                   min="0"
                   step="0.01"
-                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-cyan-500 outline-none"
+                  placeholder="Sin mínimo"
+                  className={`w-full px-4 py-2 border-2 rounded-xl outline-none ${
+                    errors.minPurchase ? 'border-red-500' : 'border-gray-200 focus:border-cyan-500'
+                  }`}
                 />
-              </div>
-
-              {/* Descuento máximo */}
-              {formData.type === 'percentage' && (
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Descuento Máximo ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.maxDiscount}
-                    onChange={(e) =>
-                      setFormData({ ...formData, maxDiscount: Number(e.target.value) })
-                    }
-                    min="0"
-                    step="0.01"
-                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-cyan-500 outline-none"
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Usos totales */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Usos Máximos Totales (0 = ilimitado)
-                </label>
-                <input
-                  type="number"
-                  value={formData.maxUses}
-                  onChange={(e) => setFormData({ ...formData, maxUses: Number(e.target.value) })}
-                  min="0"
-                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-cyan-500 outline-none"
-                />
-              </div>
-
-              {/* Usos por usuario */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Usos por Usuario
-                </label>
-                <input
-                  type="number"
-                  value={formData.maxUsesPerUser}
-                  onChange={(e) =>
-                    setFormData({ ...formData, maxUsesPerUser: Number(e.target.value) })
-                  }
-                  min="1"
-                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-cyan-500 outline-none"
-                />
+                {errors.minPurchase && (
+                  <p className="text-red-500 text-sm mt-1">{errors.minPurchase}</p>
+                )}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Fecha inicio */}
+              {/* Usos máximos */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Fecha de Inicio *
+                  Límite de Usos <span className="text-gray-400 font-normal">(opcional)</span>
                 </label>
                 <input
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-cyan-500 outline-none"
-                  required
+                  type="number"
+                  value={formData.usageLimit || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      usageLimit: e.target.value ? Number(e.target.value) : undefined,
+                    })
+                  }
+                  min="1"
+                  placeholder="Ilimitado"
+                  className={`w-full px-4 py-2 border-2 rounded-xl outline-none ${
+                    errors.usageLimit ? 'border-red-500' : 'border-gray-200 focus:border-cyan-500'
+                  }`}
                 />
+                {errors.usageLimit && (
+                  <p className="text-red-500 text-sm mt-1">{errors.usageLimit}</p>
+                )}
               </div>
 
-              {/* Fecha fin */}
+              {/* Fecha de expiración */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Fecha de Expiración *
+                  Fecha de Expiración <span className="text-gray-400 font-normal">(opcional)</span>
                 </label>
                 <input
                   type="date"
-                  value={formData.endDate}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-cyan-500 outline-none"
-                  required
+                  value={
+                    formData.expirationDate
+                      ? formData.expirationDate.toISOString().split('T')[0]
+                      : ''
+                  }
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      expirationDate: e.target.value ? new Date(e.target.value) : undefined as any,
+                    })
+                  }
+                  className={`w-full px-4 py-2 border-2 rounded-xl outline-none ${
+                    errors.expirationDate
+                      ? 'border-red-500'
+                      : 'border-gray-200 focus:border-cyan-500'
+                  }`}
                 />
+                {errors.expirationDate && (
+                  <p className="text-red-500 text-sm mt-1">{errors.expirationDate}</p>
+                )}
               </div>
             </div>
 
-            <button
+            <LoadingButton
               type="submit"
+              loading={submitting}
+              loadingText="Creando cupón..."
               className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-xl hover:shadow-lg transition-all"
             >
               Crear Cupón
-            </button>
+            </LoadingButton>
           </form>
         </div>
       )}

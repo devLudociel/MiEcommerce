@@ -248,6 +248,133 @@ export const productSchema = z
 export type ProductFormData = z.infer<typeof productSchema>;
 
 // ==========================================
+// SCHEMAS PARA CUPONES/DESCUENTOS
+// ==========================================
+
+// Validación para cupones de descuento
+export const couponSchema = z
+  .object({
+    code: z
+      .string()
+      .min(3, 'El código debe tener al menos 3 caracteres')
+      .max(20, 'El código es demasiado largo')
+      .regex(/^[A-Z0-9_-]+$/, 'El código solo puede contener letras mayúsculas, números, guiones y guiones bajos')
+      .transform((val) => val.toUpperCase().trim()),
+
+    description: z
+      .string()
+      .min(5, 'La descripción debe tener al menos 5 caracteres')
+      .max(200, 'La descripción es demasiado larga')
+      .trim(),
+
+    type: z.enum(['percentage', 'fixed', 'free_shipping'], {
+      errorMap: () => ({ message: 'Tipo de cupón inválido' }),
+    }),
+
+    value: z
+      .number({
+        required_error: 'El valor del descuento es obligatorio',
+        invalid_type_error: 'El valor debe ser un número',
+      })
+      .min(0, 'El valor no puede ser negativo')
+      .multipleOf(0.01, 'El valor debe tener máximo 2 decimales'),
+
+    expirationDate: z
+      .date({
+        invalid_type_error: 'Fecha de expiración inválida',
+      })
+      .optional()
+      .refine(
+        (date) => {
+          if (!date) return true;
+          return date > new Date();
+        },
+        { message: 'La fecha de expiración debe ser futura' }
+      ),
+
+    usageLimit: z
+      .number({
+        invalid_type_error: 'El límite de uso debe ser un número',
+      })
+      .int('El límite de uso debe ser un número entero')
+      .positive('El límite de uso debe ser mayor que 0')
+      .optional(),
+
+    timesUsed: z.number().int().min(0).default(0),
+
+    active: z.boolean().default(true),
+
+    minPurchase: z
+      .number({
+        invalid_type_error: 'La compra mínima debe ser un número',
+      })
+      .min(0, 'La compra mínima no puede ser negativa')
+      .multipleOf(0.01, 'La compra mínima debe tener máximo 2 decimales')
+      .optional(),
+
+    userSpecific: z
+      .array(z.string().email('Email de usuario inválido'))
+      .default([])
+      .optional(),
+
+    createdAt: z.date().optional(),
+    updatedAt: z.date().optional(),
+  })
+  .refine(
+    (data) => {
+      // Si es porcentaje, el valor debe estar entre 1 y 100
+      if (data.type === 'percentage' && (data.value < 1 || data.value > 100)) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'El descuento porcentual debe estar entre 1% y 100%',
+      path: ['value'],
+    }
+  )
+  .refine(
+    (data) => {
+      // Si es envío gratis, el valor debe ser 0
+      if (data.type === 'free_shipping' && data.value !== 0) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'Para envío gratis, el valor debe ser 0',
+      path: ['value'],
+    }
+  )
+  .refine(
+    (data) => {
+      // Si está en uso, no puede haber excedido el límite
+      if (data.usageLimit && data.timesUsed >= data.usageLimit) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'El cupón ha alcanzado su límite de usos',
+      path: ['usageLimit'],
+    }
+  );
+
+export type CouponFormData = z.infer<typeof couponSchema>;
+
+// Schema simplificado para validar un código de cupón desde el checkout
+export const validateCouponCodeSchema = z.object({
+  code: z
+    .string()
+    .min(1, 'Introduce un código de cupón')
+    .transform((val) => val.toUpperCase().trim()),
+  userId: z.string().optional(),
+  cartTotal: z.number().min(0),
+});
+
+export type ValidateCouponCode = z.infer<typeof validateCouponCodeSchema>;
+
+// ==========================================
 // VALIDACIONES INDIVIDUALES (para campos específicos)
 // ==========================================
 

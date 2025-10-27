@@ -31,6 +31,16 @@ interface PaymentInfo {
 
 type CheckoutStep = 1 | 2 | 3;
 
+interface AppliedCoupon {
+  id: string;
+  code: string;
+  description: string;
+  type: 'percentage' | 'fixed' | 'free_shipping';
+  value: number;
+  discountAmount: number;
+  freeShipping: boolean;
+}
+
 const SHIPPING_COST = 5.99;
 const FREE_SHIPPING_THRESHOLD = 50;
 
@@ -38,6 +48,11 @@ export default function Checkout() {
   const cart = useStore(cartStore);
   const [currentStep, setCurrentStep] = useState<CheckoutStep>(1);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     firstName: '',
@@ -85,8 +100,10 @@ export default function Checkout() {
   }, [cart.items.length]);
 
   const subtotal = cart.total;
-  const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
-  const total = subtotal + shippingCost;
+  const couponDiscount = appliedCoupon?.discountAmount || 0;
+  const shippingCost =
+    subtotal >= FREE_SHIPPING_THRESHOLD || appliedCoupon?.freeShipping ? 0 : SHIPPING_COST;
+  const total = subtotal - couponDiscount + shippingCost;
 
   const validateStep1 = async (): Promise<boolean> => {
     logger.debug('[Checkout] Validating step 1 (shipping info)', shippingInfo);
@@ -145,6 +162,52 @@ export default function Checkout() {
     }
   };
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      notify.warning('Introduce un código de cupón');
+      return;
+    }
+
+    setValidatingCoupon(true);
+    logger.info('[Checkout] Validating coupon', { code: couponCode });
+
+    try {
+      const response = await fetch('/api/validate-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: couponCode.trim(),
+          userId: 'guest', // TODO: Replace with actual user ID when auth is implemented
+          cartTotal: subtotal,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.valid) {
+        logger.warn('[Checkout] Coupon validation failed', data);
+        notify.error(data.error || 'Cupón no válido');
+        return;
+      }
+
+      logger.info('[Checkout] Coupon applied successfully', data.coupon);
+      setAppliedCoupon(data.coupon);
+      notify.success(`¡Cupón ${data.coupon.code} aplicado!`);
+      setCouponCode('');
+    } catch (error) {
+      logger.error('[Checkout] Error validating coupon', error);
+      notify.error('Error al validar el cupón. Intenta de nuevo.');
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    logger.info('[Checkout] Removing coupon', appliedCoupon);
+    setAppliedCoupon(null);
+    notify.success('Cupón eliminado');
+  };
+
   const handlePlaceOrder = async () => {
     if (!acceptTerms) {
       notify.warning('Debes aceptar los términos y condiciones');
@@ -177,6 +240,9 @@ export default function Checkout() {
         },
         paymentMethod: paymentInfo.method,
         subtotal,
+        couponDiscount,
+        couponCode: appliedCoupon?.code,
+        couponId: appliedCoupon?.id,
         shippingCost,
         total,
         status: 'pending',
@@ -744,6 +810,68 @@ export default function Checkout() {
                   </div>
                 ))}
               </div>
+
+              {/* Coupon Section */}
+              <div className="py-4 border-t-2 border-gray-200">
+                {!appliedCoupon ? (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold text-gray-700">
+                      ¿Tienes un cupón de descuento?
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleApplyCoupon();
+                          }
+                        }}
+                        placeholder="CODIGO-DESCUENTO"
+                        className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none font-mono uppercase"
+                        disabled={validatingCoupon}
+                      />
+                      <button
+                        onClick={handleApplyCoupon}
+                        disabled={validatingCoupon || !couponCode.trim()}
+                        className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {validatingCoupon ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span>Validando...</span>
+                          </div>
+                        ) : (
+                          'Aplicar'
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-green-50 border-2 border-green-200 rounded-xl p-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-green-600 font-black">✓ Cupón aplicado</span>
+                          <span className="px-2 py-0.5 bg-green-200 text-green-800 font-mono font-bold text-xs rounded">
+                            {appliedCoupon.code}
+                          </span>
+                        </div>
+                        <p className="text-sm text-green-700">{appliedCoupon.description}</p>
+                      </div>
+                      <button
+                        onClick={handleRemoveCoupon}
+                        className="text-red-500 hover:text-red-700 font-bold text-sm ml-2"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="space-y-3 py-4 border-t-2 border-gray-200">
                 <div className="flex justify-between text-gray-700">
                   <span>
@@ -752,15 +880,28 @@ export default function Checkout() {
                   </span>
                   <span className="font-bold">€{subtotal.toFixed(2)}</span>
                 </div>
+
+                {appliedCoupon && couponDiscount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Descuento ({appliedCoupon.code})</span>
+                    <span className="font-bold">-€{couponDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between text-gray-700">
                   <span>Envío</span>
                   {shippingCost === 0 ? (
-                    <span className="font-bold text-green-500">GRATIS ✓</span>
+                    <span className="font-bold text-green-500">
+                      GRATIS ✓
+                      {appliedCoupon?.freeShipping && (
+                        <span className="text-xs ml-1">(Cupón)</span>
+                      )}
+                    </span>
                   ) : (
                     <span className="font-bold">€{shippingCost.toFixed(2)}</span>
                   )}
                 </div>
-                {subtotal < FREE_SHIPPING_THRESHOLD && (
+                {subtotal < FREE_SHIPPING_THRESHOLD && !appliedCoupon?.freeShipping && (
                   <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded-lg">
                     💡 ¡Añade €{(FREE_SHIPPING_THRESHOLD - subtotal).toFixed(2)} más para envío
                     GRATIS!
