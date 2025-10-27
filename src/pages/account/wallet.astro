@@ -1,0 +1,12 @@
+---
+// src/pages/account/wallet.astro
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import RequireAuth from '../../components/auth/RequireAuth';
+import WalletPanel from '../../components/account/WalletPanel';
+---
+
+<BaseLayout title="Mi Monedero">
+  <RequireAuth client:only="react">
+    <WalletPanel client:load />
+  </RequireAuth>
+</BaseLayout>

@@ -1,12 +1,18 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import CheckoutPage from '../components/cart/CheckoutPage.tsx';
+/**
+ * DEPRECATED: This page has been replaced by /checkout
+ * Redirecting to new checkout page with improved features
+ */
 ---
 
-<BaseLayout title="Carrito">
-  <section class="py-10">
-    <div class="container mx-auto px-6">
-      <CheckoutPage client:only="react" />
-    </div>
-  </section>
-</BaseLayout>
+<html>
+  <head>
+    <meta http-equiv="refresh" content="0;url=/checkout" />
+    <script>
+      window.location.href = '/checkout';
+    </script>
+  </head>
+  <body>
+    <p>Redirigiendo a checkout...</p>
+  </body>
+</html>

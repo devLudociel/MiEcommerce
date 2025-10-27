@@ -9,6 +9,7 @@ import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import { lookupZipES, autocompleteStreetES, debounce } from '../../utils/address';
 import type { ZipLookup, AddressSuggestion } from '../../utils/address';
+import { useAuth } from '../hooks/useAuth';
 
 interface ShippingInfo {
   firstName: string;
@@ -53,6 +54,7 @@ const FREE_SHIPPING_THRESHOLD = 50;
 
 export default function Checkout() {
   const cart = useStore(cartStore);
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState<CheckoutStep>(1);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -60,6 +62,11 @@ export default function Checkout() {
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
+
+  // Wallet state
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [useWallet, setUseWallet] = useState(false);
+  const [loadingWallet, setLoadingWallet] = useState(false);
 
   // Address autocomplete state
   const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
@@ -111,6 +118,39 @@ export default function Checkout() {
       window.location.href = '/';
     }
   }, [cart.items.length]);
+
+  // Load wallet balance when user is authenticated
+  useEffect(() => {
+    if (!user) {
+      setWalletBalance(0);
+      setUseWallet(false);
+      return;
+    }
+
+    const loadWalletBalance = async () => {
+      setLoadingWallet(true);
+      try {
+        logger.info('[Checkout] Loading wallet balance', { userId: user.uid });
+        const response = await fetch(`/api/get-wallet-balance?userId=${user.uid}`);
+
+        if (!response.ok) {
+          throw new Error('Error al cargar el saldo');
+        }
+
+        const data = await response.json();
+        const balance = data.balance || 0;
+        setWalletBalance(balance);
+        logger.info('[Checkout] Wallet balance loaded', { balance });
+      } catch (error) {
+        logger.error('[Checkout] Error loading wallet balance', error);
+        setWalletBalance(0);
+      } finally {
+        setLoadingWallet(false);
+      }
+    };
+
+    loadWalletBalance();
+  }, [user]);
 
   // ZIP code lookup effect
   useEffect(() => {
@@ -199,8 +239,12 @@ export default function Checkout() {
   const subtotalAfterDiscount = subtotal - couponDiscount;
   const iva = subtotalAfterDiscount * 0.21;
 
-  // Total includes: subtotal - discount + shipping + IVA
-  const total = subtotalAfterDiscount + shippingCost + iva;
+  // Calculate wallet discount
+  const totalBeforeWallet = subtotalAfterDiscount + shippingCost + iva;
+  const walletDiscount = useWallet ? Math.min(walletBalance, totalBeforeWallet) : 0;
+
+  // Total includes: subtotal - coupon discount + shipping + IVA - wallet discount
+  const total = totalBeforeWallet - walletDiscount;
 
   const validateStep1 = async (): Promise<boolean> => {
     logger.debug('[Checkout] Validating step 1 (shipping info)', shippingInfo);
@@ -323,7 +367,7 @@ export default function Checkout() {
           price: item.price,
           image: item.image,
         })),
-        userId: 'guest', // Cambiar cuando haya autenticación
+        userId: user?.uid || 'guest',
         customerEmail: shippingInfo.email,
         shippingInfo: {
           fullName: `${shippingInfo.firstName} ${shippingInfo.lastName}`,
@@ -343,6 +387,8 @@ export default function Checkout() {
         couponId: appliedCoupon?.id,
         shippingCost,
         iva,
+        walletDiscount: useWallet ? walletDiscount : 0,
+        usedWallet: useWallet,
         total,
         status: 'pending',
       };
@@ -1154,6 +1200,48 @@ export default function Checkout() {
                 )}
               </div>
 
+              {/* Wallet Section */}
+              {user && walletBalance > 0 && (
+                <div className="py-4 border-t-2 border-gray-200">
+                  <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-200 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">💰</span>
+                        <div>
+                          <p className="font-bold text-gray-900">Saldo disponible</p>
+                          <p className="text-sm text-gray-600">€{walletBalance.toFixed(2)}</p>
+                        </div>
+                      </div>
+                      <a
+                        href="/account/wallet"
+                        className="text-xs text-cyan-600 hover:underline"
+                      >
+                        Ver monedero →
+                      </a>
+                    </div>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={useWallet}
+                        onChange={(e) => {
+                          setUseWallet(e.target.checked);
+                          logger.info('[Checkout] Wallet toggled', { useWallet: e.target.checked });
+                        }}
+                        className="w-5 h-5 text-cyan-600 rounded focus:ring-2 focus:ring-cyan-500"
+                      />
+                      <span className="text-sm font-semibold text-gray-800">
+                        Usar mi saldo del monedero en esta compra
+                      </span>
+                    </label>
+                    {useWallet && walletDiscount > 0 && (
+                      <p className="text-sm text-green-600 mt-2 font-semibold">
+                        ✓ Se aplicarán €{walletDiscount.toFixed(2)} de tu saldo
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-3 py-4 border-t-2 border-gray-200">
                 <div className="flex justify-between text-gray-700">
                   <span>
@@ -1196,6 +1284,13 @@ export default function Checkout() {
                   </span>
                   <span className="font-bold">€{iva.toFixed(2)}</span>
                 </div>
+
+                {useWallet && walletDiscount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Saldo del monedero</span>
+                    <span className="font-bold">-€{walletDiscount.toFixed(2)}</span>
+                  </div>
+                )}
 
                 <div className="flex justify-between text-xl font-black text-gray-800 pt-3 border-t-2 border-gray-200">
                   <span>Total</span>

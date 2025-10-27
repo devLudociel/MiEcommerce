@@ -663,6 +663,13 @@ const Header: React.FC<HeaderProps> = () => {
                             Mis direcciones
                           </a>
                           <a
+                            href="/account/wallet"
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            💰 Mi monedero
+                          </a>
+                          <a
                             href="/account"
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                             onClick={() => setIsUserMenuOpen(false)}
