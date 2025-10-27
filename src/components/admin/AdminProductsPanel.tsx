@@ -13,6 +13,10 @@ import {
 import { ref, uploadBytes, getDownloadURL, listAll, deleteObject } from 'firebase/storage';
 import { signOut } from 'firebase/auth';
 import VariantImageManager from './VariantImageManager';
+import { productSchema } from '../../lib/validation/schemas';
+import { useSimpleFormValidation } from '../../hooks/useFormValidation';
+import { notify } from '../../lib/notifications';
+import { logger } from '../../lib/logger';
 
 // Tipos actualizados
 interface ProductCategory {
@@ -505,7 +509,10 @@ export default function AdminProductsPanel() {
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
 
-  const logInfo = (...args: any[]) => console.log('[AdminProductsPanel]', ...args);
+  // Validación con Zod
+  const productValidation = useSimpleFormValidation(productSchema);
+
+  const logInfo = (...args: any[]) => logger.info.bind(logger, '[AdminProductsPanel]');
   const logError = (label: string, err: any) => {
     console.error('[AdminProductsPanel]', label, {
       name: err?.name,
@@ -735,29 +742,39 @@ export default function AdminProductsPanel() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    console.log('[AdminProductsPanel] handleSubmit called');
+    logger.info('[AdminProductsPanel] Form submitted');
     setError(null);
     setSuccess(null);
     setLoading(true);
 
     try {
-      if (
-        !draft.name ||
-        !draft.description ||
-        !draft.slug ||
-        !draft.categoryId ||
-        !draft.subcategoryId
-      ) {
-        throw new Error('Nombre, descripción, slug, categoría y subcategoría son obligatorios');
+      // Validar con Zod
+      const validationResult = await productValidation.validate({
+        ...draft,
+        tags: (draft.tags || []).map((t) => t.trim()).filter(Boolean),
+      });
+
+      if (!validationResult.success) {
+        const firstError = Object.values(validationResult.errors!)[0];
+        logger.warn('[AdminProductsPanel] Validation failed', validationResult.errors);
+        setError(firstError || 'Error de validación');
+        setLoading(false);
+        return;
       }
 
+      // Validar atributos requeridos (lógica específica no incluida en Zod)
       const requiredAttributes = availableAttributes.filter((attr) => attr.required);
       for (const reqAttr of requiredAttributes) {
         const hasValue = draft.attributes.some(
           (attr) => attr.attributeId === reqAttr.id && attr.value.trim() !== ''
         );
         if (!hasValue) {
-          throw new Error(`El atributo "${reqAttr.name}" es obligatorio`);
+          const errorMsg = `El atributo "${reqAttr.name}" es obligatorio`;
+          logger.warn('[AdminProductsPanel] Required attribute missing', { attribute: reqAttr.name });
+          setError(errorMsg);
+          notify.error(errorMsg);
+          setLoading(false);
+          return;
         }
       }
 
@@ -769,11 +786,9 @@ export default function AdminProductsPanel() {
       if (!isEditing) {
         const createdAt = Timestamp.now();
         const updatedAt = createdAt;
-        console.log('[AdminProductsPanel] create payload:', {
-          ...normalized,
-          images: [],
-          createdAt,
-          updatedAt,
+        logger.debug('[AdminProductsPanel] Creating product', {
+          name: normalized.name,
+          categoryId: normalized.categoryId,
         });
         const docRef = await addDoc(collection(db, 'products'), {
           ...normalized,
@@ -782,21 +797,16 @@ export default function AdminProductsPanel() {
           createdAt,
           updatedAt,
         });
-        console.log('[AdminProductsPanel] addDoc ok id=', docRef.id);
+        logger.info('[AdminProductsPanel] Product created', { productId: docRef.id });
 
         let imageUrls: string[] = [];
         if (uploadFiles.length) {
           try {
-            console.log(`🚀 Iniciando subida de ${uploadFiles.length} archivos...`);
+            logger.info('[AdminProductsPanel] Uploading images', { count: uploadFiles.length });
             imageUrls = await uploadImages(docRef.id, uploadFiles);
-            console.log('✅ Todas las imágenes subidas correctamente');
+            logger.info('[AdminProductsPanel] Images uploaded successfully');
           } catch (e: any) {
-            console.error('❌ Error detallado subiendo imágenes:', {
-              name: e.name,
-              message: e.message,
-              code: e.code,
-              stack: e.stack,
-            });
+            logger.error('[AdminProductsPanel] Error uploading images', e);
 
             if (e.message?.includes('CORS') || e.code === 'storage/unauthorized') {
               throw new Error('Error de permisos en Storage. Verifica las reglas de Firebase.');
@@ -814,6 +824,8 @@ export default function AdminProductsPanel() {
         }
 
         setSuccess('Producto creado exitosamente');
+        notify.success('¡Producto creado exitosamente!');
+        logger.info('[AdminProductsPanel] Product creation completed');
         resetForm();
       } else {
         const id = draft.id!;
@@ -822,11 +834,11 @@ export default function AdminProductsPanel() {
         let newUploads: string[] = [];
         if (uploadFiles.length) {
           try {
-            console.log(`🚀 Subiendo ${uploadFiles.length} nuevas imágenes...`);
+            logger.info('[AdminProductsPanel] Uploading new images', { count: uploadFiles.length });
             newUploads = await uploadImages(id, uploadFiles);
-            console.log('✅ Nuevas imágenes subidas correctamente');
+            logger.info('[AdminProductsPanel] New images uploaded successfully');
           } catch (e: any) {
-            console.error('❌ Error subiendo nuevas imágenes:', e);
+            logger.error('[AdminProductsPanel] Error uploading new images', e);
             throw new Error(`Error subiendo nuevas imágenes: ${e.message}`);
           }
         }
@@ -849,7 +861,7 @@ export default function AdminProductsPanel() {
           customizerType: draft.customizerType || 'default',
           updatedAt: Timestamp.now(),
         });
-        console.log('[AdminProductsPanel] updateDoc ok id=', id);
+        logger.info('[AdminProductsPanel] Product updated', { productId: id });
 
         await Promise.all(
           imagesToRemove.map(async (url) => {
@@ -861,14 +873,20 @@ export default function AdminProductsPanel() {
         );
 
         setSuccess('Producto actualizado exitosamente');
+        notify.success('¡Producto actualizado exitosamente!');
+        logger.info('[AdminProductsPanel] Product update completed');
         resetForm();
       }
     } catch (err: any) {
-      console.error('[AdminProductsPanel] handleSubmit error:', err?.code, err?.message);
+      logger.error('[AdminProductsPanel] Error in handleSubmit', err);
       if (err?.code === 'permission-denied') {
-        setError('Permisos insuficientes (Firestore rules). Ver consola para detalles.');
+        const errorMsg = 'Permisos insuficientes (Firestore rules)';
+        setError(errorMsg);
+        notify.error(errorMsg);
       } else {
-        setError(err?.message || 'Error guardando el producto');
+        const errorMsg = err?.message || 'Error guardando el producto';
+        setError(errorMsg);
+        notify.error(errorMsg);
       }
     } finally {
       setLoading(false);
