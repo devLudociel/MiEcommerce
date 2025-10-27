@@ -20,6 +20,7 @@ interface ShippingInfo {
   state: string;
   zipCode: string;
   country: string;
+  shippingMethod?: 'standard' | 'express' | 'urgent';
   notes?: string;
 }
 
@@ -43,7 +44,11 @@ interface AppliedCoupon {
   freeShipping: boolean;
 }
 
-const SHIPPING_COST = 5.99;
+const SHIPPING_COSTS = {
+  standard: 0,    // Gratis
+  express: 4.95,  // Express 24-48h
+  urgent: 9.95,   // Urgente 24h
+};
 const FREE_SHIPPING_THRESHOLD = 50;
 
 export default function Checkout() {
@@ -71,6 +76,7 @@ export default function Checkout() {
     state: '',
     zipCode: '',
     country: 'España',
+    shippingMethod: 'standard',
     notes: '',
   });
 
@@ -176,9 +182,25 @@ export default function Checkout() {
 
   const subtotal = cart.total;
   const couponDiscount = appliedCoupon?.discountAmount || 0;
-  const shippingCost =
-    subtotal >= FREE_SHIPPING_THRESHOLD || appliedCoupon?.freeShipping ? 0 : SHIPPING_COST;
-  const total = subtotal - couponDiscount + shippingCost;
+
+  // Calculate shipping cost based on method and free shipping conditions
+  const getShippingCost = () => {
+    // Free shipping from coupon or cart threshold
+    if (appliedCoupon?.freeShipping || subtotal >= FREE_SHIPPING_THRESHOLD) {
+      return 0;
+    }
+    // Return cost based on selected method
+    return SHIPPING_COSTS[shippingInfo.shippingMethod || 'standard'];
+  };
+
+  const shippingCost = getShippingCost();
+
+  // Calculate IVA (21% Spanish VAT on subtotal after discount)
+  const subtotalAfterDiscount = subtotal - couponDiscount;
+  const iva = subtotalAfterDiscount * 0.21;
+
+  // Total includes: subtotal - discount + shipping + IVA
+  const total = subtotalAfterDiscount + shippingCost + iva;
 
   const validateStep1 = async (): Promise<boolean> => {
     logger.debug('[Checkout] Validating step 1 (shipping info)', shippingInfo);
@@ -312,6 +334,7 @@ export default function Checkout() {
           zipCode: shippingInfo.zipCode,
           country: 'España',
           phone: shippingInfo.phone,
+          shippingMethod: shippingInfo.shippingMethod || 'standard',
         },
         paymentMethod: paymentInfo.method,
         subtotal,
@@ -319,6 +342,7 @@ export default function Checkout() {
         couponCode: appliedCoupon?.code,
         couponId: appliedCoupon?.id,
         shippingCost,
+        iva,
         total,
         status: 'pending',
       };
@@ -618,6 +642,123 @@ export default function Checkout() {
                         <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.zipCode}</p>
                       )}
                     </div>
+                  </div>
+
+                  {/* Shipping Method Selector */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-3">
+                      Método de envío *
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {/* Standard Shipping */}
+                      <label
+                        className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                          shippingInfo.shippingMethod === 'standard'
+                            ? 'border-cyan-500 bg-cyan-50 ring-2 ring-cyan-200'
+                            : 'border-gray-300 hover:border-cyan-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="shippingMethod"
+                          value="standard"
+                          checked={shippingInfo.shippingMethod === 'standard'}
+                          onChange={(e) =>
+                            setShippingInfo({
+                              ...shippingInfo,
+                              shippingMethod: e.target.value as 'standard' | 'express' | 'urgent',
+                            })
+                          }
+                          className="sr-only"
+                        />
+                        <div className="flex items-start justify-between mb-2">
+                          <span className="font-bold text-gray-800">Estándar</span>
+                          <span className="font-black text-green-600">GRATIS</span>
+                        </div>
+                        <p className="text-xs text-gray-600">3-5 días laborables</p>
+                        {shippingInfo.shippingMethod === 'standard' && (
+                          <div className="absolute top-2 right-2 w-5 h-5 bg-cyan-500 rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs">✓</span>
+                          </div>
+                        )}
+                      </label>
+
+                      {/* Express Shipping */}
+                      <label
+                        className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                          shippingInfo.shippingMethod === 'express'
+                            ? 'border-cyan-500 bg-cyan-50 ring-2 ring-cyan-200'
+                            : 'border-gray-300 hover:border-cyan-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="shippingMethod"
+                          value="express"
+                          checked={shippingInfo.shippingMethod === 'express'}
+                          onChange={(e) =>
+                            setShippingInfo({
+                              ...shippingInfo,
+                              shippingMethod: e.target.value as 'standard' | 'express' | 'urgent',
+                            })
+                          }
+                          className="sr-only"
+                        />
+                        <div className="flex items-start justify-between mb-2">
+                          <span className="font-bold text-gray-800">Express</span>
+                          <span className="font-black text-gray-800">€4.95</span>
+                        </div>
+                        <p className="text-xs text-gray-600">24-48 horas</p>
+                        {shippingInfo.shippingMethod === 'express' && (
+                          <div className="absolute top-2 right-2 w-5 h-5 bg-cyan-500 rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs">✓</span>
+                          </div>
+                        )}
+                      </label>
+
+                      {/* Urgent Shipping */}
+                      <label
+                        className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                          shippingInfo.shippingMethod === 'urgent'
+                            ? 'border-cyan-500 bg-cyan-50 ring-2 ring-cyan-200'
+                            : 'border-gray-300 hover:border-cyan-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="shippingMethod"
+                          value="urgent"
+                          checked={shippingInfo.shippingMethod === 'urgent'}
+                          onChange={(e) =>
+                            setShippingInfo({
+                              ...shippingInfo,
+                              shippingMethod: e.target.value as 'standard' | 'express' | 'urgent',
+                            })
+                          }
+                          className="sr-only"
+                        />
+                        <div className="flex items-start justify-between mb-2">
+                          <span className="font-bold text-gray-800">Urgente</span>
+                          <span className="font-black text-orange-600">€9.95</span>
+                        </div>
+                        <p className="text-xs text-gray-600">24 horas</p>
+                        {shippingInfo.shippingMethod === 'urgent' && (
+                          <div className="absolute top-2 right-2 w-5 h-5 bg-cyan-500 rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs">✓</span>
+                          </div>
+                        )}
+                      </label>
+                    </div>
+                    {appliedCoupon?.freeShipping && (
+                      <p className="text-sm text-green-600 mt-2">
+                        ✓ Envío gratis aplicado por cupón {appliedCoupon.code}
+                      </p>
+                    )}
+                    {subtotal >= FREE_SHIPPING_THRESHOLD && !appliedCoupon?.freeShipping && (
+                      <p className="text-sm text-green-600 mt-2">
+                        ✓ Envío gratis por superar €{FREE_SHIPPING_THRESHOLD}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -1048,6 +1189,14 @@ export default function Checkout() {
                     GRATIS!
                   </div>
                 )}
+
+                <div className="flex justify-between text-gray-700">
+                  <span>
+                    IVA (21%)
+                  </span>
+                  <span className="font-bold">€{iva.toFixed(2)}</span>
+                </div>
+
                 <div className="flex justify-between text-xl font-black text-gray-800 pt-3 border-t-2 border-gray-200">
                   <span>Total</span>
                   <span className="text-cyan-600">€{total.toFixed(2)}</span>
