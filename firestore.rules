@@ -3,278 +3,115 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ============================================
-    // FUNCIONES HELPER
-    // ============================================
-
-    // Verificar si es admin usando custom claims
+    // Función helper para verificar si es admin
     function isAdmin() {
-      return request.auth != null &&
-             request.auth.token.admin == true;
+      return request.auth != null && request.auth.token.email == 'rubenjruiz1441@gmail.com';
     }
 
-    // Verificar si es admin por email (fallback durante migración)
-    function isAdminByEmail() {
-      return request.auth != null &&
-             request.auth.token.email in [
-               'ludociel.dev@gmail.com'
-               // Agregar más emails admin aquí si es necesario
-             ];
-    }
-
-    // Verificar admin con ambos métodos (durante transición)
-    function isAdminAny() {
-      return isAdmin() || isAdminByEmail();
-    }
-
-    // Verificar si está autenticado
+    // Función helper para verificar si está autenticado
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Verificar si es el dueño
+    // Función helper para verificar si es el dueño
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // Verificar que el userId en el documento coincide con el auth
-    function userIdMatchesAuth() {
-      return request.resource.data.userId == request.auth.uid;
-    }
-
-    // ============================================
-    // PRODUCTOS
-    // ============================================
-
-    // Colección en español (legacy)
+    // === PRODUCTOS ===
+    // Colección en español
     match /productos/{productId} {
+      // Todos pueden leer productos
       allow read: if true;
-      allow write: if isAdminAny();
+      // Solo admins pueden crear/actualizar/eliminar
+      allow write: if isAdmin();
     }
 
-    // Colección en inglés (principal)
+    // Colección en inglés (products)
     match /products/{productId} {
+      // Todos pueden leer productos
       allow read: if true;
-      allow write: if isAdminAny();
+      // Solo admins pueden crear/actualizar/eliminar
+      allow write: if isAdmin();
     }
 
-    // ============================================
-    // CATEGORÍAS Y SUBCATEGORÍAS
-    // ============================================
-
-    match /categories/{categoryId} {
-      allow read: if true;
-      allow write: if isAdminAny();
-    }
-
-    match /subcategories/{subcategoryId} {
-      allow read: if true;
-      allow write: if isAdminAny();
-    }
-
-    // ============================================
-    // PERSONALIZACIONES
-    // ============================================
-
+    // === PERSONALIZACIONES ===
     match /personalizaciones/{customizationId} {
-      // Usuarios pueden leer sus propias personalizaciones
-      allow read: if isAuthenticated() &&
-                     (resource.data.userId == request.auth.uid || isAdminAny());
-      // Usuarios pueden crear sus propias personalizaciones
-      allow create: if isAuthenticated() &&
-                       request.resource.data.userId == request.auth.uid;
-      // Solo el dueño puede actualizar
-      allow update: if isAuthenticated() &&
-                       resource.data.userId == request.auth.uid;
-      // Solo admin puede eliminar
-      allow delete: if isAdminAny();
+      // Todos pueden leer
+      allow read: if true;
+      // Solo admins pueden escribir
+      allow write: if isAdmin();
     }
 
-    // ============================================
-    // PEDIDOS (ORDERS)
-    // ============================================
-
+    // === PEDIDOS (ORDERS) ===
     match /orders/{orderId} {
-      // Leer: el dueño o admin
-      // Permitir lectura por userId o por customerEmail para usuarios guest
-      allow read: if isAdminAny() ||
-                     (isAuthenticated() && resource.data.userId == request.auth.uid) ||
-                     (resource.data.userId == 'guest' &&
-                      isAuthenticated() &&
-                      resource.data.customerEmail == request.auth.token.email);
-
-      // Crear: usuarios autenticados con validaciones
-      allow create: if isAuthenticated() && (
-                       // Usuarios autenticados normales
-                       (request.resource.data.userId == request.auth.uid &&
-                        request.resource.data.customerEmail == request.auth.token.email) ||
-                       // Permitir guest orders (sin validación estricta de userId)
-                       request.resource.data.userId == 'guest'
-                     ) &&
-                     // Validaciones de datos requeridos
-                     request.resource.data.keys().hasAll([
-                       'items', 'shippingInfo', 'total', 'status'
-                     ]) &&
-                     request.resource.data.items.size() > 0 &&
-                     request.resource.data.total > 0;
-
-      // Actualizar: solo admin
-      allow update: if isAdminAny();
-
-      // Eliminar: solo admin
-      allow delete: if isAdminAny();
+      // El dueño del pedido puede leerlo, o el admin
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      // Cualquiera puede crear pedidos (incluso sin autenticación para checkout de invitados)
+      allow create: if true;
+      // Solo admins pueden actualizar/eliminar pedidos
+      allow update, delete: if isAdmin();
     }
 
-    // ============================================
-    // RESEÑAS (REVIEWS)
-    // ============================================
-
+    // === RESEÑAS (REVIEWS) ===
     match /reviews/{reviewId} {
       // Todos pueden leer reseñas
       allow read: if true;
-
-      // Crear: usuarios autenticados con validaciones
-      allow create: if isAuthenticated() &&
-                       request.resource.data.userId == request.auth.uid &&
-                       request.resource.data.userEmail == request.auth.token.email &&
-                       request.resource.data.rating >= 1 &&
-                       request.resource.data.rating <= 5 &&
-                       request.resource.data.comment.size() > 0;
-
-      // Actualizar: solo el dueño o admin
-      allow update: if isAuthenticated() &&
-                       (resource.data.userId == request.auth.uid || isAdminAny());
-
-      // Eliminar: solo el dueño o admin
-      allow delete: if isAuthenticated() &&
-                       (resource.data.userId == request.auth.uid || isAdminAny());
+      // Solo usuarios autenticados pueden crear reseñas
+      allow create: if isAuthenticated();
+      // Solo el dueño o admin pueden actualizar/eliminar
+      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // ============================================
-    // WALLET (MONEDERO)
-    // ============================================
-
-    match /wallets/{walletId} {
-      // Leer: solo el dueño (walletId = userId) o admin
-      allow read: if isAuthenticated() &&
-                     (walletId == request.auth.uid || isAdminAny());
-
-      // Crear: el usuario puede crear su propio wallet
-      allow create: if isAuthenticated() &&
-                       walletId == request.auth.uid &&
-                       request.resource.data.userId == request.auth.uid &&
-                       request.resource.data.balance == 0;
-
-      // Actualizar: SOLO a través de Admin SDK (server-side)
-      // Los usuarios NO pueden actualizar directamente su balance
-      allow update: if false;
-
-      // Eliminar: solo admin
-      allow delete: if isAdminAny();
-    }
-
-    // ============================================
-    // TRANSACCIONES DE WALLET
-    // ============================================
-
+    // === WALLET TRANSACTIONS ===
     match /wallet_transactions/{transactionId} {
-      // Leer: solo el dueño o admin
-      allow read: if isAuthenticated() &&
-                     (resource.data.userId == request.auth.uid || isAdminAny());
-
-      // Crear: SOLO a través de Admin SDK (server-side)
-      allow create: if false;
-
+      // Solo el dueño de la transacción o admin pueden leerla
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      // Solo admins pueden crear transacciones
+      allow create: if isAdmin();
       // No se pueden actualizar ni eliminar transacciones
       allow update, delete: if false;
     }
 
-    // ============================================
-    // CUPONES (COUPONS)
-    // ============================================
-
+    // === CUPONES (COUPONS) ===
     match /coupons/{couponId} {
       // Todos pueden leer cupones activos
       allow read: if true;
-
-      // Crear/actualizar/eliminar: solo admin
-      allow write: if isAdminAny();
+      // Solo admins pueden crear/actualizar/eliminar cupones
+      allow write: if isAdmin();
     }
 
-    // ============================================
-    // USO DE CUPONES (COUPON_USAGE)
-    // ============================================
-
+    // === USO DE CUPONES (COUPON_USAGE) ===
     match /coupon_usage/{usageId} {
-      // Leer: solo el dueño o admin
-      allow read: if isAuthenticated() &&
-                     (resource.data.userId == request.auth.uid || isAdminAny());
-
-      // Crear: SOLO a través de Admin SDK (para prevenir fraude)
-      allow create: if false;
-
-      // Actualizar/eliminar: solo admin
-      allow update, delete: if isAdminAny();
+      // Solo el dueño o admin pueden leer
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      // Solo usuarios autenticados pueden crear registros de uso
+      allow create: if isAuthenticated();
+      // Solo admins pueden actualizar/eliminar
+      allow update, delete: if isAdmin();
     }
 
-    // ============================================
-    // USUARIOS
-    // ============================================
-
+    // === USUARIOS (si tienes una colección de users) ===
     match /users/{userId} {
-      // Leer: el usuario puede leer su propia info, o admin
-      allow read: if isAuthenticated() &&
-                     (userId == request.auth.uid || isAdminAny());
-
-      // Crear: el usuario puede crear su propio perfil
-      allow create: if isAuthenticated() &&
-                       userId == request.auth.uid &&
-                       request.resource.data.userId == request.auth.uid;
-
-      // Actualizar: el usuario puede actualizar su propia info
-      allow update: if isAuthenticated() &&
-                       userId == request.auth.uid &&
-                       // No permitir cambiar userId o admin status
-                       request.resource.data.userId == resource.data.userId;
-
-      // Eliminar: solo admin
-      allow delete: if isAdminAny();
+      // El usuario puede leer su propia información, o el admin
+      allow read: if isAuthenticated() && (userId == request.auth.uid || isAdmin());
+      // El usuario puede actualizar su propia información
+      allow update: if isAuthenticated() && userId == request.auth.uid;
+      // Solo admins pueden crear/eliminar usuarios
+      allow create, delete: if isAdmin();
     }
 
-    // ============================================
-    // CARRITOS ABANDONADOS
-    // ============================================
-
+    // === CARRITOS ABANDONADOS (para futura funcionalidad) ===
     match /abandoned_carts/{cartId} {
-      // Leer: solo el dueño o admin
-      allow read: if isAuthenticated() &&
-                     (resource.data.userId == request.auth.uid || isAdminAny());
-
-      // Crear/actualizar: usuarios autenticados con su propio userId
-      allow create, update: if isAuthenticated() &&
-                              request.resource.data.userId == request.auth.uid;
-
-      // Eliminar: el dueño o admin
-      allow delete: if isAuthenticated() &&
-                       (resource.data.userId == request.auth.uid || isAdminAny());
+      // Solo el dueño o admin pueden leer
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      // Usuarios autenticados pueden crear/actualizar su carrito
+      allow create, update: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Solo admins pueden eliminar
+      allow delete: if isAdmin();
     }
 
-    // ============================================
-    // SISTEMA (CONTADORES, ETC)
-    // ============================================
-
-    match /system/{document} {
-      // Leer: solo admin
-      allow read: if isAdminAny();
-
-      // Escribir: SOLO a través de Admin SDK
-      allow write: if false;
-    }
-
-    // ============================================
-    // DENEGAR TODO LO DEMÁS POR DEFECTO
-    // ============================================
-
+    // Denegar todo lo demás por defecto
     match /{document=**} {
       allow read, write: if false;
     }
