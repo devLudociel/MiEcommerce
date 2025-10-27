@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useStore } from '@nanostores/react';
 import { cartStore, clearCart } from '../../store/cartStore';
 import type { CartItem } from '../../store/cartStore';
@@ -7,6 +7,8 @@ import { shippingInfoSchema, paymentInfoSchema } from '../../lib/validation/sche
 import { useFormValidation } from '../../hooks/useFormValidation';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
+import { lookupZipES, autocompleteStreetES, debounce } from '../../utils/address';
+import type { ZipLookup, AddressSuggestion } from '../../utils/address';
 
 interface ShippingInfo {
   firstName: string;
@@ -54,6 +56,11 @@ export default function Checkout() {
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
 
+  // Address autocomplete state
+  const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
+  const [zipLoading, setZipLoading] = useState(false);
+  const [streetSuggestions, setStreetSuggestions] = useState<AddressSuggestion[]>([]);
+
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     firstName: '',
     lastName: '',
@@ -98,6 +105,74 @@ export default function Checkout() {
       window.location.href = '/';
     }
   }, [cart.items.length]);
+
+  // ZIP code lookup effect
+  useEffect(() => {
+    const zip = shippingInfo.zipCode;
+    if (!/^\d{5}$/.test(zip)) {
+      setCitySuggestions([]);
+      return;
+    }
+
+    let cancelled = false;
+    setZipLoading(true);
+
+    lookupZipES(zip)
+      .then((info) => {
+        if (cancelled || !info) return;
+
+        logger.debug('[Checkout] ZIP lookup result', info);
+
+        // Auto-fill province if available and not already set
+        if (info.province && !shippingInfo.state) {
+          setShippingInfo((prev) => ({ ...prev, state: info.province! }));
+        }
+
+        // Set city suggestions
+        if (info.cities.length > 0) {
+          setCitySuggestions(info.cities);
+
+          // Auto-fill city if there's only one option
+          if (info.cities.length === 1 && !shippingInfo.city) {
+            setShippingInfo((prev) => ({ ...prev, city: info.cities[0] }));
+          }
+        }
+      })
+      .catch((error) => {
+        logger.warn('[Checkout] ZIP lookup failed', error);
+      })
+      .finally(() => {
+        if (!cancelled) setZipLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [shippingInfo.zipCode]);
+
+  // Debounced street autocomplete
+  const handleStreetAutocomplete = useCallback(
+    debounce(async (text: string) => {
+      if (text.length < 3) {
+        setStreetSuggestions([]);
+        return;
+      }
+
+      try {
+        const suggestions = await autocompleteStreetES(text, {
+          postcode: shippingInfo.zipCode,
+          city: shippingInfo.city,
+        });
+
+        logger.debug('[Checkout] Street autocomplete results', { count: suggestions.length });
+        setStreetSuggestions(suggestions);
+      } catch (error) {
+        logger.warn('[Checkout] Street autocomplete failed', error);
+        setStreetSuggestions([]);
+      }
+    }, 350),
+    [shippingInfo.zipCode, shippingInfo.city]
+  );
 
   const subtotal = cart.total;
   const couponDiscount = appliedCoupon?.discountAmount || 0;
@@ -407,7 +482,7 @@ export default function Checkout() {
                     </div>
                   </div>
 
-                  <div>
+                  <div className="relative">
                     <label className="block text-sm font-bold text-gray-700 mb-2">
                       Dirección *
                     </label>
@@ -417,18 +492,54 @@ export default function Checkout() {
                       onChange={(e) => {
                         setShippingInfo({ ...shippingInfo, address: e.target.value });
                         shippingValidation.handleChange('address', e.target.value);
+                        handleStreetAutocomplete(e.target.value);
                       }}
-                      onBlur={(e) => shippingValidation.handleBlur('address', e.target.value)}
+                      onBlur={(e) => {
+                        shippingValidation.handleBlur('address', e.target.value);
+                        // Clear suggestions after a delay
+                        setTimeout(() => setStreetSuggestions([]), 200);
+                      }}
                       className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${shippingValidation.errors.address ? 'border-red-500' : 'border-gray-300'}`}
                       placeholder="Calle Principal, 123, Piso 2"
                     />
                     {shippingValidation.errors.address && (
                       <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.address}</p>
                     )}
+
+                    {/* Street autocomplete suggestions */}
+                    {streetSuggestions.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border-2 border-cyan-200 rounded-xl shadow-lg max-h-48 overflow-auto">
+                        {streetSuggestions.map((suggestion, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => {
+                              setShippingInfo({
+                                ...shippingInfo,
+                                address: suggestion.label,
+                                city: suggestion.city || shippingInfo.city,
+                                state: suggestion.province || shippingInfo.state,
+                                zipCode: suggestion.postcode || shippingInfo.zipCode,
+                              });
+                              setStreetSuggestions([]);
+                            }}
+                            className="w-full text-left px-4 py-2 hover:bg-cyan-50 transition-colors border-b border-gray-100 last:border-0"
+                          >
+                            <div className="font-medium text-gray-800">{suggestion.label}</div>
+                            {suggestion.city && (
+                              <div className="text-xs text-gray-500 mt-0.5">
+                                {suggestion.city}
+                                {suggestion.postcode && `, ${suggestion.postcode}`}
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
+                    <div className="relative">
                       <label className="block text-sm font-bold text-gray-700 mb-2">Ciudad *</label>
                       <input
                         type="text"
@@ -437,11 +548,34 @@ export default function Checkout() {
                           setShippingInfo({ ...shippingInfo, city: e.target.value });
                           shippingValidation.handleChange('city', e.target.value);
                         }}
-                        onBlur={(e) => shippingValidation.handleBlur('city', e.target.value)}
+                        onBlur={(e) => {
+                          shippingValidation.handleBlur('city', e.target.value);
+                          // Clear suggestions after a delay
+                          setTimeout(() => setCitySuggestions([]), 200);
+                        }}
                         className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${shippingValidation.errors.city ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Madrid"
                       />
                       {shippingValidation.errors.city && <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.city}</p>}
+
+                      {/* City autocomplete suggestions */}
+                      {citySuggestions.length > 1 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border-2 border-cyan-200 rounded-xl shadow-lg max-h-40 overflow-auto">
+                          {citySuggestions.map((city) => (
+                            <button
+                              key={city}
+                              type="button"
+                              onClick={() => {
+                                setShippingInfo({ ...shippingInfo, city });
+                                setCitySuggestions([]);
+                              }}
+                              className="w-full text-left px-4 py-2 hover:bg-cyan-50 transition-colors"
+                            >
+                              {city}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-2">
@@ -460,7 +594,7 @@ export default function Checkout() {
                       />
                       {shippingValidation.errors.state && <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.state}</p>}
                     </div>
-                    <div>
+                    <div className="relative">
                       <label className="block text-sm font-bold text-gray-700 mb-2">CP *</label>
                       <input
                         type="text"
@@ -472,7 +606,14 @@ export default function Checkout() {
                         onBlur={(e) => shippingValidation.handleBlur('zipCode', e.target.value)}
                         className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${shippingValidation.errors.zipCode ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="28001"
+                        maxLength={5}
                       />
+                      {zipLoading && (
+                        <div className="absolute right-3 top-11 text-xs text-cyan-600 flex items-center gap-1">
+                          <div className="w-3 h-3 border-2 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
+                          <span>Buscando...</span>
+                        </div>
+                      )}
                       {shippingValidation.errors.zipCode && (
                         <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.zipCode}</p>
                       )}
