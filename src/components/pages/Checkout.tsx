@@ -3,6 +3,10 @@ import { useStore } from '@nanostores/react';
 import { cartStore, clearCart } from '../../store/cartStore';
 import type { CartItem } from '../../store/cartStore';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { shippingInfoSchema, paymentInfoSchema } from '../../lib/validation/schemas';
+import { useFormValidation } from '../../hooks/useFormValidation';
+import { notify } from '../../lib/notifications';
+import { logger } from '../../lib/logger';
 
 interface ShippingInfo {
   firstName: string;
@@ -56,8 +60,23 @@ export default function Checkout() {
     cardCVV: '',
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [acceptTerms, setAcceptTerms] = useState(false);
+
+  // Validación con Zod para el formulario de envío
+  const shippingValidation = useFormValidation(shippingInfoSchema, {
+    validateOnChange: false,
+    validateOnBlur: true,
+    showToastOnError: false,
+    formName: 'Checkout-Shipping',
+  });
+
+  // Validación con Zod para el formulario de pago
+  const paymentValidation = useFormValidation(paymentInfoSchema, {
+    validateOnChange: false,
+    validateOnBlur: true,
+    showToastOnError: false,
+    formName: 'Checkout-Payment',
+  });
 
   useEffect(() => {
     if (cart.items.length === 0 && typeof window !== 'undefined') {
@@ -69,50 +88,52 @@ export default function Checkout() {
   const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
   const total = subtotal + shippingCost;
 
-  const validateStep1 = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    if (!shippingInfo.firstName.trim()) newErrors.firstName = 'Nombre requerido';
-    if (!shippingInfo.lastName.trim()) newErrors.lastName = 'Apellido requerido';
-    if (!shippingInfo.email.trim()) {
-      newErrors.email = 'Email requerido';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shippingInfo.email)) {
-      newErrors.email = 'Email inválido';
+  const validateStep1 = async (): Promise<boolean> => {
+    logger.debug('[Checkout] Validating step 1 (shipping info)', shippingInfo);
+
+    const result = await shippingValidation.validate(shippingInfo);
+
+    if (!result.success) {
+      const firstError = Object.values(result.errors!)[0];
+      notify.error(firstError || 'Por favor, corrige los errores en el formulario');
+      logger.warn('[Checkout] Step 1 validation failed', result.errors);
+      return false;
     }
-    if (!shippingInfo.phone.trim()) newErrors.phone = 'Teléfono requerido';
-    if (!shippingInfo.address.trim()) newErrors.address = 'Dirección requerida';
-    if (!shippingInfo.city.trim()) newErrors.city = 'Ciudad requerida';
-    if (!shippingInfo.state.trim()) newErrors.state = 'Provincia requerida';
-    if (!shippingInfo.zipCode.trim()) newErrors.zipCode = 'Código postal requerido';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+
+    logger.info('[Checkout] Step 1 validation successful');
+    return true;
   };
 
-  const validateStep2 = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    if (paymentInfo.method === 'card') {
-      if (!paymentInfo.cardNumber?.trim()) {
-        newErrors.cardNumber = 'Número de tarjeta requerido';
-      } else if (paymentInfo.cardNumber.replace(/\s/g, '').length < 16) {
-        newErrors.cardNumber = 'Número de tarjeta inválido';
-      }
-      if (!paymentInfo.cardName?.trim()) newErrors.cardName = 'Nombre requerido';
-      if (!paymentInfo.cardExpiry?.trim()) newErrors.cardExpiry = 'Fecha requerida';
-      if (!paymentInfo.cardCVV?.trim()) newErrors.cardCVV = 'CVV requerido';
+  const validateStep2 = async (): Promise<boolean> => {
+    logger.debug('[Checkout] Validating step 2 (payment info)', paymentInfo);
+
+    const result = await paymentValidation.validate(paymentInfo);
+
+    if (!result.success) {
+      const firstError = Object.values(result.errors!)[0];
+      notify.error(firstError || 'Por favor, corrige los errores de pago');
+      logger.warn('[Checkout] Step 2 validation failed', result.errors);
+      return false;
     }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+
+    logger.info('[Checkout] Step 2 validation successful');
+    return true;
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (currentStep === 1) {
-      if (validateStep1()) {
+      const isValid = await validateStep1();
+      if (isValid) {
         setCurrentStep(2);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        logger.info('[Checkout] Moved to step 2');
       }
     } else if (currentStep === 2) {
-      if (validateStep2()) {
+      const isValid = await validateStep2();
+      if (isValid) {
         setCurrentStep(3);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        logger.info('[Checkout] Moved to step 3');
       }
     }
   };
@@ -126,9 +147,11 @@ export default function Checkout() {
 
   const handlePlaceOrder = async () => {
     if (!acceptTerms) {
-      alert('Debes aceptar los términos y condiciones');
+      notify.warning('Debes aceptar los términos y condiciones');
       return;
     }
+
+    logger.info('[Checkout] Placing order', { total, itemCount: cart.items.length });
     setIsProcessing(true);
     try {
       // Preparar datos de la orden para Firebase
@@ -173,11 +196,17 @@ export default function Checkout() {
       const { orderId } = await response.json();
 
       // Limpiar carrito y redirigir
+      logger.info('[Checkout] Order placed successfully', { orderId });
+      notify.success('¡Pedido realizado con éxito!');
       clearCart();
-      window.location.href = `/confirmacion?orderId=${orderId}`;
+
+      // Pequeña pausa para que el usuario vea la notificación
+      setTimeout(() => {
+        window.location.href = `/confirmacion?orderId=${orderId}`;
+      }, 500);
     } catch (error) {
-      console.error('Error al procesar el pedido:', error);
-      alert('Hubo un error al procesar tu pedido. Por favor, intenta de nuevo.');
+      logger.error('[Checkout] Error placing order', error);
+      notify.error('Hubo un error al procesar tu pedido. Por favor, intenta de nuevo.');
     } finally {
       setIsProcessing(false);
     }
@@ -244,14 +273,16 @@ export default function Checkout() {
                       <input
                         type="text"
                         value={shippingInfo.firstName}
-                        onChange={(e) =>
-                          setShippingInfo({ ...shippingInfo, firstName: e.target.value })
-                        }
-                        className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${errors.firstName ? 'border-red-500' : 'border-gray-300'}`}
+                        onChange={(e) => {
+                          setShippingInfo({ ...shippingInfo, firstName: e.target.value });
+                          shippingValidation.handleChange('firstName', e.target.value);
+                        }}
+                        onBlur={(e) => shippingValidation.handleBlur('firstName', e.target.value)}
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${shippingValidation.errors.firstName ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Juan"
                       />
-                      {errors.firstName && (
-                        <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>
+                      {shippingValidation.errors.firstName && (
+                        <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.firstName}</p>
                       )}
                     </div>
                     <div>
@@ -261,14 +292,16 @@ export default function Checkout() {
                       <input
                         type="text"
                         value={shippingInfo.lastName}
-                        onChange={(e) =>
-                          setShippingInfo({ ...shippingInfo, lastName: e.target.value })
-                        }
-                        className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${errors.lastName ? 'border-red-500' : 'border-gray-300'}`}
+                        onChange={(e) => {
+                          setShippingInfo({ ...shippingInfo, lastName: e.target.value });
+                          shippingValidation.handleChange('lastName', e.target.value);
+                        }}
+                        onBlur={(e) => shippingValidation.handleBlur('lastName', e.target.value)}
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${shippingValidation.errors.lastName ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="García"
                       />
-                      {errors.lastName && (
-                        <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>
+                      {shippingValidation.errors.lastName && (
+                        <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.lastName}</p>
                       )}
                     </div>
                   </div>
@@ -279,13 +312,15 @@ export default function Checkout() {
                       <input
                         type="email"
                         value={shippingInfo.email}
-                        onChange={(e) =>
-                          setShippingInfo({ ...shippingInfo, email: e.target.value })
-                        }
-                        className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
+                        onChange={(e) => {
+                          setShippingInfo({ ...shippingInfo, email: e.target.value });
+                          shippingValidation.handleChange('email', e.target.value);
+                        }}
+                        onBlur={(e) => shippingValidation.handleBlur('email', e.target.value)}
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${shippingValidation.errors.email ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="tu@email.com"
                       />
-                      {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                      {shippingValidation.errors.email && <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.email}</p>}
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-2">
@@ -294,13 +329,15 @@ export default function Checkout() {
                       <input
                         type="tel"
                         value={shippingInfo.phone}
-                        onChange={(e) =>
-                          setShippingInfo({ ...shippingInfo, phone: e.target.value })
-                        }
-                        className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
+                        onChange={(e) => {
+                          setShippingInfo({ ...shippingInfo, phone: e.target.value });
+                          shippingValidation.handleChange('phone', e.target.value);
+                        }}
+                        onBlur={(e) => shippingValidation.handleBlur('phone', e.target.value)}
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${shippingValidation.errors.phone ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="612 345 678"
                       />
-                      {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+                      {shippingValidation.errors.phone && <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.phone}</p>}
                     </div>
                   </div>
 
@@ -311,14 +348,16 @@ export default function Checkout() {
                     <input
                       type="text"
                       value={shippingInfo.address}
-                      onChange={(e) =>
-                        setShippingInfo({ ...shippingInfo, address: e.target.value })
-                      }
-                      className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${errors.address ? 'border-red-500' : 'border-gray-300'}`}
+                      onChange={(e) => {
+                        setShippingInfo({ ...shippingInfo, address: e.target.value });
+                        shippingValidation.handleChange('address', e.target.value);
+                      }}
+                      onBlur={(e) => shippingValidation.handleBlur('address', e.target.value)}
+                      className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${shippingValidation.errors.address ? 'border-red-500' : 'border-gray-300'}`}
                       placeholder="Calle Principal, 123, Piso 2"
                     />
-                    {errors.address && (
-                      <p className="text-red-500 text-sm mt-1">{errors.address}</p>
+                    {shippingValidation.errors.address && (
+                      <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.address}</p>
                     )}
                   </div>
 
@@ -328,11 +367,15 @@ export default function Checkout() {
                       <input
                         type="text"
                         value={shippingInfo.city}
-                        onChange={(e) => setShippingInfo({ ...shippingInfo, city: e.target.value })}
-                        className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
+                        onChange={(e) => {
+                          setShippingInfo({ ...shippingInfo, city: e.target.value });
+                          shippingValidation.handleChange('city', e.target.value);
+                        }}
+                        onBlur={(e) => shippingValidation.handleBlur('city', e.target.value)}
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${shippingValidation.errors.city ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Madrid"
                       />
-                      {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
+                      {shippingValidation.errors.city && <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.city}</p>}
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-2">
@@ -341,27 +384,31 @@ export default function Checkout() {
                       <input
                         type="text"
                         value={shippingInfo.state}
-                        onChange={(e) =>
-                          setShippingInfo({ ...shippingInfo, state: e.target.value })
-                        }
-                        className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${errors.state ? 'border-red-500' : 'border-gray-300'}`}
+                        onChange={(e) => {
+                          setShippingInfo({ ...shippingInfo, state: e.target.value });
+                          shippingValidation.handleChange('state', e.target.value);
+                        }}
+                        onBlur={(e) => shippingValidation.handleBlur('state', e.target.value)}
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${shippingValidation.errors.state ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Madrid"
                       />
-                      {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
+                      {shippingValidation.errors.state && <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.state}</p>}
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-2">CP *</label>
                       <input
                         type="text"
                         value={shippingInfo.zipCode}
-                        onChange={(e) =>
-                          setShippingInfo({ ...shippingInfo, zipCode: e.target.value })
-                        }
-                        className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${errors.zipCode ? 'border-red-500' : 'border-gray-300'}`}
+                        onChange={(e) => {
+                          setShippingInfo({ ...shippingInfo, zipCode: e.target.value });
+                          shippingValidation.handleChange('zipCode', e.target.value);
+                        }}
+                        onBlur={(e) => shippingValidation.handleBlur('zipCode', e.target.value)}
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${shippingValidation.errors.zipCode ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="28001"
                       />
-                      {errors.zipCode && (
-                        <p className="text-red-500 text-sm mt-1">{errors.zipCode}</p>
+                      {shippingValidation.errors.zipCode && (
+                        <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.zipCode}</p>
                       )}
                     </div>
                   </div>
@@ -455,18 +502,18 @@ export default function Checkout() {
                         <input
                           type="text"
                           value={paymentInfo.cardNumber}
-                          onChange={(e) =>
-                            setPaymentInfo({
-                              ...paymentInfo,
-                              cardNumber: formatCardNumber(e.target.value),
-                            })
-                          }
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${errors.cardNumber ? 'border-red-500' : 'border-gray-300'}`}
+                          onChange={(e) => {
+                            const formatted = formatCardNumber(e.target.value);
+                            setPaymentInfo({ ...paymentInfo, cardNumber: formatted });
+                            paymentValidation.handleChange('cardNumber', formatted);
+                          }}
+                          onBlur={(e) => paymentValidation.handleBlur('cardNumber', e.target.value)}
+                          className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${paymentValidation.errors.cardNumber ? 'border-red-500' : 'border-gray-300'}`}
                           placeholder="1234 5678 9012 3456"
                           maxLength={19}
                         />
-                        {errors.cardNumber && (
-                          <p className="text-red-500 text-sm mt-1">{errors.cardNumber}</p>
+                        {paymentValidation.errors.cardNumber && (
+                          <p className="text-red-500 text-sm mt-1">{paymentValidation.errors.cardNumber}</p>
                         )}
                       </div>
                       <div>
@@ -476,17 +523,17 @@ export default function Checkout() {
                         <input
                           type="text"
                           value={paymentInfo.cardName}
-                          onChange={(e) =>
-                            setPaymentInfo({
-                              ...paymentInfo,
-                              cardName: e.target.value.toUpperCase(),
-                            })
-                          }
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${errors.cardName ? 'border-red-500' : 'border-gray-300'}`}
+                          onChange={(e) => {
+                            const upperValue = e.target.value.toUpperCase();
+                            setPaymentInfo({ ...paymentInfo, cardName: upperValue });
+                            paymentValidation.handleChange('cardName', upperValue);
+                          }}
+                          onBlur={(e) => paymentValidation.handleBlur('cardName', e.target.value)}
+                          className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${paymentValidation.errors.cardName ? 'border-red-500' : 'border-gray-300'}`}
                           placeholder="JUAN GARCIA"
                         />
-                        {errors.cardName && (
-                          <p className="text-red-500 text-sm mt-1">{errors.cardName}</p>
+                        {paymentValidation.errors.cardName && (
+                          <p className="text-red-500 text-sm mt-1">{paymentValidation.errors.cardName}</p>
                         )}
                       </div>
                       <div className="grid grid-cols-2 gap-4">
@@ -503,13 +550,15 @@ export default function Checkout() {
                                 value = value.slice(0, 2) + '/' + value.slice(2, 4);
                               }
                               setPaymentInfo({ ...paymentInfo, cardExpiry: value });
+                              paymentValidation.handleChange('cardExpiry', value);
                             }}
-                            className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${errors.cardExpiry ? 'border-red-500' : 'border-gray-300'}`}
+                            onBlur={(e) => paymentValidation.handleBlur('cardExpiry', e.target.value)}
+                            className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${paymentValidation.errors.cardExpiry ? 'border-red-500' : 'border-gray-300'}`}
                             placeholder="MM/AA"
                             maxLength={5}
                           />
-                          {errors.cardExpiry && (
-                            <p className="text-red-500 text-sm mt-1">{errors.cardExpiry}</p>
+                          {paymentValidation.errors.cardExpiry && (
+                            <p className="text-red-500 text-sm mt-1">{paymentValidation.errors.cardExpiry}</p>
                           )}
                         </div>
                         <div>
@@ -519,18 +568,18 @@ export default function Checkout() {
                           <input
                             type="text"
                             value={paymentInfo.cardCVV}
-                            onChange={(e) =>
-                              setPaymentInfo({
-                                ...paymentInfo,
-                                cardCVV: e.target.value.replace(/\D/g, '').slice(0, 4),
-                              })
-                            }
-                            className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${errors.cardCVV ? 'border-red-500' : 'border-gray-300'}`}
+                            onChange={(e) => {
+                              const cvv = e.target.value.replace(/\D/g, '').slice(0, 4);
+                              setPaymentInfo({ ...paymentInfo, cardCVV: cvv });
+                              paymentValidation.handleChange('cardCVV', cvv);
+                            }}
+                            onBlur={(e) => paymentValidation.handleBlur('cardCVV', e.target.value)}
+                            className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${paymentValidation.errors.cardCVV ? 'border-red-500' : 'border-gray-300'}`}
                             placeholder="123"
                             maxLength={4}
                           />
-                          {errors.cardCVV && (
-                            <p className="text-red-500 text-sm mt-1">{errors.cardCVV}</p>
+                          {paymentValidation.errors.cardCVV && (
+                            <p className="text-red-500 text-sm mt-1">{paymentValidation.errors.cardCVV}</p>
                           )}
                         </div>
                       </div>
