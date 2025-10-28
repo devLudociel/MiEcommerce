@@ -1,5 +1,6 @@
 // src/store/cartStore.ts
 import { atom } from 'nanostores';
+import { useStore } from '@nanostores/react';
 import { logger } from '../lib/logger';
 import { notify } from '../lib/notifications';
 
@@ -197,7 +198,7 @@ export function clearCart(): void {
 
 // Hook para usar el carrito en React
 export function useCart(): CartState {
-  return cartStore.get();
+  return useStore(cartStore);
 }
 
 // Obtener cantidad total de items

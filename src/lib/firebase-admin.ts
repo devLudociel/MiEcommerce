@@ -1,9 +1,11 @@
 import type { App } from 'firebase-admin/app';
 import { getApps, initializeApp, cert, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { getAuth, type Auth } from 'firebase-admin/auth';
 
 let adminApp: App | null = null;
 let adminDb: Firestore | null = null;
+let adminAuth: Auth | null = null;
 
 /**
  * Inicializa Firebase Admin SDK (bypasa reglas de seguridad)
@@ -69,5 +71,16 @@ export function getAdminDb(): Firestore {
     adminDb = getFirestore(app);
   }
   return adminDb;
+}
+
+/**
+ * Firebase Auth (Admin)
+ */
+export function getAdminAuth(): Auth {
+  if (!adminAuth) {
+    const app = getAdminApp();
+    adminAuth = getAuth(app);
+  }
+  return adminAuth;
 }
 
