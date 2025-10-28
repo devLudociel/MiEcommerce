@@ -1,22 +1,42 @@
 // src/pages/api/get-wallet-balance.ts
 import type { APIRoute } from 'astro';
-import { getAdminDb } from '../../lib/firebase-admin';
+import { getAdminAuth, getAdminDb } from '../../lib/firebase-admin';
 
 export const GET: APIRoute = async ({ request }) => {
   console.log('[API get-wallet-balance] Request received');
 
   try {
     const url = new URL(request.url);
-    const userId = url.searchParams.get('userId');
+    const userIdParam = url.searchParams.get('userId');
 
-    if (!userId) {
-      return new Response(
-        JSON.stringify({ error: 'userId is required' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const idToken = authHeader.replace('Bearer ', '').trim();
+
+    let decodedToken;
+    try {
+      decodedToken = await getAdminAuth().verifyIdToken(idToken);
+    } catch (verificationError) {
+      console.error('[API get-wallet-balance] Invalid token:', verificationError);
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const requestedUserId = userIdParam || decodedToken.uid;
+
+    if (requestedUserId !== decodedToken.uid && !decodedToken.admin) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Get Firebase Admin DB
@@ -32,7 +52,7 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     // Get wallet document
-    const walletRef = adminDb.collection('wallets').doc(userId);
+    const walletRef = adminDb.collection('wallets').doc(requestedUserId);
     const walletDoc = await walletRef.get();
 
     let balance = 0;
@@ -49,7 +69,7 @@ export const GET: APIRoute = async ({ request }) => {
       });
     }
 
-    console.log('[API get-wallet-balance] Balance retrieved', { userId, balance });
+    console.log('[API get-wallet-balance] Balance retrieved', { userId: requestedUserId, balance });
 
     return new Response(
       JSON.stringify({ balance }),

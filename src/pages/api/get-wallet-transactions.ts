@@ -1,23 +1,43 @@
 // src/pages/api/get-wallet-transactions.ts
 import type { APIRoute } from 'astro';
-import { getAdminDb } from '../../lib/firebase-admin';
+import { getAdminAuth, getAdminDb } from '../../lib/firebase-admin';
 
 export const GET: APIRoute = async ({ request }) => {
   console.log('[API get-wallet-transactions] Request received');
 
   try {
     const url = new URL(request.url);
-    const userId = url.searchParams.get('userId');
+    const userIdParam = url.searchParams.get('userId');
     const limit = parseInt(url.searchParams.get('limit') || '50', 10);
 
-    if (!userId) {
-      return new Response(
-        JSON.stringify({ error: 'userId is required' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const idToken = authHeader.replace('Bearer ', '').trim();
+
+    let decodedToken;
+    try {
+      decodedToken = await getAdminAuth().verifyIdToken(idToken);
+    } catch (verificationError) {
+      console.error('[API get-wallet-transactions] Invalid token:', verificationError);
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const requestedUserId = userIdParam || decodedToken.uid;
+
+    if (requestedUserId !== decodedToken.uid && !decodedToken.admin) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Get Firebase Admin DB
@@ -38,7 +58,7 @@ export const GET: APIRoute = async ({ request }) => {
     // Get transactions from wallet_transactions collection
     const transactionsRef = adminDb
       .collection('wallet_transactions')
-      .where('userId', '==', userId)
+      .where('userId', '==', requestedUserId)
       .orderBy('createdAt', 'desc')
       .limit(limit);
 
@@ -60,7 +80,7 @@ export const GET: APIRoute = async ({ request }) => {
     });
 
     console.log('[API get-wallet-transactions] Transactions retrieved', {
-      userId,
+      userId: requestedUserId,
       count: transactions.length,
     });
 

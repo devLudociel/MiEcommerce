@@ -131,7 +131,17 @@ export default function Checkout() {
       setLoadingWallet(true);
       try {
         logger.info('[Checkout] Loading wallet balance', { userId: user.uid });
-        const response = await fetch(`/api/get-wallet-balance?userId=${user.uid}`);
+
+        const token = await user.getIdToken();
+        if (!token) {
+          throw new Error('No se pudo obtener el token de autenticación');
+        }
+
+        const response = await fetch(`/api/get-wallet-balance?userId=${user.uid}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (!response.ok) {
           throw new Error('Error al cargar el saldo');

@@ -11,6 +11,7 @@ interface ImportMetaEnv {
   readonly PUBLIC_FIREBASE_MEASUREMENT_ID?: string;
 
   // Firebase Admin (Server-side)
+  readonly FIREBASE_SERVICE_ACCOUNT?: string;
   readonly FIREBASE_PROJECT_ID: string;
   readonly FIREBASE_CLIENT_EMAIL: string;
   readonly FIREBASE_PRIVATE_KEY: string;
@@ -25,7 +26,9 @@ interface ImportMetaEnv {
   readonly RESEND_FROM_EMAIL: string;
 
   // Admin
-  readonly ADMIN_EMAILS: string;
+  readonly PUBLIC_ADMIN_EMAILS: string;
+  readonly ADMIN_EMAILS?: string;
+  readonly ADMIN_SETUP_SECRET: string;
 
   // Site
   readonly PUBLIC_SITE_URL: string;

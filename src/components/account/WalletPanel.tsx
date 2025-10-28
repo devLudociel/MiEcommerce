@@ -39,8 +39,19 @@ export default function WalletPanel() {
       setLoading(true);
       logger.info('[WalletPanel] Loading wallet data', { userId: user.uid });
 
+      const token = await user.getIdToken();
+      if (!token) {
+        throw new Error('No se pudo obtener el token de autenticación');
+      }
+
+      const authHeaders = {
+        Authorization: `Bearer ${token}`,
+      };
+
       // Fetch wallet balance
-      const balanceResponse = await fetch(`/api/get-wallet-balance?userId=${user.uid}`);
+      const balanceResponse = await fetch(`/api/get-wallet-balance?userId=${user.uid}`, {
+        headers: authHeaders,
+      });
       if (!balanceResponse.ok) {
         throw new Error('Error al cargar el saldo');
       }
@@ -50,7 +61,10 @@ export default function WalletPanel() {
 
       // Fetch transactions
       const transactionsResponse = await fetch(
-        `/api/get-wallet-transactions?userId=${user.uid}`
+        `/api/get-wallet-transactions?userId=${user.uid}`,
+        {
+          headers: authHeaders,
+        }
       );
       if (!transactionsResponse.ok) {
         throw new Error('Error al cargar las transacciones');
