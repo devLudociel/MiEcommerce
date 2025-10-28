@@ -56,6 +56,11 @@ export const storage: FirebaseStorage = getStorage(app);
 
 // Initialize Firebase Authentication
 export const auth: Auth = getAuth(app);
+try {
+  // Mostrar emails en español (restablecer contraseña, etc.)
+  // Nota: puedes sobreescribir por usuario si lo necesitas
+  (auth as any).languageCode = 'es';
+} catch {}
 
 // Initialize Analytics (only in browser)
 export const analytics: Analytics | null = typeof window !== 'undefined' ? getAnalytics(app) : null;

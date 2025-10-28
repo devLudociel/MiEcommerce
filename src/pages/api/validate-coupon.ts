@@ -2,8 +2,23 @@
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { validateCouponCodeSchema } from '../../lib/validation/schemas';
+import { rateLimit } from '../../lib/rateLimit';
 
 export const POST: APIRoute = async ({ request }) => {
+  // Rate limit básico: 30/min por IP para este endpoint
+  try {
+    const { ok, remaining, resetAt } = await rateLimit(request, 'validate-coupon', { intervalMs: 60_000, max: 30 });
+    if (!ok) {
+      return new Response(JSON.stringify({ error: 'Too many requests' }), {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RateLimit-Remaining': String(remaining),
+          'X-RateLimit-Reset': String(resetAt),
+        },
+      });
+    }
+  } catch {}
   console.log('[API validate-coupon] Request received');
 
   try {

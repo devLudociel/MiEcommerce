@@ -1,119 +1,83 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Función helper para verificar si es admin
     function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'rubenjruiz1441@gmail.com';
+      return request.auth != null && request.auth.token.admin == true;
     }
-
-    // Función helper para verificar si está autenticado
-    function isAuthenticated() {
+    function isAuth() {
       return request.auth != null;
     }
-
-    // Función helper para verificar si es el dueño
     function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+      return isAuth() && request.auth.uid == userId;
     }
 
-    // === PRODUCTOS ===
-    // Colección en español
-    match /productos/{productId} {
-      // Todos pueden leer productos
+    // Productos
+    match /products/{id} {
       allow read: if true;
-      // Solo admins pueden crear/actualizar/eliminar
+      allow write: if isAdmin();
+    }
+    match /productos/{id} {
+      allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Colección en inglés (products)
-    match /products/{productId} {
-      // Todos pueden leer productos
+    // Personalizaciones
+    match /personalizaciones/{id} {
       allow read: if true;
-      // Solo admins pueden crear/actualizar/eliminar
       allow write: if isAdmin();
     }
 
-    // === PERSONALIZACIONES ===
-    match /personalizaciones/{customizationId} {
-      // Todos pueden leer
-      allow read: if true;
-      // Solo admins pueden escribir
-      allow write: if isAdmin();
-    }
-
-    // === PEDIDOS (ORDERS) ===
+    // Pedidos (servidor Admin SDK maneja writes)
     match /orders/{orderId} {
-      // El dueño del pedido puede leerlo, o el admin
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      // Cualquiera puede crear pedidos (incluso sin autenticación para checkout de invitados)
-      allow create: if true;
-      // Solo admins pueden actualizar/eliminar pedidos
-      allow update, delete: if isAdmin();
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow create, update, delete: if false;
     }
 
-    // === RESEÑAS (REVIEWS) ===
+    // Reseñas
     match /reviews/{reviewId} {
-      // Todos pueden leer reseñas
       allow read: if true;
-      // Solo usuarios autenticados pueden crear reseñas
-      allow create: if isAuthenticated();
-      // Solo el dueño o admin pueden actualizar/eliminar
-      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isOwner(resource.data.userId) || isAdmin();
     }
 
-    // === WALLET TRANSACTIONS ===
-    match /wallet_transactions/{transactionId} {
-      // Solo el dueño de la transacción o admin pueden leerla
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      // Solo admins pueden crear transacciones
-      allow create: if isAdmin();
-      // No se pueden actualizar ni eliminar transacciones
-      allow update, delete: if false;
+    // Wallets y transacciones
+    match /wallets/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if false;
+    }
+    match /wallet_transactions/{txId} {
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow write: if false;
     }
 
-    // === CUPONES (COUPONS) ===
+    // Cupones y uso
     match /coupons/{couponId} {
-      // Todos pueden leer cupones activos
-      allow read: if true;
-      // Solo admins pueden crear/actualizar/eliminar cupones
+      allow read: if resource.data.active == true;
       allow write: if isAdmin();
     }
-
-    // === USO DE CUPONES (COUPON_USAGE) ===
     match /coupon_usage/{usageId} {
-      // Solo el dueño o admin pueden leer
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      // Solo usuarios autenticados pueden crear registros de uso
-      allow create: if isAuthenticated();
-      // Solo admins pueden actualizar/eliminar
-      allow update, delete: if isAdmin();
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow write: if false;
     }
 
-    // === USUARIOS (si tienes una colección de users) ===
+    // Usuarios
     match /users/{userId} {
-      // El usuario puede leer su propia información, o el admin
-      allow read: if isAuthenticated() && (userId == request.auth.uid || isAdmin());
-      // El usuario puede actualizar su propia información
-      allow update: if isAuthenticated() && userId == request.auth.uid;
-      // Solo admins pueden crear/eliminar usuarios
+      allow read: if isOwner(userId) || isAdmin();
+      allow update: if isOwner(userId);
       allow create, delete: if isAdmin();
     }
 
-    // === CARRITOS ABANDONADOS (para futura funcionalidad) ===
+    // Carritos abandonados (si aplica)
     match /abandoned_carts/{cartId} {
-      // Solo el dueño o admin pueden leer
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      // Usuarios autenticados pueden crear/actualizar su carrito
-      allow create, update: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      // Solo admins pueden eliminar
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow create, update: if isAuth() && request.resource.data.userId == request.auth.uid;
       allow delete: if isAdmin();
     }
 
-    // Denegar todo lo demás por defecto
+    // Denegar por defecto
     match /{document=**} {
       allow read, write: if false;
     }
   }
 }
+

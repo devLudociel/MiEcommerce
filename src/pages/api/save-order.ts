@@ -2,10 +2,25 @@
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { rateLimit } from '../../lib/rateLimit';
 
 const CASHBACK_PERCENTAGE = 0.05; // 5% de cashback
 
 export const POST: APIRoute = async ({ request }) => {
+  // Rate limit básico: 10/min por IP para guardar orden
+  try {
+    const { ok, remaining, resetAt } = await rateLimit(request, 'save-order', { intervalMs: 60_000, max: 10 });
+    if (!ok) {
+      return new Response(JSON.stringify({ error: 'Too many requests' }), {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RateLimit-Remaining': String(remaining),
+          'X-RateLimit-Reset': String(resetAt),
+        },
+      });
+    }
+  } catch {}
   console.log('API save-order: Solicitud recibida');
 
   try {
