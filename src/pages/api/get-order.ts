@@ -1,6 +1,5 @@
 import type { APIRoute } from 'astro';
-import { db } from '../../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { getAdminDb } from '../../lib/firebase-admin';
 
 export const GET: APIRoute = async ({ url }) => {
   try {
@@ -13,29 +12,33 @@ export const GET: APIRoute = async ({ url }) => {
       });
     }
 
-    // Obtener la orden de Firestore
-    const orderRef = doc(db, 'orders', orderId);
-    const orderSnap = await getDoc(orderRef);
+    // Obtener la orden desde Firestore con Admin SDK (ignora reglas)
+    const db = getAdminDb();
+    const orderRef = db.collection('orders').doc(orderId);
+    const orderSnap = await orderRef.get();
 
-    if (!orderSnap.exists()) {
+    if (!orderSnap.exists) {
       return new Response(JSON.stringify({ error: 'Order not found' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    const orderData = orderSnap.data();
+    const orderData = orderSnap.data() as any;
 
     // Formatear la orden para que coincida con la interfaz esperada
     const order = {
       id: orderSnap.id,
-      date: orderData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      date:
+        typeof orderData.createdAt?.toDate === 'function'
+          ? orderData.createdAt.toDate().toISOString()
+          : new Date().toISOString(),
       items: orderData.items || [],
       shippingInfo: orderData.shippingInfo || {},
       paymentInfo: { method: orderData.paymentMethod || 'card' },
-      subtotal: orderData.subtotal || 0,
-      shipping: orderData.shippingCost || 0,
-      total: orderData.total || 0,
+      subtotal: Number(orderData.subtotal || 0),
+      shipping: Number(orderData.shipping || orderData.shippingCost || 0),
+      total: Number(orderData.total || 0),
       status: orderData.status || 'pending',
     };
 
