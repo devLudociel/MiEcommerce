@@ -112,10 +112,14 @@ export const POST: APIRoute = async ({ request }) => {
     );
   } catch (error: any) {
     console.error('❌ Error creando Payment Intent:', error);
+
+    // En producción, no exponer detalles del error
+    const errorMessage = import.meta.env.PROD
+      ? 'Error procesando pago'
+      : (error.message || 'Error procesando pago');
+
     return new Response(
-      JSON.stringify({
-        error: error.message || 'Error procesando pago',
-      }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 500,
         headers: { 'Content-Type': 'application/json' },

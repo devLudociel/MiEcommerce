@@ -1,21 +1,61 @@
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../../lib/firebase-admin';
+import { verifyAdminAuth } from '../../../lib/authMiddleware';
+import {
+  validationErrorResponse,
+  unauthorizedResponse,
+  forbiddenResponse,
+  notFoundResponse,
+  successResponse,
+  errorResponse,
+} from '../../../lib/errorHandler';
 
-export const GET: APIRoute = async ({ url }) => {
-  const id = url.searchParams.get('id');
-  if (!id) {
-    return new Response(JSON.stringify({ error: 'Falta id' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
-  }
+/**
+ * Obtiene los detalles de un pedido (solo admin)
+ *
+ * SEGURIDAD:
+ * - Requiere autenticación con Firebase ID Token
+ * - Requiere permisos de administrador (custom claim: admin = true)
+ *
+ * USO:
+ * GET /api/admin/get-order?id=order123
+ * Headers: { Authorization: "Bearer <idToken>" }
+ */
+export const GET: APIRoute = async ({ request, url }) => {
   try {
+    // 1. Verificar autenticación y permisos de admin
+    const authResult = await verifyAdminAuth(request);
+
+    if (!authResult.success) {
+      if (authResult.error?.includes('token') || authResult.error?.includes('autenticación')) {
+        return unauthorizedResponse(authResult.error);
+      }
+      return forbiddenResponse(authResult.error);
+    }
+
+    // 2. Validar parámetros
+    const id = url.searchParams.get('id');
+    if (!id) {
+      return validationErrorResponse('Falta el parámetro "id"');
+    }
+
+    // 3. Obtener el pedido
     const db = getAdminDb();
     const snap = await db.collection('orders').doc(String(id)).get();
+
     if (!snap.exists) {
-      return new Response(JSON.stringify({ error: 'Pedido no encontrado' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+      return notFoundResponse('Pedido no encontrado');
     }
+
     const order = { id: snap.id, ...snap.data() };
-    return new Response(JSON.stringify({ order }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-  } catch (e: any) {
-    return new Response(JSON.stringify({ error: e?.message || 'Error obteniendo pedido' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+
+    console.log(
+      `[admin/get-order] Pedido ${id} consultado por ${authResult.decodedToken?.email}`
+    );
+
+    return successResponse({ order });
+  } catch (error: any) {
+    return errorResponse(error, 'admin-get-order');
   }
 };
 

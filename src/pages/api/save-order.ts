@@ -252,12 +252,14 @@ export const POST: APIRoute = async ({ request }) => {
     );
   } catch (error: any) {
     console.error('API save-order: Error:', error);
-    console.error('API save-order: Stack:', error?.stack);
+
+    // En producción, no exponer stack traces
+    const errorResponse = import.meta.env.PROD
+      ? { error: 'Error guardando pedido' }
+      : { error: error.message || 'Error guardando pedido', details: error?.stack };
+
     return new Response(
-      JSON.stringify({
-        error: error.message || 'Error guardando pedido',
-        details: error?.stack,
-      }),
+      JSON.stringify(errorResponse),
       {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
