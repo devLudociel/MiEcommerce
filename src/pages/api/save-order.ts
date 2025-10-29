@@ -21,11 +21,21 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
   } catch {}
+  const isProd = import.meta.env.PROD === true;
   console.log('API save-order: Solicitud recibida');
 
   try {
     const orderData = await request.json();
-    console.log('API save-order: Datos recibidos:', JSON.stringify(orderData, null, 2));
+    if (isProd) {
+      const redacted = {
+        itemsCount: Array.isArray(orderData.items) ? orderData.items.length : 0,
+        total: typeof orderData.total === 'number' ? orderData.total : undefined,
+        hasShippingInfo: Boolean(orderData?.shippingInfo),
+      };
+      console.log('API save-order: Datos recibidos (redacted):', redacted);
+    } else {
+      console.log('API save-order: Datos recibidos:', JSON.stringify(orderData, null, 2));
+    }
 
     // Validar datos básicos
     if (
