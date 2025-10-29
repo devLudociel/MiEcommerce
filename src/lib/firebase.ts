@@ -21,7 +21,7 @@ import {
 import type { Firestore, DocumentData, QuerySnapshot } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import type { FirebaseStorage, StorageReference, UploadResult } from 'firebase/storage';
-import { getAuth } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import type { Auth } from 'firebase/auth';
 import { getAnalytics } from 'firebase/analytics';
 import type { Analytics } from 'firebase/analytics';
@@ -56,6 +56,10 @@ export const storage: FirebaseStorage = getStorage(app);
 
 // Initialize Firebase Authentication
 export const auth: Auth = getAuth(app);
+try {
+  // Persist session across reloads (incluye resultado de redirect)
+  await setPersistence(auth, browserLocalPersistence);
+} catch {}
 try {
   // Mostrar emails en español (restablecer contraseña, etc.)
   // Nota: puedes sobreescribir por usuario si lo necesitas
