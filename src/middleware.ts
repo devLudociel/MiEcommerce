@@ -18,15 +18,20 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     // Content Security Policy (estricta en producción)
     const isProd = import.meta.env.PROD === true;
     if (isProd) {
+      const authDomain = (import.meta as any).env.PUBLIC_FIREBASE_AUTH_DOMAIN as string | undefined;
+      const firebaseAuthFrame = authDomain ? `https://${authDomain}` : null;
       const csp = [
         "default-src 'self'",
         "base-uri 'self'",
         "form-action 'self'",
         // Stripe
         "script-src 'self' https://js.stripe.com",
-        "frame-src 'self' https://js.stripe.com",
+        // Frames (Stripe + Firebase Auth + Google accounts)
+        ["frame-src 'self' https://js.stripe.com https://accounts.google.com", firebaseAuthFrame]
+          .filter(Boolean)
+          .join(' '),
         // Conexiones a APIs necesarias (Stripe, Firebase)
-        "connect-src 'self' https://api.stripe.com https://r.stripe.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com",
+        "connect-src 'self' https://api.stripe.com https://r.stripe.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://accounts.google.com https://www.googleapis.com https://apis.google.com https://oauth2.googleapis.com",
         // Recursos estáticos
         "img-src 'self' https: data:",
         // Nota: Tailwind y estilos inline (Astro/React) requieren 'unsafe-inline'. Para endurecer más, usar hashes.
