@@ -2,6 +2,9 @@
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { getAdminDb } from '../../lib/firebase-admin';
+import { validateCsrfToken, csrfErrorResponse } from '../../lib/csrfProtection';
+import { validateSafeId, validateRange } from '../../lib/inputSanitization';
+import { rateLimit } from '../../lib/rateLimit';
 
 const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
   apiVersion: '2024-12-18.acacia',
@@ -11,30 +14,66 @@ const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
  * Crea un Payment Intent de Stripe asociado a un pedido
  *
  * SEGURIDAD:
+ * - Protección CSRF
+ * - Rate limiting
  * - Valida que el orderId exista en Firestore
  * - Valida que el monto coincida con el total del pedido
  * - Previene manipulación de montos
  */
 export const POST: APIRoute = async ({ request }) => {
+  // 1. CSRF Protection
+  const csrfResult = validateCsrfToken(request);
+  if (!csrfResult.valid) {
+    console.warn('[create-payment-intent] CSRF validation failed:', csrfResult.error);
+    return csrfErrorResponse(csrfResult.error);
+  }
+
+  // 2. Rate limiting: 10 requests por minuto por IP
+  try {
+    const { ok, remaining, resetAt } = await rateLimit(request, 'create-payment-intent', {
+      intervalMs: 60_000,
+      max: 10,
+    });
+    if (!ok) {
+      return new Response(JSON.stringify({ error: 'Demasiadas solicitudes. Intenta de nuevo más tarde' }), {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RateLimit-Remaining': String(remaining),
+          'X-RateLimit-Reset': String(resetAt),
+        },
+      });
+    }
+  } catch {}
+
   try {
     const { orderId, amount, currency = 'eur' } = await request.json();
 
-    // Validar datos requeridos
-    if (!orderId) {
-      return new Response(JSON.stringify({ error: 'Order ID es requerido' }), {
+    // 3. Validar orderId
+    if (!orderId || !validateSafeId(orderId)) {
+      return new Response(JSON.stringify({ error: 'Order ID inválido' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    if (!amount || amount < 0.5) {
+    // 4. Validar amount
+    if (!amount || !validateRange(amount, { min: 0.5, max: 1000000 })) {
       return new Response(JSON.stringify({ error: 'Monto inválido. Mínimo €0.50' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // Validar que el pedido existe y obtener el monto real
+    // 5. Validar currency (solo EUR)
+    if (currency !== 'eur') {
+      return new Response(JSON.stringify({ error: 'Moneda no soportada' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 6. Validar que el pedido existe y obtener el monto real
     const db = getAdminDb();
     const orderRef = db.collection('orders').doc(orderId);
     const orderSnap = await orderRef.get();

@@ -3,11 +3,29 @@ import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { rateLimit } from '../../lib/rateLimit';
+import { validateCsrfToken, csrfErrorResponse } from '../../lib/csrfProtection';
+import {
+  sanitizeString,
+  sanitizeEmail,
+  sanitizeName,
+  sanitizeAddress,
+  sanitizePhone,
+  sanitizePostalCode,
+  validateSafeId,
+  validateRange,
+} from '../../lib/inputSanitization';
 
 const CASHBACK_PERCENTAGE = 0.05; // 5% de cashback
 
 export const POST: APIRoute = async ({ request }) => {
-  // Rate limit básico: 10/min por IP para guardar orden
+  // 1. CSRF Protection
+  const csrfResult = validateCsrfToken(request);
+  if (!csrfResult.valid) {
+    console.warn('[save-order] CSRF validation failed:', csrfResult.error);
+    return csrfErrorResponse(csrfResult.error);
+  }
+
+  // 2. Rate limiting: 10/min por IP para guardar orden
   try {
     const { ok, remaining, resetAt } = await rateLimit(request, 'save-order', { intervalMs: 60_000, max: 10 });
     if (!ok) {
@@ -25,9 +43,9 @@ export const POST: APIRoute = async ({ request }) => {
 
   try {
     const orderData = await request.json();
-    console.log('API save-order: Datos recibidos:', JSON.stringify(orderData, null, 2));
+    console.log('API save-order: Datos recibidos');
 
-    // Validar datos básicos
+    // 3. Validar datos básicos
     if (
       !Array.isArray(orderData.items) ||
       orderData.items.length === 0 ||
@@ -36,6 +54,77 @@ export const POST: APIRoute = async ({ request }) => {
     ) {
       console.error('API save-order: Datos incompletos o inválidos');
       return new Response(JSON.stringify({ error: 'Datos de pedido incompletos' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 4. Sanitizar shippingInfo
+    const sanitizedShippingInfo = {
+      name: sanitizeName(orderData.shippingInfo.name || '', { maxLength: 100 }),
+      email: sanitizeEmail(orderData.shippingInfo.email || ''),
+      phone: sanitizePhone(orderData.shippingInfo.phone || ''),
+      address: sanitizeAddress(orderData.shippingInfo.address || '', { maxLength: 200 }),
+      city: sanitizeName(orderData.shippingInfo.city || '', { maxLength: 100 }),
+      province: sanitizeName(orderData.shippingInfo.province || '', { maxLength: 100 }),
+      postalCode: sanitizePostalCode(orderData.shippingInfo.postalCode || ''),
+      notes: orderData.shippingInfo.notes
+        ? sanitizeString(orderData.shippingInfo.notes, { maxLength: 500 })
+        : undefined,
+    };
+
+    // Validar que los campos sanitizados no estén vacíos
+    if (
+      !sanitizedShippingInfo.name ||
+      !sanitizedShippingInfo.email ||
+      !sanitizedShippingInfo.address ||
+      !sanitizedShippingInfo.city ||
+      !sanitizedShippingInfo.province ||
+      !sanitizedShippingInfo.postalCode
+    ) {
+      console.error('API save-order: Shipping info inválida después de sanitización');
+      return new Response(JSON.stringify({ error: 'Información de envío inválida' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 5. Validar userId si está presente
+    if (orderData.userId && orderData.userId !== 'guest') {
+      if (!validateSafeId(orderData.userId)) {
+        console.error('API save-order: userId inválido');
+        return new Response(JSON.stringify({ error: 'ID de usuario inválido' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // 6. Validar couponId si está presente
+    if (orderData.couponId && !validateSafeId(orderData.couponId)) {
+      console.error('API save-order: couponId inválido');
+      return new Response(JSON.stringify({ error: 'ID de cupón inválido' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 7. Validar montos numéricos
+    const total = Number(orderData.total);
+    const subtotal = Number(orderData.subtotal) || 0;
+    const shipping = Number(orderData.shipping) || 0;
+    const walletDiscount = Number(orderData.walletDiscount) || 0;
+    const couponDiscount = Number(orderData.couponDiscount) || 0;
+
+    if (
+      !validateRange(total, { min: 0, max: 1000000 }) ||
+      !validateRange(subtotal, { min: 0, max: 1000000 }) ||
+      !validateRange(shipping, { min: 0, max: 10000 }) ||
+      !validateRange(walletDiscount, { min: 0, max: 100000 }) ||
+      !validateRange(couponDiscount, { min: 0, max: 100000 })
+    ) {
+      console.error('API save-order: Montos inválidos');
+      return new Response(JSON.stringify({ error: 'Montos de pedido inválidos' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -59,22 +148,43 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    // 8. Sanitizar items del pedido
     const sanitizedItems = Array.isArray(orderData.items)
       ? orderData.items.map((i: any) => ({
-          ...i,
-          price: Number(i?.price) || 0,
-          quantity: Number(i?.quantity) || 0,
+          id: validateSafeId(String(i?.id || '')) ? String(i.id) : '',
+          name: sanitizeName(String(i?.name || ''), { maxLength: 200 }),
+          price: Math.max(0, Number(i?.price) || 0),
+          quantity: Math.max(0, Math.min(1000, Number(i?.quantity) || 0)), // Max 1000 unidades
+          imageUrl: sanitizeString(String(i?.imageUrl || ''), { maxLength: 500 }),
         }))
       : [];
+
+    // Validar que todos los items tengan datos válidos
+    if (sanitizedItems.some((item) => !item.id || !item.name || item.price <= 0 || item.quantity <= 0)) {
+      console.error('API save-order: Items de pedido inválidos');
+      return new Response(JSON.stringify({ error: 'Items de pedido inválidos' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 9. Guardar pedido con datos sanitizados
     const docRef = await adminDb.collection('orders').add({
-      ...orderData,
       items: sanitizedItems,
-      subtotal: Number(orderData.subtotal) || 0,
-      shipping: Number(orderData.shipping) || 0,
-      total: Number(orderData.total) || 0,
+      shippingInfo: sanitizedShippingInfo,
+      subtotal,
+      shipping,
+      total,
+      userId: orderData.userId && orderData.userId !== 'guest' ? String(orderData.userId) : 'guest',
+      couponId: orderData.couponId ? String(orderData.couponId) : null,
+      couponCode: orderData.couponCode ? sanitizeString(String(orderData.couponCode), { maxLength: 50 }) : null,
+      couponDiscount,
+      walletDiscount,
+      usedWallet: Boolean(orderData.usedWallet),
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
-      status: orderData.status || 'pending',
+      status: orderData.status === 'paid' ? 'paid' : 'pending', // Solo permitir 'paid' o 'pending'
+      paymentStatus: orderData.paymentStatus === 'paid' ? 'paid' : 'pending',
     });
 
     console.log('API save-order: Pedido guardado con ID:', docRef.id);
