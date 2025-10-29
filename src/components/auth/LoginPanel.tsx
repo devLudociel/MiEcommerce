@@ -3,6 +3,7 @@ import {
   GoogleAuthProvider,
   GithubAuthProvider,
   signInWithPopup,
+  getRedirectResult,
   signInWithRedirect,
   onAuthStateChanged,
   signOut,
@@ -29,6 +30,22 @@ export default function LoginPanel() {
       else setUserEmail(null);
     });
     return () => unsub();
+  }, []);
+
+  // Completar login si venimos de signInWithRedirect
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getRedirectResult(auth);
+        if (res?.user) {
+          await redirectAfterLogin();
+        }
+      } catch (e: any) {
+        setError(mapAuthError(e));
+      }
+    })();
+    // no deps: sólo al cargar
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function signInWithGoogle(selectAccount = false) {
