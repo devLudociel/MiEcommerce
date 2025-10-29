@@ -24,8 +24,26 @@ export default function LoginPanel() {
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<'login' | 'register' | 'magic'>('login');
 
+  // Debug env/context on mount
+  useEffect(() => {
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      console.log('[LoginPanel] env', {
+        authDomain: (import.meta as any).env.PUBLIC_FIREBASE_AUTH_DOMAIN,
+        projectId: (import.meta as any).env.PUBLIC_FIREBASE_PROJECT_ID,
+        appUrl: (import.meta as any).env.PUBLIC_APP_URL,
+        origin,
+      });
+    } catch {}
+  }, []);
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
+      console.log('[LoginPanel] onAuthStateChanged', {
+        hasUser: !!user,
+        email: user?.email || null,
+        uid: user?.uid || null,
+      });
       if (user) setUserEmail(user.email || null);
       else setUserEmail(null);
     });
@@ -36,11 +54,20 @@ export default function LoginPanel() {
   useEffect(() => {
     (async () => {
       try {
+        console.log('[LoginPanel] checking getRedirectResult...');
         const res = await getRedirectResult(auth);
+        console.log('[LoginPanel] getRedirectResult result', {
+          hasResult: !!res,
+          providerId: (res as any)?.providerId || null,
+          op: (res as any)?.operationType || null,
+          hasUser: !!res?.user,
+          email: res?.user?.email || null,
+        });
         if (res?.user) {
           await redirectAfterLogin();
         }
       } catch (e: any) {
+        console.error('[LoginPanel] getRedirectResult error', { code: e?.code, message: e?.message });
         setError(mapAuthError(e));
       }
     })();
