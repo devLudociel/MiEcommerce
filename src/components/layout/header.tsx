@@ -184,18 +184,29 @@ const Header: React.FC<HeaderProps> = () => {
 
   const { user, email, displayName, isAuthenticated, logout } = useAuth();
 
-  // Check if user is admin
+  // Check if user is admin (allowlist OR custom claim)
   useEffect(() => {
-    if (email) {
+    let cancelled = false;
+    (async () => {
       const adminEmails = (import.meta.env.PUBLIC_ADMIN_EMAILS || '')
         .split(',')
         .map((s: string) => s.trim().toLowerCase())
         .filter(Boolean);
-      setIsAdmin(adminEmails.includes(email.toLowerCase()));
-    } else {
-      setIsAdmin(false);
-    }
-  }, [email]);
+      const byEmail = email ? adminEmails.includes(email.toLowerCase()) : false;
+      let byClaim = false;
+      try {
+        if (user) {
+          const { getIdTokenResult } = await import('firebase/auth');
+          const token = await getIdTokenResult(user, true);
+          byClaim = !!(token.claims as any)?.admin;
+        }
+      } catch {}
+      if (!cancelled) setIsAdmin(byEmail || byClaim);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [email, user]);
 
   // Categorías con la estructura actualizada
   const categories: MenuCategory[] = [

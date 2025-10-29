@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, getIdTokenResult } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 
 interface Props {
@@ -27,7 +27,13 @@ export default function RequireAdmin({ children, redirectTo = '/account' }: Prop
       try {
         const email = (user.email || '').toLowerCase();
         const allowedByEmail = !!email && adminEmails.includes(email);
-        if (allowedByEmail) {
+        let allowedByClaim = false;
+        try {
+          const token = await getIdTokenResult(user, true);
+          allowedByClaim = !!(token.claims as any)?.admin;
+          console.log('[RequireAdmin] claims', token.claims);
+        } catch {}
+        if (allowedByEmail || allowedByClaim) {
           setAllowed(true);
         } else {
           if (typeof window !== 'undefined') {
