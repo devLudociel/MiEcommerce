@@ -8,7 +8,8 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.headers.set('X-Frame-Options', 'DENY');
     res.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-    res.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+    // Permitir popups OAuth (Firebase/Google) conservando aislamiento básico
+    res.headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
     res.headers.set('X-Permitted-Cross-Domain-Policies', 'none');
     // HSTS solo en https/prod (no forzamos en dev)
     if (context.url.protocol === 'https:') {
