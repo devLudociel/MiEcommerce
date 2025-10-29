@@ -32,7 +32,7 @@ export const shippingInfoSchema = z.object({
     .min(9, 'El teléfono debe tener al menos 9 dígitos')
     .max(15, 'El teléfono es demasiado largo')
     .regex(
-      /^(\+34|0034|34)?[\s\-]?[6-9]\d{2}[\s\-]?\d{2}[\s\-]?\d{2}[\s\-]?\d{2}$/,
+      /^(\+34|0034|34)?[\s-]?[6-9]\d{2}[\s-]?\d{2}[\s-]?\d{2}[\s-]?\d{2}$/,
       'Teléfono español inválido (ej: 612 345 678 o +34 612 345 678)'
     ),
 
@@ -213,10 +213,7 @@ export const productSchema = z
 
     images: z.array(z.string().url('URL de imagen inválida')).default([]),
 
-    customizerType: z
-      .enum(['shirt', 'frame', 'resin', 'default'])
-      .default('default')
-      .optional(),
+    customizerType: z.enum(['shirt', 'frame', 'resin', 'default']).default('default').optional(),
   })
   .refine(
     (data) => {
@@ -258,7 +255,10 @@ export const couponSchema = z
       .string()
       .min(3, 'El código debe tener al menos 3 caracteres')
       .max(20, 'El código es demasiado largo')
-      .regex(/^[A-Z0-9_-]+$/, 'El código solo puede contener letras mayúsculas, números, guiones y guiones bajos')
+      .regex(
+        /^[A-Z0-9_-]+$/,
+        'El código solo puede contener letras mayúsculas, números, guiones y guiones bajos'
+      )
       .transform((val) => val.toUpperCase().trim()),
 
     description: z
@@ -312,10 +312,7 @@ export const couponSchema = z
       .multipleOf(0.01, 'La compra mínima debe tener máximo 2 decimales')
       .optional(),
 
-    userSpecific: z
-      .array(z.string().email('Email de usuario inválido'))
-      .default([])
-      .optional(),
+    userSpecific: z.array(z.string().email('Email de usuario inválido')).default([]).optional(),
 
     createdAt: z.date().optional(),
     updatedAt: z.date().optional(),
@@ -385,7 +382,7 @@ export const emailSchema = z.string().email('Email inválido').toLowerCase().tri
 export const phoneSchema = z
   .string()
   .regex(
-    /^(\+34|0034|34)?[\s\-]?[6-9]\d{2}[\s\-]?\d{2}[\s\-]?\d{2}[\s\-]?\d{2}$/,
+    /^(\+34|0034|34)?[\s-]?[6-9]\d{2}[\s-]?\d{2}[\s-]?\d{2}[\s-]?\d{2}$/,
     'Teléfono español inválido'
   );
 

@@ -19,7 +19,7 @@ function createLocalStorageMock() {
 describe('wishlistStore', () => {
   beforeEach(() => {
     vi.resetModules();
-    const listeners: Record<string, Function[]> = {};
+    const listeners: Record<string, Array<(e: any) => void>> = {};
     (globalThis as any).window = {
       addEventListener: vi.fn((evt: string, cb: any) => {
         listeners[evt] = listeners[evt] || [];
@@ -62,4 +62,3 @@ describe('wishlistStore', () => {
     expect(getWishlist()).toEqual([]);
   });
 });
-
