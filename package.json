@@ -15,8 +15,19 @@
     "test:watch": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:unit": "vitest run tests/unit",
+    "test:unit:watch": "vitest tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:integration:watch": "vitest tests/integration",
+    "test:security": "./tests/run-all-tests.sh",
+    "test:security:unit": "./tests/run-all-tests.sh --unit",
+    "test:security:integration": "./tests/run-all-tests.sh --integration",
+    "test:security:e2e": "./tests/run-all-tests.sh --e2e",
+    "test:security:coverage": "./tests/run-all-tests.sh --coverage",
     "e2e": "playwright test",
-    "e2e:ui": "playwright test --ui"
+    "e2e:ui": "playwright test --ui",
+    "e2e:security": "playwright test tests/e2e/admin-security.spec.ts",
+    "e2e:security:ui": "playwright test tests/e2e/admin-security.spec.ts --ui"
   },
   "dependencies": {
     "@astrojs/react": "^4.3.0",
