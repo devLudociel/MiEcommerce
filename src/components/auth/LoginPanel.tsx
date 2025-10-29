@@ -3,8 +3,6 @@ import {
   GoogleAuthProvider,
   GithubAuthProvider,
   signInWithPopup,
-  getRedirectResult,
-  signInWithRedirect,
   onAuthStateChanged,
   signOut,
   createUserWithEmailAndPassword,
@@ -50,30 +48,7 @@ export default function LoginPanel() {
     return () => unsub();
   }, []);
 
-  // Completar login si venimos de signInWithRedirect
-  useEffect(() => {
-    (async () => {
-      try {
-        console.log('[LoginPanel] checking getRedirectResult...');
-        const res = await getRedirectResult(auth);
-        console.log('[LoginPanel] getRedirectResult result', {
-          hasResult: !!res,
-          providerId: (res as any)?.providerId || null,
-          op: (res as any)?.operationType || null,
-          hasUser: !!res?.user,
-          email: res?.user?.email || null,
-        });
-        if (res?.user) {
-          await redirectAfterLogin();
-        }
-      } catch (e: any) {
-        console.error('[LoginPanel] getRedirectResult error', { code: e?.code, message: e?.message });
-        setError(mapAuthError(e));
-      }
-    })();
-    // no deps: sólo al cargar
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Flow de redirect deshabilitado: solo popups.
 
   async function signInWithGoogle(selectAccount = false) {
     try {
@@ -82,22 +57,26 @@ export default function LoginPanel() {
       const provider = new GoogleAuthProvider();
       if (selectAccount) provider.setCustomParameters({ prompt: 'select_account' });
       try {
+        console.log('[LoginPanel] signInWithGoogle via popup: start');
         await signInWithPopup(auth, provider);
+        console.log('[LoginPanel] signInWithGoogle via popup: success');
       } catch (e: any) {
         const code = e?.code || '';
+        console.warn('[LoginPanel] signInWithGoogle popup error', { code, message: e?.message });
         if (
           code.includes('auth/popup-blocked') ||
           code.includes('auth/popup-closed-by-user') ||
           code.includes('auth/cancelled-popup-request')
         ) {
-          await signInWithRedirect(auth, provider);
+          setError('La ventana de Google se bloqueó o se cerró. Permite pop-ups y vuelve a intentarlo.');
           return;
         }
         throw e;
       }
       await redirectAfterLogin();
     } catch (err: any) {
-      setError(err?.message || 'Error iniciando sesión');
+      console.error('[LoginPanel] signInWithGoogle fatal error', { code: err?.code, message: err?.message });
+      setError(err?.message || 'Error iniciando sesión con Google');
     } finally {
       setLoading(false);
     }
@@ -109,24 +88,25 @@ export default function LoginPanel() {
       setLoading(true);
       const provider = new GithubAuthProvider();
       try {
+        console.log('[LoginPanel] signInWithGithub via popup: start');
         await signInWithPopup(auth, provider);
+        console.log('[LoginPanel] signInWithGithub via popup: success');
       } catch (e: any) {
         const code = e?.code || '';
-        const isProd = (import.meta as any).env.PROD === true;
+        console.warn('[LoginPanel] signInWithGithub popup error', { code, message: e?.message });
         if (
-          isProd && (
-            code.includes('auth/popup-blocked') ||
-            code.includes('auth/popup-closed-by-user') ||
-            code.includes('auth/cancelled-popup-request')
-          )
+          code.includes('auth/popup-blocked') ||
+          code.includes('auth/popup-closed-by-user') ||
+          code.includes('auth/cancelled-popup-request')
         ) {
-          await signInWithRedirect(auth, provider);
+          setError('La ventana de GitHub se bloqueó o se cerró. Permite pop-ups y vuelve a intentarlo.');
           return;
         }
         throw e;
       }
       await redirectAfterLogin();
     } catch (err: any) {
+      console.error('[LoginPanel] signInWithGithub fatal error', { code: err?.code, message: err?.message });
       setError(err?.message || 'Error iniciando sesión con GitHub');
     } finally {
       setLoading(false);
@@ -353,3 +333,4 @@ export default function LoginPanel() {
     </section>
   );
 }
+
