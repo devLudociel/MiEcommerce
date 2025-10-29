@@ -4,6 +4,7 @@ import { getAdminApp, getAdminDb } from '../../../lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
 import { verifyAdminAuth } from '../../../lib/authMiddleware';
+import { rateLimit } from '../../../lib/rateLimit';
 import {
   validationErrorResponse,
   unauthorizedResponse,
@@ -40,6 +41,33 @@ const SETUP_DISABLED = import.meta.env.ADMIN_SETUP_DISABLED === 'true';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
+    // Rate limiting más estricto: 5 intentos por hora
+    // Este endpoint es crítico para la seguridad
+    const rateLimitResult = await rateLimit(request, 'admin-set-claims', {
+      intervalMs: 3600_000, // 1 hora
+      max: 5,
+      blockDuration: 7200_000, // 2 horas de bloqueo si abusa
+    });
+
+    if (!rateLimitResult.ok) {
+      return new Response(
+        JSON.stringify({
+          error: rateLimitResult.blocked
+            ? 'IP bloqueada por intentos excesivos de acceso a endpoint crítico'
+            : 'Demasiadas solicitudes a este endpoint. Intenta más tarde',
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-RateLimit-Remaining': String(rateLimitResult.remaining),
+            'X-RateLimit-Reset': String(rateLimitResult.resetAt),
+            'Retry-After': String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)),
+          },
+        }
+      );
+    }
+
     const { email, secret, remove } = await request.json();
 
     if (!email) {

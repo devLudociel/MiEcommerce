@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { verifyAdminAuth } from '../../../lib/authMiddleware';
+import { rateLimit } from '../../../lib/rateLimit';
 import {
   validationErrorResponse,
   unauthorizedResponse,
@@ -25,7 +26,32 @@ import {
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
-    // 1. Verificar autenticación y permisos de admin
+    // 1. Rate limiting: 20 requests por minuto por IP
+    const rateLimitResult = await rateLimit(request, 'admin-update-order-status', {
+      intervalMs: 60_000,
+      max: 20,
+    });
+
+    if (!rateLimitResult.ok) {
+      return new Response(
+        JSON.stringify({
+          error: rateLimitResult.blocked
+            ? 'IP bloqueada temporalmente por exceso de solicitudes'
+            : 'Demasiadas solicitudes. Intenta de nuevo más tarde',
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-RateLimit-Remaining': String(rateLimitResult.remaining),
+            'X-RateLimit-Reset': String(rateLimitResult.resetAt),
+            'Retry-After': String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)),
+          },
+        }
+      );
+    }
+
+    // 2. Verificar autenticación y permisos de admin
     const authResult = await verifyAdminAuth(request);
 
     if (!authResult.success) {
