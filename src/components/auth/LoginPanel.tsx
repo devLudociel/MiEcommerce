@@ -3,6 +3,7 @@ import {
   GoogleAuthProvider,
   GithubAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
   onAuthStateChanged,
   signOut,
   createUserWithEmailAndPassword,
@@ -36,7 +37,20 @@ export default function LoginPanel() {
       setLoading(true);
       const provider = new GoogleAuthProvider();
       if (selectAccount) provider.setCustomParameters({ prompt: 'select_account' });
-      await signInWithPopup(auth, provider);
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (e: any) {
+        const code = e?.code || '';
+        if (
+          code.includes('auth/popup-blocked') ||
+          code.includes('auth/popup-closed-by-user') ||
+          code.includes('auth/cancelled-popup-request')
+        ) {
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+        throw e;
+      }
       await redirectAfterLogin();
     } catch (err: any) {
       setError(err?.message || 'Error iniciando sesión');
