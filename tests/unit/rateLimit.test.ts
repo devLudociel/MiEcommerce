@@ -16,15 +16,17 @@ describe('rateLimit', () => {
       const request = new Request('http://localhost/test', {
         method: 'GET',
         headers: {
-          'x-forwarded-for': '192.168.1.1',
+          'x-forwarded-for': '192.168.1.100', // Use unique IP
         },
       });
 
+      const max = 30;
+
       // Make 5 requests (limit is 30 by default)
       for (let i = 0; i < 5; i++) {
-        const result = await rateLimit(request, 'test-endpoint');
+        const result = await rateLimit(request, 'test-endpoint-unique', { max });
         expect(result.ok).toBe(true);
-        expect(result.remaining).toBe(25 - i);
+        expect(result.remaining).toBe(max - (i + 1));
       }
     });
 
