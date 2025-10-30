@@ -723,7 +723,7 @@ const SpecialOffers: React.FC<SpecialOffersProps> = ({
                       <button
                         onClick={() => {
                           addToCart({
-                            id: offer.id,
+                            id: String(offer.id),
                             name: offer.title,
                             price: offer.salePrice,
                             quantity: 1,
