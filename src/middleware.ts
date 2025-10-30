@@ -45,11 +45,11 @@ function getContentSecurityPolicy(): string {
   if (isDev) {
     return [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.google.com https://*.googleapis.com https://js.stripe.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.google.com https://*.googleapis.com https://www.googletagmanager.com https://js.stripe.com",
       "style-src 'self' 'unsafe-inline' https://*.googleapis.com",
       "img-src 'self' data: https: blob:",
       "font-src 'self' data: https://*.googleapis.com https://*.gstatic.com",
-      "connect-src 'self' ws: wss: https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com",
+      "connect-src 'self' ws: wss: https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://www.google-analytics.com https://*.googletagmanager.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com",
       "frame-src 'self' https://*.firebaseapp.com https://js.stripe.com https://accounts.google.com https://*.google.com",
       "object-src 'none'",
       "base-uri 'self'",
@@ -59,11 +59,11 @@ function getContentSecurityPolicy(): string {
 
   return [
     "default-src 'self'",
-    "script-src 'self' https://*.google.com https://*.googleapis.com https://js.stripe.com",
+    "script-src 'self' https://*.google.com https://*.googleapis.com https://www.googletagmanager.com https://js.stripe.com",
     "style-src 'self' 'unsafe-inline' https://*.googleapis.com",
-    "img-src 'self' data: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://*.google.com",
+    "img-src 'self' data: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://*.google.com https://www.google-analytics.com",
     "font-src 'self' data: https://*.googleapis.com https://*.gstatic.com",
-    "connect-src 'self' https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com",
+    "connect-src 'self' https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://www.google-analytics.com https://*.googletagmanager.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com",
     "frame-src 'self' https://*.firebaseapp.com https://js.stripe.com https://accounts.google.com https://*.google.com",
     "object-src 'none'",
     "base-uri 'self'",
