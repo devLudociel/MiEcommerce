@@ -389,6 +389,44 @@ export async function getAllProducts(): Promise<ProductData[]> {
   }
 }
 
+/**
+ * 🎯 Obtener productos marcados como Ofertas Especiales
+ *
+ * Obtiene productos de la colección "products" que están marcados
+ * como ofertas especiales (isSpecialOffer: true) y aún están activos.
+ *
+ * @returns Array de productos de oferta especial con todos sus datos
+ */
+export async function getSpecialOffers(): Promise<any[]> {
+  try {
+    const q = query(
+      collection(db, 'products'),
+      where('isSpecialOffer', '==', true),
+      where('active', '==', true),
+      orderBy('createdAt', 'desc'),
+      limit(20)
+    );
+
+    const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
+    const offers: any[] = [];
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      offers.push({
+        id: doc.id,
+        ...data,
+      });
+    });
+
+    console.log(`✅ ${offers.length} ofertas especiales encontradas`);
+    return offers;
+  } catch (error) {
+    console.error('❌ Error obteniendo ofertas especiales:', error);
+    // Si falla por falta de índice, devolver array vacío
+    return [];
+  }
+}
+
 // ============================================
 // 📦 FUNCIONES PARA PEDIDOS
 // ============================================

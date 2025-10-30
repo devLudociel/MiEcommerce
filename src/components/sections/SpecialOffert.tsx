@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { addToCart } from '../../store/cartStore';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { loadSpecialOffers } from '../../lib/specialOffersMapper';
 
 interface SpecialOffer {
-  id: number;
+  id: string | number;
   title: string;
   description: string;
   originalPrice: number;
@@ -46,10 +47,14 @@ const SpecialOffers: React.FC<SpecialOffersProps> = ({
   title = 'Ofertas Especiales',
   subtitle = 'Aprovecha estos descuentos increíbles antes de que se agoten',
 }) => {
-  const [hoveredOffer, setHoveredOffer] = useState<number | null>(null);
-  const [timeLeft, setTimeLeft] = useState<{ [key: number]: TimeLeft }>({});
+  const [hoveredOffer, setHoveredOffer] = useState<string | number | null>(null);
+  const [timeLeft, setTimeLeft] = useState<{ [key: string | number]: TimeLeft }>({});
   const [currentFeatured, setCurrentFeatured] = useState(0);
   const [autoPlay, setAutoPlay] = useState(true);
+
+  // 🎯 Estado para ofertas especiales cargadas desde Firebase
+  const [offers, setOffers] = useState<SpecialOffer[]>([]);
+  const [loadingOffers, setLoadingOffers] = useState(true);
 
   // ✅ Estado para elementos flotantes - se inicializa solo en el cliente
   const [floatingElements, setFloatingElements] = useState<FloatingElement[]>([]);
@@ -77,8 +82,26 @@ const SpecialOffers: React.FC<SpecialOffersProps> = ({
     setFloatingElements(elements);
   }, []);
 
-  // Ofertas de ejemplo - reemplaza con tus datos reales
-  const offers: SpecialOffer[] = [
+  // 🎯 Cargar ofertas especiales desde Firebase
+  useEffect(() => {
+    const fetchOffers = async () => {
+      try {
+        setLoadingOffers(true);
+        const data = await loadSpecialOffers();
+        setOffers(data);
+      } catch (error) {
+        console.error('Error cargando ofertas:', error);
+        setOffers([]); // Si falla, mostrar array vacío
+      } finally {
+        setLoadingOffers(false);
+      }
+    };
+
+    fetchOffers();
+  }, []);
+
+  // Ofertas de respaldo en caso de que no haya ninguna en Firebase
+  const fallbackOffers: SpecialOffer[] = [
     {
       id: 1,
       title: 'iPhone 15 Pro Max',
@@ -177,7 +200,44 @@ const SpecialOffers: React.FC<SpecialOffersProps> = ({
     },
   ];
 
-  const featuredOffers = offers.filter((offer) => offer.featured);
+  // Usar ofertas de Firebase si están disponibles, sino usar ofertas de respaldo
+  const displayOffers = offers.length > 0 ? offers : fallbackOffers;
+  const featuredOffers = displayOffers.filter((offer) => offer.featured);
+
+  // 🔵 Mostrar indicador de carga
+  if (loadingOffers) {
+    return (
+      <section className="py-24 bg-white relative overflow-hidden">
+        <div className="container mx-auto px-6">
+          <div className="flex flex-col items-center justify-center min-h-[400px]">
+            <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4" />
+            <p className="text-gray-600 text-lg">Cargando ofertas especiales...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // 🟡 Mostrar mensaje si no hay ofertas
+  if (displayOffers.length === 0) {
+    return (
+      <section className="py-24 bg-white relative overflow-hidden">
+        <div className="container mx-auto px-6">
+          <div className="text-center">
+            <h2 className="text-4xl md:text-5xl font-black text-gray-800 mb-4">
+              🎯 Ofertas Especiales
+            </h2>
+            <p className="text-xl text-gray-600 mb-8">
+              Actualmente no hay ofertas especiales disponibles.
+            </p>
+            <p className="text-gray-500">
+              ¡Vuelve pronto para ver nuestras próximas ofertas increíbles!
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   // Countdown timer logic
   const calculateTimeLeft = useCallback((endDate: Date): TimeLeft => {
@@ -198,15 +258,15 @@ const SpecialOffers: React.FC<SpecialOffersProps> = ({
   // Update countdown every second
   useEffect(() => {
     const timer = setInterval(() => {
-      const newTimeLeft: { [key: number]: TimeLeft } = {};
-      offers.forEach((offer) => {
+      const newTimeLeft: { [key: string | number]: TimeLeft } = {};
+      displayOffers.forEach((offer) => {
         newTimeLeft[offer.id] = calculateTimeLeft(offer.endDate);
       });
       setTimeLeft(newTimeLeft);
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [offers.length, calculateTimeLeft]);
+  }, [displayOffers.length, calculateTimeLeft, displayOffers]);
 
   // Auto-rotate featured offers
   useEffect(() => {
@@ -518,7 +578,7 @@ const SpecialOffers: React.FC<SpecialOffersProps> = ({
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {offers
+            {displayOffers
               .filter((offer) => !offer.featured)
               .map((offer, index) => {
                 const urgencyClasses = getUrgencyClasses(

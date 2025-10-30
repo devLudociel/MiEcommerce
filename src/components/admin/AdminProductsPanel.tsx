@@ -75,6 +75,15 @@ interface FirebaseProduct {
   salePrice?: number;
   slug: string;
   active: boolean;
+
+  // 🎯 Campos de Oferta Especial
+  isSpecialOffer?: boolean;
+  specialOfferEndDate?: any; // Timestamp
+  specialOfferDiscount?: number; // Porcentaje (0-100)
+  urgencyLevel?: 'low' | 'medium' | 'high' | 'critical';
+  flashSale?: boolean;
+  maxStock?: number; // Stock máximo para mostrar barra de progreso
+
   createdAt?: any;
   updatedAt?: any;
 }
@@ -98,6 +107,12 @@ const emptyProduct: DraftProduct = {
   salePrice: undefined,
   slug: '',
   active: true,
+  isSpecialOffer: false,
+  specialOfferEndDate: undefined,
+  specialOfferDiscount: undefined,
+  urgencyLevel: 'low',
+  flashSale: false,
+  maxStock: 100,
   customizerType: 'default',
 };
 
@@ -794,6 +809,13 @@ export default function AdminProductsPanel() {
           ...normalized,
           images: [],
           customizerType: draft.customizerType || 'default',
+          // 🎯 Campos de Oferta Especial
+          isSpecialOffer: !!normalized.isSpecialOffer,
+          specialOfferEndDate: normalized.isSpecialOffer && normalized.specialOfferEndDate ? Timestamp.fromDate(new Date(normalized.specialOfferEndDate)) : null,
+          specialOfferDiscount: normalized.isSpecialOffer && normalized.salePrice && normalized.basePrice ? Math.round((1 - normalized.salePrice / normalized.basePrice) * 100) : null,
+          urgencyLevel: normalized.isSpecialOffer ? (normalized.urgencyLevel || 'low') : null,
+          flashSale: normalized.isSpecialOffer ? !!normalized.flashSale : false,
+          maxStock: normalized.isSpecialOffer ? (Number(normalized.maxStock) || 100) : null,
           createdAt,
           updatedAt,
         });
@@ -859,6 +881,13 @@ export default function AdminProductsPanel() {
           active: !!draft.active,
           images: nextImages,
           customizerType: draft.customizerType || 'default',
+          // 🎯 Campos de Oferta Especial
+          isSpecialOffer: !!draft.isSpecialOffer,
+          specialOfferEndDate: draft.isSpecialOffer && draft.specialOfferEndDate ? Timestamp.fromDate(new Date(draft.specialOfferEndDate)) : null,
+          specialOfferDiscount: draft.isSpecialOffer && draft.salePrice && draft.basePrice ? Math.round((1 - draft.salePrice / draft.basePrice) * 100) : null,
+          urgencyLevel: draft.isSpecialOffer ? (draft.urgencyLevel || 'low') : null,
+          flashSale: draft.isSpecialOffer ? !!draft.flashSale : false,
+          maxStock: draft.isSpecialOffer ? (Number(draft.maxStock) || 100) : null,
           updatedAt: Timestamp.now(),
         });
         logger.info('[AdminProductsPanel] Product updated', { productId: id });
@@ -909,6 +938,14 @@ export default function AdminProductsPanel() {
       salePrice: p.salePrice || undefined,
       slug: p.slug,
       active: p.active,
+      customizerType: (p as any).customizerType || 'default',
+      // 🎯 Campos de Oferta Especial
+      isSpecialOffer: p.isSpecialOffer || false,
+      specialOfferEndDate: p.specialOfferEndDate || undefined,
+      specialOfferDiscount: p.specialOfferDiscount || undefined,
+      urgencyLevel: p.urgencyLevel || 'low',
+      flashSale: p.flashSale || false,
+      maxStock: p.maxStock || 100,
     });
     setUploadFiles([]);
     setImagesToRemove([]);
@@ -1402,6 +1439,114 @@ export default function AdminProductsPanel() {
                 )}
               </div>
             )}
+
+            {/* 🎯 SECCIÓN DE OFERTA ESPECIAL */}
+            <div style={{ gridColumn: '1 / -1', marginTop: '20px' }}>
+              <div style={{
+                border: '2px solid #06b6d4',
+                borderRadius: '12px',
+                padding: '20px',
+                backgroundColor: '#f0fdfa'
+              }}>
+                <label className="flex items-center" style={{ gap: '8px', marginBottom: '16px' }}>
+                  <input
+                    type="checkbox"
+                    checked={draft.isSpecialOffer || false}
+                    onChange={(e) =>
+                      setDraft({
+                        ...draft,
+                        isSpecialOffer: e.target.checked,
+                        specialOfferEndDate: e.target.checked ? draft.specialOfferEndDate : undefined,
+                      })
+                    }
+                  />
+                  <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#0e7490' }}>
+                    ⭐ OFERTA ESPECIAL - Aparecerá en la página principal
+                  </span>
+                </label>
+
+                {draft.isSpecialOffer && (
+                  <div style={{ display: 'grid', gap: '16px' }}>
+                    {/* Fecha de fin de oferta */}
+                    <div>
+                      <label>Fecha de fin de la oferta</label>
+                      <input
+                        type="datetime-local"
+                        value={
+                          draft.specialOfferEndDate
+                            ? draft.specialOfferEndDate.toDate
+                              ? new Date(draft.specialOfferEndDate.toDate().getTime() - new Date().getTimezoneOffset() * 60000)
+                                  .toISOString()
+                                  .slice(0, 16)
+                              : new Date(new Date(draft.specialOfferEndDate).getTime() - new Date().getTimezoneOffset() * 60000)
+                                  .toISOString()
+                                  .slice(0, 16)
+                            : ''
+                        }
+                        onChange={(e) => {
+                          const date = e.target.value ? new Date(e.target.value) : undefined;
+                          setDraft({ ...draft, specialOfferEndDate: date });
+                        }}
+                      />
+                      <p style={{ fontSize: '0.875rem', color: '#666', marginTop: '4px' }}>
+                        📅 Los usuarios verán un contador regresivo hasta esta fecha
+                      </p>
+                    </div>
+
+                    {/* Nivel de urgencia */}
+                    <div>
+                      <label>Nivel de Urgencia</label>
+                      <select
+                        value={draft.urgencyLevel || 'low'}
+                        onChange={(e) =>
+                          setDraft({
+                            ...draft,
+                            urgencyLevel: e.target.value as 'low' | 'medium' | 'high' | 'critical',
+                          })
+                        }
+                      >
+                        <option value="low">🟢 Baja - Verde</option>
+                        <option value="medium">🟡 Media - Amarillo</option>
+                        <option value="high">🟠 Alta - Naranja</option>
+                        <option value="critical">🔴 Crítica - Rojo (Parpadeante)</option>
+                      </select>
+                      <p style={{ fontSize: '0.875rem', color: '#666', marginTop: '4px' }}>
+                        Afecta el color del borde y efectos visuales
+                      </p>
+                    </div>
+
+                    {/* Flash Sale */}
+                    <div>
+                      <label className="flex items-center" style={{ gap: '8px' }}>
+                        <input
+                          type="checkbox"
+                          checked={draft.flashSale || false}
+                          onChange={(e) => setDraft({ ...draft, flashSale: e.target.checked })}
+                        />
+                        <span>⚡ Flash Sale (Badge especial)</span>
+                      </label>
+                    </div>
+
+                    {/* Stock máximo (para barra de progreso) */}
+                    <div>
+                      <label>Stock Máximo (para visualización)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={draft.maxStock || 100}
+                        onChange={(e) =>
+                          setDraft({ ...draft, maxStock: parseInt(e.target.value) || 100 })
+                        }
+                        placeholder="100"
+                      />
+                      <p style={{ fontSize: '0.875rem', color: '#666', marginTop: '4px' }}>
+                        Usado para calcular el % de stock restante en la barra de progreso
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
 
             <div style={{ gridColumn: '1 / -1' }}>
               <label>Imágenes</label>
