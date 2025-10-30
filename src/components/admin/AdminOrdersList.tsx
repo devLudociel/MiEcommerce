@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { getAllOrders, updateOrderStatus } from '../../lib/firebase';
+import { getOrdersPaginated, getOrdersCount, updateOrderStatus } from '../../lib/firebase';
 import type { OrderData } from '../../lib/firebase';
+import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import Pagination from '../ui/Pagination';
 
 const statusLabels: Record<string, string> = {
   pending: 'Pendiente',
@@ -20,26 +22,73 @@ const statusColors: Record<string, string> = {
   cancelled: 'bg-red-100 text-red-800',
 };
 
+const PAGE_SIZE = 20;
+
 export default function AdminOrdersList() {
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
 
+  // Estados de paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageHistory, setPageHistory] = useState<(QueryDocumentSnapshot<DocumentData> | null)[]>([null]);
+
   useEffect(() => {
     loadOrders();
-  }, []);
+    loadTotalCount();
+  }, [filter]);
 
-  const loadOrders = async () => {
+  const loadTotalCount = async () => {
+    try {
+      const count = await getOrdersCount(filter);
+      setTotalCount(count);
+    } catch (error) {
+      console.error('Error cargando conteo:', error);
+    }
+  };
+
+  const loadOrders = async (cursor?: QueryDocumentSnapshot<DocumentData> | null) => {
     try {
       setLoading(true);
-      const allOrders = await getAllOrders();
-      setOrders(allOrders);
+      const result = await getOrdersPaginated(PAGE_SIZE, cursor, filter);
+      setOrders(result.data);
+      setLastDoc(result.lastDoc);
+      setHasMore(result.hasMore);
     } catch (error) {
       console.error('Error cargando pedidos:', error);
       alert('Error cargando pedidos');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleNextPage = () => {
+    if (hasMore && lastDoc) {
+      setPageHistory([...pageHistory, lastDoc]);
+      setCurrentPage(currentPage + 1);
+      loadOrders(lastDoc);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      const newHistory = [...pageHistory];
+      newHistory.pop();
+      const previousCursor = newHistory[newHistory.length - 1];
+      setPageHistory(newHistory);
+      setCurrentPage(currentPage - 1);
+      loadOrders(previousCursor);
+    }
+  };
+
+  const handleFilterChange = (newFilter: string) => {
+    setFilter(newFilter);
+    setCurrentPage(1);
+    setPageHistory([null]);
+    setLastDoc(null);
   };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
@@ -71,12 +120,9 @@ export default function AdminOrdersList() {
     }
   };
 
-  const filteredOrders = orders.filter((order) => {
-    if (filter === 'all') return true;
-    return order.status === filter;
-  });
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-  if (loading) {
+  if (loading && orders.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -93,7 +139,9 @@ export default function AdminOrdersList() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-black text-gray-800 mb-2">Gestión de Pedidos</h1>
-          <p className="text-gray-600">Total de pedidos: {orders.length}</p>
+          <p className="text-gray-600">
+            Total de pedidos: <span className="font-bold">{totalCount}</span>
+          </p>
         </div>
 
         {/* Filtros */}
@@ -101,42 +149,40 @@ export default function AdminOrdersList() {
           <h2 className="text-lg font-bold text-gray-800 mb-4">Filtrar por estado:</h2>
           <div className="flex flex-wrap gap-3">
             <button
-              onClick={() => setFilter('all')}
+              onClick={() => handleFilterChange('all')}
               className={`px-4 py-2 rounded-xl font-bold transition-all ${
                 filter === 'all'
                   ? 'bg-gradient-primary text-white shadow-lg scale-105'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Todos ({orders.length})
+              Todos ({totalCount})
             </button>
-            {Object.entries(statusLabels).map(([status, label]) => {
-              const count = orders.filter((o) => o.status === status).length;
-              return (
-                <button
-                  key={status}
-                  onClick={() => setFilter(status)}
-                  className={`px-4 py-2 rounded-xl font-bold transition-all ${
-                    filter === status
-                      ? 'bg-gradient-primary text-white shadow-lg scale-105'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {label} ({count})
-                </button>
-              );
-            })}
+            {Object.entries(statusLabels).map(([status, label]) => (
+              <button
+                key={status}
+                onClick={() => handleFilterChange(status)}
+                className={`px-4 py-2 rounded-xl font-bold transition-all ${
+                  filter === status
+                    ? 'bg-gradient-primary text-white shadow-lg scale-105'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Lista de pedidos */}
-        {filteredOrders.length === 0 ? (
+        {orders.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
             <p className="text-gray-500 text-lg">No hay pedidos para mostrar</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {filteredOrders.map((order) => (
+          <>
+            <div className="space-y-4 mb-6">
+              {orders.map((order) => (
               <div
                 key={order.id}
                 className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-shadow"
@@ -215,7 +261,23 @@ export default function AdminOrdersList() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+
+            {/* Paginación */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                hasMore={hasMore}
+                hasPrevious={currentPage > 1}
+                onNextPage={handleNextPage}
+                onPreviousPage={handlePreviousPage}
+                itemsPerPage={PAGE_SIZE}
+                totalItems={totalCount}
+                isLoading={loading}
+              />
+            </div>
+          </>
         )}
       </div>
     </div>

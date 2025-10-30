@@ -17,8 +17,11 @@ import {
   serverTimestamp,
   setDoc,
   increment,
+  orderBy,
+  startAfter,
+  getCountFromServer,
 } from 'firebase/firestore';
-import type { Firestore, DocumentData, QuerySnapshot } from 'firebase/firestore';
+import type { Firestore, DocumentData, QuerySnapshot, QueryDocumentSnapshot } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import type { FirebaseStorage, StorageReference, UploadResult } from 'firebase/storage';
 import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
@@ -517,6 +520,122 @@ export async function getOrdersByStatus(status: string): Promise<OrderData[]> {
 }
 
 // ============================================
+// 📄 FUNCIONES DE PAGINACIÓN
+// ============================================
+
+export interface PaginatedResult<T> {
+  data: T[];
+  lastDoc: QueryDocumentSnapshot<DocumentData> | null;
+  hasMore: boolean;
+  total?: number;
+}
+
+/**
+ * Obtener total de pedidos (para calcular páginas)
+ */
+export async function getOrdersCount(statusFilter?: string): Promise<number> {
+  try {
+    let q;
+    if (statusFilter && statusFilter !== 'all') {
+      q = query(collection(db, 'orders'), where('status', '==', statusFilter));
+    } else {
+      q = query(collection(db, 'orders'));
+    }
+
+    const snapshot = await getCountFromServer(q);
+    return snapshot.data().count;
+  } catch (error) {
+    console.error('❌ Error obteniendo conteo de pedidos:', error);
+    return 0;
+  }
+}
+
+/**
+ * Obtener pedidos paginados (para admin)
+ *
+ * @param pageSize - Cantidad de pedidos por página (default: 20)
+ * @param lastDoc - Último documento de la página anterior (para paginación)
+ * @param statusFilter - Filtrar por estado (opcional)
+ * @returns Objeto con pedidos, último documento y si hay más páginas
+ */
+export async function getOrdersPaginated(
+  pageSize: number = 20,
+  lastDoc?: QueryDocumentSnapshot<DocumentData> | null,
+  statusFilter?: string
+): Promise<PaginatedResult<OrderData>> {
+  try {
+    // Construir query base
+    let q;
+
+    if (statusFilter && statusFilter !== 'all') {
+      // Filtrar por estado
+      q = query(
+        collection(db, 'orders'),
+        where('status', '==', statusFilter),
+        orderBy('createdAt', 'desc'),
+        limit(pageSize + 1) // Traer uno más para saber si hay siguiente página
+      );
+    } else {
+      // Todos los pedidos
+      q = query(
+        collection(db, 'orders'),
+        orderBy('createdAt', 'desc'),
+        limit(pageSize + 1)
+      );
+    }
+
+    // Si hay un documento anterior, empezar después de él
+    if (lastDoc) {
+      if (statusFilter && statusFilter !== 'all') {
+        q = query(
+          collection(db, 'orders'),
+          where('status', '==', statusFilter),
+          orderBy('createdAt', 'desc'),
+          startAfter(lastDoc),
+          limit(pageSize + 1)
+        );
+      } else {
+        q = query(
+          collection(db, 'orders'),
+          orderBy('createdAt', 'desc'),
+          startAfter(lastDoc),
+          limit(pageSize + 1)
+        );
+      }
+    }
+
+    const querySnapshot = await getDocs(q);
+    const orders: OrderData[] = [];
+    let newLastDoc: QueryDocumentSnapshot<DocumentData> | null = null;
+    let hasMore = false;
+
+    // Si hay más documentos que el límite, hay siguiente página
+    if (querySnapshot.size > pageSize) {
+      hasMore = true;
+    }
+
+    // Procesar documentos (máximo pageSize, ignorar el extra)
+    const docsToProcess = querySnapshot.docs.slice(0, pageSize);
+
+    docsToProcess.forEach((doc) => {
+      orders.push({ id: doc.id, ...doc.data() } as OrderData);
+      newLastDoc = doc;
+    });
+
+    console.log(`✅ ${orders.length} pedidos obtenidos (página), hasMore: ${hasMore}`);
+
+    return {
+      data: orders,
+      lastDoc: newLastDoc,
+      hasMore,
+    };
+  } catch (error) {
+    console.error('❌ Error obteniendo pedidos paginados:', error);
+    throw error;
+  }
+}
+
+// ============================================
 // ⭐ FUNCIONES PARA REVIEWS Y RATINGS
 // ============================================
 
@@ -704,91 +823,27 @@ export async function getWalletBalance(userId: string): Promise<number> {
   }
 }
 
-/**
- * Agregar fondos al wallet (cashback, bonos, etc)
- */
-export async function addWalletFunds(
-  userId: string,
-  amount: number,
-  description: string,
-  orderId?: string
-): Promise<void> {
-  try {
-    const walletRef = doc(db, 'wallets', userId);
-    const wallet = await getOrCreateWallet(userId);
-
-    const newBalance = wallet.balance + amount;
-
-    // Actualizar wallet
-    await updateDoc(walletRef, {
-      balance: newBalance,
-      totalEarned: wallet.totalEarned + amount,
-      updatedAt: serverTimestamp(),
-    });
-
-    // Registrar transacción
-    await addDoc(collection(db, 'wallet_transactions'), {
-      userId,
-      type: 'earn',
-      amount,
-      balance: newBalance,
-      orderId,
-      description,
-      createdAt: serverTimestamp(),
-    });
-
-    console.log(`✅ ${amount} agregados al wallet de ${userId}`);
-  } catch (error) {
-    console.error('❌ Error agregando fondos al wallet:', error);
-    throw error;
-  }
-}
-
-/**
- * Gastar fondos del wallet
- */
-export async function spendWalletFunds(
-  userId: string,
-  amount: number,
-  description: string,
-  orderId?: string
-): Promise<boolean> {
-  try {
-    const walletRef = doc(db, 'wallets', userId);
-    const wallet = await getOrCreateWallet(userId);
-
-    if (wallet.balance < amount) {
-      console.error('❌ Saldo insuficiente en wallet');
-      return false;
-    }
-
-    const newBalance = wallet.balance - amount;
-
-    // Actualizar wallet
-    await updateDoc(walletRef, {
-      balance: newBalance,
-      totalSpent: wallet.totalSpent + amount,
-      updatedAt: serverTimestamp(),
-    });
-
-    // Registrar transacción
-    await addDoc(collection(db, 'wallet_transactions'), {
-      userId,
-      type: 'spend',
-      amount,
-      balance: newBalance,
-      orderId,
-      description,
-      createdAt: serverTimestamp(),
-    });
-
-    console.log(`✅ ${amount} gastados del wallet de ${userId}`);
-    return true;
-  } catch (error) {
-    console.error('❌ Error gastando fondos del wallet:', error);
-    throw error;
-  }
-}
+// ============================================
+// ⚠️ FUNCIONES REMOVIDAS POR SEGURIDAD
+// ============================================
+//
+// Las siguientes funciones fueron removidas porque permiten manipular
+// el saldo del wallet desde el cliente, lo cual es un riesgo de seguridad:
+//
+// - addWalletFunds(): Permitía agregar fondos al wallet desde el cliente
+// - spendWalletFunds(): Permitía gastar fondos del wallet desde el cliente
+//
+// ✅ SOLUCIÓN:
+// Todas las operaciones de modificación del wallet deben hacerse a través
+// de endpoints API protegidos que usan Firebase Admin SDK:
+//
+// - /api/save-order: Maneja débito de wallet y cashback
+// - /api/get-wallet-balance: Obtiene saldo (solo lectura)
+// - /api/get-wallet-transactions: Obtiene historial (solo lectura)
+//
+// Las reglas de Firestore ya previenen la modificación directa del wallet,
+// pero es mejor no exponer estas funciones en el código del cliente.
+// ============================================
 
 /**
  * Obtener historial de transacciones del wallet

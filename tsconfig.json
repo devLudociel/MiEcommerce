@@ -1,13 +1,37 @@
 {
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
+    // Configuración base
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@types/*": ["./src/types/*"]
     },
+
+    // React y JavaScript
     "jsx": "react-jsx",
     "allowJs": true,
+    "noEmit": true,
+
+    // Chequeos estrictos (mejoran calidad del código)
     "strict": true,
-    "noEmit": true
-  }
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": false,
+    "noPropertyAccessFromIndexSignature": false,
+
+    // Compatibilidad y experiencia de desarrollo
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", ".astro", "**/*.test.ts", "**/*.test.tsx"]
 }
