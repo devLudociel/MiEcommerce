@@ -58,10 +58,10 @@ export const POST: APIRoute = async ({ request }) => {
     console.log('📧 Email enviado correctamente:', response);
 
     const emailId = (response as any).data?.id || (response as any).id;
-    return new Response(
-      JSON.stringify({ success: true, emailId }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ success: true, emailId }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error: any) {
     console.error('❌ Error enviando email:', error);
     return new Response(
@@ -70,4 +70,3 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 };
-

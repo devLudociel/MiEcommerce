@@ -14,7 +14,9 @@ export const POST: APIRoute = async ({ request }) => {
   const webhookSecret = import.meta.env.STRIPE_WEBHOOK_SECRET as string | undefined;
 
   if (!webhookSecret) {
-    return new Response(JSON.stringify({ error: 'Webhook secret not configured' }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Webhook secret not configured' }), {
+      status: 500,
+    });
   }
 
   let event: Stripe.Event;
@@ -74,4 +76,3 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: 'Webhook handler error' }), { status: 500 });
   }
 };
-

@@ -65,12 +65,14 @@ Si todo está correcto, verás:
 ## 🔍 Validaciones Implementadas
 
 ### Firebase Client SDK
+
 - ✅ Todas las claves requeridas presentes
 - ✅ Auth Domain termina en `.firebaseapp.com`
 - ✅ Storage Bucket termina en `.appspot.com`
 - ✅ Measurement ID empieza con `G-` (si existe)
 
 ### Firebase Admin SDK
+
 - ✅ Al menos una opción configurada:
   - `FIREBASE_SERVICE_ACCOUNT` (JSON completo) **o**
   - `FIREBASE_CLIENT_EMAIL` + `FIREBASE_PRIVATE_KEY`
@@ -78,19 +80,23 @@ Si todo está correcto, verás:
 - ✅ Private Key contiene `BEGIN PRIVATE KEY`
 
 ### Stripe
+
 - ✅ Publishable Key empieza con `pk_test_` o `pk_live_`
 - ✅ Secret Key empieza con `sk_test_` o `sk_live_`
 - ✅ Webhook Secret empieza con `whsec_` (opcional)
 
 ### Resend (Email)
+
 - ✅ API Key empieza con `re_`
 - ✅ From Email es un email válido
 
 ### Admin
+
 - ✅ Admin Setup Secret tiene al menos 16 caracteres
 - ✅ Admin Emails son emails válidos (separados por comas)
 
 ### Company Information
+
 - ✅ Zip Code tiene 5 dígitos (código postal español)
 - ✅ Email es válido
 - ✅ Todos los campos están presentes
@@ -100,11 +106,13 @@ Si todo está correcto, verás:
 ### Variables Privadas vs Públicas
 
 **Variables con `PUBLIC_` prefix**:
+
 - ✅ Expuestas al cliente (navegador)
 - ⚠️ Visibles en el código del bundle
 - Ejemplo: `PUBLIC_FIREBASE_API_KEY`
 
 **Variables sin `PUBLIC_` prefix**:
+
 - 🔒 Solo disponibles en el servidor
 - ✅ NUNCA se exponen al cliente
 - Ejemplo: `STRIPE_SECRET_KEY`
@@ -112,12 +120,14 @@ Si todo está correcto, verás:
 ### Mejores Prácticas
 
 1. **NUNCA commitees el archivo `.env`**
+
    ```bash
    # Ya está en .gitignore ✅
    .env
    ```
 
 2. **Usa valores diferentes en desarrollo y producción**
+
    ```bash
    # Desarrollo
    STRIPE_SECRET_KEY=sk_test_...
@@ -132,6 +142,7 @@ Si todo está correcto, verás:
    - Resend API Key
 
 4. **Verifica el modo de Stripe**
+
    ```typescript
    import { env } from '@/lib/env';
 
@@ -148,6 +159,7 @@ Si todo está correcto, verás:
 **Problema**: Falta o es inválida una variable requerida.
 
 **Solución**:
+
 1. Lee el mensaje de error específico
 2. Revisa tu archivo `.env`
 3. Compara con `.env.example`
@@ -158,6 +170,7 @@ Si todo está correcto, verás:
 **Problema**: El JSON de la service account está mal formateado.
 
 **Solución**:
+
 ```bash
 # Opción 1: Minificar el JSON en una línea
 FIREBASE_SERVICE_ACCOUNT={"type":"service_account","project_id":"..."}
@@ -167,11 +180,12 @@ FIREBASE_CLIENT_EMAIL=firebase-adminsdk@...
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 ```
 
-### Error: "Stripe Secret Key debe empezar con sk_test_ o sk_live_"
+### Error: "Stripe Secret Key debe empezar con sk*test* o sk*live*"
 
 **Problema**: Copiaste la publishable key en lugar de la secret key.
 
 **Solución**:
+
 ```bash
 # ❌ Incorrecto (publishable key)
 STRIPE_SECRET_KEY=pk_test_...
@@ -185,6 +199,7 @@ STRIPE_SECRET_KEY=sk_test_...
 **Problema**: El secret es muy corto.
 
 **Solución**:
+
 ```bash
 # Generar un secret seguro
 openssl rand -hex 32

@@ -22,7 +22,9 @@ export interface UseFormValidationReturn<T> {
   /** Si el formulario está siendo validado */
   isValidating: boolean;
   /** Valida todo el formulario */
-  validate: (data: unknown) => Promise<{ success: boolean; data?: T; errors?: Record<string, string> }>;
+  validate: (
+    data: unknown
+  ) => Promise<{ success: boolean; data?: T; errors?: Record<string, string> }>;
   /** Valida un campo individual */
   validateField: (fieldName: string, value: unknown) => Promise<{ valid: boolean; error?: string }>;
   /** Limpia todos los errores */

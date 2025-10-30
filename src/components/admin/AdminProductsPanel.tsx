@@ -785,7 +785,9 @@ export default function AdminProductsPanel() {
         );
         if (!hasValue) {
           const errorMsg = `El atributo "${reqAttr.name}" es obligatorio`;
-          logger.warn('[AdminProductsPanel] Required attribute missing', { attribute: reqAttr.name });
+          logger.warn('[AdminProductsPanel] Required attribute missing', {
+            attribute: reqAttr.name,
+          });
           setError(errorMsg);
           notify.error(errorMsg);
           setLoading(false);
@@ -811,11 +813,17 @@ export default function AdminProductsPanel() {
           customizerType: draft.customizerType || 'default',
           // 🎯 Campos de Oferta Especial
           isSpecialOffer: !!normalized.isSpecialOffer,
-          specialOfferEndDate: normalized.isSpecialOffer && normalized.specialOfferEndDate ? Timestamp.fromDate(new Date(normalized.specialOfferEndDate)) : null,
-          specialOfferDiscount: normalized.isSpecialOffer && normalized.salePrice && normalized.basePrice ? Math.round((1 - normalized.salePrice / normalized.basePrice) * 100) : null,
-          urgencyLevel: normalized.isSpecialOffer ? (normalized.urgencyLevel || 'low') : null,
+          specialOfferEndDate:
+            normalized.isSpecialOffer && normalized.specialOfferEndDate
+              ? Timestamp.fromDate(new Date(normalized.specialOfferEndDate))
+              : null,
+          specialOfferDiscount:
+            normalized.isSpecialOffer && normalized.salePrice && normalized.basePrice
+              ? Math.round((1 - normalized.salePrice / normalized.basePrice) * 100)
+              : null,
+          urgencyLevel: normalized.isSpecialOffer ? normalized.urgencyLevel || 'low' : null,
           flashSale: normalized.isSpecialOffer ? !!normalized.flashSale : false,
-          maxStock: normalized.isSpecialOffer ? (Number(normalized.maxStock) || 100) : null,
+          maxStock: normalized.isSpecialOffer ? Number(normalized.maxStock) || 100 : null,
           createdAt,
           updatedAt,
         });
@@ -883,11 +891,17 @@ export default function AdminProductsPanel() {
           customizerType: draft.customizerType || 'default',
           // 🎯 Campos de Oferta Especial
           isSpecialOffer: !!draft.isSpecialOffer,
-          specialOfferEndDate: draft.isSpecialOffer && draft.specialOfferEndDate ? Timestamp.fromDate(new Date(draft.specialOfferEndDate)) : null,
-          specialOfferDiscount: draft.isSpecialOffer && draft.salePrice && draft.basePrice ? Math.round((1 - draft.salePrice / draft.basePrice) * 100) : null,
-          urgencyLevel: draft.isSpecialOffer ? (draft.urgencyLevel || 'low') : null,
+          specialOfferEndDate:
+            draft.isSpecialOffer && draft.specialOfferEndDate
+              ? Timestamp.fromDate(new Date(draft.specialOfferEndDate))
+              : null,
+          specialOfferDiscount:
+            draft.isSpecialOffer && draft.salePrice && draft.basePrice
+              ? Math.round((1 - draft.salePrice / draft.basePrice) * 100)
+              : null,
+          urgencyLevel: draft.isSpecialOffer ? draft.urgencyLevel || 'low' : null,
           flashSale: draft.isSpecialOffer ? !!draft.flashSale : false,
-          maxStock: draft.isSpecialOffer ? (Number(draft.maxStock) || 100) : null,
+          maxStock: draft.isSpecialOffer ? Number(draft.maxStock) || 100 : null,
           updatedAt: Timestamp.now(),
         });
         logger.info('[AdminProductsPanel] Product updated', { productId: id });
@@ -1442,12 +1456,14 @@ export default function AdminProductsPanel() {
 
             {/* 🎯 SECCIÓN DE OFERTA ESPECIAL */}
             <div style={{ gridColumn: '1 / -1', marginTop: '20px' }}>
-              <div style={{
-                border: '2px solid #06b6d4',
-                borderRadius: '12px',
-                padding: '20px',
-                backgroundColor: '#f0fdfa'
-              }}>
+              <div
+                style={{
+                  border: '2px solid #06b6d4',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  backgroundColor: '#f0fdfa',
+                }}
+              >
                 <label className="flex items-center" style={{ gap: '8px', marginBottom: '16px' }}>
                   <input
                     type="checkbox"
@@ -1456,7 +1472,9 @@ export default function AdminProductsPanel() {
                       setDraft({
                         ...draft,
                         isSpecialOffer: e.target.checked,
-                        specialOfferEndDate: e.target.checked ? draft.specialOfferEndDate : undefined,
+                        specialOfferEndDate: e.target.checked
+                          ? draft.specialOfferEndDate
+                          : undefined,
                       })
                     }
                   />
@@ -1475,10 +1493,16 @@ export default function AdminProductsPanel() {
                         value={
                           draft.specialOfferEndDate
                             ? draft.specialOfferEndDate.toDate
-                              ? new Date(draft.specialOfferEndDate.toDate().getTime() - new Date().getTimezoneOffset() * 60000)
+                              ? new Date(
+                                  draft.specialOfferEndDate.toDate().getTime() -
+                                    new Date().getTimezoneOffset() * 60000
+                                )
                                   .toISOString()
                                   .slice(0, 16)
-                              : new Date(new Date(draft.specialOfferEndDate).getTime() - new Date().getTimezoneOffset() * 60000)
+                              : new Date(
+                                  new Date(draft.specialOfferEndDate).getTime() -
+                                    new Date().getTimezoneOffset() * 60000
+                                )
                                   .toISOString()
                                   .slice(0, 16)
                             : ''

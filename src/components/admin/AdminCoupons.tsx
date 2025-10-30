@@ -82,7 +82,9 @@ export default function AdminCoupons() {
         type: validatedData.type,
         value: validatedData.value,
         startDate: Timestamp.fromDate(new Date()) as any,
-        endDate: validatedData.expirationDate ? Timestamp.fromDate(validatedData.expirationDate) as any : undefined,
+        endDate: validatedData.expirationDate
+          ? (Timestamp.fromDate(validatedData.expirationDate) as any)
+          : undefined,
         active: validatedData.active,
         createdBy: user.uid,
         minPurchase: validatedData.minPurchase,
@@ -315,7 +317,9 @@ export default function AdminCoupons() {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      expirationDate: e.target.value ? new Date(e.target.value) : undefined as any,
+                      expirationDate: e.target.value
+                        ? new Date(e.target.value)
+                        : (undefined as any),
                     })
                   }
                   className={`w-full px-4 py-2 border-2 rounded-xl outline-none ${

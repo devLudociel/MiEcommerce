@@ -45,10 +45,10 @@ export const GET: APIRoute = async ({ request }) => {
       adminDb = getAdminDb();
     } catch (adminInitError) {
       console.error('[API get-wallet-balance] Error initializing Firebase Admin:', adminInitError);
-      return new Response(
-        JSON.stringify({ error: 'Error del servidor' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Error del servidor' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Get wallet document
@@ -71,13 +71,10 @@ export const GET: APIRoute = async ({ request }) => {
 
     console.log('[API get-wallet-balance] Balance retrieved', { userId: requestedUserId, balance });
 
-    return new Response(
-      JSON.stringify({ balance }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify({ balance }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('[API get-wallet-balance] Unexpected error:', error);
     return new Response(

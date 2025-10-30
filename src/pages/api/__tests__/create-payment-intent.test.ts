@@ -62,7 +62,7 @@ describe('API create-payment-intent', () => {
   });
 
   it('crea Payment Intent cuando el monto coincide', async () => {
-    const { __mockDb } = await import('../../../lib/firebase-admin') as any;
+    const { __mockDb } = (await import('../../../lib/firebase-admin')) as any;
     __mockDb.orders['o1'] = { total: 19.99, customerEmail: 'ok@example.com' };
     const req = new Request('http://local/api/create-payment-intent', {
       method: 'POST',
@@ -77,7 +77,7 @@ describe('API create-payment-intent', () => {
   });
 
   it('rechaza si el monto no coincide', async () => {
-    const { __mockDb } = await import('../../../lib/firebase-admin') as any;
+    const { __mockDb } = (await import('../../../lib/firebase-admin')) as any;
     __mockDb.orders['o2'] = { total: 50 };
     const req = new Request('http://local/api/create-payment-intent', {
       method: 'POST',

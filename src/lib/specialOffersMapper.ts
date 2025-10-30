@@ -27,7 +27,9 @@ export interface SpecialOffer {
 function mapProductToOffer(product: any): SpecialOffer {
   const basePrice = Number(product.basePrice) || 0;
   const salePrice = Number(product.salePrice) || basePrice;
-  const discount = product.specialOfferDiscount || (basePrice > 0 ? Math.round((1 - salePrice / basePrice) * 100) : 0);
+  const discount =
+    product.specialOfferDiscount ||
+    (basePrice > 0 ? Math.round((1 - salePrice / basePrice) * 100) : 0);
 
   // Obtener la primera imagen o usar fallback
   const image = product.images?.[0] || '';

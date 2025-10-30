@@ -24,7 +24,9 @@ const clientEnvSchema = z.object({
     .string()
     .min(1, 'Firebase Storage Bucket es requerido')
     .includes('.appspot.com', { message: 'Storage Bucket debe ser un bucket de Firebase' }),
-  PUBLIC_FIREBASE_MESSAGING_SENDER_ID: z.string().min(1, 'Firebase Messaging Sender ID es requerido'),
+  PUBLIC_FIREBASE_MESSAGING_SENDER_ID: z
+    .string()
+    .min(1, 'Firebase Messaging Sender ID es requerido'),
   PUBLIC_FIREBASE_APP_ID: z.string().min(1, 'Firebase App ID es requerido'),
   PUBLIC_FIREBASE_MEASUREMENT_ID: z
     .string()

@@ -68,14 +68,19 @@ export default function LoginPanel() {
           code.includes('auth/popup-closed-by-user') ||
           code.includes('auth/cancelled-popup-request')
         ) {
-          setError('La ventana de Google se bloqueó o se cerró. Permite pop-ups y vuelve a intentarlo.');
+          setError(
+            'La ventana de Google se bloqueó o se cerró. Permite pop-ups y vuelve a intentarlo.'
+          );
           return;
         }
         throw e;
       }
       await redirectAfterLogin();
     } catch (err: any) {
-      console.error('[LoginPanel] signInWithGoogle fatal error', { code: err?.code, message: err?.message });
+      console.error('[LoginPanel] signInWithGoogle fatal error', {
+        code: err?.code,
+        message: err?.message,
+      });
       setError(err?.message || 'Error iniciando sesión con Google');
     } finally {
       setLoading(false);
@@ -99,14 +104,19 @@ export default function LoginPanel() {
           code.includes('auth/popup-closed-by-user') ||
           code.includes('auth/cancelled-popup-request')
         ) {
-          setError('La ventana de GitHub se bloqueó o se cerró. Permite pop-ups y vuelve a intentarlo.');
+          setError(
+            'La ventana de GitHub se bloqueó o se cerró. Permite pop-ups y vuelve a intentarlo.'
+          );
           return;
         }
         throw e;
       }
       await redirectAfterLogin();
     } catch (err: any) {
-      console.error('[LoginPanel] signInWithGithub fatal error', { code: err?.code, message: err?.message });
+      console.error('[LoginPanel] signInWithGithub fatal error', {
+        code: err?.code,
+        message: err?.message,
+      });
       setError(err?.message || 'Error iniciando sesión con GitHub');
     } finally {
       setLoading(false);
@@ -135,8 +145,10 @@ export default function LoginPanel() {
     if (code.includes('auth/invalid-email')) return 'Email inválido.';
     if (code.includes('auth/missing-email')) return 'Ingresa tu email.';
     if (code.includes('auth/user-not-found')) return 'No existe una cuenta con ese email.';
-    if (code.includes('auth/invalid-continue-uri')) return 'Configuración de URL de retorno inválida.';
-    if (code.includes('auth/unauthorized-continue-uri')) return 'El dominio de retorno no está autorizado en Firebase.';
+    if (code.includes('auth/invalid-continue-uri'))
+      return 'Configuración de URL de retorno inválida.';
+    if (code.includes('auth/unauthorized-continue-uri'))
+      return 'El dominio de retorno no está autorizado en Firebase.';
     return e?.message || 'Ocurrió un error al procesar la solicitud.';
   }
 
@@ -268,7 +280,11 @@ export default function LoginPanel() {
           ) : (
             <div className="space-y-4">
               <div className="grid gap-3">
-                <button className="btn btn-primary" onClick={() => signInWithGoogle(true)} disabled={loading}>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => signInWithGoogle(true)}
+                  disabled={loading}
+                >
                   {loading ? 'Conectando...' : 'Continuar con Google'}
                 </button>
                 <button className="btn btn-ghost" onClick={signInWithGithub} disabled={loading}>
@@ -300,27 +316,46 @@ export default function LoginPanel() {
 
                 {mode === 'magic' ? (
                   <div className="grid gap-2">
-                    <button className="btn btn-primary" onClick={handleMagicLink} disabled={loading}>
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleMagicLink}
+                      disabled={loading}
+                    >
                       Enviar enlace de acceso
                     </button>
-                    <button className="btn btn-ghost" onClick={() => setMode('login')} disabled={loading}>
+                    <button
+                      className="btn btn-ghost"
+                      onClick={() => setMode('login')}
+                      disabled={loading}
+                    >
                       Usar contraseña
                     </button>
                   </div>
                 ) : (
                   <div className="grid gap-2">
-                    <button className="btn btn-primary" onClick={handleEmailPasswordLogin} disabled={loading}>
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleEmailPasswordLogin}
+                      disabled={loading}
+                    >
                       {mode === 'register' ? 'Crear cuenta' : 'Iniciar sesión'}
                     </button>
                     <div className="flex justify-between text-sm">
-                      <button className="link" onClick={() => setMode(mode === 'register' ? 'login' : 'register')}>
+                      <button
+                        className="link"
+                        onClick={() => setMode(mode === 'register' ? 'login' : 'register')}
+                      >
                         {mode === 'register' ? 'Ya tengo cuenta' : 'Crear una cuenta'}
                       </button>
                       <button className="link" onClick={() => setMode('magic')}>
                         Acceder con enlace
                       </button>
                     </div>
-                    <button className="btn btn-ghost" onClick={handleForgotPassword} disabled={loading}>
+                    <button
+                      className="btn btn-ghost"
+                      onClick={handleForgotPassword}
+                      disabled={loading}
+                    >
                       Olvidé mi contraseña
                     </button>
                   </div>
@@ -333,4 +368,3 @@ export default function LoginPanel() {
     </section>
   );
 }
-

@@ -5,6 +5,7 @@
 ### 1. **Sitemap Dinámico** (`/sitemap.xml`)
 
 Se ha creado un sitemap.xml automático que incluye:
+
 - ✅ Todas las páginas estáticas (home, sobre-nosotros, contacto, etc.)
 - ✅ Todos los productos desde Firestore con sus fechas de actualización
 - ✅ Prioridades y frecuencias de cambio optimizadas
@@ -19,6 +20,7 @@ Se ha creado un sitemap.xml automático que incluye:
 ### 2. **Meta Tags Open Graph Completos**
 
 Todas las páginas ahora tienen meta tags optimizados para redes sociales:
+
 - ✅ Open Graph (Facebook, LinkedIn, WhatsApp)
 - ✅ Twitter Cards
 - ✅ Imágenes de previsualización
@@ -26,6 +28,7 @@ Todas las páginas ahora tienen meta tags optimizados para redes sociales:
 - ✅ URLs canónicas
 
 **Mejoras en BaseLayout**:
+
 - Soporte para `ogType` (website, product, article)
 - URLs canónicas automáticas
 - Image alt tags
@@ -36,10 +39,12 @@ Todas las páginas ahora tienen meta tags optimizados para redes sociales:
 ### 3. **Schema.org Structured Data**
 
 #### **Página de Inicio** (`index.astro`)
+
 - ✅ **Organization Schema**: Información de tu empresa
 - ✅ **WebSite Schema**: Para search box en Google
 
 #### **Páginas de Producto** (`producto/[slug].astro`)
+
 - ✅ **Product Schema**: Datos estructurados de cada producto
   - Nombre y descripción
   - Imágenes
@@ -49,6 +54,7 @@ Todas las páginas ahora tienen meta tags optimizados para redes sociales:
   - URL canónica
 
 **Beneficios**:
+
 - Rich snippets en resultados de Google
 - Mejor CTR desde buscadores
 - Información estructurada para bots
@@ -58,6 +64,7 @@ Todas las páginas ahora tienen meta tags optimizados para redes sociales:
 ### 4. **Robots.txt Optimizado**
 
 Archivo `public/robots.txt` configurado con:
+
 - ✅ Acceso permitido a todos los bots
 - ✅ Bloqueo de áreas privadas (/admin, /account, /api)
 - ✅ Referencia al sitemap
@@ -68,12 +75,14 @@ Archivo `public/robots.txt` configurado con:
 ### 5. **SEO On-Page Mejorado**
 
 #### **BaseLayout.astro** - Mejoras globales:
+
 - Canonical URLs automáticas
 - Soporte para `noindex` en páginas privadas
 - Meta descriptions dinámicas
 - Slot para contenido adicional en `<head>`
 
 #### **Páginas de Producto** - SEO específico:
+
 - Títulos dinámicos con nombre del producto
 - Descriptions del producto desde Firestore
 - Imágenes de producto en meta tags
@@ -91,7 +100,7 @@ Edita `astro.config.mjs` y añade tu dominio:
 export default defineConfig({
   site: 'https://tudominio.com', // 👈 Cambia esto por tu dominio real
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
   },
   integrations: [react()],
   output: 'server',
@@ -99,6 +108,7 @@ export default defineConfig({
 ```
 
 **IMPORTANTE**: Esto es crucial para que:
+
 - Las URLs canónicas funcionen correctamente
 - El sitemap tenga las URLs completas
 - Los meta tags tengan rutas absolutas
@@ -122,11 +132,11 @@ En `src/pages/index.astro`, descomenta y añade tus redes sociales:
 ```javascript
 const organizationSchema = {
   // ...
-  "sameAs": [
-    "https://www.facebook.com/tuempresa",
-    "https://www.instagram.com/tuempresa",
-    "https://twitter.com/tuempresa",
-    "https://www.linkedin.com/company/tuempresa"
+  sameAs: [
+    'https://www.facebook.com/tuempresa',
+    'https://www.instagram.com/tuempresa',
+    'https://twitter.com/tuempresa',
+    'https://www.linkedin.com/company/tuempresa',
   ],
   // ...
 };
@@ -137,6 +147,7 @@ const organizationSchema = {
 ### 4. **Crear Imagen OG por Defecto**
 
 Crea una imagen `og-image.jpg` en la carpeta `public/`:
+
 - Dimensiones recomendadas: **1200 x 630px**
 - Formato: JPG o PNG
 - Peso máximo: 300KB
@@ -159,6 +170,7 @@ Esta imagen se usará cuando compartan tus páginas en redes sociales.
 ## 🧪 Cómo Probar que Funciona
 
 ### **1. Verificar Sitemap**
+
 ```bash
 # En desarrollo:
 http://localhost:4321/sitemap.xml
@@ -174,6 +186,7 @@ Deberías ver XML con todas tus páginas y productos.
 ### **2. Probar Meta Tags**
 
 **Herramientas recomendadas**:
+
 - [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/)
 - [Twitter Card Validator](https://cards-dev.twitter.com/validator)
 - [LinkedIn Post Inspector](https://www.linkedin.com/post-inspector/)
@@ -193,6 +206,7 @@ Ingresa la URL de una página de producto para ver cómo se verá al compartirla
 ---
 
 ### **4. Verificar Robots.txt**
+
 ```bash
 # En producción:
 https://tudominio.com/robots.txt
@@ -226,21 +240,25 @@ Una vez implementado y publicado, monitorea:
 ## 🎯 Próximos Pasos Recomendados
 
 ### **1. Crear Contenido de Calidad**
+
 - Blog con guías de personalización
 - Casos de éxito de clientes
 - Tutoriales de diseño
 
 ### **2. Optimizar Velocidad**
+
 - Comprimir imágenes de productos
 - Implementar lazy loading
 - Usar CDN para imágenes
 
 ### **3. Link Building Interno**
+
 - Enlazar productos relacionados
 - Breadcrumbs en categorías
 - Enlaces contextuales en descripciones
 
 ### **4. Mobile-First**
+
 - Verificar que todo sea responsive
 - Testar en diferentes dispositivos
 - Optimizar tap targets
@@ -250,20 +268,26 @@ Una vez implementado y publicado, monitorea:
 ## ❓ FAQ
 
 ### ¿Cuánto tarda en aparecer en Google?
+
 Normalmente 1-4 semanas después de enviar el sitemap. Puede acelerarse con:
+
 - Google Search Console (solicitar indexación)
 - Links desde redes sociales
 - Contenido fresco regularmente
 
 ### ¿Qué pasa si cambio de dominio?
+
 Necesitarás actualizar:
+
 - `astro.config.mjs` (site)
 - `robots.txt` (sitemap URL)
 - `index.astro` (schemas)
 - Volver a enviar sitemap en Google Search Console
 
 ### ¿Puedo añadir más tipos de Schema?
+
 Sí, puedes añadir:
+
 - `BreadcrumbList` para navegación
 - `Review` agregado para reseñas de productos
 - `FAQPage` en la página de FAQ
@@ -274,6 +298,7 @@ Sí, puedes añadir:
 ## 📞 Notas Finales
 
 ✅ **Implementado**:
+
 - Sitemap dinámico
 - Meta tags completos
 - Schema.org (Organization, WebSite, Product)
@@ -282,6 +307,7 @@ Sí, puedes añadir:
 - Open Graph + Twitter Cards
 
 ⚠️ **Pendiente de configurar**:
+
 - Tu dominio real en astro.config.mjs
 - Imagen og-image.jpg
 - Redes sociales (opcional)

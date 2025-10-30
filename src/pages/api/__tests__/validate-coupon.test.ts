@@ -8,33 +8,39 @@ vi.mock('../../../lib/firebase-admin', () => {
 
   function couponsWhere(field: string, op: string, value: any) {
     if (field === 'code') state.code = value;
-    return { where: couponsWhere, async get() {
-      if (state.code === 'PERC10') {
-        return {
-          empty: false,
-          docs: [
-            {
-              id: 'c1',
-              data: () => ({
-                code: 'PERC10', active: true, type: 'percentage', value: 10,
-              }),
-            },
-          ],
-        } as any;
-      }
-      if (state.code === 'FREESHIP') {
-        return {
-          empty: false,
-          docs: [
-            {
-              id: 'c2',
-              data: () => ({ code: 'FREESHIP', active: true, type: 'free_shipping', value: 0 }),
-            },
-          ],
-        } as any;
-      }
-      return { empty: true } as any;
-    } } as any;
+    return {
+      where: couponsWhere,
+      async get() {
+        if (state.code === 'PERC10') {
+          return {
+            empty: false,
+            docs: [
+              {
+                id: 'c1',
+                data: () => ({
+                  code: 'PERC10',
+                  active: true,
+                  type: 'percentage',
+                  value: 10,
+                }),
+              },
+            ],
+          } as any;
+        }
+        if (state.code === 'FREESHIP') {
+          return {
+            empty: false,
+            docs: [
+              {
+                id: 'c2',
+                data: () => ({ code: 'FREESHIP', active: true, type: 'free_shipping', value: 0 }),
+              },
+            ],
+          } as any;
+        }
+        return { empty: true } as any;
+      },
+    } as any;
   }
 
   const collections: Record<string, any> = {
@@ -104,4 +110,3 @@ describe('API validate-coupon', () => {
     expect(data.coupon.freeShipping).toBe(true);
   });
 });
-

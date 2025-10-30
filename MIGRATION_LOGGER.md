@@ -15,6 +15,7 @@ chmod +x migrate-to-logger.sh
 ```
 
 El script migrará los archivos más críticos:
+
 - `src/pages/api/save-order.ts`
 - `src/pages/api/create-payment-intent.ts`
 - `src/pages/api/get-wallet-balance.ts`
@@ -56,20 +57,24 @@ logger.error('[Wallet] Debit failed', { userId, amount, error });
 ## 📊 Archivos por Prioridad
 
 ### Alta Prioridad (APIs críticas)
+
 - `src/pages/api/save-order.ts` - 24 ocurrencias
 - `src/pages/api/create-payment-intent.ts` - 3 ocurrencias
 - `src/pages/api/get-wallet-balance.ts` - 5 ocurrencias
 
 ### Media Prioridad (Componentes admin)
+
 - `src/components/admin/AdminDashboard.tsx` - 15 ocurrencias
 - `src/components/admin/AdminOrdersList.tsx` - 4 ocurrencias
 
 ### Baja Prioridad (Otros componentes)
+
 - El resto de archivos frontend
 
 ## ✅ Checklist de Migración
 
 Para cada archivo:
+
 - [ ] Leer el archivo y entender el contexto
 - [ ] Agregar `import { logger }` al inicio
 - [ ] Reemplazar `console.log` → `logger.info` o `logger.debug`
@@ -83,6 +88,7 @@ Para cada archivo:
 ## 🎯 Beneficios
 
 Después de la migración:
+
 - ✅ Logs desactivados automáticamente en producción
 - ✅ Mejor organización con contexto y colores
 - ✅ Preparado para integración con Sentry

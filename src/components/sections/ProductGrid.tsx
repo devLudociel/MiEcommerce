@@ -215,18 +215,12 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
         </div>
 
         {/* Loading State */}
-        {loading && (
-          <ProductGridSkeleton count={maxItems} />
-        )}
+        {loading && <ProductGridSkeleton count={maxItems} />}
 
         {/* Error State */}
         {!loading && error && (
           <div className="max-w-2xl mx-auto">
-            <ErrorMessage
-              error={error}
-              onRetry={() => window.location.reload()}
-              variant="card"
-            />
+            <ErrorMessage error={error} onRetry={() => window.location.reload()} variant="card" />
           </div>
         )}
 
@@ -234,78 +228,78 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
         {!loading && !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-8">
             {filteredProducts.map((product, index) => (
-            <a
-              key={product.id}
-              href={`/producto?${product.slug ? 'slug=' + product.slug : 'id=' + product.id}`}
-              className={`
+              <a
+                key={product.id}
+                href={`/producto?${product.slug ? 'slug=' + product.slug : 'id=' + product.id}`}
+                className={`
                 group block relative bg-white rounded-3xl overflow-hidden shadow-lg
                 transform transition-all duration-500 hover:scale-105 hover:shadow-2xl
                 ${hoveredProduct === product.id ? 'z-20' : 'z-10'}
               `}
-              onMouseEnter={() => setHoveredProduct(product.id)}
-              onMouseLeave={() => setHoveredProduct(null)}
-              style={{
-                animationDelay: `${index * 100}ms`,
-              }}
-              aria-label={`Ver detalle de ${product.name}`}
-            >
-              {/* Badge */}
-              {product.badge && (
-                <div className="absolute top-4 left-4 z-30">
-                  <span
-                    className={`
+                onMouseEnter={() => setHoveredProduct(product.id)}
+                onMouseLeave={() => setHoveredProduct(null)}
+                style={{
+                  animationDelay: `${index * 100}ms`,
+                }}
+                aria-label={`Ver detalle de ${product.name}`}
+              >
+                {/* Badge */}
+                {product.badge && (
+                  <div className="absolute top-4 left-4 z-30">
+                    <span
+                      className={`
                     px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full
                     text-white shadow-lg ${getBadgeClasses(product.badge)}
                   `}
-                  >
-                    {product.badge === 'new'
-                      ? 'Nuevo'
-                      : product.badge === 'sale' && product.onSale && product.salePrice
-                        ? `-${Math.round((1 - product.salePrice / product.price) * 100)}%`
-                        : product.badge === 'sale'
-                          ? 'Oferta'
-                          : product.badge === 'hot'
-                            ? 'Popular'
-                            : 'Limitado'}
-                  </span>
-                </div>
-              )}
+                    >
+                      {product.badge === 'new'
+                        ? 'Nuevo'
+                        : product.badge === 'sale' && product.onSale && product.salePrice
+                          ? `-${Math.round((1 - product.salePrice / product.price) * 100)}%`
+                          : product.badge === 'sale'
+                            ? 'Oferta'
+                            : product.badge === 'hot'
+                              ? 'Popular'
+                              : 'Limitado'}
+                    </span>
+                  </div>
+                )}
 
-              {/* Stock Status */}
-              {!product.inStock && (
-                <div className="absolute top-4 right-4 z-30">
-                  <span className="px-3 py-1 text-xs font-bold bg-red-500 text-white rounded-full">
-                    Agotado
-                  </span>
-                </div>
-              )}
+                {/* Stock Status */}
+                {!product.inStock && (
+                  <div className="absolute top-4 right-4 z-30">
+                    <span className="px-3 py-1 text-xs font-bold bg-red-500 text-white rounded-full">
+                      Agotado
+                    </span>
+                  </div>
+                )}
 
-              {/* Product Image */}
-              <div className="relative h-64 overflow-hidden">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className={`
+                {/* Product Image */}
+                <div className="relative h-64 overflow-hidden">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className={`
                     w-full h-full object-cover transition-all duration-700
                     ${hoveredProduct === product.id ? 'scale-110 rotate-2' : 'scale-100'}
                   `}
-                />
+                  />
 
-                {/* Gradient Overlay */}
-                <div
-                  className={`
+                  {/* Gradient Overlay */}
+                  <div
+                    className={`
                   absolute inset-0 bg-gradient-to-t from-black/50 to-transparent
                   transition-opacity duration-300
                   ${hoveredProduct === product.id ? 'opacity-70' : 'opacity-0'}
                 `}
-                />
+                  />
 
-                {/* Quick Actions Overlay eliminado para evitar iconos superpuestos */}
+                  {/* Quick Actions Overlay eliminado para evitar iconos superpuestos */}
 
-                {/* Color Options */}
-                {product.colors && product.colors.length > 0 && (
-                  <div
-                    className={`
+                  {/* Color Options */}
+                  {product.colors && product.colors.length > 0 && (
+                    <div
+                      className={`
                     absolute bottom-4 left-4 flex gap-2
                     transition-all duration-300
                     ${
@@ -314,97 +308,97 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
                         : 'opacity-0 translate-y-4'
                     }
                   `}
-                  >
-                    {product.colors.slice(0, 3).map((color, colorIndex) => (
-                      <div
-                        key={colorIndex}
-                        className="w-6 h-6 rounded-full border-2 border-white/50 shadow-md cursor-pointer hover:scale-110 transition-transform"
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                    {product.colors.length > 3 && (
-                      <div className="w-6 h-6 rounded-full bg-white/20 border-2 border-white/50 flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">
-                          +{product.colors.length - 3}
-                        </span>
-                      </div>
+                    >
+                      {product.colors.slice(0, 3).map((color, colorIndex) => (
+                        <div
+                          key={colorIndex}
+                          className="w-6 h-6 rounded-full border-2 border-white/50 shadow-md cursor-pointer hover:scale-110 transition-transform"
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                      {product.colors.length > 3 && (
+                        <div className="w-6 h-6 rounded-full bg-white/20 border-2 border-white/50 flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">
+                            +{product.colors.length - 3}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Product Info */}
+                <div className="p-6">
+                  {/* Rating */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <svg
+                          key={i}
+                          className={`w-4 h-4 ${i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
+                    </div>
+                    {product.rating > 0 ? (
+                      <span className="text-sm text-gray-500">
+                        {product.rating.toFixed(1)} ({product.reviews})
+                      </span>
+                    ) : (
+                      <span className="text-sm text-gray-400">Sin reseñas aún</span>
                     )}
                   </div>
-                )}
-              </div>
 
-              {/* Product Info */}
-              <div className="p-6">
-                {/* Rating */}
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <svg
-                        key={i}
-                        className={`w-4 h-4 ${i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
+                  {/* Category */}
+                  <p className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-2">
+                    {product.category}
+                  </p>
+
+                  {/* Name */}
+                  <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-cyan-600 transition-colors">
+                    {product.name}
+                  </h3>
+
+                  {/* Description */}
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
+
+                  {/* Price */}
+                  <div className="flex items-center gap-3 mb-4">
+                    {product.onSale && product.salePrice ? (
+                      <>
+                        <span className="text-2xl font-bold text-red-600">
+                          €{product.salePrice.toFixed(2)}
+                        </span>
+                        <span className="text-lg text-gray-400 line-through">
+                          €{product.price.toFixed(2)}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-2xl font-bold text-cyan-600">
+                          €{product.price.toFixed(2)}
+                        </span>
+                        {product.originalPrice && (
+                          <>
+                            <span className="text-lg text-gray-400 line-through">
+                              €{product.originalPrice.toFixed(2)}
+                            </span>
+                            <span className="px-2 py-1 text-xs font-bold bg-red-100 text-red-600 rounded">
+                              -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+                            </span>
+                          </>
+                        )}
+                      </>
+                    )}
                   </div>
-                  {product.rating > 0 ? (
-                    <span className="text-sm text-gray-500">
-                      {product.rating.toFixed(1)} ({product.reviews})
-                    </span>
-                  ) : (
-                    <span className="text-sm text-gray-400">Sin reseñas aún</span>
-                  )}
+
+                  {/* Se elimina el botón de carrito para que toda la card sea clickeable */}
                 </div>
-
-                {/* Category */}
-                <p className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-2">
-                  {product.category}
-                </p>
-
-                {/* Name */}
-                <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-cyan-600 transition-colors">
-                  {product.name}
-                </h3>
-
-                {/* Description */}
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
-
-                {/* Price */}
-                <div className="flex items-center gap-3 mb-4">
-                  {product.onSale && product.salePrice ? (
-                    <>
-                      <span className="text-2xl font-bold text-red-600">
-                        €{product.salePrice.toFixed(2)}
-                      </span>
-                      <span className="text-lg text-gray-400 line-through">
-                        €{product.price.toFixed(2)}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-2xl font-bold text-cyan-600">
-                        €{product.price.toFixed(2)}
-                      </span>
-                      {product.originalPrice && (
-                        <>
-                          <span className="text-lg text-gray-400 line-through">
-                            €{product.originalPrice.toFixed(2)}
-                          </span>
-                          <span className="px-2 py-1 text-xs font-bold bg-red-100 text-red-600 rounded">
-                            -{Math.round((1 - product.price / product.originalPrice) * 100)}%
-                          </span>
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                {/* Se elimina el botón de carrito para que toda la card sea clickeable */}
-              </div>
-            </a>
-          ))}
+              </a>
+            ))}
           </div>
         )}
 

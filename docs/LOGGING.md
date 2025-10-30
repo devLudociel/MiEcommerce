@@ -27,6 +27,7 @@ import { logger } from '@/lib/logger';
 ### Niveles de Log
 
 #### DEBUG - Información Detallada
+
 Solo visible en desarrollo. Para debugging profundo.
 
 ```typescript
@@ -34,6 +35,7 @@ logger.debug('[Component] Loading data...', { userId: 123, filters: ['active'] }
 ```
 
 #### INFO - Información General
+
 Operaciones normales y flujo de la aplicación.
 
 ```typescript
@@ -41,6 +43,7 @@ logger.info('[API] Order created successfully', { orderId: 'abc123' });
 ```
 
 #### WARN - Advertencias
+
 Situaciones inesperadas pero no críticas.
 
 ```typescript
@@ -48,6 +51,7 @@ logger.warn('[Cart] localStorage quota exceeded', { size: '10MB' });
 ```
 
 #### ERROR - Errores
+
 Errores que requieren atención.
 
 ```typescript
@@ -55,6 +59,7 @@ logger.error('[Payment] Stripe error', error);
 ```
 
 #### SUCCESS - Operaciones Exitosas
+
 Para resaltar operaciones importantes completadas.
 
 ```typescript
@@ -76,8 +81,8 @@ logger.error('[Checkout] Payment processing failed', error);
 logger.debug('[CartStore] Item added to cart', { productId: '123' });
 
 // ❌ Malo
-logger.info('products loaded');  // Sin contexto
-logger.error('error');  // Vago
+logger.info('products loaded'); // Sin contexto
+logger.error('error'); // Vago
 ```
 
 ### Componentes Comunes
@@ -180,12 +185,14 @@ configureLogger({
 ## 🌍 Comportamiento por Ambiente
 
 ### Desarrollo (`npm run dev`)
+
 - **Nivel por Defecto**: `DEBUG` (todos los logs)
 - **Timestamps**: Habilitados
 - **Colores**: Habilitados
 - **Prefix**: `[DEV]`
 
 ### Producción (`npm run build`)
+
 - **Nivel por Defecto**: `ERROR` (solo errores)
 - **Timestamps**: Deshabilitados
 - **Colores**: Habilitados
@@ -201,10 +208,10 @@ En desarrollo, el logger está disponible globalmente:
 // Abrir DevTools Console (F12)
 
 // Ver nivel actual
-window.__logger
+window.__logger;
 
 // Cambiar nivel de log
-window.__setLogLevel(LogLevel.INFO)
+window.__setLogLevel(LogLevel.INFO);
 
 // Probar diferentes niveles
 window.__logger.debug('Test debug');
@@ -256,7 +263,6 @@ async function handlePlaceOrder() {
     logger.timeEnd('[Checkout] Create order');
 
     logger.success('[Checkout] Order created', { orderId });
-
   } catch (error) {
     logger.error('[Checkout] Order creation failed', error);
     notify.error('Error al procesar el pedido');
@@ -275,7 +281,7 @@ export async function getProducts(): Promise<Product[]> {
 
   try {
     const snapshot = await getDocs(collection(db, 'products'));
-    const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const products = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
     logger.info('[Firebase] Products fetched', { count: products.length });
 
@@ -311,13 +317,13 @@ logger.info('[ProductDetail] Product loaded', { productId });
 // ❌ Malo - expone datos sensibles
 logger.info('[Auth] User logged in', {
   email: user.email,
-  password: user.password  // ¡NUNCA!
+  password: user.password, // ¡NUNCA!
 });
 
 // ✅ Bueno
 logger.info('[Auth] User logged in', {
   userId: user.id,
-  email: user.email
+  email: user.email,
 });
 ```
 
@@ -325,13 +331,13 @@ logger.info('[Auth] User logged in', {
 
 ```typescript
 // ❌ Malo - spam de logs
-products.forEach(product => {
+products.forEach((product) => {
   logger.info('[Loop] Processing product', product);
 });
 
 // ✅ Bueno
 logger.info('[ProductProcessor] Processing products', { count: products.length });
-logger.table(products);  // O usar tabla para ver detalles
+logger.table(products); // O usar tabla para ver detalles
 ```
 
 ---
@@ -345,7 +351,7 @@ El sistema está preparado para integrar con Sentry en producción:
 if (isProduction && error) {
   Sentry.captureException(error, {
     level: 'error',
-    extra: { message, ...data }
+    extra: { message, ...data },
   });
 }
 ```
@@ -404,6 +410,7 @@ Para migrar un archivo al nuevo sistema:
    - `error`: Errores que necesitan atención
 
 2. **Agregar contexto útil**:
+
    ```typescript
    // ❌ Poco útil
    logger.info('Order created');
@@ -413,11 +420,12 @@ Para migrar un archivo al nuevo sistema:
      orderId,
      total,
      itemCount,
-     userId
+     userId,
    });
    ```
 
 3. **Usar timers para operaciones costosas**:
+
    ```typescript
    logger.time('[Heavy] Operation');
    await heavyOperation();

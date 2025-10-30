@@ -38,9 +38,7 @@ describe('paymentInfoSchema (card)', () => {
     try {
       paymentInfoSchema.parse(expired);
       // Si no lanza, la lógica de fecha lo considera válido en este mes; prueba un mes 01/00
-      expect(() =>
-        paymentInfoSchema.parse({ ...expired, cardExpiry: '01/00' } as any)
-      ).toThrow();
+      expect(() => paymentInfoSchema.parse({ ...expired, cardExpiry: '01/00' } as any)).toThrow();
     } catch {
       // ok
     }
@@ -57,4 +55,3 @@ describe('paymentInfoSchema (card)', () => {
     expect(() => paymentInfoSchema.parse(bad)).toThrow();
   });
 });
-

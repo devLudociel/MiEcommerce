@@ -33,14 +33,11 @@ export default function ErrorMessage({
   className = '',
   variant = 'card',
 }: ErrorMessageProps) {
-  const errorMessage = message || (error instanceof Error ? error.message : String(error || 'Ha ocurrido un error'));
+  const errorMessage =
+    message || (error instanceof Error ? error.message : String(error || 'Ha ocurrido un error'));
 
   if (variant === 'inline') {
-    return (
-      <div className={`text-red-600 text-sm ${className}`}>
-        ⚠️ {errorMessage}
-      </div>
-    );
+    return <div className={`text-red-600 text-sm ${className}`}>⚠️ {errorMessage}</div>;
   }
 
   if (variant === 'banner') {
@@ -52,16 +49,10 @@ export default function ErrorMessage({
         `}
       >
         <div className="flex items-start">
-          <div className="flex-shrink-0 text-2xl mr-3">
-            ⚠️
-          </div>
+          <div className="flex-shrink-0 text-2xl mr-3">⚠️</div>
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-red-800">
-              Error
-            </h3>
-            <p className="text-sm text-red-700 mt-1">
-              {errorMessage}
-            </p>
+            <h3 className="text-sm font-semibold text-red-800">Error</h3>
+            <p className="text-sm text-red-700 mt-1">{errorMessage}</p>
             {onRetry && (
               <button
                 onClick={onRetry}
@@ -87,12 +78,8 @@ export default function ErrorMessage({
     >
       <div className="text-center">
         <div className="text-5xl mb-3">😕</div>
-        <h3 className="text-lg font-bold text-gray-900 mb-2">
-          ¡Ups! Algo salió mal
-        </h3>
-        <p className="text-gray-600 mb-4">
-          {errorMessage}
-        </p>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">¡Ups! Algo salió mal</h3>
+        <p className="text-gray-600 mb-4">{errorMessage}</p>
         {onRetry && (
           <button
             onClick={onRetry}

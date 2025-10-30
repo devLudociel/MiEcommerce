@@ -3,18 +3,26 @@ import { test, expect } from '@playwright/test';
 test.describe('Checkout flow', () => {
   test.beforeEach(async ({ page, baseURL }) => {
     // Pre-cargar carrito en localStorage
-    await page.addInitScript((cart) => {
-      localStorage.setItem('cart', JSON.stringify(cart));
-    }, {
-      items: [
-        { id: 'p1', name: 'Prod 1', price: 10, quantity: 2, image: 'x.jpg' },
-      ],
-      total: 20,
-    });
+    await page.addInitScript(
+      (cart) => {
+        localStorage.setItem('cart', JSON.stringify(cart));
+      },
+      {
+        items: [{ id: 'p1', name: 'Prod 1', price: 10, quantity: 2, image: 'x.jpg' }],
+        total: 20,
+      }
+    );
 
     // Interceptar servicios externos para evitar red real
-    await page.route('**/api.zippopotam.us/**', (route) => route.fulfill({ status: 200, body: JSON.stringify({ state: 'Madrid', places: [{ 'place name': 'Madrid' }] }) }));
-    await page.route('**/api.geoapify.com/**', (route) => route.fulfill({ status: 200, body: JSON.stringify({ features: [] }) }));
+    await page.route('**/api.zippopotam.us/**', (route) =>
+      route.fulfill({
+        status: 200,
+        body: JSON.stringify({ state: 'Madrid', places: [{ 'place name': 'Madrid' }] }),
+      })
+    );
+    await page.route('**/api.geoapify.com/**', (route) =>
+      route.fulfill({ status: 200, body: JSON.stringify({ features: [] }) })
+    );
 
     // Abrir checkout directamente
     await page.goto(baseURL + '/checkout');
@@ -60,7 +68,11 @@ test.describe('Checkout flow', () => {
           }),
         });
       }
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: false, error: 'No válido' }) });
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ valid: false, error: 'No válido' }),
+      });
     });
 
     // Rellenar mínimos necesarios de paso 1 (para que se renderice el bloque del cupón)
@@ -93,12 +105,22 @@ test.describe('Checkout flow', () => {
           body: JSON.stringify({
             valid: true,
             coupon: {
-              id: 'c1', code: 'PERC10', description: '10% Descuento', type: 'percentage', value: 10, discountAmount: 2, freeShipping: false,
+              id: 'c1',
+              code: 'PERC10',
+              description: '10% Descuento',
+              type: 'percentage',
+              value: 10,
+              discountAmount: 2,
+              freeShipping: false,
             },
           }),
         });
       }
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: false }) });
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ valid: false }),
+      });
     });
 
     // Completar mínimos del paso 1
@@ -147,12 +169,22 @@ test.describe('Checkout flow', () => {
           body: JSON.stringify({
             valid: true,
             coupon: {
-              id: 'c2', code: 'FREESHIP', description: 'Envío gratis', type: 'free_shipping', value: 0, discountAmount: 0, freeShipping: true,
+              id: 'c2',
+              code: 'FREESHIP',
+              description: 'Envío gratis',
+              type: 'free_shipping',
+              value: 0,
+              discountAmount: 0,
+              freeShipping: true,
             },
           }),
         });
       }
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: false }) });
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ valid: false }),
+      });
     });
 
     // Completar mínimos del paso 1
@@ -176,7 +208,11 @@ test.describe('Checkout flow', () => {
     let saveCalled = false;
     await page.route('**/api/save-order', async (route) => {
       saveCalled = true;
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, orderId: 'o123' }) });
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, orderId: 'o123' }),
+      });
     });
     await page.route('**/api/send-email', async (route) => route.fulfill({ status: 200 }));
 
@@ -206,9 +242,6 @@ test.describe('Checkout flow', () => {
     await expect.poll(() => saveCalled).toBe(true);
 
     // Redirige a confirmación o a home si carrito queda vacío antes del redirect con timeout
-    await Promise.race([
-      page.waitForURL('**/confirmacion?orderId=o123'),
-      page.waitForURL('**/'),
-    ]);
+    await Promise.race([page.waitForURL('**/confirmacion?orderId=o123'), page.waitForURL('**/')]);
   });
 });

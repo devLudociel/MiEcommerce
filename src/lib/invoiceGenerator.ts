@@ -86,7 +86,14 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
             width: '*',
             stack: [
               { text: 'Fecha de factura:', style: 'label' },
-              { text: invoiceDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }), style: 'value' },
+              {
+                text: invoiceDate.toLocaleDateString('es-ES', {
+                  day: '2-digit',
+                  month: 'long',
+                  year: 'numeric',
+                }),
+                style: 'value',
+              },
             ],
           },
           {
@@ -95,7 +102,13 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
               { text: 'Fecha de pedido:', style: 'label' },
               {
                 text: (order as any).createdAt?.toDate
-                  ? (order as any).createdAt.toDate().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+                  ? (order as any).createdAt
+                      .toDate()
+                      .toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric',
+                      })
                   : 'N/A',
                 style: 'value',
               },
@@ -107,12 +120,22 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
 
       // Datos de cliente
       { text: 'FACTURAR A:', style: 'sectionHeader' },
-      { canvas: [{ type: 'rect', x: 0, y: 0, w: 515, h: 90, r: 4, lineWidth: 1, lineColor: '#e2e8f0' }] },
+      {
+        canvas: [
+          { type: 'rect', x: 0, y: 0, w: 515, h: 90, r: 4, lineWidth: 1, lineColor: '#e2e8f0' },
+        ],
+      },
       {
         stack: [
-          { text: `${(shipping?.firstName ?? 'N/A')} ${(shipping?.lastName ?? '')}`.trim(), style: 'customerName' },
+          {
+            text: `${shipping?.firstName ?? 'N/A'} ${shipping?.lastName ?? ''}`.trim(),
+            style: 'customerName',
+          },
           { text: shipping?.address ?? 'N/A', style: 'customerDetails' },
-          { text: `${shipping?.zipCode ?? ''} ${shipping?.city ?? ''}, ${shipping?.state ?? ''}`.trim(), style: 'customerDetails' },
+          {
+            text: `${shipping?.zipCode ?? ''} ${shipping?.city ?? ''}, ${shipping?.state ?? ''}`.trim(),
+            style: 'customerDetails',
+          },
           { text: shipping?.country ?? '', style: 'customerDetails' },
           { text: `Email: ${shipping?.email ?? 'N/A'}`, style: 'customerDetails' },
           { text: `Teléfono: ${shipping?.phone ?? 'N/A'}`, style: 'customerDetails' },
@@ -174,9 +197,29 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
           {
             width: 200,
             stack: [
-              { columns: [{ text: 'Subtotal:', alignment: 'left', style: 'totalLabel' }, { text: eur(subtotal), alignment: 'right', style: 'totalValue' }] },
-              { columns: [{ text: 'Envío:', alignment: 'left', style: 'totalLabel' }, { text: shippingCost === 0 ? 'GRATIS' : eur(shippingCost), alignment: 'right', style: 'totalValue' }] },
-              { columns: [{ text: 'Total:', alignment: 'left', style: 'totalLabel' }, { text: eur(total), alignment: 'right', style: 'totalFinalValue' }], margin: [0, 5, 0, 0] },
+              {
+                columns: [
+                  { text: 'Subtotal:', alignment: 'left', style: 'totalLabel' },
+                  { text: eur(subtotal), alignment: 'right', style: 'totalValue' },
+                ],
+              },
+              {
+                columns: [
+                  { text: 'Envío:', alignment: 'left', style: 'totalLabel' },
+                  {
+                    text: shippingCost === 0 ? 'GRATIS' : eur(shippingCost),
+                    alignment: 'right',
+                    style: 'totalValue',
+                  },
+                ],
+              },
+              {
+                columns: [
+                  { text: 'Total:', alignment: 'left', style: 'totalLabel' },
+                  { text: eur(total), alignment: 'right', style: 'totalFinalValue' },
+                ],
+                margin: [0, 5, 0, 0],
+              },
             ],
           },
         ],
@@ -184,13 +227,29 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
 
       // Método de pago
       { text: '', margin: [0, 30, 0, 0] },
-      { stack: [{ text: 'MÉTODO DE PAGO', style: 'sectionHeader' }, { text: methodText((order as any)?.paymentInfo?.method), style: 'paymentMethod' }] },
+      {
+        stack: [
+          { text: 'MÉTODO DE PAGO', style: 'sectionHeader' },
+          { text: methodText((order as any)?.paymentInfo?.method), style: 'paymentMethod' },
+        ],
+      },
 
       // Notas
       { text: '', margin: [0, 40, 0, 0] },
-      { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#cbd5e1' }] },
-      { text: 'Esta factura se ha generado electrónicamente y es válida sin firma.', style: 'footer', margin: [0, 10, 0, 5] },
-      { text: `Gracias por su compra. Para cualquier consulta, contacte con ${companyInfo.email}`, style: 'footer' },
+      {
+        canvas: [
+          { type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#cbd5e1' },
+        ],
+      },
+      {
+        text: 'Esta factura se ha generado electrónicamente y es válida sin firma.',
+        style: 'footer',
+        margin: [0, 10, 0, 5],
+      },
+      {
+        text: `Gracias por su compra. Para cualquier consulta, contacte con ${companyInfo.email}`,
+        style: 'footer',
+      },
     ],
 
     styles: {
@@ -215,4 +274,3 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
     },
   };
 }
-

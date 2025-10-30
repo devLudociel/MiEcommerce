@@ -53,4 +53,3 @@ describe('generateInvoiceDefinition', () => {
     expect(totalsSection).toBeTruthy();
   });
 });
-

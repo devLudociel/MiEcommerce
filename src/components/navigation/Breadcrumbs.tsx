@@ -28,7 +28,9 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ category, subcategory, produc
 
         {category && (
           <>
-            <li><Icon name="chevron-right" className="w-4 h-4" /></li>
+            <li>
+              <Icon name="chevron-right" className="w-4 h-4" />
+            </li>
             <li>
               <a
                 href={`/categoria/${category.slug}`}
@@ -45,7 +47,9 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ category, subcategory, produc
 
         {subcategory && (
           <>
-            <li><Icon name="chevron-right" className="w-4 h-4" /></li>
+            <li>
+              <Icon name="chevron-right" className="w-4 h-4" />
+            </li>
             <li>
               <a
                 href={`/categoria/${category?.slug}/${subcategory.slug}`}
@@ -62,7 +66,9 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ category, subcategory, produc
 
         {product && (
           <>
-            <li><Icon name="chevron-right" className="w-4 h-4" /></li>
+            <li>
+              <Icon name="chevron-right" className="w-4 h-4" />
+            </li>
             <li style={{ color: 'var(--color-gray-800)', fontWeight: '500' }}>{product.name}</li>
           </>
         )}

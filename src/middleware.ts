@@ -69,6 +69,6 @@ function getContentSecurityPolicy(): string {
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'self'",
-    "upgrade-insecure-requests",
+    'upgrade-insecure-requests',
   ].join('; ');
 }

@@ -15,18 +15,22 @@ Las reglas de seguridad de Firestore han sido completamente reescritas con:
 ### 2. APIs Protegidas
 
 #### **`/api/create-payment-intent`**
+
 Ahora requiere y valida:
+
 - ✅ `orderId` (debe existir en Firestore)
 - ✅ El `amount` debe coincidir con el `total` del pedido
 - ✅ Previene pagos duplicados
 - ✅ Asocia el Payment Intent con metadata del pedido
 
 #### **`/api/admin/set-admin-claims`** (NUEVO)
+
 Endpoint para asignar custom claims de admin a usuarios.
 
 ### 3. Variables de Entorno
 
 Información de la empresa movida a `.env`:
+
 ```bash
 COMPANY_NAME=ImprimeArte
 COMPANY_ADDRESS=Calle Principal 123
@@ -75,6 +79,7 @@ firebase deploy --only firestore:rules
 ```
 
 O desde la consola de Firebase:
+
 1. Ve a [Firebase Console](https://console.firebase.google.com/)
 2. Selecciona tu proyecto
 3. Ve a **Firestore Database** → **Reglas**
@@ -106,7 +111,7 @@ const admin = require('firebase-admin');
 const serviceAccount = require('./path/to/serviceAccountKey.json');
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  credential: admin.credential.cert(serviceAccount),
 });
 
 async function setAdminClaim(email) {
@@ -120,11 +125,13 @@ setAdminClaim('tu-email@gmail.com');
 ```
 
 Ejecuta:
+
 ```bash
 node set-admin.js
 ```
 
 **IMPORTANTE**: Después de asignar custom claims, debes:
+
 1. Cerrar sesión en la aplicación
 2. Volver a iniciar sesión
 3. Las custom claims ahora estarán activas
@@ -152,6 +159,7 @@ node set-admin.js
 ### Para Producción
 
 1. **Cambia `ADMIN_SETUP_SECRET`** a un valor aleatorio y seguro:
+
    ```bash
    # Genera uno con:
    openssl rand -hex 32
@@ -171,6 +179,7 @@ node set-admin.js
 ### Monitoreo
 
 Después del deploy, monitorea:
+
 - Logs de Firebase para intentos de acceso denegados
 - Logs de `create-payment-intent` para intentos de manipulación
 - Logs de Admin para uso del endpoint de custom claims
@@ -184,6 +193,7 @@ Después del deploy, monitorea:
 **Causa**: Las nuevas reglas son más estrictas.
 
 **Solución**:
+
 1. Verifica que el usuario esté autenticado
 2. Verifica que `userId` sea 'guest' o coincida con `auth.uid`
 3. Verifica que `customerEmail` coincida con `auth.token.email` (para usuarios autenticados)
@@ -193,6 +203,7 @@ Después del deploy, monitorea:
 **Causa**: Custom claims no configuradas o usuario no cerró sesión.
 
 **Solución**:
+
 1. Ejecuta el endpoint de set-admin-claims
 2. **Cierra sesión completamente**
 3. Vuelve a iniciar sesión
@@ -203,6 +214,7 @@ Después del deploy, monitorea:
 **Causa**: El monto enviado no coincide con el del pedido en Firestore.
 
 **Solución**:
+
 1. Verifica que primero se guarde el pedido con `save-order`
 2. Usa el `orderId` retornado para crear el payment intent
 3. El API ahora valida automáticamente el monto

@@ -73,7 +73,15 @@ describe('cartStore', () => {
 
   it('actualiza cantidad, elimina y limpia', async () => {
     const mod = await import('../cartStore');
-    const { addToCart, updateCartItemQuantity, removeFromCart, clearCart, cartStore, isInCart, getCartItemCount } = mod;
+    const {
+      addToCart,
+      updateCartItemQuantity,
+      removeFromCart,
+      clearCart,
+      cartStore,
+      isInCart,
+      getCartItemCount,
+    } = mod;
 
     addToCart({ id: 'p1', name: 'Prod 1', price: 5, quantity: 2, image: 'x.jpg' });
     addToCart({ id: 'p2', name: 'Prod 2', price: 3, quantity: 1, image: 'y.jpg', variantId: 1 });
@@ -92,4 +100,3 @@ describe('cartStore', () => {
     expect(cartStore.get().total).toBe(0);
   });
 });
-

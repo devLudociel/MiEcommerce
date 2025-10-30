@@ -49,10 +49,10 @@ export const GET: APIRoute = async ({ request }) => {
         '[API get-wallet-transactions] Error initializing Firebase Admin:',
         adminInitError
       );
-      return new Response(
-        JSON.stringify({ error: 'Error del servidor' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Error del servidor' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Get transactions from wallet_transactions collection
@@ -84,13 +84,10 @@ export const GET: APIRoute = async ({ request }) => {
       count: transactions.length,
     });
 
-    return new Response(
-      JSON.stringify({ transactions }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify({ transactions }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('[API get-wallet-transactions] Unexpected error:', error);
     return new Response(
