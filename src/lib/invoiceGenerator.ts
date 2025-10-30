@@ -102,13 +102,11 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
               { text: 'Fecha de pedido:', style: 'label' },
               {
                 text: (order as any).createdAt?.toDate
-                  ? (order as any).createdAt
-                      .toDate()
-                      .toLocaleDateString('es-ES', {
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric',
-                      })
+                  ? (order as any).createdAt.toDate().toLocaleDateString('es-ES', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                    })
                   : 'N/A',
                 style: 'value',
               },
