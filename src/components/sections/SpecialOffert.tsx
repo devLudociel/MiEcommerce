@@ -101,7 +101,7 @@ const SpecialOffers: React.FC<SpecialOffersProps> = ({
   }, []);
 
   // Ofertas de respaldo en caso de que no haya ninguna en Firebase
-  const fallbackOffers: SpecialOffer[] = [
+  const fallbackOffers: SpecialOffer[] = useMemo(() => [
     {
       id: 1,
       title: 'iPhone 15 Pro Max',
@@ -198,48 +198,20 @@ const SpecialOffers: React.FC<SpecialOffersProps> = ({
       featured: false,
       urgencyLevel: 'medium',
     },
-  ];
+  ], []);
 
   // Usar ofertas de Firebase si están disponibles, sino usar ofertas de respaldo
-  const displayOffers = offers.length > 0 ? offers : fallbackOffers;
-  const featuredOffers = displayOffers.filter((offer) => offer.featured);
+  const displayOffers = useMemo(() =>
+    offers.length > 0 ? offers : fallbackOffers,
+    [offers, fallbackOffers]
+  );
 
-  // 🔵 Mostrar indicador de carga
-  if (loadingOffers) {
-    return (
-      <section className="py-24 bg-white relative overflow-hidden">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col items-center justify-center min-h-[400px]">
-            <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4" />
-            <p className="text-gray-600 text-lg">Cargando ofertas especiales...</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  const featuredOffers = useMemo(() =>
+    displayOffers.filter((offer) => offer.featured),
+    [displayOffers]
+  );
 
-  // 🟡 Mostrar mensaje si no hay ofertas
-  if (displayOffers.length === 0) {
-    return (
-      <section className="py-24 bg-white relative overflow-hidden">
-        <div className="container mx-auto px-6">
-          <div className="text-center">
-            <h2 className="text-4xl md:text-5xl font-black text-gray-800 mb-4">
-              🎯 Ofertas Especiales
-            </h2>
-            <p className="text-xl text-gray-600 mb-8">
-              Actualmente no hay ofertas especiales disponibles.
-            </p>
-            <p className="text-gray-500">
-              ¡Vuelve pronto para ver nuestras próximas ofertas increíbles!
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  // Countdown timer logic
+  // Countdown timer logic (DEBE estar antes de cualquier return condicional)
   const calculateTimeLeft = useCallback((endDate: Date): TimeLeft => {
     const difference = endDate.getTime() - new Date().getTime();
 
@@ -327,6 +299,42 @@ const SpecialOffers: React.FC<SpecialOffersProps> = ({
     };
   };
 
+  // 🔵 Renderizado condicional: Loading state
+  if (loadingOffers) {
+    return (
+      <section className="py-24 bg-white relative overflow-hidden">
+        <div className="container mx-auto px-6">
+          <div className="flex flex-col items-center justify-center min-h-[400px]">
+            <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4" />
+            <p className="text-gray-600 text-lg">Cargando ofertas especiales...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // 🟡 Renderizado condicional: Empty state
+  if (displayOffers.length === 0) {
+    return (
+      <section className="py-24 bg-white relative overflow-hidden">
+        <div className="container mx-auto px-6">
+          <div className="text-center">
+            <h2 className="text-4xl md:text-5xl font-black text-gray-800 mb-4">
+              🎯 Ofertas Especiales
+            </h2>
+            <p className="text-xl text-gray-600 mb-8">
+              Actualmente no hay ofertas especiales disponibles.
+            </p>
+            <p className="text-gray-500">
+              ¡Vuelve pronto para ver nuestras próximas ofertas increíbles!
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // 🟢 Renderizado principal con ofertas
   return (
     <section className="py-24 bg-white relative overflow-hidden">
       {/* Animated Background (muy sutil) - Solo se renderiza en el cliente */}
