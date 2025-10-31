@@ -1,0 +1,17 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import RequireAuth from '../../../components/auth/RequireAuth.tsx';
+import OrderDetail from '../../../components/account/OrderDetail.tsx';
+
+const { id } = Astro.params;
+---
+
+<BaseLayout title={`Pedido #${id?.substring(0, 8).toUpperCase()} - Detalle`}>
+  <section class="py-16">
+    <div class="container mx-auto px-4 md:px-6 max-w-4xl">
+      <RequireAuth client:load>
+        <OrderDetail orderId={id} client:load />
+      </RequireAuth>
+    </div>
+  </section>
+</BaseLayout>

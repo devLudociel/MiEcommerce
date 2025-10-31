@@ -1151,3 +1151,94 @@ export async function deactivateCoupon(couponId: string): Promise<boolean> {
     return false;
   }
 }
+
+// ============================================
+// 📦 FUNCIONES PARA PEDIDOS (ORDERS)
+// ============================================
+
+export interface UserOrder {
+  id: string;
+  userId: string;
+  customerEmail: string;
+  items: Array<{
+    productId: string;
+    name: string;
+    quantity: number;
+    price: number;
+    image?: string;
+  }>;
+  shippingInfo: {
+    fullName: string;
+    email: string;
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+    phone: string;
+    shippingMethod: 'standard' | 'express' | 'urgent';
+  };
+  paymentMethod: string;
+  subtotal: number;
+  couponDiscount?: number;
+  couponCode?: string;
+  shippingCost: number;
+  iva: number;
+  walletDiscount?: number;
+  total: number;
+  status: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  paymentStatus?: string;
+  paymentIntentId?: string;
+  createdAt: any;
+  updatedAt?: any;
+}
+
+/**
+ * Obtener pedidos de un usuario
+ */
+export async function getUserOrders(
+  userId: string,
+  limitCount: number = 50
+): Promise<UserOrder[]> {
+  try {
+    const q = query(
+      collection(db, 'orders'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc'),
+      limit(limitCount)
+    );
+
+    const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
+    const orders: UserOrder[] = [];
+
+    querySnapshot.forEach((doc) => {
+      orders.push({ id: doc.id, ...doc.data() } as UserOrder);
+    });
+
+    console.log(`✅ ${orders.length} pedidos encontrados para usuario ${userId}`);
+    return orders;
+  } catch (error) {
+    console.error('❌ Error obteniendo pedidos del usuario:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtener un pedido específico
+ */
+export async function getOrder(orderId: string): Promise<UserOrder | null> {
+  try {
+    const orderRef = doc(db, 'orders', orderId);
+    const orderSnap = await getDoc(orderRef);
+
+    if (!orderSnap.exists()) {
+      console.warn(`⚠️ Pedido ${orderId} no encontrado`);
+      return null;
+    }
+
+    return { id: orderSnap.id, ...orderSnap.data() } as UserOrder;
+  } catch (error) {
+    console.error('❌ Error obteniendo pedido:', error);
+    throw error;
+  }
+}
