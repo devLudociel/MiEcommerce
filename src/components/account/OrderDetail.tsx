@@ -199,6 +199,9 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
         </div>
       </div>
 
+      {/* Tracking del envío */}
+      <ShipmentTracking order={order} />
+
       {/* Resumen del pedido */}
       <div className="card p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Resumen del pedido</h2>

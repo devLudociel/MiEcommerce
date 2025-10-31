@@ -431,6 +431,14 @@ export async function getSpecialOffers(): Promise<any[]> {
 // 📦 FUNCIONES PARA PEDIDOS
 // ============================================
 
+export interface TrackingEvent {
+  status: 'pending' | 'confirmed' | 'processing' | 'packed' | 'shipped' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'failed' | 'returned';
+  timestamp: any;
+  location?: string;
+  description: string;
+  updatedBy?: string; // userId del admin que hizo el update
+}
+
 export interface OrderData {
   id?: string;
   userId?: string;
@@ -446,6 +454,12 @@ export interface OrderData {
   updatedAt?: any;
   invoiceNumber?: string;
   invoiceDate?: any;
+  // Tracking información
+  trackingNumber?: string;
+  carrier?: string; // 'correos' | 'seur' | 'dhl' | 'ups' | 'fedex' | 'mrw' | 'other'
+  trackingUrl?: string;
+  estimatedDelivery?: any;
+  trackingHistory?: TrackingEvent[];
 }
 
 /**
@@ -515,6 +529,124 @@ export async function updateOrderStatus(orderId: string, status: string): Promis
     console.error('❌ Error actualizando estado de pedido:', error);
     throw error;
   }
+}
+
+/**
+ * Actualizar información de tracking del pedido
+ */
+export async function updateOrderTracking(
+  orderId: string,
+  trackingData: {
+    trackingNumber?: string;
+    carrier?: string;
+    trackingUrl?: string;
+    estimatedDelivery?: Date;
+  },
+  userId?: string
+): Promise<boolean> {
+  try {
+    const docRef = doc(db, 'orders', orderId);
+    const updateData: any = {
+      ...trackingData,
+      updatedAt: serverTimestamp(),
+    };
+
+    if (trackingData.estimatedDelivery) {
+      updateData.estimatedDelivery = trackingData.estimatedDelivery;
+    }
+
+    await updateDoc(docRef, updateData);
+
+    console.log('✅ Tracking actualizado para pedido:', orderId);
+    return true;
+  } catch (error) {
+    console.error('❌ Error actualizando tracking:', error);
+    throw error;
+  }
+}
+
+/**
+ * Agregar evento al historial de tracking
+ */
+export async function addTrackingEvent(
+  orderId: string,
+  event: {
+    status: TrackingEvent['status'];
+    location?: string;
+    description: string;
+  },
+  userId?: string
+): Promise<boolean> {
+  try {
+    const docRef = doc(db, 'orders', orderId);
+    const orderSnap = await getDoc(docRef);
+
+    if (!orderSnap.exists()) {
+      throw new Error('Pedido no encontrado');
+    }
+
+    const orderData = orderSnap.data();
+    const currentHistory: TrackingEvent[] = orderData.trackingHistory || [];
+
+    const newEvent: TrackingEvent = {
+      ...event,
+      timestamp: serverTimestamp(),
+      updatedBy: userId,
+    };
+
+    const updatedHistory = [...currentHistory, newEvent];
+
+    await updateDoc(docRef, {
+      trackingHistory: updatedHistory,
+      status: event.status,
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log('✅ Evento de tracking agregado:', orderId, event.status);
+    return true;
+  } catch (error) {
+    console.error('❌ Error agregando evento de tracking:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtener carriers soportados con sus URLs de tracking
+ */
+export function getCarrierInfo(carrier: string, trackingNumber: string): { name: string; url: string } {
+  const carriers: Record<string, { name: string; urlTemplate: string }> = {
+    correos: {
+      name: 'Correos',
+      urlTemplate: 'https://www.correos.es/es/es/herramientas/localizador/envios?numero={tracking}',
+    },
+    seur: {
+      name: 'SEUR',
+      urlTemplate: 'https://www.seur.com/livetracking/?segOnlineIdentificador={tracking}',
+    },
+    dhl: {
+      name: 'DHL',
+      urlTemplate: 'https://www.dhl.com/es-es/home/tracking/tracking-express.html?submit=1&tracking-id={tracking}',
+    },
+    ups: {
+      name: 'UPS',
+      urlTemplate: 'https://www.ups.com/track?loc=es_ES&tracknum={tracking}',
+    },
+    fedex: {
+      name: 'FedEx',
+      urlTemplate: 'https://www.fedex.com/fedextrack/?trknbr={tracking}',
+    },
+    mrw: {
+      name: 'MRW',
+      urlTemplate: 'https://www.mrw.es/seguimiento_envios/MRW_resultados_consultas.asp?modo=nacional&envio={tracking}',
+    },
+  };
+
+  const carrierData = carriers[carrier.toLowerCase()] || { name: carrier, urlTemplate: '' };
+
+  return {
+    name: carrierData.name,
+    url: carrierData.urlTemplate.replace('{tracking}', trackingNumber),
+  };
 }
 
 /**
