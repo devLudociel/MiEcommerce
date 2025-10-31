@@ -8,8 +8,9 @@ import { useFormValidation } from '../../hooks/useFormValidation';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import { lookupZipES, autocompleteStreetES, debounce } from '../../utils/address';
-import type { ZipLookup, AddressSuggestion } from '../../utils/address';
+import type { AddressSuggestion } from '../../utils/address';
 import { useAuth } from '../hooks/useAuth';
+import { stripePromise } from '../../lib/stripe';
 
 interface ShippingInfo {
   firstName: string;
@@ -66,7 +67,6 @@ export default function Checkout() {
   // Wallet state
   const [walletBalance, setWalletBalance] = useState(0);
   const [useWallet, setUseWallet] = useState(false);
-  const [loadingWallet, setLoadingWallet] = useState(false);
 
   // Address autocomplete state
   const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
@@ -128,7 +128,6 @@ export default function Checkout() {
     }
 
     const loadWalletBalance = async () => {
-      setLoadingWallet(true);
       try {
         logger.info('[Checkout] Loading wallet balance', { userId: user.uid });
 
@@ -154,8 +153,6 @@ export default function Checkout() {
       } catch (error) {
         logger.error('[Checkout] Error loading wallet balance', error);
         setWalletBalance(0);
-      } finally {
-        setLoadingWallet(false);
       }
     };
 
@@ -181,7 +178,7 @@ export default function Checkout() {
 
         // Auto-fill province if available and not already set
         if (info.province && !shippingInfo.state) {
-          setShippingInfo((prev) => ({ ...prev, state: info.province! }));
+          setShippingInfo((prev) => ({ ...prev, state: info.province || '' }));
         }
 
         // Set city suggestions
@@ -190,7 +187,7 @@ export default function Checkout() {
 
           // Auto-fill city if there's only one option
           if (info.cities.length === 1 && !shippingInfo.city) {
-            setShippingInfo((prev) => ({ ...prev, city: info.cities[0] }));
+            setShippingInfo((prev) => ({ ...prev, city: info.cities[0] || '' }));
           }
         }
       })
@@ -255,6 +252,129 @@ export default function Checkout() {
 
   // Total includes: subtotal - coupon discount + shipping + IVA - wallet discount
   const total = totalBeforeWallet - walletDiscount;
+
+  /**
+   * Procesa el pago con tarjeta de forma segura usando Stripe
+   * Flujo correcto para producción:
+   * 1. Crear PaymentMethod en el servidor (tokenización segura)
+   * 2. Crear PaymentIntent con el monto del pedido
+   * 3. Confirmar el pago usando el PaymentMethod ID
+   */
+  const processCardPayment = useCallback(
+    async (orderId: string, orderTotal: number) => {
+      if (paymentInfo.method !== 'card') {
+        return;
+      }
+
+      const stripe = await stripePromise;
+      if (!stripe) {
+        logger.error('[Checkout] Stripe no se inicializó');
+        throw new Error('No se pudo inicializar el sistema de pagos');
+      }
+
+      // Validar datos de tarjeta
+      const cardNumber = paymentInfo.cardNumber?.replace(/\s/g, '');
+      if (!cardNumber || cardNumber.length < 13) {
+        throw new Error('Número de tarjeta inválido');
+      }
+
+      const [expMonthStr, expYearStr] = (paymentInfo.cardExpiry || '').split('/');
+      const expMonth = Number(expMonthStr);
+      const expYearDigits = Number(expYearStr);
+      if (!expMonth || !expYearDigits || expMonth < 1 || expMonth > 12) {
+        throw new Error('Fecha de vencimiento inválida');
+      }
+      const expYear = expYearDigits < 100 ? 2000 + expYearDigits : expYearDigits;
+
+      if (!paymentInfo.cardCVV || paymentInfo.cardCVV.length < 3) {
+        throw new Error('CVV inválido');
+      }
+
+      logger.info('[Checkout] Creando Payment Method seguro en el servidor');
+
+      // Paso 1: Crear Payment Method en el servidor (tokenización segura)
+      const paymentMethodResponse = await fetch('/api/create-payment-method', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cardNumber,
+          expMonth,
+          expYear,
+          cvc: paymentInfo.cardCVV,
+          billingDetails: {
+            name: `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim(),
+            email: shippingInfo.email,
+            phone: shippingInfo.phone,
+            address: {
+              line1: shippingInfo.address,
+              city: shippingInfo.city,
+              postal_code: shippingInfo.zipCode,
+              state: shippingInfo.state,
+              country: shippingInfo.country?.toLowerCase().includes('es') ? 'ES' : shippingInfo.country,
+            },
+          },
+        }),
+      });
+
+      const paymentMethodData = await paymentMethodResponse.json();
+
+      if (!paymentMethodResponse.ok) {
+        logger.error('[Checkout] Error creando Payment Method', paymentMethodData);
+        throw new Error(paymentMethodData.error || 'Error procesando los datos de la tarjeta');
+      }
+
+      const { paymentMethodId } = paymentMethodData;
+      logger.info('[Checkout] Payment Method creado', {
+        paymentMethodId,
+        last4: paymentMethodData.card?.last4,
+      });
+
+      // Paso 2: Crear Payment Intent
+      const paymentIntentResponse = await fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          amount: Number(orderTotal.toFixed(2)),
+          currency: 'eur',
+        }),
+      });
+
+      const paymentIntentData = await paymentIntentResponse.json();
+
+      if (!paymentIntentResponse.ok) {
+        logger.error('[Checkout] Error creando Payment Intent', paymentIntentData);
+        throw new Error(paymentIntentData.error || 'Error al iniciar el pago');
+      }
+
+      const { clientSecret, paymentIntentId } = paymentIntentData;
+      logger.info('[Checkout] Payment Intent creado', { orderId, paymentIntentId });
+
+      // Paso 3: Confirmar el pago con el Payment Method ID
+      const confirmation = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: paymentMethodId, // ✅ CORRECTO: usar payment_method, no payment_method_data
+      });
+
+      if (confirmation.error) {
+        logger.error('[Checkout] Error al confirmar el pago', confirmation.error);
+        throw new Error(
+          confirmation.error.message || 'El pago fue rechazado. Verifica los datos e intenta nuevamente.'
+        );
+      }
+
+      const status = confirmation.paymentIntent?.status;
+      logger.info('[Checkout] Pago confirmado', { orderId, paymentIntentId, status });
+
+      if (status !== 'succeeded' && status !== 'processing' && status !== 'requires_capture') {
+        throw new Error(
+          `El pago tiene estado "${status || 'desconocido'}". Por favor contacta con soporte.`
+        );
+      }
+
+      logger.info('[Checkout] ✅ Pago completado exitosamente', { orderId, status });
+    },
+    [paymentInfo, shippingInfo]
+  );
 
   const validateStep1 = async (): Promise<boolean> => {
     logger.debug('[Checkout] Validating step 1 (shipping info)', shippingInfo);
