@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, getUserOrders } from '../../lib/firebase';
-import type { UserOrder } from '../../lib/firebase';
+import type { OrderData } from '../../lib/firebase';
 import { logger } from '../../lib/logger';
 
 export default function OrdersPanel() {
   const [uid, setUid] = useState<string | null>(null);
-  const [orders, setOrders] = useState<UserOrder[]>([]);
+  const [orders, setOrders] = useState<OrderData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -195,13 +195,13 @@ export default function OrdersPanel() {
                     >
                       {getStatusText(order.status)}
                     </span>
-                    {order.paymentMethod && (
+                    {((order as any).paymentMethod || (order as any).paymentInfo?.method) && (
                       <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                        {order.paymentMethod === 'card'
+                        {((order as any).paymentMethod || (order as any).paymentInfo?.method) === 'card'
                           ? '💳 Tarjeta'
-                          : order.paymentMethod === 'paypal'
+                          : ((order as any).paymentMethod || (order as any).paymentInfo?.method) === 'paypal'
                             ? '🅿️ PayPal'
-                            : order.paymentMethod === 'transfer'
+                            : ((order as any).paymentMethod || (order as any).paymentInfo?.method) === 'transfer'
                               ? '🏦 Transferencia'
                               : '💵 Contra Reembolso'}
                       </span>
