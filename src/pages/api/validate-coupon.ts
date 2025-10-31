@@ -7,7 +7,10 @@ import { rateLimit } from '../../lib/rateLimit';
 export const POST: APIRoute = async ({ request }) => {
   // Rate limit básico: 30/min por IP para este endpoint
   try {
-    const { ok, remaining, resetAt } = await rateLimit(request, 'validate-coupon', { intervalMs: 60_000, max: 30 });
+    const { ok, remaining, resetAt } = await rateLimit(request, 'validate-coupon', {
+      intervalMs: 60_000,
+      max: 30,
+    });
     if (!ok) {
       return new Response(JSON.stringify({ error: 'Too many requests' }), {
         status: 429,
@@ -60,7 +63,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Query coupon from Firestore
     const couponsRef = adminDb.collection('coupons');
-    const couponQuery = await couponsRef.where('code', '==', code).where('active', '==', true).get();
+    const couponQuery = await couponsRef
+      .where('code', '==', code)
+      .where('active', '==', true)
+      .get();
 
     if (couponQuery.empty) {
       console.log('[API validate-coupon] Coupon not found or inactive:', code);
@@ -88,7 +94,9 @@ export const POST: APIRoute = async ({ request }) => {
     // Validate expiration date
     if (coupon.endDate) {
       const expirationDate =
-        typeof coupon.endDate?.toDate === 'function' ? coupon.endDate.toDate() : new Date(coupon.endDate);
+        typeof coupon.endDate?.toDate === 'function'
+          ? coupon.endDate.toDate()
+          : new Date(coupon.endDate);
 
       if (expirationDate < new Date()) {
         console.log('[API validate-coupon] Coupon expired');
@@ -108,7 +116,9 @@ export const POST: APIRoute = async ({ request }) => {
     // Validate start date
     if (coupon.startDate) {
       const startDate =
-        typeof coupon.startDate?.toDate === 'function' ? coupon.startDate.toDate() : new Date(coupon.startDate);
+        typeof coupon.startDate?.toDate === 'function'
+          ? coupon.startDate.toDate()
+          : new Date(coupon.startDate);
 
       if (startDate > new Date()) {
         console.log('[API validate-coupon] Coupon not yet valid');
@@ -159,7 +169,11 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Validate user-specific coupons
-    if (coupon.userSpecific && Array.isArray(coupon.userSpecific) && coupon.userSpecific.length > 0) {
+    if (
+      coupon.userSpecific &&
+      Array.isArray(coupon.userSpecific) &&
+      coupon.userSpecific.length > 0
+    ) {
       if (!userId) {
         console.log('[API validate-coupon] User-specific coupon requires authentication');
         return new Response(

@@ -78,7 +78,10 @@ export default function Pagination({
 
         {/* Controles de paginación */}
         <div>
-          <nav className="relative z-0 inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+          <nav
+            className="relative z-0 inline-flex -space-x-px rounded-md shadow-sm"
+            aria-label="Pagination"
+          >
             {/* Botón Anterior */}
             <button
               onClick={onPreviousPage}
@@ -90,7 +93,9 @@ export default function Pagination({
             </button>
 
             {/* Números de página (si tenemos totalPages) */}
-            {totalPages && onPageChange && renderPageNumbers(currentPage, totalPages, onPageChange, isLoading)}
+            {totalPages &&
+              onPageChange &&
+              renderPageNumbers(currentPage, totalPages, onPageChange, isLoading)}
 
             {/* Indicador de página actual (si NO tenemos totalPages) */}
             {!totalPages && (

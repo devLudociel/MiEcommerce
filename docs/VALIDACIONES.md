@@ -5,6 +5,7 @@ Documentación completa del sistema de validación de formularios implementado e
 ## 🎯 Descripción
 
 Sistema robusto de validación de formularios utilizando **Zod** para:
+
 - Validación en tiempo real (on-blur)
 - Validación al enviar formularios
 - Mensajes de error amigables
@@ -41,6 +42,7 @@ Contiene todos los schemas de Zod para diferentes formularios.
 #### Schemas Disponibles:
 
 ##### `shippingInfoSchema`
+
 Valida información de envío en el checkout.
 
 ```typescript
@@ -54,11 +56,12 @@ const data = {
   state: 'Madrid',
   zipCode: '28001',
   country: 'España',
-  notes: 'Opcional'
+  notes: 'Opcional',
 };
 ```
 
 **Validaciones:**
+
 - ✅ Nombres: Solo letras, 2-50 caracteres
 - ✅ Email: Formato válido, normalizado a lowercase
 - ✅ Teléfono: Formato español (+34 xxx xxx xxx)
@@ -66,30 +69,33 @@ const data = {
 - ✅ Campos requeridos con min/max lengths
 
 ##### `paymentInfoSchema`
+
 Valida información de pago con discriminated union.
 
 ```typescript
 // Pago con tarjeta
 const cardPayment = {
   method: 'card',
-  cardNumber: '4532 1234 5678 9010',  // Validado con algoritmo de Luhn
+  cardNumber: '4532 1234 5678 9010', // Validado con algoritmo de Luhn
   cardName: 'JUAN GARCIA',
-  cardExpiry: '12/25',                 // MM/AA, valida fecha futura
-  cardCVV: '123'                       // 3-4 dígitos
+  cardExpiry: '12/25', // MM/AA, valida fecha futura
+  cardCVV: '123', // 3-4 dígitos
 };
 
 // Otros métodos
 const otherPayment = {
-  method: 'paypal' | 'transfer' | 'cash'
+  method: 'paypal' | 'transfer' | 'cash',
 };
 ```
 
 **Validaciones especiales:**
+
 - ✅ **Algoritmo de Luhn**: Valida números de tarjeta reales
 - ✅ **Fecha de expiración**: Verifica que no esté vencida
 - ✅ **Discriminated union**: Diferentes validaciones según método
 
 ##### `productSchema`
+
 Valida productos en el panel de admin.
 
 ```typescript
@@ -100,20 +106,19 @@ const product = {
   categoryId: '2',
   subcategoryId: '4',
   basePrice: 19.99,
-  salePrice: 14.99,           // Opcional, debe ser < basePrice
+  salePrice: 14.99, // Opcional, debe ser < basePrice
   onSale: true,
   featured: false,
   active: true,
-  attributes: [
-    { attributeId: '3', value: 'Camiseta' }
-  ],
+  attributes: [{ attributeId: '3', value: 'Camiseta' }],
   tags: ['textil', 'personalizable'],
   images: ['https://...'],
-  customizerType: 'shirt'
+  customizerType: 'shirt',
 };
 ```
 
 **Validaciones:**
+
 - ✅ Slug: URL-friendly (solo minúsculas, números y guiones)
 - ✅ Precios: >= 0.01, máximo 2 decimales
 - ✅ Sale price: Debe ser menor que basePrice
@@ -129,16 +134,16 @@ Hook reutilizable para manejar validación de formularios.
 
 ```typescript
 const {
-  errors,          // Record<string, string> - Errores por campo
-  isValidating,    // boolean - Estado de validación
-  validate,        // (data) => Promise<Result> - Valida todo el form
-  validateField,   // (name, value) => Promise - Valida un campo
-  clearErrors,     // () => void - Limpia todos los errores
+  errors, // Record<string, string> - Errores por campo
+  isValidating, // boolean - Estado de validación
+  validate, // (data) => Promise<Result> - Valida todo el form
+  validateField, // (name, value) => Promise - Valida un campo
+  clearErrors, // () => void - Limpia todos los errores
   clearFieldError, // (name) => void - Limpia un error
-  setFieldError,   // (name, error) => void - Set error manual
-  setErrors,       // (errors) => void - Set múltiples errores
-  handleChange,    // (name, value) => void - Handler onChange
-  handleBlur,      // (name, value) => void - Handler onBlur
+  setFieldError, // (name, error) => void - Set error manual
+  setErrors, // (errors) => void - Set múltiples errores
+  handleChange, // (name, value) => void - Handler onChange
+  handleBlur, // (name, value) => void - Handler onBlur
 } = useFormValidation(schema, options);
 ```
 
@@ -146,10 +151,10 @@ const {
 
 ```typescript
 const options = {
-  validateOnChange: false,    // Validar al escribir
-  validateOnBlur: true,       // Validar al perder foco
-  showToastOnError: false,    // Mostrar toast en error
-  formName: 'MiFormulario'    // Nombre para logs
+  validateOnChange: false, // Validar al escribir
+  validateOnBlur: true, // Validar al perder foco
+  showToastOnError: false, // Mostrar toast en error
+  formName: 'MiFormulario', // Nombre para logs
 };
 ```
 
@@ -162,11 +167,12 @@ const { errors, validate } = useSimpleFormValidation(productSchema);
 ```
 
 Equivale a:
+
 ```typescript
 useFormValidation(schema, {
   validateOnChange: false,
   validateOnBlur: false,
-  showToastOnError: true
+  showToastOnError: true,
 });
 ```
 
@@ -322,7 +328,7 @@ En `src/lib/validation/schemas.ts`:
 ```typescript
 export const contactSchema = z.object({
   name: z.string().min(2, 'Nombre demasiado corto'),
-  email: emailSchema,  // Reutilizar schema existente
+  email: emailSchema, // Reutilizar schema existente
   message: z.string().min(10, 'Mensaje muy corto').max(500),
 });
 
@@ -334,29 +340,31 @@ export type ContactFormData = z.infer<typeof contactSchema>;
 Usa `.refine()` para validar relaciones entre campos:
 
 ```typescript
-const schema = z.object({
-  password: z.string().min(8),
-  confirmPassword: z.string(),
-}).refine(
-  (data) => data.password === data.confirmPassword,
-  {
+const schema = z
+  .object({
+    password: z.string().min(8),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
     message: 'Las contraseñas no coinciden',
-    path: ['confirmPassword']  // Asignar error a este campo
-  }
-);
+    path: ['confirmPassword'], // Asignar error a este campo
+  });
 ```
 
 ### Validaciones Async
 
 ```typescript
 const schema = z.object({
-  email: z.string().email().refine(
-    async (email) => {
-      const exists = await checkEmailExists(email);
-      return !exists;
-    },
-    { message: 'Este email ya está registrado' }
-  )
+  email: z
+    .string()
+    .email()
+    .refine(
+      async (email) => {
+        const exists = await checkEmailExists(email);
+        return !exists;
+      },
+      { message: 'Este email ya está registrado' }
+    ),
 });
 ```
 
@@ -391,9 +399,9 @@ import { validateSchema } from '../lib/validation/schemas';
 const result = validateSchema(schema, data);
 
 if (result.success) {
-  console.log(result.data);  // Datos validados y tipados
+  console.log(result.data); // Datos validados y tipados
 } else {
-  console.log(result.errors);  // { field: 'error message' }
+  console.log(result.errors); // { field: 'error message' }
 }
 ```
 
@@ -446,7 +454,7 @@ En modo desarrollo:
 ```javascript
 // En la consola del navegador
 __logger.debug('Test');
-__setLogLevel('DEBUG');  // DEBUG | INFO | WARN | ERROR
+__setLogLevel('DEBUG'); // DEBUG | INFO | WARN | ERROR
 ```
 
 ---

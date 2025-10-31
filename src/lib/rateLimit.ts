@@ -8,7 +8,8 @@ export interface RateLimitOptions {
 }
 
 function keyFromRequest(request: Request, scope: string) {
-  const ip = request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip') || 'local';
+  const ip =
+    request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip') || 'local';
   return `${scope}:${ip}`;
 }
 
@@ -32,4 +33,3 @@ export async function rateLimit(request: Request, scope: string, opts: RateLimit
   const ok = win.count <= max;
   return { ok, remaining, resetAt: win.resetAt };
 }
-

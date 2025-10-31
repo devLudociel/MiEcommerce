@@ -20,7 +20,8 @@ export function getAdminApp(): App {
   }
 
   try {
-    const projectId = (import.meta.env.PUBLIC_FIREBASE_PROJECT_ID as string | undefined) || undefined;
+    const projectId =
+      (import.meta.env.PUBLIC_FIREBASE_PROJECT_ID as string | undefined) || undefined;
 
     // Opción 1: Service Account JSON (recomendada)
     const svc = import.meta.env.FIREBASE_SERVICE_ACCOUNT as string | undefined;
@@ -83,4 +84,3 @@ export function getAdminAuth(): Auth {
   }
   return adminAuth;
 }
-

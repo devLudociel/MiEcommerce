@@ -47,9 +47,9 @@ interface AppliedCoupon {
 }
 
 const SHIPPING_COSTS = {
-  standard: 0,    // Gratis
-  express: 4.95,  // Express 24-48h
-  urgent: 9.95,   // Urgente 24h
+  standard: 0, // Gratis
+  express: 4.95, // Express 24-48h
+  urgent: 9.95, // Urgente 24h
 };
 const FREE_SHIPPING_THRESHOLD = 50;
 
@@ -623,7 +623,9 @@ export default function Checkout() {
                         placeholder="Juan"
                       />
                       {shippingValidation.errors.firstName && (
-                        <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.firstName}</p>
+                        <p className="text-red-500 text-sm mt-1">
+                          {shippingValidation.errors.firstName}
+                        </p>
                       )}
                     </div>
                     <div>
@@ -642,7 +644,9 @@ export default function Checkout() {
                         placeholder="García"
                       />
                       {shippingValidation.errors.lastName && (
-                        <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.lastName}</p>
+                        <p className="text-red-500 text-sm mt-1">
+                          {shippingValidation.errors.lastName}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -661,7 +665,11 @@ export default function Checkout() {
                         className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${shippingValidation.errors.email ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="tu@email.com"
                       />
-                      {shippingValidation.errors.email && <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.email}</p>}
+                      {shippingValidation.errors.email && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {shippingValidation.errors.email}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-2">
@@ -678,7 +686,11 @@ export default function Checkout() {
                         className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${shippingValidation.errors.phone ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="612 345 678"
                       />
-                      {shippingValidation.errors.phone && <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.phone}</p>}
+                      {shippingValidation.errors.phone && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {shippingValidation.errors.phone}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -703,7 +715,9 @@ export default function Checkout() {
                       placeholder="Calle Principal, 123, Piso 2"
                     />
                     {shippingValidation.errors.address && (
-                      <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.address}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {shippingValidation.errors.address}
+                      </p>
                     )}
 
                     {/* Street autocomplete suggestions */}
@@ -756,7 +770,11 @@ export default function Checkout() {
                         className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${shippingValidation.errors.city ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Madrid"
                       />
-                      {shippingValidation.errors.city && <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.city}</p>}
+                      {shippingValidation.errors.city && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {shippingValidation.errors.city}
+                        </p>
+                      )}
 
                       {/* City autocomplete suggestions */}
                       {citySuggestions.length > 1 && (
@@ -792,7 +810,11 @@ export default function Checkout() {
                         className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${shippingValidation.errors.state ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Madrid"
                       />
-                      {shippingValidation.errors.state && <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.state}</p>}
+                      {shippingValidation.errors.state && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {shippingValidation.errors.state}
+                        </p>
+                      )}
                     </div>
                     <div className="relative">
                       <label className="block text-sm font-bold text-gray-700 mb-2">CP *</label>
@@ -815,7 +837,9 @@ export default function Checkout() {
                         </div>
                       )}
                       {shippingValidation.errors.zipCode && (
-                        <p className="text-red-500 text-sm mt-1">{shippingValidation.errors.zipCode}</p>
+                        <p className="text-red-500 text-sm mt-1">
+                          {shippingValidation.errors.zipCode}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -1037,7 +1061,9 @@ export default function Checkout() {
                           maxLength={19}
                         />
                         {paymentValidation.errors.cardNumber && (
-                          <p className="text-red-500 text-sm mt-1">{paymentValidation.errors.cardNumber}</p>
+                          <p className="text-red-500 text-sm mt-1">
+                            {paymentValidation.errors.cardNumber}
+                          </p>
                         )}
                       </div>
                       <div>
@@ -1057,7 +1083,9 @@ export default function Checkout() {
                           placeholder="JUAN GARCIA"
                         />
                         {paymentValidation.errors.cardName && (
-                          <p className="text-red-500 text-sm mt-1">{paymentValidation.errors.cardName}</p>
+                          <p className="text-red-500 text-sm mt-1">
+                            {paymentValidation.errors.cardName}
+                          </p>
                         )}
                       </div>
                       <div className="grid grid-cols-2 gap-4">
@@ -1076,13 +1104,17 @@ export default function Checkout() {
                               setPaymentInfo({ ...paymentInfo, cardExpiry: value });
                               paymentValidation.handleChange('cardExpiry', value);
                             }}
-                            onBlur={(e) => paymentValidation.handleBlur('cardExpiry', e.target.value)}
+                            onBlur={(e) =>
+                              paymentValidation.handleBlur('cardExpiry', e.target.value)
+                            }
                             className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${paymentValidation.errors.cardExpiry ? 'border-red-500' : 'border-gray-300'}`}
                             placeholder="MM/AA"
                             maxLength={5}
                           />
                           {paymentValidation.errors.cardExpiry && (
-                            <p className="text-red-500 text-sm mt-1">{paymentValidation.errors.cardExpiry}</p>
+                            <p className="text-red-500 text-sm mt-1">
+                              {paymentValidation.errors.cardExpiry}
+                            </p>
                           )}
                         </div>
                         <div>
@@ -1103,7 +1135,9 @@ export default function Checkout() {
                             maxLength={4}
                           />
                           {paymentValidation.errors.cardCVV && (
-                            <p className="text-red-500 text-sm mt-1">{paymentValidation.errors.cardCVV}</p>
+                            <p className="text-red-500 text-sm mt-1">
+                              {paymentValidation.errors.cardCVV}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -1342,10 +1376,7 @@ export default function Checkout() {
                           <p className="text-sm text-gray-600">€{walletBalance.toFixed(2)}</p>
                         </div>
                       </div>
-                      <a
-                        href="/account/wallet"
-                        className="text-xs text-cyan-600 hover:underline"
-                      >
+                      <a href="/account/wallet" className="text-xs text-cyan-600 hover:underline">
                         Ver monedero →
                       </a>
                     </div>
@@ -1393,9 +1424,7 @@ export default function Checkout() {
                   {shippingCost === 0 ? (
                     <span className="font-bold text-green-500">
                       GRATIS ✓
-                      {appliedCoupon?.freeShipping && (
-                        <span className="text-xs ml-1">(Cupón)</span>
-                      )}
+                      {appliedCoupon?.freeShipping && <span className="text-xs ml-1">(Cupón)</span>}
                     </span>
                   ) : (
                     <span className="font-bold">€{shippingCost.toFixed(2)}</span>
@@ -1409,9 +1438,7 @@ export default function Checkout() {
                 )}
 
                 <div className="flex justify-between text-gray-700">
-                  <span>
-                    IVA (21%)
-                  </span>
+                  <span>IVA (21%)</span>
                   <span className="font-bold">€{iva.toFixed(2)}</span>
                 </div>
 

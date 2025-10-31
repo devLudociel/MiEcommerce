@@ -51,4 +51,3 @@ describe('API get-order', () => {
     expect(Array.isArray(body.items)).toBe(true);
   });
 });
-

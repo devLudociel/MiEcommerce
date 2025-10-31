@@ -21,7 +21,12 @@ import {
   startAfter,
   getCountFromServer,
 } from 'firebase/firestore';
-import type { Firestore, DocumentData, QuerySnapshot, QueryDocumentSnapshot } from 'firebase/firestore';
+import type {
+  Firestore,
+  DocumentData,
+  QuerySnapshot,
+  QueryDocumentSnapshot,
+} from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import type { FirebaseStorage, StorageReference, UploadResult } from 'firebase/storage';
 import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
@@ -756,11 +761,7 @@ export async function getOrdersPaginated(
       );
     } else {
       // Todos los pedidos
-      q = query(
-        collection(db, 'orders'),
-        orderBy('createdAt', 'desc'),
-        limit(pageSize + 1)
-      );
+      q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(pageSize + 1));
     }
 
     // Si hay un documento anterior, empezar después de él

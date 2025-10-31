@@ -54,11 +54,7 @@ export default function LoadingSpinner({
         role="status"
         aria-label="Cargando"
       />
-      {text && (
-        <p className="text-sm text-gray-600 font-medium animate-pulse">
-          {text}
-        </p>
-      )}
+      {text && <p className="text-sm text-gray-600 font-medium animate-pulse">{text}</p>}
     </div>
   );
 }
@@ -74,14 +70,7 @@ export function InlineSpinner({ className = '' }: { className?: string }) {
       fill="none"
       viewBox="0 0 24 24"
     >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path
         className="opacity-75"
         fill="currentColor"

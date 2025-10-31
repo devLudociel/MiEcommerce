@@ -23,13 +23,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Validar secret key
     if (secret !== ADMIN_SECRET) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized: Invalid secret key' }),
-        {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      return new Response(JSON.stringify({ error: 'Unauthorized: Invalid secret key' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     if (!email) {

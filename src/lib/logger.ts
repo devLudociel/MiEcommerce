@@ -64,9 +64,7 @@ const colors = {
  * Formatea el mensaje con timestamp y color
  */
 function formatMessage(level: string, message: string, color: string): string {
-  const timestamp = config.enableTimestamps
-    ? `[${new Date().toLocaleTimeString('es-ES')}]`
-    : '';
+  const timestamp = config.enableTimestamps ? `[${new Date().toLocaleTimeString('es-ES')}]` : '';
 
   const prefix = config.prefix ? `${config.prefix} ` : '';
 

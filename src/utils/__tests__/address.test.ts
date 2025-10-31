@@ -73,4 +73,3 @@ describe('lookupZipES', () => {
     fetchSpy.mockRestore();
   });
 });
-

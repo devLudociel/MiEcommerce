@@ -107,20 +107,14 @@ export function ErrorFallback({ error, errorInfo, onReset }: ErrorFallbackProps)
       <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-8 border-2 border-red-200">
         <div className="text-center mb-6">
           <div className="text-6xl mb-4">⚠️</div>
-          <h1 className="text-3xl font-black text-gray-900 mb-2">
-            ¡Oops! Algo salió mal
-          </h1>
-          <p className="text-gray-600">
-            Lo sentimos, ha ocurrido un error inesperado.
-          </p>
+          <h1 className="text-3xl font-black text-gray-900 mb-2">¡Oops! Algo salió mal</h1>
+          <p className="text-gray-600">Lo sentimos, ha ocurrido un error inesperado.</p>
         </div>
 
         {import.meta.env.DEV && error && (
           <div className="mt-6 p-4 bg-red-50 rounded-xl border border-red-200">
             <h3 className="font-bold text-red-900 mb-2">Detalles del Error (Solo Dev):</h3>
-            <pre className="text-sm text-red-800 overflow-auto max-h-40">
-              {error.toString()}
-            </pre>
+            <pre className="text-sm text-red-800 overflow-auto max-h-40">{error.toString()}</pre>
             {errorInfo && (
               <details className="mt-3">
                 <summary className="cursor-pointer text-sm text-red-700 font-semibold">

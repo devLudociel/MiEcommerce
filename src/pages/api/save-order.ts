@@ -9,7 +9,10 @@ const CASHBACK_PERCENTAGE = 0.05; // 5% de cashback
 export const POST: APIRoute = async ({ request }) => {
   // Rate limit básico: 10/min por IP para guardar orden
   try {
-    const { ok, remaining, resetAt } = await rateLimit(request, 'save-order', { intervalMs: 60_000, max: 10 });
+    const { ok, remaining, resetAt } = await rateLimit(request, 'save-order', {
+      intervalMs: 60_000,
+      max: 10,
+    });
     if (!ok) {
       return new Response(JSON.stringify({ error: 'Too many requests' }), {
         status: 429,
@@ -62,8 +65,7 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(
         JSON.stringify({
           error: 'El servidor no pudo inicializar Firebase Admin.',
-          hint:
-            'Configura credenciales: FIREBASE_SERVICE_ACCOUNT (JSON) o FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY + PUBLIC_FIREBASE_PROJECT_ID en .env',
+          hint: 'Configura credenciales: FIREBASE_SERVICE_ACCOUNT (JSON) o FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY + PUBLIC_FIREBASE_PROJECT_ID en .env',
         }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
@@ -90,7 +92,12 @@ export const POST: APIRoute = async ({ request }) => {
     console.log('API save-order: Pedido guardado con ID:', docRef.id);
 
     // Procesar wallet debit si se usó saldo (nueva estructura del checkout)
-    if (orderData.usedWallet && orderData.walletDiscount && orderData.userId && orderData.userId !== 'guest') {
+    if (
+      orderData.usedWallet &&
+      orderData.walletDiscount &&
+      orderData.userId &&
+      orderData.userId !== 'guest'
+    ) {
       try {
         console.log('[save-order] Processing wallet debit...');
         const userId: string = String(orderData.userId);
@@ -104,12 +111,16 @@ export const POST: APIRoute = async ({ request }) => {
             console.warn('[save-order] Wallet document does not exist for user, creating...');
           }
 
-          const current = snap.exists ? (snap.data() as any) : { balance: 0, totalEarned: 0, totalSpent: 0, userId };
+          const current = snap.exists
+            ? (snap.data() as any)
+            : { balance: 0, totalEarned: 0, totalSpent: 0, userId };
           const currentBalance = Number(current.balance || 0);
 
           // Ensure we don't go negative
           if (currentBalance < walletAmount) {
-            console.error(`[save-order] Insufficient wallet balance. Current: €${currentBalance}, Required: €${walletAmount}`);
+            console.error(
+              `[save-order] Insufficient wallet balance. Current: €${currentBalance}, Required: €${walletAmount}`
+            );
             throw new Error('Saldo insuficiente en el monedero');
           }
 
@@ -136,7 +147,9 @@ export const POST: APIRoute = async ({ request }) => {
             createdAt: FieldValue.serverTimestamp(),
           });
 
-          console.log(`[save-order] Wallet debited: €${walletAmount.toFixed(2)}, New balance: €${newBalance.toFixed(2)}`);
+          console.log(
+            `[save-order] Wallet debited: €${walletAmount.toFixed(2)}, New balance: €${newBalance.toFixed(2)}`
+          );
         }
       } catch (walletError) {
         console.error('[save-order] Error processing wallet debit:', walletError);
@@ -145,7 +158,12 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Procesar cupón si se usó (actualizado con nueva estructura)
-    if (orderData.couponCode && orderData.couponId && orderData.userId && orderData.userId !== 'guest') {
+    if (
+      orderData.couponCode &&
+      orderData.couponId &&
+      orderData.userId &&
+      orderData.userId !== 'guest'
+    ) {
       try {
         console.log('[save-order] Processing coupon usage...');
         const couponId: string = String(orderData.couponId);
@@ -158,7 +176,7 @@ export const POST: APIRoute = async ({ request }) => {
           {
             timesUsed: FieldValue.increment(1),
             currentUses: FieldValue.increment(1),
-            updatedAt: FieldValue.serverTimestamp()
+            updatedAt: FieldValue.serverTimestamp(),
           },
           { merge: true }
         );
@@ -173,7 +191,9 @@ export const POST: APIRoute = async ({ request }) => {
           usedAt: FieldValue.serverTimestamp(),
         });
 
-        console.log(`[save-order] Coupon processed: ${couponCode} (-€${discountAmount.toFixed(2)})`);
+        console.log(
+          `[save-order] Coupon processed: ${couponCode} (-€${discountAmount.toFixed(2)})`
+        );
       } catch (couponError) {
         console.error('[save-order] Error processing coupon:', couponError);
         // Don't throw - log and continue
@@ -195,7 +215,9 @@ export const POST: APIRoute = async ({ request }) => {
           const userId: string = String(orderData.userId);
           const walletRef = adminDb.collection('wallets').doc(userId);
           const snap = await walletRef.get();
-          const current = snap.exists ? (snap.data() as any) : { balance: 0, totalEarned: 0, totalSpent: 0, userId };
+          const current = snap.exists
+            ? (snap.data() as any)
+            : { balance: 0, totalEarned: 0, totalSpent: 0, userId };
           const newBalance = Number(current.balance || 0) + cashbackAmount;
 
           await walletRef.set(
@@ -219,7 +241,9 @@ export const POST: APIRoute = async ({ request }) => {
             createdAt: FieldValue.serverTimestamp(),
           });
 
-          console.log(`[save-order] Cashback added: €${cashbackAmount.toFixed(2)} (5% of €${subtotalAfterDiscount.toFixed(2)})`);
+          console.log(
+            `[save-order] Cashback added: €${cashbackAmount.toFixed(2)} (5% of €${subtotalAfterDiscount.toFixed(2)})`
+          );
         }
       } catch (cashbackError) {
         console.error('[save-order] Error adding cashback:', cashbackError);
@@ -275,4 +299,3 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 };
-

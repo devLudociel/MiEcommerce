@@ -28,6 +28,7 @@
 5. Espera a que se verifique (puede tardar unos minutos)
 
 **Si NO configuras dominio:**
+
 - Los emails se enviarán desde `onboarding@resend.dev`
 - Funcionan perfectamente para pruebas
 - Para producción es mejor usar tu dominio
@@ -43,6 +44,7 @@ EMAIL_FROM=pedidos@tudominio.com
 ```
 
 **Opciones para EMAIL_FROM:**
+
 - Si configuraste dominio: `pedidos@imprimearte.es` o `noreply@imprimearte.es`
 - Si NO configuraste dominio: `onboarding@resend.dev`
 
@@ -55,9 +57,11 @@ npm run dev
 ## 📩 Emails que se envían automáticamente
 
 ### 1. Confirmación de Pedido
+
 **Cuándo:** Inmediatamente después de realizar un pedido
 **A quién:** Cliente que hizo el pedido
 **Contenido:**
+
 - Número de pedido
 - Productos comprados
 - Dirección de envío
@@ -65,6 +69,7 @@ npm run dev
 - Fecha estimada de entrega
 
 ### 2. Actualización de Estado
+
 **Cuándo:** Cuando el admin cambia el estado del pedido
 **A quién:** Cliente
 **Contenido:** Depende del estado:
@@ -95,12 +100,14 @@ npm run dev
 ## 📊 Límites del plan gratuito
 
 **Resend Free:**
+
 - ✅ 100 emails/día
 - ✅ 3,000 emails/mes
 - ✅ Dominios ilimitados
 - ✅ API keys ilimitadas
 
 **Para más emails:**
+
 - Plan Pro: $20/mes → 50,000 emails/mes
 - [Ver planes](https://resend.com/pricing)
 
@@ -118,28 +125,33 @@ npm run dev
 ### Los emails no llegan
 
 **1. Verifica la API key:**
+
 ```bash
 # En tu terminal
 cat .env | grep RESEND
 ```
+
 Debe mostrar tu clave que empieza con `re_`
 
 **2. Revisa la carpeta de spam**
 Los primeros emails pueden ir a spam
 
 **3. Verifica en Resend Dashboard:**
+
 - Ve a [https://resend.com/emails](https://resend.com/emails)
 - Busca el email
 - Si está "delivered", el problema está en el servidor de email del destinatario
 
 **4. Revisa los logs del servidor:**
 En la terminal donde corre `npm run dev`, busca:
+
 - `✅ Email enviado correctamente`
 - `❌ Error enviando email`
 
 ### Email dice "from onboarding@resend.dev"
 
 Esto es normal si **NO** configuraste un dominio. Para usar tu dominio:
+
 1. Configura tu dominio en Resend (paso 3)
 2. Actualiza `EMAIL_FROM` en `.env`
 
@@ -151,11 +163,13 @@ Esto es normal si **NO** configuraste un dominio. Para usar tu dominio:
 ## 🎨 Personalizar plantillas
 
 Las plantillas de email están en:
+
 ```
 src/lib/emailTemplates.ts
 ```
 
 Puedes modificar:
+
 - Colores
 - Textos
 - Estructura HTML

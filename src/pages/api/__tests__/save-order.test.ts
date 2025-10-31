@@ -100,8 +100,11 @@ describe('API save-order', () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch' as any).mockResolvedValue({ ok: true } as any);
 
     // Inicializar wallet usuario
-    const { __mockDb } = await import('../../../lib/firebase-admin') as any;
-    await __mockDb.collection('wallets').doc('u1').set({ userId: 'u1', balance: 50, totalEarned: 0, totalSpent: 0 });
+    const { __mockDb } = (await import('../../../lib/firebase-admin')) as any;
+    await __mockDb
+      .collection('wallets')
+      .doc('u1')
+      .set({ userId: 'u1', balance: 50, totalEarned: 0, totalSpent: 0 });
 
     const req = new Request('http://local/api/save-order', {
       method: 'POST',
@@ -143,8 +146,11 @@ describe('API save-order', () => {
   });
 
   it('continúa si el wallet no tiene fondos suficientes (no falla 200)', async () => {
-    const { __mockDb } = await import('../../../lib/firebase-admin') as any;
-    await __mockDb.collection('wallets').doc('u2').set({ userId: 'u2', balance: 1, totalEarned: 0, totalSpent: 0 });
+    const { __mockDb } = (await import('../../../lib/firebase-admin')) as any;
+    await __mockDb
+      .collection('wallets')
+      .doc('u2')
+      .set({ userId: 'u2', balance: 1, totalEarned: 0, totalSpent: 0 });
 
     const req = new Request('http://local/api/save-order', {
       method: 'POST',
@@ -166,4 +172,3 @@ describe('API save-order', () => {
     expect(data.success).toBe(true);
   });
 });
-

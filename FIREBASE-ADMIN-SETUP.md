@@ -5,6 +5,7 @@
 Firebase Admin SDK se usa en los **endpoints del servidor** (API routes) para realizar operaciones con privilegios completos que **bypasean las reglas de seguridad** de Firestore.
 
 **Casos de uso**:
+
 - Guardar pedidos desde el servidor (`/api/save-order`)
 - Procesar transacciones de wallet
 - Enviar emails automáticos
@@ -15,6 +16,7 @@ Firebase Admin SDK se usa en los **endpoints del servidor** (API routes) para re
 ## 🚨 Problema que Resuelve
 
 **Antes**: El endpoint `/api/save-order` usaba el cliente de Firebase normal, que requiere autenticación de usuario. Esto causaba:
+
 ```
 Error: 7 PERMISSION_DENIED: Missing or insufficient permissions
 ```
@@ -71,6 +73,7 @@ FIREBASE_SERVICE_ACCOUNT={"type":"service_account","project_id":"tu-proyecto-id"
 ```
 
 **IMPORTANTE**:
+
 - Debe ser **TODO EN UNA LÍNEA**
 - **SIN saltos de línea** en el JSON
 - Las `\n` dentro del `private_key` deben mantenerse como `\n` (no convertirlas a saltos de línea reales)
@@ -94,6 +97,7 @@ FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFA
 ```
 
 **IMPORTANTE**:
+
 - El `private_key` debe estar **entre comillas dobles**
 - Mantén las `\n` literalmente (no las conviertas a saltos de línea)
 - Debe tener el formato exacto con `-----BEGIN PRIVATE KEY-----` y `-----END PRIVATE KEY-----`
@@ -103,6 +107,7 @@ FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFA
 ## 🧪 Verificar que Funciona
 
 1. Reinicia tu servidor de desarrollo:
+
 ```bash
 npm run dev
 ```
@@ -112,6 +117,7 @@ npm run dev
 3. Procede al checkout y completa un pedido de prueba
 
 4. Si todo está bien configurado, verás en la consola del servidor:
+
 ```
 ✅ Firebase Admin inicializado con Service Account
 🔵 API save-order: Intentando guardar en Firestore con Admin SDK...
@@ -119,6 +125,7 @@ npm run dev
 ```
 
 5. **NO** deberías ver el error:
+
 ```
 ❌ 7 PERMISSION_DENIED: Missing or insufficient permissions
 ```
@@ -154,6 +161,7 @@ Si accidentalmente expones tu clave privada:
 **Causa**: Falta configurar las credenciales en `.env`
 
 **Solución**:
+
 1. Verifica que hayas añadido `FIREBASE_SERVICE_ACCOUNT` o `FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY` en tu `.env`
 2. Reinicia el servidor después de modificar `.env`
 
@@ -164,6 +172,7 @@ Si accidentalmente expones tu clave privada:
 **Causa**: El `private_key` no está correctamente formateado
 
 **Solución**:
+
 1. Asegúrate de que las `\n` estén literalmente como `\n` (no como saltos de línea reales)
 2. El formato debe ser: `"-----BEGIN PRIVATE KEY-----\nXXXXX\n-----END PRIVATE KEY-----\n"`
 3. Todo debe estar entre comillas dobles
@@ -176,6 +185,7 @@ Si accidentalmente expones tu clave privada:
 
 **Solución**:
 Verifica que tu `.env` tenga:
+
 ```env
 PUBLIC_FIREBASE_PROJECT_ID=tu-proyecto-id
 ```
@@ -184,13 +194,13 @@ PUBLIC_FIREBASE_PROJECT_ID=tu-proyecto-id
 
 ## 📚 Diferencia entre Client SDK y Admin SDK
 
-| Aspecto | Client SDK | Admin SDK |
-|---------|------------|-----------|
-| **Dónde se usa** | Navegador (cliente) | Servidor (API routes) |
-| **Autenticación** | Requiere login de usuario | Privilegios completos |
-| **Reglas de seguridad** | SÍ aplican | NO aplican (bypasea) |
-| **Archivo config** | `src/lib/firebase.ts` | `src/lib/firebase-admin.ts` |
-| **Variables .env** | `PUBLIC_FIREBASE_*` | `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` |
+| Aspecto                 | Client SDK                | Admin SDK                                       |
+| ----------------------- | ------------------------- | ----------------------------------------------- |
+| **Dónde se usa**        | Navegador (cliente)       | Servidor (API routes)                           |
+| **Autenticación**       | Requiere login de usuario | Privilegios completos                           |
+| **Reglas de seguridad** | SÍ aplican                | NO aplican (bypasea)                            |
+| **Archivo config**      | `src/lib/firebase.ts`     | `src/lib/firebase-admin.ts`                     |
+| **Variables .env**      | `PUBLIC_FIREBASE_*`       | `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` |
 
 ---
 
@@ -208,6 +218,7 @@ PUBLIC_FIREBASE_PROJECT_ID=tu-proyecto-id
 ## 🎉 ¡Listo!
 
 Una vez configurado Firebase Admin SDK, tu servidor podrá:
+
 - ✅ Guardar pedidos en Firestore
 - ✅ Procesar transacciones de wallet
 - ✅ Usar cupones

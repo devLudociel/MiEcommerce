@@ -34,7 +34,9 @@ export default function AdminOrdersList() {
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
-  const [pageHistory, setPageHistory] = useState<(QueryDocumentSnapshot<DocumentData> | null)[]>([null]);
+  const [pageHistory, setPageHistory] = useState<(QueryDocumentSnapshot<DocumentData> | null)[]>([
+    null,
+  ]);
 
   useEffect(() => {
     loadOrders();
@@ -183,84 +185,84 @@ export default function AdminOrdersList() {
           <>
             <div className="space-y-4 mb-6">
               {orders.map((order) => (
-              <div
-                key={order.id}
-                className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-shadow"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-                  {/* ID y Fecha */}
-                  <div>
-                    <p className="text-sm text-gray-500">Pedido</p>
-                    <p className="font-bold text-gray-800 truncate">#{order.id?.slice(0, 8)}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {order.createdAt?.toDate
-                        ? order.createdAt.toDate().toLocaleDateString('es-ES', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })
-                        : 'Fecha no disponible'}
-                    </p>
-                  </div>
-
-                  {/* Cliente */}
-                  <div>
-                    <p className="text-sm text-gray-500">Cliente</p>
-                    <p className="font-bold text-gray-800">
-                      {order.shippingInfo.firstName} {order.shippingInfo.lastName}
-                    </p>
-                    <p className="text-xs text-gray-500">{order.shippingInfo.email}</p>
-                  </div>
-
-                  {/* Productos */}
-                  <div>
-                    <p className="text-sm text-gray-500">Productos</p>
-                    <p className="font-bold text-gray-800">{order.items.length} item(s)</p>
-                    <p className="text-xs text-gray-500">
-                      {order.items.reduce((sum, item) => sum + item.quantity, 0)} unidades
-                    </p>
-                  </div>
-
-                  {/* Total */}
-                  <div>
-                    <p className="text-sm text-gray-500">Total</p>
-                    <p className="font-black text-cyan-600 text-xl">€{order.total.toFixed(2)}</p>
-                  </div>
-
-                  {/* Estado y Acciones */}
-                  <div className="flex flex-col gap-2">
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-bold text-center ${
-                        statusColors[order.status] || 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {statusLabels[order.status] || order.status}
-                    </span>
-                    <div className="flex gap-2">
-                      <a
-                        href={`/admin/orders/${order.id}`}
-                        className="flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-300 transition-all text-center"
-                      >
-                        Ver Detalle
-                      </a>
+                <div
+                  key={order.id}
+                  className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-shadow"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                    {/* ID y Fecha */}
+                    <div>
+                      <p className="text-sm text-gray-500">Pedido</p>
+                      <p className="font-bold text-gray-800 truncate">#{order.id?.slice(0, 8)}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {order.createdAt?.toDate
+                          ? order.createdAt.toDate().toLocaleDateString('es-ES', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          : 'Fecha no disponible'}
+                      </p>
                     </div>
-                    <select
-                      value={order.status}
-                      onChange={(e) => handleStatusChange(order.id!, e.target.value)}
-                      className="px-3 py-2 border-2 border-gray-300 rounded-xl text-sm font-bold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none"
-                    >
-                      {Object.entries(statusLabels).map(([status, label]) => (
-                        <option key={status} value={status}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
+
+                    {/* Cliente */}
+                    <div>
+                      <p className="text-sm text-gray-500">Cliente</p>
+                      <p className="font-bold text-gray-800">
+                        {order.shippingInfo.firstName} {order.shippingInfo.lastName}
+                      </p>
+                      <p className="text-xs text-gray-500">{order.shippingInfo.email}</p>
+                    </div>
+
+                    {/* Productos */}
+                    <div>
+                      <p className="text-sm text-gray-500">Productos</p>
+                      <p className="font-bold text-gray-800">{order.items.length} item(s)</p>
+                      <p className="text-xs text-gray-500">
+                        {order.items.reduce((sum, item) => sum + item.quantity, 0)} unidades
+                      </p>
+                    </div>
+
+                    {/* Total */}
+                    <div>
+                      <p className="text-sm text-gray-500">Total</p>
+                      <p className="font-black text-cyan-600 text-xl">€{order.total.toFixed(2)}</p>
+                    </div>
+
+                    {/* Estado y Acciones */}
+                    <div className="flex flex-col gap-2">
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-bold text-center ${
+                          statusColors[order.status] || 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {statusLabels[order.status] || order.status}
+                      </span>
+                      <div className="flex gap-2">
+                        <a
+                          href={`/admin/orders/${order.id}`}
+                          className="flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-300 transition-all text-center"
+                        >
+                          Ver Detalle
+                        </a>
+                      </div>
+                      <select
+                        value={order.status}
+                        onChange={(e) => handleStatusChange(order.id!, e.target.value)}
+                        className="px-3 py-2 border-2 border-gray-300 rounded-xl text-sm font-bold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none"
+                      >
+                        {Object.entries(statusLabels).map(([status, label]) => (
+                          <option key={status} value={status}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
             </div>
 
             {/* Paginación */}

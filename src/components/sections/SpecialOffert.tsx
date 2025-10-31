@@ -101,113 +101,116 @@ const SpecialOffers: React.FC<SpecialOffersProps> = ({
   }, []);
 
   // Ofertas de respaldo en caso de que no haya ninguna en Firebase
-  const fallbackOffers: SpecialOffer[] = useMemo(() => [
-    {
-      id: 1,
-      title: 'iPhone 15 Pro Max',
-      description: 'El smartphone más avanzado con cámara profesional y chip A17 Pro',
-      originalPrice: 1199.99,
-      salePrice: 899.99,
-      discount: 25,
-      image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&h=500&fit=crop',
-      endDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 días
-      stock: 3,
-      maxStock: 50,
-      isFlashSale: true,
-      category: 'Tecnología',
-      featured: true,
-      urgencyLevel: 'critical',
-    },
-    {
-      id: 2,
-      title: 'MacBook Air M3',
-      description: 'Portátil ultraligero con el nuevo chip M3 para máximo rendimiento',
-      originalPrice: 1299.99,
-      salePrice: 999.99,
-      discount: 23,
-      image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500&h=500&fit=crop',
-      endDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 días
-      stock: 12,
-      maxStock: 30,
-      isFlashSale: false,
-      category: 'Tecnología',
-      featured: true,
-      urgencyLevel: 'medium',
-    },
-    {
-      id: 3,
-      title: 'Nike Air Jordan Retro',
-      description: 'Zapatillas icónicas con diseño clásico y comodidad premium',
-      originalPrice: 179.99,
-      salePrice: 119.99,
-      discount: 33,
-      image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&h=500&fit=crop',
-      endDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // 1 día
-      stock: 7,
-      maxStock: 25,
-      isFlashSale: true,
-      category: 'Moda',
-      featured: false,
-      urgencyLevel: 'high',
-    },
-    {
-      id: 4,
-      title: 'Sony WH-1000XM5',
-      description: 'Auriculares premium con cancelación de ruido líder en la industria',
-      originalPrice: 399.99,
-      salePrice: 279.99,
-      discount: 30,
-      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop',
-      endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 días
-      stock: 18,
-      maxStock: 40,
-      isFlashSale: false,
-      category: 'Audio',
-      featured: false,
-      urgencyLevel: 'low',
-    },
-    {
-      id: 5,
-      title: 'Canon EOS R8',
-      description: 'Cámara mirrorless profesional con video 4K y estabilización',
-      originalPrice: 1499.99,
-      salePrice: 1199.99,
-      discount: 20,
-      image: 'https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=500&h=500&fit=crop',
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días
-      stock: 5,
-      maxStock: 15,
-      isFlashSale: false,
-      category: 'Fotografía',
-      featured: true,
-      urgencyLevel: 'high',
-    },
-    {
-      id: 6,
-      title: 'Gaming Setup RGB',
-      description: 'Kit completo de gaming con teclado, mouse y auriculares RGB',
-      originalPrice: 299.99,
-      salePrice: 199.99,
-      discount: 33,
-      image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=500&h=500&fit=crop',
-      endDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // 4 días
-      stock: 15,
-      maxStock: 50,
-      isFlashSale: true,
-      category: 'Gaming',
-      featured: false,
-      urgencyLevel: 'medium',
-    },
-  ], []);
+  const fallbackOffers: SpecialOffer[] = useMemo(
+    () => [
+      {
+        id: 1,
+        title: 'iPhone 15 Pro Max',
+        description: 'El smartphone más avanzado con cámara profesional y chip A17 Pro',
+        originalPrice: 1199.99,
+        salePrice: 899.99,
+        discount: 25,
+        image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&h=500&fit=crop',
+        endDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 días
+        stock: 3,
+        maxStock: 50,
+        isFlashSale: true,
+        category: 'Tecnología',
+        featured: true,
+        urgencyLevel: 'critical',
+      },
+      {
+        id: 2,
+        title: 'MacBook Air M3',
+        description: 'Portátil ultraligero con el nuevo chip M3 para máximo rendimiento',
+        originalPrice: 1299.99,
+        salePrice: 999.99,
+        discount: 23,
+        image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500&h=500&fit=crop',
+        endDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 días
+        stock: 12,
+        maxStock: 30,
+        isFlashSale: false,
+        category: 'Tecnología',
+        featured: true,
+        urgencyLevel: 'medium',
+      },
+      {
+        id: 3,
+        title: 'Nike Air Jordan Retro',
+        description: 'Zapatillas icónicas con diseño clásico y comodidad premium',
+        originalPrice: 179.99,
+        salePrice: 119.99,
+        discount: 33,
+        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&h=500&fit=crop',
+        endDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // 1 día
+        stock: 7,
+        maxStock: 25,
+        isFlashSale: true,
+        category: 'Moda',
+        featured: false,
+        urgencyLevel: 'high',
+      },
+      {
+        id: 4,
+        title: 'Sony WH-1000XM5',
+        description: 'Auriculares premium con cancelación de ruido líder en la industria',
+        originalPrice: 399.99,
+        salePrice: 279.99,
+        discount: 30,
+        image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop',
+        endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 días
+        stock: 18,
+        maxStock: 40,
+        isFlashSale: false,
+        category: 'Audio',
+        featured: false,
+        urgencyLevel: 'low',
+      },
+      {
+        id: 5,
+        title: 'Canon EOS R8',
+        description: 'Cámara mirrorless profesional con video 4K y estabilización',
+        originalPrice: 1499.99,
+        salePrice: 1199.99,
+        discount: 20,
+        image: 'https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=500&h=500&fit=crop',
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días
+        stock: 5,
+        maxStock: 15,
+        isFlashSale: false,
+        category: 'Fotografía',
+        featured: true,
+        urgencyLevel: 'high',
+      },
+      {
+        id: 6,
+        title: 'Gaming Setup RGB',
+        description: 'Kit completo de gaming con teclado, mouse y auriculares RGB',
+        originalPrice: 299.99,
+        salePrice: 199.99,
+        discount: 33,
+        image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=500&h=500&fit=crop',
+        endDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // 4 días
+        stock: 15,
+        maxStock: 50,
+        isFlashSale: true,
+        category: 'Gaming',
+        featured: false,
+        urgencyLevel: 'medium',
+      },
+    ],
+    []
+  );
 
   // Usar ofertas de Firebase si están disponibles, sino usar ofertas de respaldo
-  const displayOffers = useMemo(() =>
-    offers.length > 0 ? offers : fallbackOffers,
+  const displayOffers = useMemo(
+    () => (offers.length > 0 ? offers : fallbackOffers),
     [offers, fallbackOffers]
   );
 
-  const featuredOffers = useMemo(() =>
-    displayOffers.filter((offer) => offer.featured),
+  const featuredOffers = useMemo(
+    () => displayOffers.filter((offer) => offer.featured),
     [displayOffers]
   );
 

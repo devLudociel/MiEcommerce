@@ -777,7 +777,10 @@ export default function ProductDetail({ id, slug }: Props) {
                     }}
                     className={`py-3 px-6 rounded-xl font-bold transition-all duration-300 ${isInWishlist ? 'bg-gradient-secondary text-white shadow-magenta' : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-magenta-500 hover:text-magenta-500'} transform hover:scale-105 flex items-center justify-center gap-2`}
                   >
-                    <Icon name="heart" className={isInWishlist ? 'w-5 h-5 text-pink-600' : 'w-5 h-5'} />
+                    <Icon
+                      name="heart"
+                      className={isInWishlist ? 'w-5 h-5 text-pink-600' : 'w-5 h-5'}
+                    />
                     {isInWishlist ? 'En Favoritos' : 'Favoritos'}
                   </button>
 

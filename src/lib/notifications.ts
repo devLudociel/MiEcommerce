@@ -140,14 +140,10 @@ export const notify = {
     options?: any
   ): Promise<T> {
     logger.debug('[Notify] Promise toast', { messages });
-    return toast.promise(
-      promise,
-      messages,
-      {
-        ...toastConfig,
-        ...options,
-      }
-    );
+    return toast.promise(promise, messages, {
+      ...toastConfig,
+      ...options,
+    });
   },
 
   /**

@@ -31,15 +31,18 @@ STRIPE_SECRET_KEY=sk_test_TU_CLAVE_SECRETA_AQUI
 Para hacer pruebas, usa estas tarjetas:
 
 **Pago exitoso:**
+
 - Número: `4242 4242 4242 4242`
 - Fecha: Cualquier fecha futura (ej: `12/25`)
 - CVV: Cualquier 3 dígitos (ej: `123`)
 - Código postal: Cualquiera
 
 **Pago rechazado:**
+
 - Número: `4000 0000 0000 0002`
 
 **Requiere autenticación 3D Secure:**
+
 - Número: `4000 0025 0000 3155`
 
 Más tarjetas de prueba: [https://stripe.com/docs/testing](https://stripe.com/docs/testing)
@@ -57,6 +60,7 @@ Más tarjetas de prueba: [https://stripe.com/docs/testing](https://stripe.com/do
 ### 6. Ver transacciones
 
 Accede al dashboard de Stripe para ver:
+
 - Pagos: [https://dashboard.stripe.com/test/payments](https://dashboard.stripe.com/test/payments)
 - Clientes: [https://dashboard.stripe.com/test/customers](https://dashboard.stripe.com/test/customers)
 
@@ -92,6 +96,7 @@ Los siguientes métodos ya están configurados pero no procesan pagos reales:
 ## 🔐 Seguridad
 
 **IMPORTANTE:**
+
 - NUNCA subas el archivo `.env` a Git (ya está en `.gitignore`)
 - NUNCA compartas tus claves secretas (`sk_test_...` o `sk_live_...`)
 - Las claves publicables (`pk_test_...` o `pk_live_...`) son seguras para el frontend
@@ -99,6 +104,7 @@ Los siguientes métodos ya están configurados pero no procesan pagos reales:
 ## 📊 Monitoreo
 
 Stripe te notificará por email cuando:
+
 - Hay un pago exitoso
 - Hay un pago fallido
 - Hay una disputa o devolución
@@ -106,5 +112,6 @@ Stripe te notificará por email cuando:
 ## 🆘 Soporte
 
 Si tienes problemas:
+
 - Documentación de Stripe: [https://stripe.com/docs](https://stripe.com/docs)
 - Soporte de Stripe: [https://support.stripe.com](https://support.stripe.com)

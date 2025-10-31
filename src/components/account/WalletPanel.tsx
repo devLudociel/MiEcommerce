@@ -60,12 +60,9 @@ export default function WalletPanel() {
       const balance = balanceData.balance || 0;
 
       // Fetch transactions
-      const transactionsResponse = await fetch(
-        `/api/get-wallet-transactions?userId=${user.uid}`,
-        {
-          headers: authHeaders,
-        }
-      );
+      const transactionsResponse = await fetch(`/api/get-wallet-transactions?userId=${user.uid}`, {
+        headers: authHeaders,
+      });
       if (!transactionsResponse.ok) {
         throw new Error('Error al cargar las transacciones');
       }
@@ -77,7 +74,10 @@ export default function WalletPanel() {
       }));
 
       setWallet({ balance, transactions });
-      logger.info('[WalletPanel] Wallet loaded', { balance, transactionCount: transactions.length });
+      logger.info('[WalletPanel] Wallet loaded', {
+        balance,
+        transactionCount: transactions.length,
+      });
     } catch (error) {
       logger.error('[WalletPanel] Error loading wallet', error);
       notify.error('Error al cargar el monedero');
@@ -194,7 +194,9 @@ export default function WalletPanel() {
         <ul className="space-y-2 text-sm text-gray-700">
           <li className="flex items-start gap-2">
             <span className="text-green-500 mt-0.5">✓</span>
-            <span>Recibe <strong>5% de cashback</strong> en cada compra que realices</span>
+            <span>
+              Recibe <strong>5% de cashback</strong> en cada compra que realices
+            </span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-green-500 mt-0.5">✓</span>

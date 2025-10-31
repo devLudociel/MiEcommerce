@@ -38,9 +38,7 @@ vi.mock('../../hooks/useAuth', () => ({
 
 // Mock de cartStore para evitar redirección y proporcionar items
 vi.mock('../../../store/cartStore', async () => {
-  const items = [
-    { id: 'p1', name: 'Prod 1', price: 10, quantity: 1, image: 'x.jpg' },
-  ];
+  const items = [{ id: 'p1', name: 'Prod 1', price: 10, quantity: 1, image: 'x.jpg' }];
   const state = { items, total: 10 };
   const listeners = new Set<(v: any) => void>();
   const cartStore = {
