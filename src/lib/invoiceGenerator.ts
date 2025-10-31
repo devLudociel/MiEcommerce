@@ -271,4 +271,4 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
       footer: { fontSize: 8, color: '#94a3b8', alignment: 'center' },
     },
   };
-}
+},
