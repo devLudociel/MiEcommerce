@@ -280,7 +280,15 @@ export default function OrderConfirmation() {
         </div>
 
         {/* Botones de acción */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <a
+            href={`/api/generate-invoice?orderId=${order.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-4 px-6 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-2xl font-bold text-lg text-center shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
+          >
+            📄 Descargar Factura
+          </a>
           <a
             href="/"
             className="py-4 px-6 bg-gradient-primary text-white rounded-2xl font-bold text-lg text-center shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"

@@ -347,6 +347,14 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
       {/* Acciones */}
       <div className="flex gap-4 flex-wrap">
         <a
+          href={`/api/generate-invoice?orderId=${order.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
+        >
+          📄 Descargar Factura
+        </a>
+        <a
           href="/account/orders"
           className="btn btn-outline border-2 border-gray-300 px-8 py-3 rounded-xl font-bold hover:border-cyan-500 transition-all"
         >

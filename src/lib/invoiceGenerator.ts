@@ -33,8 +33,12 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
 
   const items: any[] = Array.isArray((order as any).items) ? (order as any).items : [];
   const shipping: any = (order as any).shippingInfo || {};
+  const billing: any = (order as any).billingInfo || {};
   const subtotal = Number((order as any).subtotal ?? 0);
-  const shippingCost = Number((order as any).shipping ?? 0);
+  const shippingCost = Number((order as any).shippingCost ?? 0);
+  const tax = Number((order as any).tax ?? 0);
+  const taxType = (order as any).taxType || 'IVA';
+  const taxLabel = (order as any).taxLabel || 'IVA (21%)';
   const total = Number((order as any).total ?? 0);
 
   try {
@@ -116,29 +120,35 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
         margin: [0, 0, 0, 20],
       },
 
-      // Datos de cliente
+      // Datos de cliente (facturación)
       { text: 'FACTURAR A:', style: 'sectionHeader' },
       {
         canvas: [
-          { type: 'rect', x: 0, y: 0, w: 515, h: 90, r: 4, lineWidth: 1, lineColor: '#e2e8f0' },
+          { type: 'rect', x: 0, y: 0, w: 515, h: 100, r: 4, lineWidth: 1, lineColor: '#e2e8f0' },
         ],
       },
       {
         stack: [
           {
-            text: `${shipping?.firstName ?? 'N/A'} ${shipping?.lastName ?? ''}`.trim(),
+            text: billing?.fiscalName || `${shipping?.fullName ?? 'N/A'}`,
             style: 'customerName',
           },
-          { text: shipping?.address ?? 'N/A', style: 'customerDetails' },
+          billing?.nifCif
+            ? { text: `NIF/CIF: ${billing.nifCif}`, style: 'customerNif' }
+            : { text: '' },
+          { text: billing?.address || shipping?.address || 'N/A', style: 'customerDetails' },
           {
-            text: `${shipping?.zipCode ?? ''} ${shipping?.city ?? ''}, ${shipping?.state ?? ''}`.trim(),
+            text: `${billing?.zipCode || shipping?.zipCode || ''} ${billing?.city || shipping?.city || ''}, ${billing?.state || shipping?.state || ''}`.trim(),
             style: 'customerDetails',
           },
-          { text: shipping?.country ?? '', style: 'customerDetails' },
+          {
+            text: billing?.country || shipping?.country || '',
+            style: 'customerDetails',
+          },
           { text: `Email: ${shipping?.email ?? 'N/A'}`, style: 'customerDetails' },
           { text: `Teléfono: ${shipping?.phone ?? 'N/A'}`, style: 'customerDetails' },
         ],
-        margin: [10, -80, 0, 0],
+        margin: [10, -90, 0, 0],
       },
       { text: '', margin: [0, 0, 0, 30] },
 
@@ -213,6 +223,16 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
               },
               {
                 columns: [
+                  { text: `${taxLabel}:`, alignment: 'left', style: 'totalLabel' },
+                  {
+                    text: tax === 0 ? 'Exento' : eur(tax),
+                    alignment: 'right',
+                    style: tax === 0 ? 'totalExempt' : 'totalValue',
+                  },
+                ],
+              },
+              {
+                columns: [
                   { text: 'Total:', alignment: 'left', style: 'totalLabel' },
                   { text: eur(total), alignment: 'right', style: 'totalFinalValue' },
                 ],
@@ -259,6 +279,7 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
       value: { fontSize: 10, color: '#1e293b', margin: [0, 2, 0, 0] },
       sectionHeader: { fontSize: 11, bold: true, color: '#1e293b', margin: [0, 0, 0, 10] },
       customerName: { fontSize: 12, bold: true, color: '#1e293b', margin: [0, 5, 0, 3] },
+      customerNif: { fontSize: 9, color: '#0891b2', bold: true, margin: [0, 2, 0, 3] },
       customerDetails: { fontSize: 9, color: '#64748b', margin: [0, 2, 0, 0] },
       tableHeader: { fontSize: 10, bold: true, color: '#ffffff', fillColor: '#0891b2' },
       itemName: { fontSize: 10, color: '#1e293b', bold: true },
@@ -266,6 +287,7 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
       itemCustom: { fontSize: 8, color: '#9333ea', margin: [0, 2, 0, 0] },
       totalLabel: { fontSize: 10, color: '#64748b' },
       totalValue: { fontSize: 10, color: '#1e293b', bold: true },
+      totalExempt: { fontSize: 10, color: '#16a34a', bold: true },
       totalFinalValue: { fontSize: 14, bold: true, color: '#0891b2' },
       paymentMethod: { fontSize: 10, color: '#1e293b', margin: [0, 5, 0, 0] },
       footer: { fontSize: 8, color: '#94a3b8', alignment: 'center' },
