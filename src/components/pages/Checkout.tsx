@@ -26,6 +26,16 @@ interface ShippingInfo {
   notes?: string;
 }
 
+interface BillingInfo {
+  fiscalName: string;
+  nifCif: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
+
 interface PaymentInfo {
   method: 'card' | 'paypal' | 'transfer' | 'cash';
   cardNumber?: string;
@@ -85,6 +95,18 @@ export default function Checkout() {
     country: 'España',
     shippingMethod: 'standard',
     notes: '',
+  });
+
+  // Billing info state
+  const [useSameAddress, setUseSameAddress] = useState(true);
+  const [billingInfo, setBillingInfo] = useState<BillingInfo>({
+    fiscalName: '',
+    nifCif: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: 'España',
   });
 
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>({
@@ -528,6 +550,25 @@ export default function Checkout() {
           phone: shippingInfo.phone,
           shippingMethod: shippingInfo.shippingMethod || 'standard',
         },
+        billingInfo: useSameAddress
+          ? {
+              fiscalName: `${shippingInfo.firstName} ${shippingInfo.lastName}`,
+              nifCif: billingInfo.nifCif || '',
+              address: shippingInfo.address,
+              city: shippingInfo.city,
+              state: shippingInfo.state,
+              zipCode: shippingInfo.zipCode,
+              country: 'España',
+            }
+          : {
+              fiscalName: billingInfo.fiscalName,
+              nifCif: billingInfo.nifCif,
+              address: billingInfo.address,
+              city: billingInfo.city,
+              state: billingInfo.state,
+              zipCode: billingInfo.zipCode,
+              country: billingInfo.country,
+            },
         paymentMethod: paymentInfo.method,
         subtotal,
         couponDiscount,
@@ -1047,6 +1088,181 @@ export default function Checkout() {
                     />
                   </div>
 
+                  {/* Billing Information Section */}
+                  <div className="border-t-2 border-gray-200 pt-6">
+                    <h3 className="text-xl font-black text-gray-800 mb-4">📋 Datos de Facturación</h3>
+
+                    {/* NIF/CIF field - always visible */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        NIF / CIF (opcional)
+                      </label>
+                      <input
+                        type="text"
+                        value={billingInfo.nifCif}
+                        onChange={(e) =>
+                          setBillingInfo({
+                            ...billingInfo,
+                            nifCif: e.target.value.toUpperCase(),
+                          })
+                        }
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all bg-white font-mono"
+                        placeholder="12345678A / B12345678"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Para empresas o particulares que necesiten factura con NIF/CIF
+                      </p>
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="flex items-center gap-3 cursor-pointer p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all">
+                        <input
+                          type="checkbox"
+                          checked={useSameAddress}
+                          onChange={(e) => setUseSameAddress(e.target.checked)}
+                          className="w-5 h-5 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500"
+                        />
+                        <span className="text-sm font-semibold text-gray-800">
+                          Usar la misma dirección de envío para facturación
+                        </span>
+                      </label>
+                    </div>
+
+                    {!useSameAddress && (
+                      <div className="space-y-4 p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">
+                            Nombre Fiscal / Razón Social *
+                          </label>
+                          <input
+                            type="text"
+                            value={billingInfo.fiscalName}
+                            onChange={(e) =>
+                              setBillingInfo({ ...billingInfo, fiscalName: e.target.value })
+                            }
+                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all bg-white"
+                            placeholder="Juan García Pérez / Mi Empresa S.L."
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">
+                            Dirección Fiscal *
+                          </label>
+                          <input
+                            type="text"
+                            value={billingInfo.address}
+                            onChange={(e) =>
+                              setBillingInfo({ ...billingInfo, address: e.target.value })
+                            }
+                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all bg-white"
+                            placeholder="Calle Principal, 123, Piso 2"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                              Ciudad *
+                            </label>
+                            <input
+                              type="text"
+                              value={billingInfo.city}
+                              onChange={(e) =>
+                                setBillingInfo({ ...billingInfo, city: e.target.value })
+                              }
+                              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all bg-white"
+                              placeholder="Madrid"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                              Provincia *
+                            </label>
+                            <select
+                              value={billingInfo.state}
+                              onChange={(e) =>
+                                setBillingInfo({ ...billingInfo, state: e.target.value })
+                              }
+                              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all bg-white"
+                            >
+                              <option value="">Selecciona una provincia</option>
+                              <option value="Álava">Álava</option>
+                              <option value="Albacete">Albacete</option>
+                              <option value="Alicante">Alicante</option>
+                              <option value="Almería">Almería</option>
+                              <option value="Asturias">Asturias</option>
+                              <option value="Ávila">Ávila</option>
+                              <option value="Badajoz">Badajoz</option>
+                              <option value="Baleares">Baleares</option>
+                              <option value="Barcelona">Barcelona</option>
+                              <option value="Burgos">Burgos</option>
+                              <option value="Cáceres">Cáceres</option>
+                              <option value="Cádiz">Cádiz</option>
+                              <option value="Cantabria">Cantabria</option>
+                              <option value="Castellón">Castellón</option>
+                              <option value="Ceuta">Ceuta</option>
+                              <option value="Ciudad Real">Ciudad Real</option>
+                              <option value="Córdoba">Córdoba</option>
+                              <option value="Cuenca">Cuenca</option>
+                              <option value="Girona">Girona</option>
+                              <option value="Granada">Granada</option>
+                              <option value="Guadalajara">Guadalajara</option>
+                              <option value="Guipúzcoa">Guipúzcoa</option>
+                              <option value="Huelva">Huelva</option>
+                              <option value="Huesca">Huesca</option>
+                              <option value="Jaén">Jaén</option>
+                              <option value="A Coruña">A Coruña</option>
+                              <option value="La Rioja">La Rioja</option>
+                              <option value="Las Palmas">Las Palmas</option>
+                              <option value="León">León</option>
+                              <option value="Lleida">Lleida</option>
+                              <option value="Lugo">Lugo</option>
+                              <option value="Madrid">Madrid</option>
+                              <option value="Málaga">Málaga</option>
+                              <option value="Melilla">Melilla</option>
+                              <option value="Murcia">Murcia</option>
+                              <option value="Navarra">Navarra</option>
+                              <option value="Ourense">Ourense</option>
+                              <option value="Palencia">Palencia</option>
+                              <option value="Pontevedra">Pontevedra</option>
+                              <option value="Salamanca">Salamanca</option>
+                              <option value="Segovia">Segovia</option>
+                              <option value="Sevilla">Sevilla</option>
+                              <option value="Soria">Soria</option>
+                              <option value="Tarragona">Tarragona</option>
+                              <option value="Santa Cruz de Tenerife">Santa Cruz de Tenerife</option>
+                              <option value="Teruel">Teruel</option>
+                              <option value="Toledo">Toledo</option>
+                              <option value="Valencia">Valencia</option>
+                              <option value="Valladolid">Valladolid</option>
+                              <option value="Vizcaya">Vizcaya</option>
+                              <option value="Zamora">Zamora</option>
+                              <option value="Zaragoza">Zaragoza</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                              CP *
+                            </label>
+                            <input
+                              type="text"
+                              value={billingInfo.zipCode}
+                              onChange={(e) =>
+                                setBillingInfo({ ...billingInfo, zipCode: e.target.value })
+                              }
+                              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all bg-white"
+                              placeholder="28001"
+                              maxLength={5}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <button
                     onClick={handleNextStep}
                     className="w-full py-4 bg-gradient-rainbow text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
@@ -1270,6 +1486,39 @@ export default function Checkout() {
                         </p>
                       )}
                     </div>
+                  </div>
+
+                  {/* Billing Information Review */}
+                  <div className="bg-gray-50 rounded-2xl p-6 border-2 border-gray-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-gray-800">📋 Facturación a:</h3>
+                      <button
+                        onClick={() => setCurrentStep(1)}
+                        className="text-cyan-600 hover:text-cyan-700 font-bold text-sm"
+                      >
+                        Editar
+                      </button>
+                    </div>
+                    {useSameAddress ? (
+                      <div className="text-gray-700">
+                        <p className="font-medium">Misma dirección de envío</p>
+                        {billingInfo.nifCif && (
+                          <p className="pt-2 font-mono text-sm">NIF/CIF: {billingInfo.nifCif}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-1 text-gray-700">
+                        <p className="font-bold">{billingInfo.fiscalName}</p>
+                        {billingInfo.nifCif && (
+                          <p className="font-mono text-sm">NIF/CIF: {billingInfo.nifCif}</p>
+                        )}
+                        <p>{billingInfo.address}</p>
+                        <p>
+                          {billingInfo.zipCode} {billingInfo.city}, {billingInfo.state}
+                        </p>
+                        <p>{billingInfo.country}</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="bg-gray-50 rounded-2xl p-6 border-2 border-gray-200">
