@@ -7,7 +7,10 @@ interface ShipmentTrackingProps {
 
 export default function ShipmentTracking({ order }: ShipmentTrackingProps) {
   const getStatusInfo = (status: string) => {
-    const statusMap: Record<string, { icon: string; color: string; label: string; description: string }> = {
+    const statusMap: Record<
+      string,
+      { icon: string; color: string; label: string; description: string }
+    > = {
       pending: {
         icon: '⏳',
         color: 'yellow',
@@ -94,7 +97,8 @@ export default function ShipmentTracking({ order }: ShipmentTrackingProps) {
     }).format(date);
   };
 
-  const hasTracking = order.trackingNumber || (order.trackingHistory && order.trackingHistory.length > 0);
+  const hasTracking =
+    order.trackingNumber || (order.trackingHistory && order.trackingHistory.length > 0);
 
   if (!hasTracking) {
     return (
@@ -110,9 +114,10 @@ export default function ShipmentTracking({ order }: ShipmentTrackingProps) {
     );
   }
 
-  const carrierInfo = order.trackingNumber && order.carrier
-    ? getCarrierInfo(order.carrier, order.trackingNumber)
-    : null;
+  const carrierInfo =
+    order.trackingNumber && order.carrier
+      ? getCarrierInfo(order.carrier, order.trackingNumber)
+      : null;
 
   const sortedHistory = order.trackingHistory
     ? [...order.trackingHistory].sort((a, b) => {
@@ -232,9 +237,7 @@ export default function ShipmentTracking({ order }: ShipmentTrackingProps) {
                         <div>
                           <h4 className="font-bold text-gray-900">{info.label}</h4>
                           {event.location && (
-                            <p className="text-sm text-gray-600">
-                              📍 {event.location}
-                            </p>
+                            <p className="text-sm text-gray-600">📍 {event.location}</p>
                           )}
                         </div>
                         <span className="text-sm text-gray-500 whitespace-nowrap">

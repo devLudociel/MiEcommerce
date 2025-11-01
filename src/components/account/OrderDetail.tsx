@@ -307,9 +307,7 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
 
           {(order as any).couponDiscount && (order as any).couponDiscount > 0 && (
             <div className="flex justify-between text-green-600">
-              <span>
-                Descuento {(order as any).couponCode && `(${(order as any).couponCode})`}
-              </span>
+              <span>Descuento {(order as any).couponCode && `(${(order as any).couponCode})`}</span>
               <span className="font-semibold">-€{(order as any).couponDiscount.toFixed(2)}</span>
             </div>
           )}

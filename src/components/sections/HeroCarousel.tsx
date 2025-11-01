@@ -220,6 +220,10 @@ const HeroCarousel = () => {
                 className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
                   index === currentSlide ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/80'
                 }`}
+                type="button"
+                aria-label={`Ir a la diapositiva ${index + 1}`}
+                aria-current={index === currentSlide ? 'true' : undefined}
+                aria-pressed={index === currentSlide}
               />
             ))}
           </div>
@@ -228,13 +232,26 @@ const HeroCarousel = () => {
           <button
             onClick={() => setIsAutoPlaying(!isAutoPlaying)}
             className="ml-4 p-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 text-white hover:bg-white/30 transition-all"
+            type="button"
+            aria-label={isAutoPlaying ? 'Pausar carrusel' : 'Reproducir carrusel'}
+            aria-pressed={!isAutoPlaying}
           >
             {isAutoPlaying ? (
-              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+              <svg
+                className="w-3.5 h-3.5"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+              >
                 <path d="M5 4h3v12H5V4zm7 0h3v12h-3V4z" />
               </svg>
             ) : (
-              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+              <svg
+                className="w-3.5 h-3.5"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+              >
                 <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
               </svg>
             )}
@@ -248,8 +265,16 @@ const HeroCarousel = () => {
         onMouseEnter={() => setIsAutoPlaying(false)}
         onMouseLeave={() => setIsAutoPlaying(true)}
         className="absolute right-4 top-1/2 transform -translate-y-1/2 z-30 p-2.5 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 text-white hover:bg-white/30 transition-all hover:scale-110"
+        type="button"
+        aria-label="Siguiente diapositiva"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </button>
@@ -259,8 +284,16 @@ const HeroCarousel = () => {
         onMouseEnter={() => setIsAutoPlaying(false)}
         onMouseLeave={() => setIsAutoPlaying(true)}
         className="absolute left-4 top-1/2 transform -translate-y-1/2 z-30 p-2.5 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 text-white hover:bg-white/30 transition-all hover:scale-110"
+        type="button"
+        aria-label="Diapositiva anterior"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
       </button>

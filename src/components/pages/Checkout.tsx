@@ -350,7 +350,9 @@ export default function Checkout() {
               city: shippingInfo.city,
               postal_code: shippingInfo.zipCode,
               state: shippingInfo.state,
-              country: shippingInfo.country?.toLowerCase().includes('es') ? 'ES' : shippingInfo.country,
+              country: shippingInfo.country?.toLowerCase().includes('es')
+                ? 'ES'
+                : shippingInfo.country,
             },
           },
         }),
@@ -398,7 +400,8 @@ export default function Checkout() {
       if (confirmation.error) {
         logger.error('[Checkout] Error al confirmar el pago', confirmation.error);
         throw new Error(
-          confirmation.error.message || 'El pago fue rechazado. Verifica los datos e intenta nuevamente.'
+          confirmation.error.message ||
+            'El pago fue rechazado. Verifica los datos e intenta nuevamente.'
         );
       }
 
@@ -1090,7 +1093,9 @@ export default function Checkout() {
 
                   {/* Billing Information Section */}
                   <div className="border-t-2 border-gray-200 pt-6">
-                    <h3 className="text-xl font-black text-gray-800 mb-4">📋 Datos de Facturación</h3>
+                    <h3 className="text-xl font-black text-gray-800 mb-4">
+                      📋 Datos de Facturación
+                    </h3>
 
                     {/* NIF/CIF field - always visible */}
                     <div className="mb-4">

@@ -166,7 +166,10 @@ export default function OrdersPanel() {
           <p className="text-gray-500 text-sm mb-6">
             Explora nuestra tienda y encuentra productos increíbles
           </p>
-          <a href="/" className="btn bg-gradient-to-r from-cyan-500 to-purple-600 text-white inline-block px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all">
+          <a
+            href="/"
+            className="btn bg-gradient-to-r from-cyan-500 to-purple-600 text-white inline-block px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
+          >
             Ir a la tienda
           </a>
         </div>
@@ -197,11 +200,14 @@ export default function OrdersPanel() {
                     </span>
                     {((order as any).paymentMethod || (order as any).paymentInfo?.method) && (
                       <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                        {((order as any).paymentMethod || (order as any).paymentInfo?.method) === 'card'
+                        {((order as any).paymentMethod || (order as any).paymentInfo?.method) ===
+                        'card'
                           ? '💳 Tarjeta'
-                          : ((order as any).paymentMethod || (order as any).paymentInfo?.method) === 'paypal'
+                          : ((order as any).paymentMethod || (order as any).paymentInfo?.method) ===
+                              'paypal'
                             ? '🅿️ PayPal'
-                            : ((order as any).paymentMethod || (order as any).paymentInfo?.method) === 'transfer'
+                            : ((order as any).paymentMethod ||
+                                  (order as any).paymentInfo?.method) === 'transfer'
                               ? '🏦 Transferencia'
                               : '💵 Contra Reembolso'}
                       </span>

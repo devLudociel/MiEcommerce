@@ -45,6 +45,24 @@ const {
         --header-height: 208px;
       }
 
+      .skip-link {
+        position: absolute;
+        top: -200px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 0.75rem 1rem;
+        background-color: #111827;
+        color: #fff;
+        border-radius: 0.5rem;
+        transition: top 0.2s ease;
+        z-index: 9999;
+      }
+
+      .skip-link:focus {
+        top: 1rem;
+        outline: 3px solid #0ea5e9;
+      }
+
       main {
         padding-top: var(--header-height);
       }
@@ -64,8 +82,9 @@ const {
     </style>
   </head>
   <body class="bg-white min-h-screen">
+    <a class="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
     <Header client:load />
-    <main>
+    <main id="contenido-principal">
       <slot />
     </main>
     <!-- Toast Notifications Container -->

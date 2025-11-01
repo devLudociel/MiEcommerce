@@ -223,9 +223,7 @@ export default function OrderTrackingUpdate({ order, onUpdate }: OrderTrackingUp
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                Descripción *
-              </label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Descripción *</label>
               <textarea
                 value={eventDescription}
                 onChange={(e) => setEventDescription(e.target.value)}

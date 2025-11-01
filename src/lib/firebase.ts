@@ -437,7 +437,17 @@ export async function getSpecialOffers(): Promise<any[]> {
 // ============================================
 
 export interface TrackingEvent {
-  status: 'pending' | 'confirmed' | 'processing' | 'packed' | 'shipped' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'failed' | 'returned';
+  status:
+    | 'pending'
+    | 'confirmed'
+    | 'processing'
+    | 'packed'
+    | 'shipped'
+    | 'in_transit'
+    | 'out_for_delivery'
+    | 'delivered'
+    | 'failed'
+    | 'returned';
   timestamp: any;
   location?: string;
   description: string;
@@ -490,10 +500,7 @@ export async function getOrderById(orderId: string): Promise<OrderData | null> {
 /**
  * Obtener pedidos de un usuario
  */
-export async function getUserOrders(
-  userId: string,
-  limitCount: number = 50
-): Promise<OrderData[]> {
+export async function getUserOrders(userId: string, limitCount: number = 50): Promise<OrderData[]> {
   try {
     const q = query(
       collection(db, 'orders'),
@@ -618,7 +625,10 @@ export async function addTrackingEvent(
 /**
  * Obtener carriers soportados con sus URLs de tracking
  */
-export function getCarrierInfo(carrier: string, trackingNumber: string): { name: string; url: string } {
+export function getCarrierInfo(
+  carrier: string,
+  trackingNumber: string
+): { name: string; url: string } {
   const carriers: Record<string, { name: string; urlTemplate: string }> = {
     correos: {
       name: 'Correos',
@@ -630,7 +640,8 @@ export function getCarrierInfo(carrier: string, trackingNumber: string): { name:
     },
     dhl: {
       name: 'DHL',
-      urlTemplate: 'https://www.dhl.com/es-es/home/tracking/tracking-express.html?submit=1&tracking-id={tracking}',
+      urlTemplate:
+        'https://www.dhl.com/es-es/home/tracking/tracking-express.html?submit=1&tracking-id={tracking}',
     },
     ups: {
       name: 'UPS',
@@ -642,7 +653,8 @@ export function getCarrierInfo(carrier: string, trackingNumber: string): { name:
     },
     mrw: {
       name: 'MRW',
-      urlTemplate: 'https://www.mrw.es/seguimiento_envios/MRW_resultados_consultas.asp?modo=nacional&envio={tracking}',
+      urlTemplate:
+        'https://www.mrw.es/seguimiento_envios/MRW_resultados_consultas.asp?modo=nacional&envio={tracking}',
     },
   };
 
@@ -1293,4 +1305,3 @@ export async function deactivateCoupon(couponId: string): Promise<boolean> {
     return false;
   }
 }
-

@@ -40,17 +40,26 @@ export interface CartState {
   total: number;
 }
 
+const CART_STORAGE_PREFIX = 'cart';
+const CART_GUEST_KEY = `${CART_STORAGE_PREFIX}:guest`;
+
+const getCartStorageKey = (userId?: string | null) =>
+  userId ? `${CART_STORAGE_PREFIX}:${userId}` : CART_GUEST_KEY;
+
 // Cargar carrito desde localStorage al iniciar
-const loadCartFromStorage = (): CartState => {
+const loadCartFromStorage = (userId?: string | null): CartState => {
   if (typeof window === 'undefined') {
     return { items: [], total: 0 };
   }
 
+  const storageKey = getCartStorageKey(userId);
+
   try {
-    const stored = localStorage.getItem('cart');
+    const stored = localStorage.getItem(storageKey);
     if (stored) {
       const parsed = JSON.parse(stored);
       logger.debug('[CartStore] Cart loaded from localStorage', {
+        storageKey,
         itemCount: parsed.items?.length || 0,
         total: parsed.total || 0,
       });
@@ -60,26 +69,35 @@ const loadCartFromStorage = (): CartState => {
       };
     }
   } catch (e) {
-    logger.error('[CartStore] Error loading cart from localStorage', e);
+    logger.error('[CartStore] Error loading cart from localStorage', {
+      storageKey,
+      error: e,
+    });
     // No mostrar notificación aquí para no molestar al usuario al cargar la página
   }
 
-  logger.debug('[CartStore] Initialized empty cart');
+  logger.debug('[CartStore] Initialized empty cart', { storageKey });
   return { items: [], total: 0 };
 };
 
 // Guardar carrito en localStorage
-const saveCartToStorage = (state: CartState): void => {
+const saveCartToStorage = (state: CartState, userId?: string | null): void => {
   if (typeof window === 'undefined') return;
 
+  const storageKey = getCartStorageKey(userId);
+
   try {
-    localStorage.setItem('cart', JSON.stringify(state));
+    localStorage.setItem(storageKey, JSON.stringify(state));
     logger.debug('[CartStore] Cart saved to localStorage', {
+      storageKey,
       itemCount: state.items.length,
       total: state.total,
     });
   } catch (e) {
-    logger.error('[CartStore] Error saving cart to localStorage', e);
+    logger.error('[CartStore] Error saving cart to localStorage', {
+      storageKey,
+      error: e,
+    });
     logger.warn('[CartStore] Cart changes will not persist across sessions');
     // Mostrar advertencia al usuario si falla el guardado
     notify.warning('No se pudo guardar el carrito. Los cambios pueden perderse.');
@@ -141,37 +159,70 @@ const loadCartFromFirestore = async (userId: string): Promise<CartState | null> 
 // Sync cart when user logs in or out
 export const syncCartWithUser = async (userId: string | null): Promise<void> => {
   if (userId === currentUserId) {
-    // Same user, no need to sync
     return;
   }
 
-  logger.info('[CartStore] Syncing cart with user', { userId, previousUserId: currentUserId });
+  const previousUserId = currentUserId;
+
+  logger.info('[CartStore] Syncing cart with user', { userId, previousUserId });
 
   if (userId) {
-    // User logged in
-    const localCart = cartStore.get();
+    const storedCart = loadCartFromStorage(userId);
+    const guestCart = loadCartFromStorage(null);
     const firestoreCart = await loadCartFromFirestore(userId);
 
+    let source: 'firestore' | 'stored' | 'guest' | 'empty' = 'empty';
+    let resolvedCart: CartState = { items: [], total: 0 };
+
     if (firestoreCart && firestoreCart.items.length > 0) {
-      // User has cart in Firestore, load it
-      cartStore.set(firestoreCart);
-      saveCartToStorage(firestoreCart);
-      logger.info('[CartStore] Loaded cart from Firestore', {
-        itemCount: firestoreCart.items.length,
+      resolvedCart = {
+        items: firestoreCart.items,
+        total: calculateTotal(firestoreCart.items),
+      };
+      source = 'firestore';
+      logger.info('[CartStore] Using Firestore cart', {
+        userId,
+        itemCount: resolvedCart.items.length,
       });
-    } else if (localCart.items.length > 0) {
-      // User has local cart but nothing in Firestore, save local to Firestore
-      await saveCartToFirestore(userId, localCart);
-      logger.info('[CartStore] Migrated local cart to Firestore', {
-        itemCount: localCart.items.length,
+    } else if (storedCart.items.length > 0) {
+      resolvedCart = {
+        items: storedCart.items,
+        total: calculateTotal(storedCart.items),
+      };
+      source = 'stored';
+      logger.info('[CartStore] Using locally stored cart for user', {
+        userId,
+        itemCount: resolvedCart.items.length,
+      });
+    } else if (guestCart.items.length > 0) {
+      resolvedCart = {
+        items: guestCart.items,
+        total: calculateTotal(guestCart.items),
+      };
+      source = 'guest';
+      logger.info('[CartStore] Promoting guest cart to user cart', {
+        userId,
+        itemCount: resolvedCart.items.length,
       });
     }
+
+    cartStore.set(resolvedCart);
+    saveCartToStorage(resolvedCart, userId);
+
+    if (source === 'guest') {
+      saveCartToStorage({ items: [], total: 0 }, null);
+    }
+
+    if (source !== 'firestore' && resolvedCart.items.length > 0) {
+      await saveCartToFirestore(userId, resolvedCart);
+    }
   } else {
-    // User logged out
-    // Clear cart to prevent showing previous user's cart
     const emptyCart: CartState = { items: [], total: 0 };
     cartStore.set(emptyCart);
-    saveCartToStorage(emptyCart);
+    if (previousUserId) {
+      saveCartToStorage(emptyCart, previousUserId);
+    }
+    saveCartToStorage(emptyCart, null);
     logger.info('[CartStore] Cleared cart after logout');
   }
 
@@ -220,7 +271,7 @@ export function addToCart(item: CartItem): void {
   };
 
   cartStore.set(newState);
-  saveCartToStorage(newState);
+  saveCartToStorage(newState, currentUserId);
 
   // Save to Firestore if user is authenticated
   if (currentUserId) {
@@ -248,7 +299,7 @@ export function updateCartItemQuantity(
   };
 
   cartStore.set(newState);
-  saveCartToStorage(newState);
+  saveCartToStorage(newState, currentUserId);
 
   // Save to Firestore if user is authenticated
   if (currentUserId) {
@@ -274,7 +325,7 @@ export function removeFromCart(itemId: string, variantId?: number): void {
   };
 
   cartStore.set(newState);
-  saveCartToStorage(newState);
+  saveCartToStorage(newState, currentUserId);
 
   if (removedItem) {
     logger.info('[CartStore] Item removed from cart', { productId: itemId });
@@ -294,7 +345,7 @@ export function clearCart(): void {
 
   const newState: CartState = { items: [], total: 0 };
   cartStore.set(newState);
-  saveCartToStorage(newState);
+  saveCartToStorage(newState, currentUserId);
 
   if (itemCount > 0) {
     logger.info('[CartStore] Cart cleared', { itemCount });

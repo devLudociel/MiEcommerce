@@ -198,9 +198,7 @@ export const POST: APIRoute = async ({ request }) => {
 
           // Check if coupon has reached usage limit
           if (maxUses > 0 && currentUses >= maxUses) {
-            console.error(
-              `[save-order] Coupon usage limit exceeded: ${currentUses}/${maxUses}`
-            );
+            console.error(`[save-order] Coupon usage limit exceeded: ${currentUses}/${maxUses}`);
             throw new Error('Este cupón ha alcanzado su límite de usos');
           }
 

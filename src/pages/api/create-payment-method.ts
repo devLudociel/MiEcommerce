@@ -19,23 +19,14 @@ const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const {
-      cardNumber,
-      expMonth,
-      expYear,
-      cvc,
-      billingDetails,
-    } = await request.json();
+    const { cardNumber, expMonth, expYear, cvc, billingDetails } = await request.json();
 
     // Validar datos requeridos
     if (!cardNumber || !expMonth || !expYear || !cvc) {
-      return new Response(
-        JSON.stringify({ error: 'Datos de tarjeta incompletos' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      return new Response(JSON.stringify({ error: 'Datos de tarjeta incompletos' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Crear Payment Method usando la API de Stripe en el servidor
@@ -51,13 +42,15 @@ export const POST: APIRoute = async ({ request }) => {
         name: billingDetails?.name,
         email: billingDetails?.email,
         phone: billingDetails?.phone,
-        address: billingDetails?.address ? {
-          line1: billingDetails.address.line1,
-          city: billingDetails.address.city,
-          postal_code: billingDetails.address.postal_code,
-          state: billingDetails.address.state,
-          country: billingDetails.address.country,
-        } : undefined,
+        address: billingDetails?.address
+          ? {
+              line1: billingDetails.address.line1,
+              city: billingDetails.address.city,
+              postal_code: billingDetails.address.postal_code,
+              state: billingDetails.address.state,
+              country: billingDetails.address.country,
+            }
+          : undefined,
       },
     });
 

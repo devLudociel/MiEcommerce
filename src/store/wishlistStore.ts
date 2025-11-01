@@ -10,16 +10,25 @@ export interface WishlistItem {
   image?: string;
 }
 
-const WL_KEY = 'wishlist:v1';
+const WL_STORAGE_PREFIX = 'wishlist';
+const WL_GUEST_KEY = `${WL_STORAGE_PREFIX}:guest`;
 const WL_EVENT = 'wishlist:change';
+
+const getWishlistStorageKey = (userId?: string | null) =>
+  userId ? `${WL_STORAGE_PREFIX}:${userId}` : WL_GUEST_KEY;
 
 // Track current user ID
 let currentUserId: string | null = null;
 
-function readWishlist(): WishlistItem[] {
+type WishlistChangeDetail = {
+  userId: string | null;
+};
+
+function readWishlist(userId?: string | null): WishlistItem[] {
   if (typeof window === 'undefined') return [];
+  const storageKey = getWishlistStorageKey(userId);
   try {
-    const raw = localStorage.getItem(WL_KEY);
+    const raw = localStorage.getItem(storageKey);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
@@ -28,22 +37,29 @@ function readWishlist(): WishlistItem[] {
   }
 }
 
-function writeWishlist(items: WishlistItem[]) {
+function writeWishlist(
+  items: WishlistItem[],
+  userId?: string | null,
+  options?: { skipRemote?: boolean }
+) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(WL_KEY, JSON.stringify(items));
-  window.dispatchEvent(new CustomEvent(WL_EVENT));
+  const targetUserId = userId ?? currentUserId;
+  const storageKey = getWishlistStorageKey(targetUserId);
+  localStorage.setItem(storageKey, JSON.stringify(items));
+  window.dispatchEvent(
+    new CustomEvent<WishlistChangeDetail>(WL_EVENT, {
+      detail: { userId: targetUserId ?? null },
+    })
+  );
 
   // Save to Firestore if user is authenticated
-  if (currentUserId) {
-    saveWishlistToFirestore(currentUserId, items);
+  if (!options?.skipRemote && targetUserId) {
+    saveWishlistToFirestore(targetUserId, items);
   }
 }
 
 // Save wishlist to Firestore for authenticated users
-const saveWishlistToFirestore = async (
-  userId: string,
-  items: WishlistItem[]
-): Promise<void> => {
+const saveWishlistToFirestore = async (userId: string, items: WishlistItem[]): Promise<void> => {
   try {
     const userRef = doc(db, 'users', userId);
     await setDoc(
@@ -91,51 +107,77 @@ export const syncWishlistWithUser = async (userId: string | null): Promise<void>
     return;
   }
 
+  const previousUserId = currentUserId;
+
   logger.info('[WishlistStore] Syncing wishlist with user', {
     userId,
-    previousUserId: currentUserId,
+    previousUserId,
   });
 
   if (userId) {
     // User logged in
-    const localWishlist = readWishlist();
+    const storedWishlist = readWishlist(userId);
+    const guestWishlist = readWishlist(null);
     const firestoreWishlist = await loadWishlistFromFirestore(userId);
 
+    let source: 'firestore' | 'stored' | 'guest' | 'empty' = 'empty';
+    let resolvedWishlist: WishlistItem[] = [];
+
     if (firestoreWishlist && firestoreWishlist.length > 0) {
-      // User has wishlist in Firestore, load it
-      writeWishlist(firestoreWishlist);
-      logger.info('[WishlistStore] Loaded wishlist from Firestore', {
+      resolvedWishlist = firestoreWishlist;
+      source = 'firestore';
+      logger.info('[WishlistStore] Using Firestore wishlist', {
+        userId,
         itemCount: firestoreWishlist.length,
       });
-    } else if (localWishlist.length > 0) {
-      // User has local wishlist but nothing in Firestore, save local to Firestore
-      await saveWishlistToFirestore(userId, localWishlist);
-      logger.info('[WishlistStore] Migrated local wishlist to Firestore', {
-        itemCount: localWishlist.length,
+    } else if (storedWishlist.length > 0) {
+      resolvedWishlist = storedWishlist;
+      source = 'stored';
+      logger.info('[WishlistStore] Using locally stored wishlist for user', {
+        userId,
+        itemCount: storedWishlist.length,
       });
+    } else if (guestWishlist.length > 0) {
+      resolvedWishlist = guestWishlist;
+      source = 'guest';
+      logger.info('[WishlistStore] Promoting guest wishlist to user', {
+        userId,
+        itemCount: guestWishlist.length,
+      });
+    } else {
+      logger.info('[WishlistStore] No wishlist data found, starting empty', { userId });
+    }
+
+    const skipRemote = source === 'firestore' || source === 'empty';
+    writeWishlist(resolvedWishlist, userId, { skipRemote });
+
+    if (source === 'guest') {
+      writeWishlist([], null, { skipRemote: true });
     }
   } else {
     // User logged out - clear wishlist to prevent showing previous user's items
-    writeWishlist([]);
-    logger.info('[WishlistStore] Cleared wishlist after logout');
+    writeWishlist([], null, { skipRemote: true });
+    logger.info('[WishlistStore] Switched to guest wishlist after logout', {
+      previousUserId,
+    });
   }
 
   currentUserId = userId;
 };
 
 export function getWishlist(): WishlistItem[] {
-  return readWishlist();
+  return readWishlist(currentUserId);
 }
 
 export function toggleWishlist(item: WishlistItem) {
-  const items = readWishlist();
+  const items = readWishlist(currentUserId);
   const exists = items.some((i) => i.id === item.id);
   const next = exists ? items.filter((i) => i.id !== item.id) : [...items, item];
   writeWishlist(next);
 }
 
 export function removeFromWishlist(id: WishlistItem['id']) {
-  writeWishlist(readWishlist().filter((i) => i.id !== id));
+  writeWishlist(readWishlist(currentUserId).filter((i) => i.id !== id));
 }
 
 export function clearWishlist() {
@@ -143,13 +185,18 @@ export function clearWishlist() {
 }
 
 export function useWishlist() {
-  const [items, setItems] = useState<WishlistItem[]>(() => readWishlist());
+  const [items, setItems] = useState<WishlistItem[]>(() => readWishlist(currentUserId));
 
   useEffect(() => {
-    const onChange = () => setItems(readWishlist());
-    window.addEventListener(WL_EVENT, onChange as EventListener);
-    setItems(readWishlist());
-    return () => window.removeEventListener(WL_EVENT, onChange as EventListener);
+    const handler = (event: Event) => {
+      const customEvent = event as CustomEvent<WishlistChangeDetail>;
+      const targetUserId = customEvent.detail?.userId ?? currentUserId;
+      setItems(readWishlist(targetUserId));
+    };
+
+    window.addEventListener(WL_EVENT, handler as EventListener);
+    setItems(readWishlist(currentUserId));
+    return () => window.removeEventListener(WL_EVENT, handler as EventListener);
   }, []);
 
   const count = items.length;
