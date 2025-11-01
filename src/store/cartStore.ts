@@ -3,6 +3,8 @@ import { atom } from 'nanostores';
 import { useStore } from '@nanostores/react';
 import { logger } from '../lib/logger';
 import { notify } from '../lib/notifications';
+import { db } from '../lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export interface CartItem {
   id: string;
@@ -92,6 +94,95 @@ const calculateTotal = (items: CartItem[]): number => {
 // Atom del carrito
 export const cartStore = atom<CartState>(loadCartFromStorage());
 
+// Track current user ID
+let currentUserId: string | null = null;
+
+// Save cart to Firestore for authenticated users
+const saveCartToFirestore = async (userId: string, state: CartState): Promise<void> => {
+  try {
+    const cartRef = doc(db, 'carts', userId);
+    await setDoc(cartRef, {
+      items: state.items,
+      total: state.total,
+      updatedAt: new Date(),
+    });
+    logger.debug('[CartStore] Cart saved to Firestore', {
+      userId,
+      itemCount: state.items.length,
+    });
+  } catch (error) {
+    logger.error('[CartStore] Error saving cart to Firestore', error);
+  }
+};
+
+// Load cart from Firestore for authenticated users
+const loadCartFromFirestore = async (userId: string): Promise<CartState | null> => {
+  try {
+    const cartRef = doc(db, 'carts', userId);
+    const cartSnap = await getDoc(cartRef);
+
+    if (cartSnap.exists()) {
+      const data = cartSnap.data();
+      logger.debug('[CartStore] Cart loaded from Firestore', {
+        userId,
+        itemCount: data.items?.length || 0,
+      });
+      return {
+        items: data.items || [],
+        total: data.total || 0,
+      };
+    }
+  } catch (error) {
+    logger.error('[CartStore] Error loading cart from Firestore', error);
+  }
+  return null;
+};
+
+// Sync cart when user logs in or out
+export const syncCartWithUser = async (userId: string | null): Promise<void> => {
+  if (userId === currentUserId) {
+    // Same user, no need to sync
+    return;
+  }
+
+  logger.info('[CartStore] Syncing cart with user', { userId, previousUserId: currentUserId });
+
+  if (userId) {
+    // User logged in
+    const localCart = cartStore.get();
+    const firestoreCart = await loadCartFromFirestore(userId);
+
+    if (firestoreCart && firestoreCart.items.length > 0) {
+      // User has cart in Firestore, load it
+      cartStore.set(firestoreCart);
+      saveCartToStorage(firestoreCart);
+      logger.info('[CartStore] Loaded cart from Firestore', {
+        itemCount: firestoreCart.items.length,
+      });
+    } else if (localCart.items.length > 0) {
+      // User has local cart but nothing in Firestore, save local to Firestore
+      await saveCartToFirestore(userId, localCart);
+      logger.info('[CartStore] Migrated local cart to Firestore', {
+        itemCount: localCart.items.length,
+      });
+    }
+  } else {
+    // User logged out
+    // Clear cart to prevent showing previous user's cart
+    const emptyCart: CartState = { items: [], total: 0 };
+    cartStore.set(emptyCart);
+    saveCartToStorage(emptyCart);
+    logger.info('[CartStore] Cleared cart after logout');
+  }
+
+  currentUserId = userId;
+};
+
+// Get current user ID
+export const setCurrentUserId = (userId: string | null): void => {
+  currentUserId = userId;
+};
+
 // Agregar item al carrito
 export function addToCart(item: CartItem): void {
   const currentState = cartStore.get();
@@ -130,6 +221,11 @@ export function addToCart(item: CartItem): void {
 
   cartStore.set(newState);
   saveCartToStorage(newState);
+
+  // Save to Firestore if user is authenticated
+  if (currentUserId) {
+    saveCartToFirestore(currentUserId, newState);
+  }
 }
 
 // Actualizar cantidad de un item
@@ -153,6 +249,11 @@ export function updateCartItemQuantity(
 
   cartStore.set(newState);
   saveCartToStorage(newState);
+
+  // Save to Firestore if user is authenticated
+  if (currentUserId) {
+    saveCartToFirestore(currentUserId, newState);
+  }
 }
 
 // Remover item del carrito
@@ -179,6 +280,11 @@ export function removeFromCart(itemId: string, variantId?: number): void {
     logger.info('[CartStore] Item removed from cart', { productId: itemId });
     notify.info(`${removedItem.name} eliminado del carrito`);
   }
+
+  // Save to Firestore if user is authenticated
+  if (currentUserId) {
+    saveCartToFirestore(currentUserId, newState);
+  }
 }
 
 // Limpiar carrito
@@ -193,6 +299,11 @@ export function clearCart(): void {
   if (itemCount > 0) {
     logger.info('[CartStore] Cart cleared', { itemCount });
     notify.info('Carrito vaciado');
+  }
+
+  // Save to Firestore if user is authenticated
+  if (currentUserId) {
+    saveCartToFirestore(currentUserId, newState);
   }
 }
 
