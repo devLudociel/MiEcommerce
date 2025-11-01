@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { onAuthStateChanged, signOut, getIdTokenResult } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import { syncCartWithUser } from '../../store/cartStore';
+import { syncWishlistWithUser } from '../../store/wishlistStore';
 
 export function useAuth() {
   const [user, setUser] = useState<any>(null);
@@ -18,21 +19,27 @@ export function useAuth() {
           const token = await getIdTokenResult(currentUser, true);
           setIsAdminClaim(!!(token.claims as any)?.admin);
 
-          // Sync cart with authenticated user
-          await syncCartWithUser(currentUser.uid);
+          // Sync cart and wishlist with authenticated user
+          await Promise.all([
+            syncCartWithUser(currentUser.uid),
+            syncWishlistWithUser(currentUser.uid),
+          ]);
         } else {
           setIsAdminClaim(false);
 
-          // Clear cart when user logs out
-          await syncCartWithUser(null);
+          // Clear cart and wishlist when user logs out
+          await Promise.all([syncCartWithUser(null), syncWishlistWithUser(null)]);
         }
       } catch {
         setIsAdminClaim(false);
-        // Still sync cart even if token check fails
+        // Still sync cart and wishlist even if token check fails
         if (currentUser) {
-          await syncCartWithUser(currentUser.uid);
+          await Promise.all([
+            syncCartWithUser(currentUser.uid),
+            syncWishlistWithUser(currentUser.uid),
+          ]);
         } else {
-          await syncCartWithUser(null);
+          await Promise.all([syncCartWithUser(null), syncWishlistWithUser(null)]);
         }
       }
     });
