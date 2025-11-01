@@ -23,7 +23,11 @@ export const POST: APIRoute = async ({ request }) => {
         },
       });
     }
-  } catch {}
+  } catch (rateLimitError) {
+    // SECURITY FIX: Log rate limit failures instead of silently ignoring
+    console.error('[save-order] Rate limit check failed:', rateLimitError);
+    // Continue anyway - don't block orders if rate limiting system fails
+  }
   const isProd = import.meta.env.PROD === true;
   console.log('API save-order: Solicitud recibida');
 
@@ -92,6 +96,7 @@ export const POST: APIRoute = async ({ request }) => {
     console.log('API save-order: Pedido guardado con ID:', docRef.id);
 
     // Procesar wallet debit si se usó saldo (nueva estructura del checkout)
+    // SECURITY FIX: Use Firestore transaction to prevent race conditions
     if (
       orderData.usedWallet &&
       orderData.walletDiscount &&
@@ -105,39 +110,43 @@ export const POST: APIRoute = async ({ request }) => {
 
         if (walletAmount > 0) {
           const walletRef = adminDb.collection('wallets').doc(userId);
-          const snap = await walletRef.get();
 
-          if (!snap.exists) {
-            console.warn('[save-order] Wallet document does not exist for user, creating...');
-          }
+          // Use transaction to prevent double-spend attacks
+          await adminDb.runTransaction(async (transaction) => {
+            const snap = await transaction.get(walletRef);
 
-          const current = snap.exists
-            ? (snap.data() as any)
-            : { balance: 0, totalEarned: 0, totalSpent: 0, userId };
-          const currentBalance = Number(current.balance || 0);
+            if (!snap.exists) {
+              console.warn('[save-order] Wallet document does not exist for user, creating...');
+              throw new Error('Wallet no encontrado. Por favor, recarga la página.');
+            }
 
-          // Ensure we don't go negative
-          if (currentBalance < walletAmount) {
-            console.error(
-              `[save-order] Insufficient wallet balance. Current: €${currentBalance}, Required: €${walletAmount}`
+            const current = snap.data() as any;
+            const currentBalance = Number(current.balance || 0);
+
+            // Ensure we don't go negative
+            if (currentBalance < walletAmount) {
+              console.error(
+                `[save-order] Insufficient wallet balance. Current: €${currentBalance}, Required: €${walletAmount}`
+              );
+              throw new Error('Saldo insuficiente en el monedero');
+            }
+
+            const newBalance = currentBalance - walletAmount;
+
+            transaction.set(
+              walletRef,
+              {
+                userId,
+                balance: newBalance,
+                totalSpent: Number(current.totalSpent || 0) + walletAmount,
+                totalEarned: Number(current.totalEarned || 0),
+                updatedAt: FieldValue.serverTimestamp(),
+              },
+              { merge: true }
             );
-            throw new Error('Saldo insuficiente en el monedero');
-          }
+          });
 
-          const newBalance = currentBalance - walletAmount;
-
-          await walletRef.set(
-            {
-              userId,
-              balance: newBalance,
-              totalSpent: Number(current.totalSpent || 0) + walletAmount,
-              totalEarned: Number(current.totalEarned || 0),
-              updatedAt: FieldValue.serverTimestamp(),
-              ...(snap.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
-            },
-            { merge: true }
-          );
-
+          // Transaction succeeded, now add transaction record
           await adminDb.collection('wallet_transactions').add({
             userId,
             type: 'debit',
@@ -147,17 +156,19 @@ export const POST: APIRoute = async ({ request }) => {
             createdAt: FieldValue.serverTimestamp(),
           });
 
-          console.log(
-            `[save-order] Wallet debited: €${walletAmount.toFixed(2)}, New balance: €${newBalance.toFixed(2)}`
-          );
+          console.log(`[save-order] Wallet debited (atomic): €${walletAmount.toFixed(2)}`);
         }
       } catch (walletError) {
         console.error('[save-order] Error processing wallet debit:', walletError);
-        // Don't throw - log and continue
+        // This IS critical - throw to prevent order from completing
+        throw new Error(
+          `Error al procesar el pago con monedero: ${(walletError as Error).message}`
+        );
       }
     }
 
     // Procesar cupón si se usó (actualizado con nueva estructura)
+    // SECURITY FIX: Use Firestore transaction to prevent exceeding usage limits
     if (
       orderData.couponCode &&
       orderData.couponId &&
@@ -172,15 +183,39 @@ export const POST: APIRoute = async ({ request }) => {
         const userId: string = String(orderData.userId);
 
         const couponRef = adminDb.collection('coupons').doc(couponId);
-        await couponRef.set(
-          {
-            timesUsed: FieldValue.increment(1),
-            currentUses: FieldValue.increment(1),
-            updatedAt: FieldValue.serverTimestamp(),
-          },
-          { merge: true }
-        );
 
+        // Use transaction to enforce usage limits atomically
+        await adminDb.runTransaction(async (transaction) => {
+          const couponSnap = await transaction.get(couponRef);
+
+          if (!couponSnap.exists) {
+            throw new Error('Cupón no encontrado');
+          }
+
+          const couponData = couponSnap.data() as any;
+          const currentUses = Number(couponData.currentUses || 0);
+          const maxUses = Number(couponData.maxUses || 0);
+
+          // Check if coupon has reached usage limit
+          if (maxUses > 0 && currentUses >= maxUses) {
+            console.error(
+              `[save-order] Coupon usage limit exceeded: ${currentUses}/${maxUses}`
+            );
+            throw new Error('Este cupón ha alcanzado su límite de usos');
+          }
+
+          transaction.set(
+            couponRef,
+            {
+              timesUsed: FieldValue.increment(1),
+              currentUses: FieldValue.increment(1),
+              updatedAt: FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+        });
+
+        // Transaction succeeded, now add usage record
         await adminDb.collection('coupon_usage').add({
           couponId,
           couponCode,
@@ -192,15 +227,17 @@ export const POST: APIRoute = async ({ request }) => {
         });
 
         console.log(
-          `[save-order] Coupon processed: ${couponCode} (-€${discountAmount.toFixed(2)})`
+          `[save-order] Coupon processed (atomic): ${couponCode} (-€${discountAmount.toFixed(2)})`
         );
       } catch (couponError) {
         console.error('[save-order] Error processing coupon:', couponError);
-        // Don't throw - log and continue
+        // This IS critical - throw to prevent order from completing with invalid discount
+        throw new Error(`Error al procesar el cupón: ${(couponError as Error).message}`);
       }
     }
 
     // Agregar cashback al wallet (5% del subtotal después de descuentos, solo para usuarios autenticados)
+    // SECURITY FIX: Use Firestore transaction to prevent race conditions
     if (orderData.userId && orderData.userId !== 'guest' && orderData.subtotal) {
       try {
         console.log('[save-order] Calculating cashback...');
@@ -214,24 +251,30 @@ export const POST: APIRoute = async ({ request }) => {
         if (cashbackAmount > 0) {
           const userId: string = String(orderData.userId);
           const walletRef = adminDb.collection('wallets').doc(userId);
-          const snap = await walletRef.get();
-          const current = snap.exists
-            ? (snap.data() as any)
-            : { balance: 0, totalEarned: 0, totalSpent: 0, userId };
-          const newBalance = Number(current.balance || 0) + cashbackAmount;
 
-          await walletRef.set(
-            {
-              userId,
-              balance: newBalance,
-              totalEarned: Number(current.totalEarned || 0) + cashbackAmount,
-              totalSpent: Number(current.totalSpent || 0),
-              updatedAt: FieldValue.serverTimestamp(),
-              ...(snap.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
-            },
-            { merge: true }
-          );
+          // Use transaction to prevent duplicate cashback on concurrent orders
+          await adminDb.runTransaction(async (transaction) => {
+            const snap = await transaction.get(walletRef);
+            const current = snap.exists
+              ? (snap.data() as any)
+              : { balance: 0, totalEarned: 0, totalSpent: 0, userId };
+            const newBalance = Number(current.balance || 0) + cashbackAmount;
 
+            transaction.set(
+              walletRef,
+              {
+                userId,
+                balance: newBalance,
+                totalEarned: Number(current.totalEarned || 0) + cashbackAmount,
+                totalSpent: Number(current.totalSpent || 0),
+                updatedAt: FieldValue.serverTimestamp(),
+                ...(snap.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
+              },
+              { merge: true }
+            );
+          });
+
+          // Transaction succeeded, now add transaction record
           await adminDb.collection('wallet_transactions').add({
             userId,
             type: 'cashback',
@@ -242,12 +285,12 @@ export const POST: APIRoute = async ({ request }) => {
           });
 
           console.log(
-            `[save-order] Cashback added: €${cashbackAmount.toFixed(2)} (5% of €${subtotalAfterDiscount.toFixed(2)})`
+            `[save-order] Cashback added (atomic): €${cashbackAmount.toFixed(2)} (5% of €${subtotalAfterDiscount.toFixed(2)})`
           );
         }
       } catch (cashbackError) {
         console.error('[save-order] Error adding cashback:', cashbackError);
-        // Don't throw - log and continue
+        // Don't throw - cashback failure shouldn't block order
       }
     }
 
