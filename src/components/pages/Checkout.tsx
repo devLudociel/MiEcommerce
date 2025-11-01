@@ -246,9 +246,9 @@ export default function Checkout() {
   const getTaxInfo = () => {
     const province = shippingInfo.state;
 
-    // Canarias: IGIC 7% instead of IVA 21%
+    // Canarias: IGIC exempt (0% - not registered for IGIC)
     if (province === 'Las Palmas' || province === 'Santa Cruz de Tenerife') {
-      return { rate: 0.07, name: 'IGIC', label: 'IGIC (7%)' };
+      return { rate: 0, name: 'IGIC', label: 'IGIC (Exento)' };
     }
 
     // Ceuta y Melilla: IPSI (exempt for most products, we'll use 0%)
@@ -1516,7 +1516,7 @@ export default function Checkout() {
                     <span className="font-bold">€{tax.toFixed(2)}</span>
                   </div>
                 )}
-                {tax === 0 && taxInfo.name === 'IPSI' && (
+                {tax === 0 && (taxInfo.name === 'IPSI' || taxInfo.name === 'IGIC') && (
                   <div className="flex justify-between text-green-600">
                     <span>{taxInfo.label}</span>
                     <span className="font-bold">€0.00</span>
