@@ -1,8 +1,30 @@
 import type { APIRoute } from 'astro';
-import { getAdminDb } from '../../lib/firebase-admin';
+import { getAdminDb, getAdminAuth } from '../../lib/firebase-admin';
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, request }) => {
   try {
+    // SECURITY: Verify user authentication
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized - Authentication required' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const idToken = authHeader.replace('Bearer ', '').trim();
+    let decodedToken;
+
+    try {
+      decodedToken = await getAdminAuth().verifyIdToken(idToken);
+    } catch (verificationError) {
+      console.error('[get-order] Invalid token:', verificationError);
+      return new Response(JSON.stringify({ error: 'Unauthorized - Invalid token' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const orderId = url.searchParams.get('orderId');
 
     if (!orderId) {
@@ -25,6 +47,19 @@ export const GET: APIRoute = async ({ url }) => {
     }
 
     const orderData = orderSnap.data() as any;
+
+    // SECURITY: Verify user owns this order or is admin
+    if (orderData.userId !== decodedToken.uid && !decodedToken.admin) {
+      console.warn('[get-order] Unauthorized access attempt:', {
+        orderId,
+        orderUserId: orderData.userId,
+        requestUserId: decodedToken.uid,
+      });
+      return new Response(JSON.stringify({ error: 'Forbidden - You do not own this order' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     // Formatear la orden para que coincida con la interfaz esperada
     const order = {
