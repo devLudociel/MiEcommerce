@@ -56,28 +56,30 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     // Get transactions from wallet_transactions collection
+    // Note: We fetch without orderBy to avoid index requirements, then sort in memory
     const transactionsRef = adminDb
       .collection('wallet_transactions')
-      .where('userId', '==', requestedUserId)
-      .orderBy('createdAt', 'desc')
-      .limit(limit);
+      .where('userId', '==', requestedUserId);
 
     const snapshot = await transactionsRef.get();
 
-    const transactions = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        type: data.type,
-        amount: data.amount,
-        description: data.description,
-        orderId: data.orderId,
-        createdAt:
-          typeof data.createdAt?.toDate === 'function'
-            ? data.createdAt.toDate().toISOString()
-            : new Date(data.createdAt).toISOString(),
-      };
-    });
+    const transactions = snapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          type: data.type,
+          amount: data.amount,
+          description: data.description,
+          orderId: data.orderId,
+          createdAt:
+            typeof data.createdAt?.toDate === 'function'
+              ? data.createdAt.toDate().toISOString()
+              : new Date(data.createdAt).toISOString(),
+        };
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, limit);
 
     console.log('[API get-wallet-transactions] Transactions retrieved', {
       userId: requestedUserId,
