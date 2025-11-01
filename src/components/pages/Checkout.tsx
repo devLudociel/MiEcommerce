@@ -242,15 +242,33 @@ export default function Checkout() {
 
   const shippingCost = getShippingCost();
 
-  // Calculate IVA (21% Spanish VAT on subtotal after discount)
+  // Calculate tax based on province (different tax regimes in Spain)
+  const getTaxInfo = () => {
+    const province = shippingInfo.state;
+
+    // Canarias: IGIC 7% instead of IVA 21%
+    if (province === 'Las Palmas' || province === 'Santa Cruz de Tenerife') {
+      return { rate: 0.07, name: 'IGIC', label: 'IGIC (7%)' };
+    }
+
+    // Ceuta y Melilla: IPSI (exempt for most products, we'll use 0%)
+    if (province === 'Ceuta' || province === 'Melilla') {
+      return { rate: 0, name: 'IPSI', label: 'IPSI (Exento)' };
+    }
+
+    // Rest of Spain: IVA 21%
+    return { rate: 0.21, name: 'IVA', label: 'IVA (21%)' };
+  };
+
+  const taxInfo = getTaxInfo();
   const subtotalAfterDiscount = subtotal - couponDiscount;
-  const iva = subtotalAfterDiscount * 0.21;
+  const tax = subtotalAfterDiscount * taxInfo.rate;
 
   // Calculate wallet discount
-  const totalBeforeWallet = subtotalAfterDiscount + shippingCost + iva;
+  const totalBeforeWallet = subtotalAfterDiscount + shippingCost + tax;
   const walletDiscount = useWallet ? Math.min(walletBalance, totalBeforeWallet) : 0;
 
-  // Total includes: subtotal - coupon discount + shipping + IVA - wallet discount
+  // Total includes: subtotal - coupon discount + shipping + tax - wallet discount
   const total = totalBeforeWallet - walletDiscount;
 
   /**
@@ -516,7 +534,10 @@ export default function Checkout() {
         couponCode: appliedCoupon?.code,
         couponId: appliedCoupon?.id,
         shippingCost,
-        iva,
+        tax,
+        taxType: taxInfo.name,
+        taxRate: taxInfo.rate,
+        taxLabel: taxInfo.label,
         walletDiscount: useWallet ? walletDiscount : 0,
         usedWallet: useWallet,
         total,
@@ -1489,10 +1510,18 @@ export default function Checkout() {
                   </div>
                 )}
 
-                <div className="flex justify-between text-gray-700">
-                  <span>IVA (21%)</span>
-                  <span className="font-bold">€{iva.toFixed(2)}</span>
-                </div>
+                {tax > 0 && (
+                  <div className="flex justify-between text-gray-700">
+                    <span>{taxInfo.label}</span>
+                    <span className="font-bold">€{tax.toFixed(2)}</span>
+                  </div>
+                )}
+                {tax === 0 && taxInfo.name === 'IPSI' && (
+                  <div className="flex justify-between text-green-600">
+                    <span>{taxInfo.label}</span>
+                    <span className="font-bold">€0.00</span>
+                  </div>
+                )}
 
                 {useWallet && walletDiscount > 0 && (
                   <div className="flex justify-between text-green-600">
