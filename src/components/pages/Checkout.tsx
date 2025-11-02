@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { cartStore, clearCart } from '../../store/cartStore';
 import type { CartItem } from '../../store/cartStore';
@@ -113,6 +113,9 @@ export default function Checkout() {
   });
 
   const [acceptTerms, setAcceptTerms] = useState(false);
+
+  // Order tracking for Stripe Elements payments
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   // Validación con Zod para el formulario de envío
   const shippingValidation = useFormValidation(shippingInfoSchema, {
@@ -282,131 +285,41 @@ export default function Checkout() {
   // Total includes: subtotal - coupon discount + shipping + tax - wallet discount
   const total = totalBeforeWallet - walletDiscount;
 
-  /**
-   * Procesa el pago con tarjeta de forma segura usando Stripe
-   * Flujo correcto para producción:
-   * 1. Crear PaymentMethod en el servidor (tokenización segura)
-   * 2. Crear PaymentIntent con el monto del pedido
-   * 3. Confirmar el pago usando el PaymentMethod ID
-   */
-  const processCardPayment = useCallback(
-    async (orderId: string, orderTotal: number) => {
-      if (paymentInfo.method !== 'card') {
-        return;
-      }
+  // REMOVED: Old insecure processCardPayment function
+  // Now using Stripe Elements (PCI-DSS compliant)
 
-      const stripe = await stripePromise;
-      if (!stripe) {
-        logger.error('[Checkout] Stripe no se inicializó');
-        throw new Error('No se pudo inicializar el sistema de pagos');
-      }
-
-      // Validar datos de tarjeta
-      const cardNumber = paymentInfo.cardNumber?.replace(/\s/g, '');
-      if (!cardNumber || cardNumber.length < 13) {
-        throw new Error('Número de tarjeta inválido');
-      }
-
-      const [expMonthStr, expYearStr] = (paymentInfo.cardExpiry || '').split('/');
-      const expMonth = Number(expMonthStr);
-      const expYearDigits = Number(expYearStr);
-      if (!expMonth || !expYearDigits || expMonth < 1 || expMonth > 12) {
-        throw new Error('Fecha de vencimiento inválida');
-      }
-      const expYear = expYearDigits < 100 ? 2000 + expYearDigits : expYearDigits;
-
-      if (!paymentInfo.cardCVV || paymentInfo.cardCVV.length < 3) {
-        throw new Error('CVV inválido');
-      }
-
-      logger.info('[Checkout] Creando Payment Method seguro en el servidor');
-
-      // Paso 1: Crear Payment Method en el servidor (tokenización segura)
-      const paymentMethodResponse = await fetch('/api/create-payment-method', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cardNumber,
-          expMonth,
-          expYear,
-          cvc: paymentInfo.cardCVV,
-          billingDetails: {
-            name: `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim(),
-            email: shippingInfo.email,
-            phone: shippingInfo.phone,
-            address: {
-              line1: shippingInfo.address,
-              city: shippingInfo.city,
-              postal_code: shippingInfo.zipCode,
-              state: shippingInfo.state,
-              country: shippingInfo.country?.toLowerCase().includes('es')
-                ? 'ES'
-                : shippingInfo.country,
-            },
-          },
-        }),
-      });
-
-      const paymentMethodData = await paymentMethodResponse.json();
-
-      if (!paymentMethodResponse.ok) {
-        logger.error('[Checkout] Error creando Payment Method', paymentMethodData);
-        throw new Error(paymentMethodData.error || 'Error procesando los datos de la tarjeta');
-      }
-
-      const { paymentMethodId } = paymentMethodData;
-      logger.info('[Checkout] Payment Method creado', {
-        paymentMethodId,
-        last4: paymentMethodData.card?.last4,
-      });
-
-      // Paso 2: Crear Payment Intent
-      const paymentIntentResponse = await fetch('/api/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId,
-          amount: Number(orderTotal.toFixed(2)),
-          currency: 'eur',
-        }),
-      });
-
-      const paymentIntentData = await paymentIntentResponse.json();
-
-      if (!paymentIntentResponse.ok) {
-        logger.error('[Checkout] Error creando Payment Intent', paymentIntentData);
-        throw new Error(paymentIntentData.error || 'Error al iniciar el pago');
-      }
-
-      const { clientSecret, paymentIntentId } = paymentIntentData;
-      logger.info('[Checkout] Payment Intent creado', { orderId, paymentIntentId });
-
-      // Paso 3: Confirmar el pago con el Payment Method ID
-      const confirmation = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: paymentMethodId, // ✅ CORRECTO: usar payment_method, no payment_method_data
-      });
-
-      if (confirmation.error) {
-        logger.error('[Checkout] Error al confirmar el pago', confirmation.error);
-        throw new Error(
-          confirmation.error.message ||
-            'El pago fue rechazado. Verifica los datos e intenta nuevamente.'
-        );
-      }
-
-      const status = confirmation.paymentIntent?.status;
-      logger.info('[Checkout] Pago confirmado', { orderId, paymentIntentId, status });
-
-      if (status !== 'succeeded' && status !== 'processing' && status !== 'requires_capture') {
-        throw new Error(
-          `El pago tiene estado "${status || 'desconocido'}". Por favor contacta con soporte.`
-        );
-      }
-
-      logger.info('[Checkout] ✅ Pago completado exitosamente', { orderId, status });
+  // Stripe Elements - PCI-DSS Compliant Payment
+  const securePayment = useSecureCardPayment({
+    orderId: orderId ?? '',
+    orderTotal: total,
+    billingDetails: {
+      name: `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim(),
+      email: shippingInfo.email,
+      phone: shippingInfo.phone,
+      address: {
+        line1: shippingInfo.address,
+        city: shippingInfo.city,
+        postal_code: shippingInfo.zipCode,
+        state: shippingInfo.state,
+        country: 'ES',
+      },
     },
-    [paymentInfo, shippingInfo]
-  );
+    onSuccess: (paymentIntentId, completedOrderId) => {
+      logger.info('[Checkout] Payment successful', {
+        paymentIntentId,
+        orderId: completedOrderId,
+      });
+      notify.success('¡Pago completado con éxito!');
+      clearCart();
+      setTimeout(() => {
+        window.location.href = `/confirmacion?orderId=${completedOrderId}`;
+      }, 500);
+    },
+    onError: (errorMessage) => {
+      logger.error('[Checkout] Payment failed', { error: errorMessage });
+      setIsProcessing(false);
+    },
+  });
 
   const validateStep1 = async (): Promise<boolean> => {
     logger.debug('[Checkout] Validating step 1 (shipping info)', shippingInfo);
@@ -425,18 +338,15 @@ export default function Checkout() {
   };
 
   const validateStep2 = async (): Promise<boolean> => {
-    logger.debug('[Checkout] Validating step 2 (payment info)', paymentInfo);
+    logger.debug('[Checkout] Validating step 2 (payment method)', paymentInfo);
 
-    const result = await paymentValidation.validate(paymentInfo);
-
-    if (!result.success) {
-      const firstError = Object.values(result.errors!)[0];
-      notify.error(firstError || 'Por favor, corrige los errores de pago');
-      logger.warn('[Checkout] Step 2 validation failed', result.errors);
+    // Payment method validation only
+    if (!paymentInfo.method) {
+      notify.error('Selecciona un método de pago');
       return false;
     }
 
-    logger.info('[Checkout] Step 2 validation successful');
+    // Card validation handled by Stripe Elements
     return true;
   };
 
@@ -519,14 +429,13 @@ export default function Checkout() {
 
     logger.info('[Checkout] Placing order', { total, itemCount: cart.items.length });
     setIsProcessing(true);
+
     try {
-      // IDEMPOTENCY: Generate a unique key to prevent duplicate orders
       const idempotencyKey = `order_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
       logger.info('[Checkout] Generated idempotency key:', idempotencyKey);
 
-      // Preparar datos de la orden para Firebase
       const orderData = {
-        idempotencyKey, // Include idempotency key
+        idempotencyKey,
         items: cart.items.map((item) => ({
           productId: item.id,
           name: item.name,
@@ -582,7 +491,6 @@ export default function Checkout() {
         status: 'pending',
       };
 
-      // Guardar orden en Firebase
       const response = await fetch('/api/save-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -593,31 +501,37 @@ export default function Checkout() {
         throw new Error('Error al guardar la orden');
       }
 
-      const { orderId } = await response.json();
+      const { orderId: newOrderId } = await response.json();
+      setOrderId(newOrderId);
 
-      // Limpiar carrito y redirigir
-      logger.info('[Checkout] Order placed successfully', { orderId });
-      notify.success('¡Pedido realizado con éxito!');
-      clearCart();
+      logger.info('[Checkout] Order saved', { orderId: newOrderId });
 
-      // Pequeña pausa para que el usuario vea la notificación
-      setTimeout(() => {
-        window.location.href = `/confirmacion?orderId=${orderId}`;
-      }, 500);
+      if (paymentInfo.method === 'card') {
+        logger.info('[Checkout] Processing card payment...');
+        const paymentResult = await securePayment.processPayment(newOrderId);
+
+        if (!paymentResult.success) {
+          throw new Error(paymentResult.error || 'Error procesando pago');
+        }
+        // El onSuccess del hook maneja el resto (notificación, carrito y redirección)
+      } else {
+        notify.success('¡Pedido realizado con éxito!');
+        clearCart();
+        setTimeout(() => {
+          window.location.href = `/confirmacion?orderId=${newOrderId}`;
+        }, 500);
+      }
     } catch (error) {
       logger.error('[Checkout] Error placing order', error);
-      notify.error('Hubo un error al procesar tu pedido. Por favor, intenta de nuevo.');
+      const errorMessage =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Hubo un error al procesar tu pedido. Por favor, intenta de nuevo.';
+      notify.error(errorMessage);
     } finally {
       setIsProcessing(false);
     }
   };
-
-  const formatCardNumber = (value: string) => {
-    const cleaned = value.replace(/\s/g, '');
-    const formatted = cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
-    return formatted.substring(0, 19);
-  };
-
   if (cart.items.length === 0) {
     return null;
   }
@@ -1328,108 +1242,9 @@ export default function Checkout() {
                     ))}
                   </div>
 
-                  {paymentInfo.method === 'card' && (
-                    <div className="space-y-4 mt-6 p-6 bg-gray-50 rounded-2xl border-2 border-gray-200">
-                      <h3 className="font-bold text-gray-800 mb-4">Datos de la Tarjeta</h3>
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">
-                          Número de Tarjeta *
-                        </label>
-                        <input
-                          type="text"
-                          value={paymentInfo.cardNumber}
-                          onChange={(e) => {
-                            const formatted = formatCardNumber(e.target.value);
-                            setPaymentInfo({ ...paymentInfo, cardNumber: formatted });
-                            paymentValidation.handleChange('cardNumber', formatted);
-                          }}
-                          onBlur={(e) => paymentValidation.handleBlur('cardNumber', e.target.value)}
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${paymentValidation.errors.cardNumber ? 'border-red-500' : 'border-gray-300'}`}
-                          placeholder="1234 5678 9012 3456"
-                          maxLength={19}
-                        />
-                        {paymentValidation.errors.cardNumber && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {paymentValidation.errors.cardNumber}
-                          </p>
-                        )}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">
-                          Nombre en la Tarjeta *
-                        </label>
-                        <input
-                          type="text"
-                          value={paymentInfo.cardName}
-                          onChange={(e) => {
-                            const upperValue = e.target.value.toUpperCase();
-                            setPaymentInfo({ ...paymentInfo, cardName: upperValue });
-                            paymentValidation.handleChange('cardName', upperValue);
-                          }}
-                          onBlur={(e) => paymentValidation.handleBlur('cardName', e.target.value)}
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${paymentValidation.errors.cardName ? 'border-red-500' : 'border-gray-300'}`}
-                          placeholder="JUAN GARCIA"
-                        />
-                        {paymentValidation.errors.cardName && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {paymentValidation.errors.cardName}
-                          </p>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-bold text-gray-700 mb-2">
-                            Fecha de Vencimiento *
-                          </label>
-                          <input
-                            type="text"
-                            value={paymentInfo.cardExpiry}
-                            onChange={(e) => {
-                              let value = e.target.value.replace(/\D/g, '');
-                              if (value.length >= 2) {
-                                value = value.slice(0, 2) + '/' + value.slice(2, 4);
-                              }
-                              setPaymentInfo({ ...paymentInfo, cardExpiry: value });
-                              paymentValidation.handleChange('cardExpiry', value);
-                            }}
-                            onBlur={(e) =>
-                              paymentValidation.handleBlur('cardExpiry', e.target.value)
-                            }
-                            className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${paymentValidation.errors.cardExpiry ? 'border-red-500' : 'border-gray-300'}`}
-                            placeholder="MM/AA"
-                            maxLength={5}
-                          />
-                          {paymentValidation.errors.cardExpiry && (
-                            <p className="text-red-500 text-sm mt-1">
-                              {paymentValidation.errors.cardExpiry}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold text-gray-700 mb-2">
-                            CVV *
-                          </label>
-                          <input
-                            type="text"
-                            value={paymentInfo.cardCVV}
-                            onChange={(e) => {
-                              const cvv = e.target.value.replace(/\D/g, '').slice(0, 4);
-                              setPaymentInfo({ ...paymentInfo, cardCVV: cvv });
-                              paymentValidation.handleChange('cardCVV', cvv);
-                            }}
-                            onBlur={(e) => paymentValidation.handleBlur('cardCVV', e.target.value)}
-                            className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${paymentValidation.errors.cardCVV ? 'border-red-500' : 'border-gray-300'}`}
-                            placeholder="123"
-                            maxLength={4}
-                          />
-                          {paymentValidation.errors.cardCVV && (
-                            <p className="text-red-500 text-sm mt-1">
-                              {paymentValidation.errors.cardCVV}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                  {/* PCI-DSS Compliant Card Input */}
+                  {paymentInfo.method === 'card' && securePayment && (
+                    <div className="mt-4">{securePayment.CardElement}</div>
                   )}
 
                   <div className="flex gap-4">

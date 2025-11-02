@@ -17,13 +17,10 @@ export async function verifyAuthToken(request: Request): Promise<AuthResult> {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return {
       success: false,
-      error: new Response(
-        JSON.stringify({ error: 'Unauthorized - No token provided' }),
-        {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      ),
+      error: new Response(JSON.stringify({ error: 'Unauthorized - No token provided' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      }),
     };
   }
 
@@ -40,13 +37,10 @@ export async function verifyAuthToken(request: Request): Promise<AuthResult> {
     console.error('[auth-helpers] Invalid token:', verificationError);
     return {
       success: false,
-      error: new Response(
-        JSON.stringify({ error: 'Unauthorized - Invalid token' }),
-        {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      ),
+      error: new Response(JSON.stringify({ error: 'Unauthorized - Invalid token' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      }),
     };
   }
 }
@@ -65,13 +59,10 @@ export async function verifyAdminAuth(request: Request): Promise<AuthResult> {
     console.warn('[auth-helpers] Non-admin user attempted admin access:', authResult.uid);
     return {
       success: false,
-      error: new Response(
-        JSON.stringify({ error: 'Forbidden - Admin access required' }),
-        {
-          status: 403,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      ),
+      error: new Response(JSON.stringify({ error: 'Forbidden - Admin access required' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      }),
     };
   }
 
@@ -82,13 +73,10 @@ export async function verifyAdminAuth(request: Request): Promise<AuthResult> {
  * Crea una respuesta de error genérica sin exponer detalles internos
  */
 export function createErrorResponse(message: string, status: number = 500): Response {
-  return new Response(
-    JSON.stringify({ error: message }),
-    {
-      status,
-      headers: { 'Content-Type': 'application/json' },
-    }
-  );
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 /**

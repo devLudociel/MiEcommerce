@@ -131,12 +131,9 @@ export const POST: APIRoute = async ({ request }) => {
       userMessage = 'Solicitud de pago inválida. Por favor, contacta a soporte.';
     }
 
-    return new Response(
-      JSON.stringify({ error: userMessage }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify({ error: userMessage }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 };

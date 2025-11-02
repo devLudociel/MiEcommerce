@@ -44,9 +44,11 @@ export function validateOrigin(request: Request): boolean {
  * This prevents simple form submissions from foreign sites
  */
 export function hasCustomHeader(request: Request): boolean {
-  return request.headers.get('X-Requested-With') === 'XMLHttpRequest' ||
-         request.headers.get('Content-Type')?.includes('application/json') ||
-         false;
+  return (
+    request.headers.get('X-Requested-With') === 'XMLHttpRequest' ||
+    request.headers.get('Content-Type')?.includes('application/json') ||
+    false
+  );
 }
 
 /**

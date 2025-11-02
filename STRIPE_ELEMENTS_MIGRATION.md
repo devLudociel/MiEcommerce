@@ -3,11 +3,13 @@
 ## ⚠️ Problema Actual
 
 El checkout **ACTUAL** envía datos de tarjeta al servidor:
+
 ```
 Browser → Servidor (card data) → Stripe
 ```
 
 **Esto viola PCI-DSS** y expone tu negocio a:
+
 - Riesgos legales
 - Multas por incumplimiento
 - Vulnerabilidades de seguridad
@@ -18,12 +20,14 @@ Browser → Servidor (card data) → Stripe
 ## ✅ Solución: Stripe Elements
 
 Los datos de tarjeta van **directo a Stripe**:
+
 ```
 Browser (Stripe iframe) → Stripe ✓
 Servidor solo recibe tokens ✓
 ```
 
 **Beneficios**:
+
 - ✅ 100% PCI-DSS compliant
 - ✅ Sin certificación PCI requerida
 - ✅ Stripe maneja la seguridad
@@ -34,6 +38,7 @@ Servidor solo recibe tokens ✓
 ## 📦 Componentes Creados
 
 ### 1. **StripeProvider.tsx**
+
 Envuelve el checkout con el proveedor de Stripe Elements.
 
 ```tsx
@@ -41,10 +46,11 @@ import StripeProvider from './components/checkout/StripeProvider';
 
 <StripeProvider>
   <Checkout />
-</StripeProvider>
+</StripeProvider>;
 ```
 
 ### 2. **StripeCardElement.tsx**
+
 Componente seguro para entrada de tarjeta (iframe de Stripe).
 
 - Datos de tarjeta en iframe aislado
@@ -53,6 +59,7 @@ Componente seguro para entrada de tarjeta (iframe de Stripe).
 - Estilizado personalizable
 
 ### 3. **SecureCardPayment.tsx**
+
 Hook completo para procesar pagos de forma segura.
 
 ```tsx
@@ -78,11 +85,13 @@ await payment.processPayment();
 ### Paso 1: Envolver Checkout con StripeProvider
 
 **Antes** (`src/pages/checkout.astro`):
+
 ```astro
 <Checkout client:load />
 ```
 
 **Después**:
+
 ```astro
 import StripeProvider from '../components/checkout/StripeProvider';
 
@@ -132,7 +141,9 @@ const securePayment = useSecureCardPayment({
 });
 
 // En el formulario de pago:
-{securePayment.CardElement}
+{
+  securePayment.CardElement;
+}
 ```
 
 ### Paso 3: Actualizar processCardPayment
@@ -187,10 +198,10 @@ rm src/pages/api/create-payment-method.ts
 
 Usa estas tarjetas de test en desarrollo:
 
-| Tarjeta | Resultado |
-|---------|-----------|
-| `4242 4242 4242 4242` | ✅ Pago exitoso |
-| `4000 0000 0000 9995` | ❌ Tarjeta rechazada |
+| Tarjeta               | Resultado             |
+| --------------------- | --------------------- |
+| `4242 4242 4242 4242` | ✅ Pago exitoso       |
+| `4000 0000 0000 9995` | ❌ Tarjeta rechazada  |
 | `4000 0025 0000 3155` | 🔐 Requiere 3D Secure |
 
 **CVC**: Cualquier 3 dígitos
@@ -249,6 +260,7 @@ Usa estas tarjetas de test en desarrollo:
 ### ¿Por qué no puedo seguir enviando tarjetas al servidor?
 
 Porque viola PCI-DSS Level 1 requirements. Almacenar o transmitir datos de tarjeta requiere:
+
 - Auditorías anuales costosas ($50,000+)
 - Infraestructura altamente segura
 - Certificaciones y compliance

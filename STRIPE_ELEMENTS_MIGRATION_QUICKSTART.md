@@ -18,6 +18,7 @@
 **Eliminar** toda la función hasta la línea que tiene: `[paymentInfo, shippingInfo]`
 
 **Reemplazar** con:
+
 ```tsx
 // REMOVED: Old insecure processCardPayment function
 // Now using Stripe Elements (PCI-DSS compliant)
@@ -30,6 +31,7 @@
 **Buscar** (línea ~427): `const validateStep2 = async`
 
 **Opción A - Simplificar**:
+
 ```tsx
 const validateStep2 = async (): Promise<boolean> => {
   // Payment method validation only
@@ -50,6 +52,7 @@ const validateStep2 = async (): Promise<boolean> => {
 ### Paso 3: Actualizar la sección del formulario de tarjeta
 
 **Buscar** (línea ~1340-1440): Los 3 inputs de tarjeta:
+
 ```tsx
 <input type="text" value={paymentInfo.cardNumber} ...
 <input type="text" value={paymentInfo.cardExpiry} ...
@@ -57,13 +60,16 @@ const validateStep2 = async (): Promise<boolean> => {
 ```
 
 **Reemplazar CON**:
+
 ```tsx
-{/* PCI-DSS Compliant Card Input */}
-{paymentInfo.method === 'card' && securePayment && (
-  <div className="mt-4">
-    {securePayment.CardElement}
-  </div>
-)}
+{
+  /* PCI-DSS Compliant Card Input */
+}
+{
+  paymentInfo.method === 'card' && securePayment && (
+    <div className="mt-4">{securePayment.CardElement}</div>
+  );
+}
 ```
 
 ---
@@ -195,6 +201,7 @@ const handlePlaceOrder = async () => {
 ### Paso 6: Eliminar funciones helper de formateo de tarjeta
 
 **Buscar y ELIMINAR**:
+
 - `formatCardNumber`
 - `formatCVV`
 - Cualquier otra función relacionada con validación de tarjeta
@@ -208,9 +215,8 @@ const handlePlaceOrder = async () => {
 Después de hacer los cambios:
 
 1. **Verificar que compile**:
-```bash
-npm run build
-```
+
+
 
 2. **Probar flujo completo**:
    - Agregar producto al carrito
@@ -248,6 +254,7 @@ npm run build
 ## 🆘 Si algo falla
 
 Revisa:
+
 1. Console del navegador (errores de React)
 2. Network tab (errores de API)
 3. Que StripeProvider esté en checkout.astro

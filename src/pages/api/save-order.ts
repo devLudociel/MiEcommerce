@@ -49,7 +49,7 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(
         JSON.stringify({
           error: 'Idempotency key is required',
-          hint: 'Include a unique idempotencyKey in your request to prevent duplicate orders'
+          hint: 'Include a unique idempotencyKey in your request to prevent duplicate orders',
         }),
         {
           status: 400,

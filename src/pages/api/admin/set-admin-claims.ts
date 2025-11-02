@@ -25,7 +25,7 @@ const ADMIN_SECRET = import.meta.env.ADMIN_SETUP_SECRET;
 if (!ADMIN_SECRET || ADMIN_SECRET === 'change-this-secret-in-production') {
   throw new Error(
     'CRITICAL: ADMIN_SETUP_SECRET must be set in .env with a strong secret. ' +
-    'This endpoint allows granting admin privileges and MUST be protected.'
+      'This endpoint allows granting admin privileges and MUST be protected.'
   );
 }
 
@@ -41,10 +41,7 @@ export const POST: APIRoute = async ({ request }) => {
       console.warn('[set-admin-claims] Rate limit exceeded', {
         resetAt: new Date(rateLimitResult.resetAt).toISOString(),
       });
-      return createErrorResponse(
-        'Too many requests. Please try again later.',
-        429
-      );
+      return createErrorResponse('Too many requests. Please try again later.', 429);
     }
 
     const { email, secret, remove } = await request.json();

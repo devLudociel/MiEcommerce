@@ -34,7 +34,9 @@ const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
  */
 export const POST: APIRoute = async ({ request }) => {
   // Log warning every time this deprecated endpoint is used
-  logger.warn('⚠️ DEPRECATED ENDPOINT USED: /api/create-payment-method - MIGRATE TO STRIPE ELEMENTS');
+  logger.warn(
+    '⚠️ DEPRECATED ENDPOINT USED: /api/create-payment-method - MIGRATE TO STRIPE ELEMENTS'
+  );
   logger.warn('Card data is passing through your server - PCI-DSS violation');
   logger.warn('See: src/components/checkout/SecureCardPayment.tsx for secure implementation');
   try {

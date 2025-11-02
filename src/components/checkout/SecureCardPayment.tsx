@@ -20,7 +20,7 @@ interface SecureCardPaymentProps {
       country: string;
     };
   };
-  onSuccess: (paymentIntentId: string) => void;
+  onSuccess: (paymentIntentId: string, orderId: string) => void;
   onError: (error: string) => void;
 }
 
@@ -65,7 +65,9 @@ export default function SecureCardPayment({
   /**
    * Process payment using Stripe Elements (PCI-DSS compliant)
    */
-  const processPayment = async (): Promise<{ success: boolean; error?: string }> => {
+  const processPayment = async (
+    orderIdOverride?: string
+  ): Promise<{ success: boolean; error?: string }> => {
     if (!stripe || !elements) {
       logger.error('[SecureCardPayment] Stripe.js has not loaded yet');
       return { success: false, error: 'Sistema de pago no inicializado' };
@@ -78,7 +80,14 @@ export default function SecureCardPayment({
     setProcessing(true);
 
     try {
-      logger.info('[SecureCardPayment] Creating PaymentMethod', { orderId });
+      const effectiveOrderId = orderIdOverride || orderId;
+
+      if (!effectiveOrderId) {
+        logger.error('[SecureCardPayment] Missing orderId for payment');
+        return { success: false, error: 'No se pudo identificar la orden para el pago' };
+      }
+
+      logger.info('[SecureCardPayment] Creating PaymentMethod', { orderId: effectiveOrderId });
 
       // Step 1: Create PaymentMethod from card element (CLIENT-SIDE ONLY)
       const cardElement = elements.getElement(CardElement);
@@ -98,18 +107,22 @@ export default function SecureCardPayment({
       }
 
       logger.info('[SecureCardPayment] PaymentMethod created', {
+        orderId: effectiveOrderId,
         paymentMethodId: paymentMethod.id,
         last4: (paymentMethod.card as any)?.last4,
       });
 
       // Step 2: Create PaymentIntent on server (with order validation)
-      logger.info('[SecureCardPayment] Creating PaymentIntent', { orderId, orderTotal });
+      logger.info('[SecureCardPayment] Creating PaymentIntent', {
+        orderId: effectiveOrderId,
+        orderTotal,
+      });
 
       const paymentIntentResponse = await fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          orderId,
+          orderId: effectiveOrderId,
           amount: Number(orderTotal.toFixed(2)),
           currency: 'eur',
         }),
@@ -123,7 +136,10 @@ export default function SecureCardPayment({
       }
 
       const { clientSecret, paymentIntentId } = paymentIntentData;
-      logger.info('[SecureCardPayment] PaymentIntent created', { orderId, paymentIntentId });
+      logger.info('[SecureCardPayment] PaymentIntent created', {
+        orderId: effectiveOrderId,
+        paymentIntentId,
+      });
 
       // Step 3: Confirm payment with PaymentMethod (CLIENT-SIDE ONLY)
       logger.info('[SecureCardPayment] Confirming payment', { paymentIntentId });
@@ -141,7 +157,11 @@ export default function SecureCardPayment({
       }
 
       const status = confirmation.paymentIntent?.status;
-      logger.info('[SecureCardPayment] Payment confirmed', { orderId, paymentIntentId, status });
+      logger.info('[SecureCardPayment] Payment confirmed', {
+        orderId: effectiveOrderId,
+        paymentIntentId,
+        status,
+      });
 
       if (status !== 'succeeded' && status !== 'processing' && status !== 'requires_capture') {
         throw new Error(
@@ -150,16 +170,15 @@ export default function SecureCardPayment({
       }
 
       logger.info('[SecureCardPayment] ✅ Payment completed successfully', {
-        orderId,
+        orderId: effectiveOrderId,
         paymentIntentId,
         status,
       });
 
-      onSuccess(paymentIntentId);
+      onSuccess(paymentIntentId, effectiveOrderId);
       return { success: true };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Error procesando el pago';
+      const errorMessage = error instanceof Error ? error.message : 'Error procesando el pago';
       logger.error('[SecureCardPayment] Payment failed', error);
       onError(errorMessage);
       return { success: false, error: errorMessage };
