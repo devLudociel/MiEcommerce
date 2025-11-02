@@ -2,7 +2,7 @@
 import type { APIRoute } from 'astro';
 import { getAdminApp } from '../../../lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
-import { rateLimit } from '../../../lib/rateLimit';
+import { rateLimitPersistent } from '../../../lib/rateLimitPersistent';
 import { logErrorSafely, createErrorResponse } from '../../../lib/auth-helpers';
 
 /**
@@ -31,8 +31,8 @@ if (!ADMIN_SECRET || ADMIN_SECRET === 'change-this-secret-in-production') {
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    // SECURITY: Rate limiting estricto - 3 intentos por hora
-    const rateLimitResult = await rateLimit(request, 'admin-claims', {
+    // SECURITY: Rate limiting estricto - 3 intentos por hora (PERSISTENT)
+    const rateLimitResult = await rateLimitPersistent(request, 'admin-claims', {
       intervalMs: 60 * 60 * 1000, // 1 hora
       max: 3, // Solo 3 intentos por hora
     });
