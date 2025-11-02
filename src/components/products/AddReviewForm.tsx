@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { addReview, hasUserReviewed } from '../../lib/firebase';
 import { useAuth } from '../hooks/useAuth';
+import AccessibleModal from '../common/AccessibleModal';
 
 interface AddReviewFormProps {
   productId: string;
@@ -16,6 +17,31 @@ export default function AddReviewForm({ productId, onReviewAdded }: AddReviewFor
   const [loading, setLoading] = useState(false);
   const [hasReviewed, setHasReviewed] = useState(false);
   const [checking, setChecking] = useState(true);
+
+  // Accessible modal state
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    type: 'info' | 'warning' | 'error' | 'success';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+  });
+
+  const showModal = (
+    type: 'info' | 'warning' | 'error' | 'success',
+    title: string,
+    message: string
+  ) => {
+    setModal({ isOpen: true, type, title, message });
+  };
+
+  const closeModal = () => {
+    setModal({ ...modal, isOpen: false });
+  };
 
   useEffect(() => {
     checkIfUserReviewed();
@@ -41,12 +67,20 @@ export default function AddReviewForm({ productId, onReviewAdded }: AddReviewFor
     e.preventDefault();
 
     if (!user) {
-      alert('Debes iniciar sesión para dejar una reseña');
+      showModal(
+        'warning',
+        'Sesión requerida',
+        'Debes iniciar sesión para dejar una reseña'
+      );
       return;
     }
 
     if (comment.trim().length < 10) {
-      alert('La reseña debe tener al menos 10 caracteres');
+      showModal(
+        'warning',
+        'Reseña muy corta',
+        'La reseña debe tener al menos 10 caracteres'
+      );
       return;
     }
 
@@ -63,14 +97,22 @@ export default function AddReviewForm({ productId, onReviewAdded }: AddReviewFor
         verified: false, // Podrías verificar si el usuario compró el producto
       });
 
-      alert('¡Gracias por tu reseña!');
+      showModal(
+        'success',
+        '¡Reseña publicada!',
+        'Gracias por compartir tu opinión. Tu reseña ayuda a otros usuarios.'
+      );
       setComment('');
       setRating(5);
       setHasReviewed(true);
       onReviewAdded();
     } catch (error) {
       console.error('Error enviando review:', error);
-      alert('Hubo un error al enviar tu reseña. Intenta de nuevo.');
+      showModal(
+        'error',
+        'Error al enviar',
+        'Hubo un error al enviar tu reseña. Por favor, intenta de nuevo.'
+      );
     } finally {
       setLoading(false);
     }
@@ -135,10 +177,21 @@ export default function AddReviewForm({ productId, onReviewAdded }: AddReviewFor
   }
 
   return (
-    <div className="bg-white rounded-2xl p-6 border-2 border-gray-200">
-      <h3 className="text-xl font-bold text-gray-800 mb-4">Deja tu reseña</h3>
+    <>
+      {/* Accessible Modal */}
+      <AccessibleModal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        type={modal.type}
+      >
+        {modal.message}
+      </AccessibleModal>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-white rounded-2xl p-6 border-2 border-gray-200">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Deja tu reseña</h3>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
         {/* Selector de rating */}
         <div>
           <label className="block text-base font-semibold text-gray-700 mb-3">
@@ -213,7 +266,8 @@ export default function AddReviewForm({ productId, onReviewAdded }: AddReviewFor
             'Publicar Reseña'
           )}
         </button>
-      </form>
-    </div>
+        </form>
+      </div>
+    </>
   );
 }
