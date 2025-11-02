@@ -3,6 +3,7 @@ import { getOrdersPaginated, getOrdersCount, updateOrderStatus } from '../../lib
 import type { OrderData } from '../../lib/firebase';
 import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import Pagination from '../ui/Pagination';
+import AccessibleModal from '../common/AccessibleModal';
 
 const statusLabels: Record<string, string> = {
   pending: 'Pendiente',
@@ -38,6 +39,31 @@ export default function AdminOrdersList() {
     null,
   ]);
 
+  // Modal state
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    type: 'info' | 'warning' | 'error' | 'success';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+  });
+
+  const showModal = (
+    type: 'info' | 'warning' | 'error' | 'success',
+    title: string,
+    message: string
+  ) => {
+    setModal({ isOpen: true, type, title, message });
+  };
+
+  const closeModal = () => {
+    setModal({ ...modal, isOpen: false });
+  };
+
   useEffect(() => {
     loadOrders();
     loadTotalCount();
@@ -61,7 +87,7 @@ export default function AdminOrdersList() {
       setHasMore(result.hasMore);
     } catch (error) {
       console.error('Error cargando pedidos:', error);
-      alert('Error cargando pedidos');
+      showModal('error', 'Error al cargar', 'No se pudieron cargar los pedidos. Por favor, intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -115,10 +141,10 @@ export default function AdminOrdersList() {
 
       // Recargar pedidos
       await loadOrders();
-      alert('Estado actualizado correctamente. Email enviado al cliente.');
+      showModal('success', 'Estado actualizado', 'El estado del pedido se actualizó correctamente y se envió un email al cliente.');
     } catch (error) {
       console.error('Error actualizando estado:', error);
-      alert('Error actualizando estado');
+      showModal('error', 'Error al actualizar', 'No se pudo actualizar el estado del pedido. Por favor, intenta de nuevo.');
     }
   };
 
@@ -136,15 +162,25 @@ export default function AdminOrdersList() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-6">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-black text-gray-800 mb-2">Gestión de Pedidos</h1>
-          <p className="text-gray-600">
-            Total de pedidos: <span className="font-bold">{totalCount}</span>
-          </p>
-        </div>
+    <>
+      <AccessibleModal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        type={modal.type}
+      >
+        {modal.message}
+      </AccessibleModal>
+
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-6">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-4xl font-black text-gray-800 mb-2">Gestión de Pedidos</h1>
+            <p className="text-gray-600">
+              Total de pedidos: <span className="font-bold">{totalCount}</span>
+            </p>
+          </div>
 
         {/* Filtros */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
@@ -283,5 +319,6 @@ export default function AdminOrdersList() {
         )}
       </div>
     </div>
+    </>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Icon from '../ui/Icon';
 import type { OrderData } from '../../lib/firebase';
+import AccessibleModal from '../common/AccessibleModal';
 
 const statusLabels: Record<string, string> = {
   pending: 'Pendiente',
@@ -18,6 +19,31 @@ export default function AdminOrderDetail() {
   const [loading, setLoading] = useState(true);
   const [orderId, setOrderId] = useState<string | null>(null);
 
+  // Modal state
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    type: 'info' | 'warning' | 'error' | 'success';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+  });
+
+  const showModal = (
+    type: 'info' | 'warning' | 'error' | 'success',
+    title: string,
+    message: string
+  ) => {
+    setModal({ isOpen: true, type, title, message });
+  };
+
+  const closeModal = () => {
+    setModal({ ...modal, isOpen: false });
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id') || window.location.pathname.split('/').pop();
@@ -34,15 +60,17 @@ export default function AdminOrderDetail() {
       setLoading(true);
       const res = await fetch(`/api/admin/get-order?id=${encodeURIComponent(id)}`);
       if (!res.ok) {
-        alert('Pedido no encontrado');
-        window.location.href = '/admin/orders';
+        showModal('error', 'Pedido no encontrado', 'El pedido solicitado no existe o no tienes permisos para verlo.');
+        setTimeout(() => {
+          window.location.href = '/admin/orders';
+        }, 2000);
         return;
       }
       const data = await res.json();
       setOrder(data.order as OrderData);
     } catch (e) {
       console.error('Error cargando pedido:', e);
-      alert('Error cargando pedido');
+      showModal('error', 'Error al cargar', 'No se pudo cargar el pedido. Por favor, intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -63,10 +91,10 @@ export default function AdminOrderDetail() {
         body: JSON.stringify({ orderId, type: 'status-update', newStatus }),
       }).catch(() => {});
       await loadOrder(orderId);
-      alert('Estado actualizado correctamente');
+      showModal('success', 'Estado actualizado', 'El estado del pedido se actualizó correctamente.');
     } catch (e) {
       console.error('Error actualizando estado:', e);
-      alert('Error actualizando estado');
+      showModal('error', 'Error al actualizar', 'No se pudo actualizar el estado del pedido. Por favor, intenta de nuevo.');
     }
   }
 
@@ -86,18 +114,28 @@ export default function AdminOrderDetail() {
   const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date();
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-6 max-w-6xl">
-        <div className="mb-8">
-          <a
-            href="/admin/orders"
-            className="inline-flex items-center gap-2 text-cyan-600 hover:text-cyan-700 font-bold mb-4"
-          >
-            <Icon name="arrow-left" className="w-4 h-4" /> Volver a lista de pedidos
-          </a>
-          <h1 className="text-4xl font-black text-gray-800 mb-2">
-            Detalle del Pedido #{order.id?.slice(0, 8)}
-          </h1>
+    <>
+      <AccessibleModal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        type={modal.type}
+      >
+        {modal.message}
+      </AccessibleModal>
+
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-6 max-w-6xl">
+          <div className="mb-8">
+            <a
+              href="/admin/orders"
+              className="inline-flex items-center gap-2 text-cyan-600 hover:text-cyan-700 font-bold mb-4"
+            >
+              <Icon name="arrow-left" className="w-4 h-4" /> Volver a lista de pedidos
+            </a>
+            <h1 className="text-4xl font-black text-gray-800 mb-2">
+              Detalle del Pedido #{order.id?.slice(0, 8)}
+            </h1>
           <p className="text-gray-600">
             Realizado el{' '}
             {orderDate.toLocaleDateString('es-ES', {
@@ -278,5 +316,6 @@ export default function AdminOrderDetail() {
         </div>
       </div>
     </div>
+    </>
   );
 }

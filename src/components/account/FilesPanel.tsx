@@ -8,6 +8,7 @@ import {
   getDownloadURL,
 } from 'firebase/storage';
 import { storage, auth } from '../../lib/firebase';
+import AccessibleModal from '../common/AccessibleModal';
 
 interface File {
   id: string;
@@ -26,6 +27,31 @@ export default function FilesPanel() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
+
+  // Modal state
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    type: 'info' | 'warning' | 'error' | 'success';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+  });
+
+  const showModal = (
+    type: 'info' | 'warning' | 'error' | 'success',
+    title: string,
+    message: string
+  ) => {
+    setModal({ isOpen: true, type, title, message });
+  };
+
+  const closeModal = () => {
+    setModal({ ...modal, isOpen: false });
+  };
 
   // Cargar archivos al montar
   useEffect(() => {
@@ -91,7 +117,7 @@ export default function FilesPanel() {
       setUploading(true);
       const user = auth.currentUser;
       if (!user) {
-        alert('Debes estar autenticado para subir archivos');
+        showModal('warning', 'Autenticación requerida', 'Debes estar autenticado para subir archivos.');
         return;
       }
 
@@ -112,7 +138,7 @@ export default function FilesPanel() {
       event.target.value = '';
     } catch (error) {
       console.error('Error subiendo archivo:', error);
-      alert('Error al subir el archivo');
+      showModal('error', 'Error al subir', 'No se pudo subir el archivo. Por favor, intenta de nuevo.');
     } finally {
       setUploading(false);
     }
@@ -142,7 +168,7 @@ export default function FilesPanel() {
       window.URL.revokeObjectURL(urlBlob);
     } catch (error) {
       console.error('Error descargando archivo:', error);
-      alert('Error al descargar el archivo');
+      showModal('error', 'Error al descargar', 'No se pudo descargar el archivo. Por favor, intenta de nuevo.');
     }
   };
 
@@ -196,9 +222,19 @@ export default function FilesPanel() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-gradient-primary">Mis Archivos</h2>
+    <>
+      <AccessibleModal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        type={modal.type}
+      >
+        {modal.message}
+      </AccessibleModal>
+
+      <div className="space-y-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-3xl font-bold text-gradient-primary">Mis Archivos</h2>
         <label
           className="btn btn-primary cursor-pointer"
           style={{ cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1 }}
@@ -315,5 +351,6 @@ export default function FilesPanel() {
         </div>
       )}
     </div>
+    </>
   );
 }

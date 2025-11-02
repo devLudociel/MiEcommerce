@@ -13,6 +13,7 @@ import {
   signInWithEmailLink,
 } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
+import AccessibleModal from '../common/AccessibleModal';
 
 export default function LoginPanel() {
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +22,31 @@ export default function LoginPanel() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<'login' | 'register' | 'magic'>('login');
+
+  // Modal state
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    type: 'info' | 'warning' | 'error' | 'success';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+  });
+
+  const showModal = (
+    type: 'info' | 'warning' | 'error' | 'success',
+    title: string,
+    message: string
+  ) => {
+    setModal({ isOpen: true, type, title, message });
+  };
+
+  const closeModal = () => {
+    setModal({ ...modal, isOpen: false });
+  };
 
   // Debug env/context on mount
   useEffect(() => {
@@ -164,7 +190,11 @@ export default function LoginPanel() {
       const target = email.trim();
       if (!target) throw { code: 'auth/missing-email' };
       await sendPasswordResetEmail(auth, target, actionCodeSettings);
-      alert('Te enviamos un email para restablecer tu contraseña. Revisa tu bandeja.');
+      showModal(
+        'success',
+        'Email enviado',
+        'Te enviamos un email para restablecer tu contraseña. Revisa tu bandeja.'
+      );
     } catch (err: any) {
       setError(mapAuthError(err));
     } finally {
@@ -185,7 +215,11 @@ export default function LoginPanel() {
       if (!target) throw new Error('Ingresa tu email');
       window.localStorage.setItem('emailForSignIn', target);
       await sendSignInLinkToEmail(auth, target, actionCodeSettings);
-      alert('Te enviamos un enlace de acceso. Revisa tu bandeja.');
+      showModal(
+        'success',
+        'Enlace enviado',
+        'Te enviamos un enlace de acceso. Revisa tu bandeja.'
+      );
     } catch (err: any) {
       setError(err?.message || 'No se pudo enviar el enlace');
     } finally {
@@ -251,17 +285,27 @@ export default function LoginPanel() {
   }
 
   return (
-    <section className="py-20" style={{ background: 'white' }}>
-      <div className="container" style={{ maxWidth: 480 }}>
-        <div className="card" style={{ padding: 24 }}>
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">Iniciar sesión</h1>
-          <p className="text-gray-600 mb-6">Accede al panel de administración</p>
+    <>
+      <AccessibleModal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        type={modal.type}
+      >
+        {modal.message}
+      </AccessibleModal>
 
-          {error && (
-            <div className="error-box mb-4">
-              <strong>Error:</strong> {error}
-            </div>
-          )}
+      <section className="py-20" style={{ background: 'white' }}>
+        <div className="container" style={{ maxWidth: 480 }}>
+          <div className="card" style={{ padding: 24 }}>
+            <h1 className="text-3xl font-bold text-gray-800 mb-4">Iniciar sesión</h1>
+            <p className="text-gray-600 mb-6">Accede al panel de administración</p>
+
+            {error && (
+              <div className="error-box mb-4">
+                <strong>Error:</strong> {error}
+              </div>
+            )}
 
           {userEmail ? (
             <div>
@@ -366,5 +410,6 @@ export default function LoginPanel() {
         </div>
       </div>
     </section>
+    </>
   );
 }

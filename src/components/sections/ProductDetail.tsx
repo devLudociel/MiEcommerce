@@ -8,6 +8,7 @@ import { useWishlist, toggleWishlist } from '../../store/wishlistStore';
 import ProductReviews from '../products/ProductReviews';
 import AddReviewForm from '../products/AddReviewForm';
 import Icon from '../ui/Icon';
+import AccessibleModal from '../common/AccessibleModal';
 
 interface ProductImage {
   id: number;
@@ -147,6 +148,31 @@ export default function ProductDetail({ id, slug }: Props) {
   const imageRef = useRef<HTMLDivElement>(null);
   const [reviewStats, setReviewStats] = useState({ averageRating: 0, totalReviews: 0 });
 
+  // Modal state
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    type: 'info' | 'warning' | 'error' | 'success';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+  });
+
+  const showModal = (
+    type: 'info' | 'warning' | 'error' | 'success',
+    title: string,
+    message: string
+  ) => {
+    setModal({ isOpen: true, type, title, message });
+  };
+
+  const closeModal = () => {
+    setModal({ ...modal, isOpen: false });
+  };
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -267,9 +293,9 @@ export default function ProductDetail({ id, slug }: Props) {
     } else {
       try {
         await navigator.clipboard.writeText(window.location.href);
-        alert('✓ Link copiado al portapapeles');
+        showModal('success', 'Link copiado', 'El enlace del producto se copió al portapapeles');
       } catch (err) {
-        alert('No se pudo copiar el link');
+        showModal('error', 'Error al copiar', 'No se pudo copiar el link al portapapeles');
       }
     }
   };
@@ -372,25 +398,35 @@ export default function ProductDetail({ id, slug }: Props) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      <div className="bg-white/60 backdrop-blur-sm border-b border-gray-100 py-3 mb-4 lg:mb-6">
-        <div className="container mx-auto px-6">
-          <nav className="flex items-center gap-2 text-sm">
-            <a href="/" className="text-gray-500 hover:text-cyan-500 transition-colors">
-              Inicio
-            </a>
-            <span className="text-gray-400">›</span>
-            <a
-              href={`/categoria/${(product.category || '').toLowerCase()}`}
-              className="text-gray-500 hover:text-cyan-500 transition-colors"
-            >
-              {product.category}
-            </a>
-            <span className="text-gray-400">›</span>
-            <span className="text-gray-800 font-medium">{product.name}</span>
-          </nav>
+    <>
+      <AccessibleModal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        type={modal.type}
+      >
+        {modal.message}
+      </AccessibleModal>
+
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+        <div className="bg-white/60 backdrop-blur-sm border-b border-gray-100 py-3 mb-4 lg:mb-6">
+          <div className="container mx-auto px-6">
+            <nav className="flex items-center gap-2 text-sm">
+              <a href="/" className="text-gray-500 hover:text-cyan-500 transition-colors">
+                Inicio
+              </a>
+              <span className="text-gray-400">›</span>
+              <a
+                href={`/categoria/${(product.category || '').toLowerCase()}`}
+                className="text-gray-500 hover:text-cyan-500 transition-colors"
+              >
+                {product.category}
+              </a>
+              <span className="text-gray-400">›</span>
+              <span className="text-gray-800 font-medium">{product.name}</span>
+            </nav>
+          </div>
         </div>
-      </div>
 
       <div className="container mx-auto px-6 py-10 md:py-12 mt-8 md:mt-12 lg:mt-120 sm:mt-160">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
@@ -1061,5 +1097,6 @@ export default function ProductDetail({ id, slug }: Props) {
         </div>
       </div>
     </div>
+    </>
   );
 }

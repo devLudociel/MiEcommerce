@@ -2,11 +2,37 @@ import { useEffect, useState } from 'react';
 import { db } from '../../lib/firebase';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { collection, query, where, limit, getDocs, addDoc, Timestamp } from 'firebase/firestore';
+import AccessibleModal from '../common/AccessibleModal';
 
 export default function ProductsSection() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Modal state
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    type: 'info' | 'warning' | 'error' | 'success';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+  });
+
+  const showModal = (
+    type: 'info' | 'warning' | 'error' | 'success',
+    title: string,
+    message: string
+  ) => {
+    setModal({ isOpen: true, type, title, message });
+  };
+
+  const closeModal = () => {
+    setModal({ ...modal, isOpen: false });
+  };
 
   useEffect(() => {
     loadProducts();
@@ -102,34 +128,88 @@ export default function ProductsSection() {
       loadProducts();
     } catch (err) {
       console.error('❌ Error creando productos:', err);
-      alert(
-        'Error creando productos: ' + (err instanceof Error ? err.message : 'Error desconocido')
-      );
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      showModal('error', 'Error al crear productos', `No se pudieron crear los productos de ejemplo: ${errorMessage}`);
     }
   };
 
   if (loading) {
     return (
-      <section className="py-20" style={{ background: 'white' }}>
-        <div className="container">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-800 mb-4">Nuestros Productos</h2>
-            <p className="text-xl text-gray-600" style={{ maxWidth: '512px', margin: '0 auto' }}>
-              Productos personalizables de alta calidad
-            </p>
-          </div>
+      <>
+        <AccessibleModal
+          isOpen={modal.isOpen}
+          onClose={closeModal}
+          title={modal.title}
+          type={modal.type}
+        >
+          {modal.message}
+        </AccessibleModal>
 
-          <div className="text-center py-12">
-            <div className="loading-spinner"></div>
-            <p className="mt-4 text-gray-600">Cargando productos...</p>
+        <section className="py-20" style={{ background: 'white' }}>
+          <div className="container">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold text-gray-800 mb-4">Nuestros Productos</h2>
+              <p className="text-xl text-gray-600" style={{ maxWidth: '512px', margin: '0 auto' }}>
+                Productos personalizables de alta calidad
+              </p>
+            </div>
+
+            <div className="text-center py-12">
+              <div className="loading-spinner"></div>
+              <p className="mt-4 text-gray-600">Cargando productos...</p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </>
     );
   }
 
   if (error) {
     return (
+      <>
+        <AccessibleModal
+          isOpen={modal.isOpen}
+          onClose={closeModal}
+          title={modal.title}
+          type={modal.type}
+        >
+          {modal.message}
+        </AccessibleModal>
+
+        <section className="py-20" style={{ background: 'white' }}>
+          <div className="container">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold text-gray-800 mb-4">Nuestros Productos</h2>
+              <p className="text-xl text-gray-600" style={{ maxWidth: '512px', margin: '0 auto' }}>
+                Productos personalizables de alta calidad
+              </p>
+            </div>
+
+            <div className="text-center py-12">
+              <div className="error-box">
+                <strong>Error:</strong> {error}
+              </div>
+              <button onClick={loadProducts} className="btn btn-primary mt-4">
+                Intentar de nuevo
+              </button>
+            </div>
+          </div>
+        </section>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <AccessibleModal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        type={modal.type}
+      >
+        {modal.message}
+      </AccessibleModal>
+
       <section className="py-20" style={{ background: 'white' }}>
         <div className="container">
           <div className="text-center mb-16">
@@ -138,29 +218,6 @@ export default function ProductsSection() {
               Productos personalizables de alta calidad
             </p>
           </div>
-
-          <div className="text-center py-12">
-            <div className="error-box">
-              <strong>Error:</strong> {error}
-            </div>
-            <button onClick={loadProducts} className="btn btn-primary mt-4">
-              Intentar de nuevo
-            </button>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className="py-20" style={{ background: 'white' }}>
-      <div className="container">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-800 mb-4">Nuestros Productos</h2>
-          <p className="text-xl text-gray-600" style={{ maxWidth: '512px', margin: '0 auto' }}>
-            Productos personalizables de alta calidad
-          </p>
-        </div>
 
         {products.length === 0 ? (
           <div className="text-center py-12">
@@ -210,5 +267,6 @@ export default function ProductsSection() {
         )}
       </div>
     </section>
+    </>
   );
 }

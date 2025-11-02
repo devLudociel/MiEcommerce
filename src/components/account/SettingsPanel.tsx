@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { auth } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
+import AccessibleModal from '../common/AccessibleModal';
 
 export default function SettingsPanel() {
   const [email, setEmail] = useState(auth.currentUser?.email || '');
@@ -15,6 +16,33 @@ export default function SettingsPanel() {
     showActivity: true,
   });
 
+  // Modal state
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    type: 'info' | 'warning' | 'error' | 'success';
+    title: string;
+    message: string;
+    onConfirm?: () => void;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+  });
+
+  const showModal = (
+    type: 'info' | 'warning' | 'error' | 'success',
+    title: string,
+    message: string,
+    onConfirm?: () => void
+  ) => {
+    setModal({ isOpen: true, type, title, message, onConfirm });
+  };
+
+  const closeModal = () => {
+    setModal({ ...modal, isOpen: false });
+  };
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -25,24 +53,39 @@ export default function SettingsPanel() {
   };
 
   const handleSaveSettings = () => {
-    alert('Configuración guardada correctamente');
+    showModal('success', 'Configuración guardada', 'Tus preferencias se guardaron correctamente.');
   };
 
   const handleChangePassword = () => {
-    alert('Función de cambio de contraseña');
+    showModal('info', 'Cambiar contraseña', 'La función de cambio de contraseña estará disponible próximamente.');
   };
 
   const handleDeleteAccount = () => {
-    if (
-      confirm('¿Estás seguro de que quieres eliminar tu cuenta? Esta acción no se puede deshacer.')
-    ) {
-      alert('Función de eliminar cuenta');
-    }
+    showModal(
+      'warning',
+      'Confirmar eliminación',
+      '¿Estás seguro de que quieres eliminar tu cuenta? Esta acción no se puede deshacer.',
+      () => {
+        // TODO: Implement account deletion
+        showModal('info', 'Eliminación de cuenta', 'La función de eliminar cuenta estará disponible próximamente.');
+      }
+    );
   };
 
   return (
-    <div className="space-y-8">
-      <h2 className="text-3xl font-bold text-gradient-primary mb-6">Configuración de la Cuenta</h2>
+    <>
+      <AccessibleModal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        type={modal.type}
+        onConfirm={modal.onConfirm}
+      >
+        {modal.message}
+      </AccessibleModal>
+
+      <div className="space-y-8">
+        <h2 className="text-3xl font-bold text-gradient-primary mb-6">Configuración de la Cuenta</h2>
 
       {/* Información de la cuenta */}
       <div className="card card-cyan p-6">
@@ -173,5 +216,6 @@ export default function SettingsPanel() {
         </div>
       </div>
     </div>
+    </>
   );
 }
