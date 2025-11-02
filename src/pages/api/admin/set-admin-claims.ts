@@ -2,38 +2,64 @@
 import type { APIRoute } from 'astro';
 import { getAdminApp } from '../../../lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
+import { rateLimit } from '../../../lib/rateLimit';
+import { logErrorSafely, createErrorResponse } from '../../../lib/auth-helpers';
 
 /**
  * Endpoint para asignar custom claims de admin a usuarios
  *
- * SEGURIDAD: Este endpoint debe ser protegido.
- * Solo debe ser accesible por admins existentes o mediante un secret key inicial.
+ * SEGURIDAD: Este endpoint está protegido con:
+ * - Secret key fuerte (DEBE configurarse en .env)
+ * - Rate limiting estricto (3 intentos por hora)
+ * - Sin exposición de stack traces
  *
  * USO:
  * POST /api/admin/set-admin-claims
  * Body: { email: "user@example.com", secret: "YOUR_ADMIN_SECRET" }
  */
 
-// Secret key para proteger este endpoint (cambiar en producción)
-const ADMIN_SECRET = import.meta.env.ADMIN_SETUP_SECRET || 'change-this-secret-in-production';
+// Secret key OBLIGATORIO - debe configurarse en .env
+const ADMIN_SECRET = import.meta.env.ADMIN_SETUP_SECRET;
+
+// CRITICAL SECURITY: Verificar que el secret esté configurado
+if (!ADMIN_SECRET || ADMIN_SECRET === 'change-this-secret-in-production') {
+  throw new Error(
+    'CRITICAL: ADMIN_SETUP_SECRET must be set in .env with a strong secret. ' +
+    'This endpoint allows granting admin privileges and MUST be protected.'
+  );
+}
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { email, secret, remove } = await request.json();
+    // SECURITY: Rate limiting estricto - 3 intentos por hora
+    const rateLimitResult = await rateLimit(request, 'admin-claims', {
+      intervalMs: 60 * 60 * 1000, // 1 hora
+      max: 3, // Solo 3 intentos por hora
+    });
 
-    // Validar secret key
-    if (secret !== ADMIN_SECRET) {
-      return new Response(JSON.stringify({ error: 'Unauthorized: Invalid secret key' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
+    if (!rateLimitResult.ok) {
+      console.warn('[set-admin-claims] Rate limit exceeded', {
+        resetAt: new Date(rateLimitResult.resetAt).toISOString(),
       });
+      return createErrorResponse(
+        'Too many requests. Please try again later.',
+        429
+      );
     }
 
-    if (!email) {
-      return new Response(JSON.stringify({ error: 'Email is required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
+    const { email, secret, remove } = await request.json();
+
+    // SECURITY: Validar secret key primero
+    if (!secret || secret !== ADMIN_SECRET) {
+      console.warn('[set-admin-claims] Invalid secret attempt', {
+        hasSecret: !!secret,
+        timestamp: new Date().toISOString(),
       });
+      return createErrorResponse('Unauthorized: Invalid secret key', 401);
+    }
+
+    if (!email || typeof email !== 'string') {
+      return createErrorResponse('Email is required', 400);
     }
 
     // Obtener Auth instance
@@ -41,13 +67,12 @@ export const POST: APIRoute = async ({ request }) => {
     const auth = getAuth(app);
 
     // Buscar usuario por email
-    const user = await auth.getUserByEmail(email);
-
-    if (!user) {
-      return new Response(JSON.stringify({ error: 'User not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    let user;
+    try {
+      user = await auth.getUserByEmail(email);
+    } catch (getUserError) {
+      logErrorSafely('set-admin-claims', getUserError);
+      return createErrorResponse('User not found', 404);
     }
 
     // Asignar o remover custom claim de admin
@@ -82,17 +107,9 @@ export const POST: APIRoute = async ({ request }) => {
         }
       );
     }
-  } catch (error: any) {
-    console.error('❌ Error setting admin claims:', error);
-    return new Response(
-      JSON.stringify({
-        error: error.message || 'Error setting admin claims',
-        details: error.stack,
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+  } catch (error: unknown) {
+    // SECURITY: No exponer stack traces ni detalles internos
+    logErrorSafely('set-admin-claims', error);
+    return createErrorResponse('Error setting admin claims', 500);
   }
 };

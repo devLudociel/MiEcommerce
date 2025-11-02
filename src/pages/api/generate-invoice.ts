@@ -5,6 +5,7 @@ import { generateInvoiceDefinition } from '../../lib/invoiceGenerator';
 import type { InvoiceData } from '../../lib/invoiceGenerator';
 import type { OrderData } from '../../lib/firebase';
 import PdfPrinter from 'pdfmake/src/printer';
+import { verifyAuthToken, logErrorSafely, createErrorResponse } from '../../lib/auth-helpers';
 
 // Fuentes estándar de PDFKit (no requieren archivos externos)
 const fonts = {
@@ -46,15 +47,18 @@ async function getNextInvoiceNumber(): Promise<string> {
   return invoiceNumber;
 }
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ request, url }) => {
   try {
+    // SECURITY: Verificar autenticación
+    const authResult = await verifyAuthToken(request);
+    if (!authResult.success) {
+      return authResult.error!;
+    }
+
     const orderId = url.searchParams.get('orderId');
-    console.log('[generate-invoice] start', { orderId });
+    console.log('[generate-invoice] start', { orderId, userId: authResult.uid });
     if (!orderId) {
-      return new Response(JSON.stringify({ error: 'Se requiere orderId' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return createErrorResponse('Se requiere orderId', 400);
     }
 
     // Leer pedido (Admin)
@@ -63,12 +67,19 @@ export const GET: APIRoute = async ({ url }) => {
     const orderSnap = await orderRef.get();
     console.log('[generate-invoice] order loaded', { exists: orderSnap.exists });
     if (!orderSnap.exists) {
-      return new Response(JSON.stringify({ error: 'Pedido no encontrado' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return createErrorResponse('Pedido no encontrado', 404);
     }
     const order = { id: orderSnap.id, ...orderSnap.data() } as OrderData;
+
+    // SECURITY: Verificar autorización - solo admin o el usuario dueño del pedido
+    if (!authResult.isAdmin && order.userId !== authResult.uid) {
+      console.warn('[generate-invoice] Unauthorized access attempt', {
+        userId: authResult.uid,
+        orderId,
+        orderUserId: order.userId,
+      });
+      return createErrorResponse('Forbidden - No tienes acceso a esta factura', 403);
+    }
 
     // Asegurar número de factura
     let invoiceNumber = order.invoiceNumber as string | undefined;
@@ -117,13 +128,8 @@ export const GET: APIRoute = async ({ url }) => {
       pdfDoc.end();
     });
   } catch (error) {
-    console.error('[generate-invoice] error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'Error generando factura',
-        details: error instanceof Error ? error.message : String(error),
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    // SECURITY: No exponer detalles internos
+    logErrorSafely('generate-invoice', error);
+    return createErrorResponse('Error generando factura', 500);
   }
 };

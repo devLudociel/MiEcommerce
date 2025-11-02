@@ -111,11 +111,19 @@ export const POST: APIRoute = async ({ request }) => {
       }
     );
   } catch (error: any) {
+    // SECURITY: No exponer detalles internos
     console.error('❌ Error creando Payment Intent:', error);
+
+    // Si es error de Stripe, podemos dar feedback más útil sin exponer detalles internos
+    let userMessage = 'Error procesando pago';
+    if (error?.type === 'StripeCardError') {
+      userMessage = 'Error con la tarjeta. Por favor, verifica los datos e intenta nuevamente.';
+    } else if (error?.type === 'StripeInvalidRequestError') {
+      userMessage = 'Solicitud de pago inválida. Por favor, contacta a soporte.';
+    }
+
     return new Response(
-      JSON.stringify({
-        error: error.message || 'Error procesando pago',
-      }),
+      JSON.stringify({ error: userMessage }),
       {
         status: 500,
         headers: { 'Content-Type': 'application/json' },

@@ -76,11 +76,11 @@ export const GET: APIRoute = async ({ request }) => {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
+    // SECURITY: No exponer detalles internos
     console.error('[API get-wallet-balance] Unexpected error:', error);
     return new Response(
       JSON.stringify({
         error: 'Error al obtener el saldo',
-        details: (error as Error).message,
       }),
       {
         status: 500,

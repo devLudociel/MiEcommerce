@@ -91,11 +91,11 @@ export const GET: APIRoute = async ({ request }) => {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
+    // SECURITY: No exponer detalles internos
     console.error('[API get-wallet-transactions] Unexpected error:', error);
     return new Response(
       JSON.stringify({
         error: 'Error al obtener las transacciones',
-        details: (error as Error).message,
       }),
       {
         status: 500,
