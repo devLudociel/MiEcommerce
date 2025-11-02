@@ -531,8 +531,13 @@ export default function Checkout() {
     logger.info('[Checkout] Placing order', { total, itemCount: cart.items.length });
     setIsProcessing(true);
     try {
+      // IDEMPOTENCY: Generate a unique key to prevent duplicate orders
+      const idempotencyKey = `order_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+      logger.info('[Checkout] Generated idempotency key:', idempotencyKey);
+
       // Preparar datos de la orden para Firebase
       const orderData = {
+        idempotencyKey, // Include idempotency key
         items: cart.items.map((item) => ({
           productId: item.id,
           name: item.name,

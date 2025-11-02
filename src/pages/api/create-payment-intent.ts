@@ -2,6 +2,7 @@
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { getAdminDb } from '../../lib/firebase-admin';
+import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 
 const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
   apiVersion: '2024-12-18.acacia',
@@ -11,11 +12,19 @@ const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
  * Crea un Payment Intent de Stripe asociado a un pedido
  *
  * SEGURIDAD:
+ * - Protección CSRF
  * - Valida que el orderId exista en Firestore
  * - Valida que el monto coincida con el total del pedido
  * - Previene manipulación de montos
  */
 export const POST: APIRoute = async ({ request }) => {
+  // SECURITY: CSRF protection
+  const csrfCheck = validateCSRF(request);
+  if (!csrfCheck.valid) {
+    console.warn('[create-payment-intent] CSRF validation failed:', csrfCheck.reason);
+    return createCSRFErrorResponse();
+  }
+
   try {
     const { orderId, amount, currency = 'eur' } = await request.json();
 

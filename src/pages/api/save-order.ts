@@ -3,10 +3,18 @@ import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { rateLimit } from '../../lib/rateLimit';
+import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 
 const CASHBACK_PERCENTAGE = 0.05; // 5% de cashback
 
 export const POST: APIRoute = async ({ request }) => {
+  // SECURITY: CSRF protection
+  const csrfCheck = validateCSRF(request);
+  if (!csrfCheck.valid) {
+    console.warn('[save-order] CSRF validation failed:', csrfCheck.reason);
+    return createCSRFErrorResponse();
+  }
+
   // Rate limit básico: 10/min por IP para guardar orden
   try {
     const { ok, remaining, resetAt } = await rateLimit(request, 'save-order', {
@@ -33,6 +41,22 @@ export const POST: APIRoute = async ({ request }) => {
 
   try {
     const orderData = await request.json();
+
+    // IDEMPOTENCY: Check for idempotency key to prevent duplicate orders
+    const idempotencyKey = orderData.idempotencyKey;
+    if (!idempotencyKey || typeof idempotencyKey !== 'string') {
+      console.error('API save-order: Missing or invalid idempotency key');
+      return new Response(
+        JSON.stringify({
+          error: 'Idempotency key is required',
+          hint: 'Include a unique idempotencyKey in your request to prevent duplicate orders'
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
     if (isProd) {
       const redacted = {
         itemsCount: Array.isArray(orderData.items) ? orderData.items.length : 0,
@@ -75,6 +99,31 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    // IDEMPOTENCY: Check if an order with this idempotency key already exists
+    console.log('[save-order] Checking idempotency key:', idempotencyKey);
+    const existingOrderQuery = await adminDb
+      .collection('orders')
+      .where('idempotencyKey', '==', idempotencyKey)
+      .limit(1)
+      .get();
+
+    if (!existingOrderQuery.empty) {
+      const existingOrder = existingOrderQuery.docs[0];
+      console.log('[save-order] Order with this idempotency key already exists:', existingOrder.id);
+      return new Response(
+        JSON.stringify({
+          success: true,
+          orderId: existingOrder.id,
+          duplicate: true,
+          message: 'Order already created (idempotency key matched)',
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     const sanitizedItems = Array.isArray(orderData.items)
       ? orderData.items.map((i: any) => ({
           ...i,
@@ -88,6 +137,7 @@ export const POST: APIRoute = async ({ request }) => {
       subtotal: Number(orderData.subtotal) || 0,
       shipping: Number(orderData.shipping) || 0,
       total: Number(orderData.total) || 0,
+      idempotencyKey, // Store the idempotency key with the order
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
       status: orderData.status || 'pending',
@@ -326,12 +376,12 @@ export const POST: APIRoute = async ({ request }) => {
       }
     );
   } catch (error: any) {
+    // SECURITY: No exponer stack traces en producción
     console.error('API save-order: Error:', error);
     console.error('API save-order: Stack:', error?.stack);
     return new Response(
       JSON.stringify({
         error: error.message || 'Error guardando pedido',
-        details: error?.stack,
       }),
       {
         status: 500,
