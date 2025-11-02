@@ -8,16 +8,35 @@ const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
 });
 
 /**
- * Crea un Payment Method de Stripe de forma segura en el servidor
+ * @deprecated SECURITY VIOLATION - PCI-DSS Non-Compliant
  *
- * IMPORTANTE: Este endpoint acepta datos de tarjeta pero SOLO para propósitos
- * de desarrollo/testing. En producción real, deberías usar Stripe Elements
- * para que los datos de tarjeta nunca pasen por tu servidor.
+ * ⚠️ THIS ENDPOINT IS INSECURE AND SHOULD NOT BE USED ⚠️
  *
- * Sin embargo, esta implementación es más segura que hacerlo en el cliente
- * porque al menos los datos se tokeniz an inmediatamente en el servidor.
+ * PROBLEM:
+ * - Accepts raw card data (number, expiry, CVV) via POST
+ * - Card data passes through your server
+ * - Violates PCI-DSS compliance requirements
+ * - Exposes you to legal and security risks
+ *
+ * SOLUTION:
+ * - Use Stripe Elements instead (client-side tokenization)
+ * - See: src/components/checkout/SecureCardPayment.tsx
+ * - Card data goes directly from browser to Stripe (never touches your server)
+ *
+ * This endpoint is kept ONLY for backwards compatibility during migration.
+ * It will be removed in the next major version.
+ *
+ * Migration guide:
+ * 1. Wrap checkout with <StripeProvider>
+ * 2. Use <SecureCardPayment> component
+ * 3. Remove all references to this endpoint
+ * 4. Delete this file
  */
 export const POST: APIRoute = async ({ request }) => {
+  // Log warning every time this deprecated endpoint is used
+  logger.warn('⚠️ DEPRECATED ENDPOINT USED: /api/create-payment-method - MIGRATE TO STRIPE ELEMENTS');
+  logger.warn('Card data is passing through your server - PCI-DSS violation');
+  logger.warn('See: src/components/checkout/SecureCardPayment.tsx for secure implementation');
   try {
     const { cardNumber, expMonth, expYear, cvc, billingDetails } = await request.json();
 
