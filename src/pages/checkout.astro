@@ -1,8 +1,11 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CheckoutComponent from '../components/pages/Checkout';
+import StripeProvider from '../components/checkout/StripeProvider';
 ---
 
 <BaseLayout title="Checkout - Finalizar Compra">
-  <CheckoutComponent client:load />
+  <StripeProvider client:only="react">
+    <CheckoutComponent client:load />
+  </StripeProvider>
 </BaseLayout>

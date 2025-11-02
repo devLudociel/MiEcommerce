@@ -3,14 +3,14 @@ import { useStore } from '@nanostores/react';
 import { cartStore, clearCart } from '../../store/cartStore';
 import type { CartItem } from '../../store/cartStore';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
-import { shippingInfoSchema, paymentInfoSchema } from '../../lib/validation/schemas';
+import { shippingInfoSchema } from '../../lib/validation/schemas';
 import { useFormValidation } from '../../hooks/useFormValidation';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import { lookupZipES, autocompleteStreetES, debounce } from '../../utils/address';
 import type { AddressSuggestion } from '../../utils/address';
 import { useAuth } from '../hooks/useAuth';
-import { stripePromise } from '../../lib/stripe';
+import { useSecureCardPayment } from '../checkout/SecureCardPayment';
 
 interface ShippingInfo {
   firstName: string;
@@ -38,10 +38,8 @@ interface BillingInfo {
 
 interface PaymentInfo {
   method: 'card' | 'paypal' | 'transfer' | 'cash';
-  cardNumber?: string;
-  cardName?: string;
-  cardExpiry?: string;
-  cardCVV?: string;
+  // Card data removed - now handled securely by Stripe Elements
+  // No card data in state = PCI-DSS compliant ✓
 }
 
 type CheckoutStep = 1 | 2 | 3;
@@ -111,10 +109,7 @@ export default function Checkout() {
 
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>({
     method: 'card',
-    cardNumber: '',
-    cardName: '',
-    cardExpiry: '',
-    cardCVV: '',
+    // Card fields removed - Stripe Elements handles them securely
   });
 
   const [acceptTerms, setAcceptTerms] = useState(false);
@@ -127,13 +122,7 @@ export default function Checkout() {
     formName: 'Checkout-Shipping',
   });
 
-  // Validación con Zod para el formulario de pago
-  const paymentValidation = useFormValidation(paymentInfoSchema, {
-    validateOnChange: false,
-    validateOnBlur: true,
-    showToastOnError: false,
-    formName: 'Checkout-Payment',
-  });
+  // Payment validation removed - Stripe Elements validates card data securely
 
   useEffect(() => {
     if (cart.items.length === 0 && typeof window !== 'undefined') {
