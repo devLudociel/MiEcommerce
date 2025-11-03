@@ -323,7 +323,7 @@ export default function Checkout() {
         country: 'ES',
       },
     },
-    onSuccess: (paymentIntentId, completedOrderId) => {
+    onSuccess: async (paymentIntentId, completedOrderId) => {
       logger.info('[Checkout] Payment successful', {
         paymentIntentId,
         orderId: completedOrderId,
