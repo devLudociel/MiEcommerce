@@ -12,12 +12,14 @@
 ### Prioridad Alta - Componentes de Usuario
 
 #### 1. **src/components/auth/LoginPanel.tsx**
+
 ```tsx
 Línea 167: alert('Te enviamos un email...')
 Línea 188: alert('Te enviamos un enlace...')
 ```
 
 **Acción**: Reemplazar con AccessibleModal
+
 ```tsx
 import AccessibleModal from '../common/AccessibleModal';
 
@@ -31,12 +33,14 @@ showModal('success', 'Email enviado', 'Te enviamos un email para restablecer tu 
 ---
 
 #### 2. **src/components/cart/CheckoutPage.tsx**
+
 ```tsx
 Línea 431: alert('Debes aceptar los términos...')
 Línea 456: alert('Hubo un error al procesar...')
 ```
 
 **Nota**: Este componente parece ser un duplicado de `Checkout.tsx`.
+
 - Verificar si se usa
 - Si no, eliminarlo
 - Si se usa, aplicar el mismo patrón de Stripe Elements
@@ -44,6 +48,7 @@ Línea 456: alert('Hubo un error al procesar...')
 ---
 
 #### 3. **src/components/sections/ProductDetail.tsx**
+
 ```tsx
 // Buscar alerts relacionados con agregar al carrito
 ```
@@ -55,6 +60,7 @@ Línea 456: alert('Hubo un error al procesar...')
 ### Prioridad Media - Componentes Admin
 
 #### 4. **src/components/admin/AdminOrdersList.tsx**
+
 ```tsx
 Línea 64: alert('Error cargando pedidos')
 Línea 118: alert('Estado actualizado correctamente...')
@@ -66,6 +72,7 @@ Línea 121: alert('Error actualizando estado')
 ---
 
 #### 5. **src/components/admin/AdminOrderDetail.tsx**
+
 ```tsx
 Línea 37: alert('Pedido no encontrado')
 Línea 45: alert('Error cargando pedido')
@@ -80,12 +87,15 @@ Línea 69: alert('Error actualizando estado')
 ### Prioridad Baja - Componentes de Cuenta
 
 #### 6. **src/components/account/SettingsPanel.tsx**
+
 Revisar alerts relacionados con guardado de configuración.
 
 #### 7. **src/components/account/FilesPanel.tsx**
+
 Revisar alerts relacionados con subida/eliminación de archivos.
 
 #### 8. **src/components/sections/ProductsSection.tsx**
+
 Revisar alerts relacionados con productos.
 
 ---
@@ -95,7 +105,9 @@ Revisar alerts relacionados con productos.
 ### Elementos que necesitan soporte de teclado:
 
 #### 1. **Botones Personalizados (divs con onClick)**
+
 Buscar y reemplazar:
+
 ```tsx
 // ❌ MAL
 <div onClick={handleClick}>Acción</div>
@@ -116,12 +128,15 @@ Buscar y reemplazar:
 ```
 
 #### 2. **Elementos de Carrito**
+
 - Botones +/- cantidad
 - Botón eliminar
 - Todos deben responder a Enter/Space
 
 #### 3. **Selector de Estrellas (Rating)**
+
 Ya implementado correctamente en AddReviewForm ✅
+
 - Aplicar el mismo patrón a otros selectores de rating
 
 ---
@@ -141,26 +156,23 @@ grep -n '<input' src/components/**/*.tsx | grep -v 'htmlFor\|aria-label'
 ### Patrones a aplicar:
 
 #### Botones de iconos
+
 ```tsx
-<button
-  onClick={handleDelete}
-  aria-label="Eliminar producto del carrito"
->
+<button onClick={handleDelete} aria-label="Eliminar producto del carrito">
   <TrashIcon />
 </button>
 ```
 
 #### Links de navegación
+
 ```tsx
-<a
-  href="/cart"
-  aria-label={`Carrito de compras (${itemCount} productos)`}
->
+<a href="/cart" aria-label={`Carrito de compras (${itemCount} productos)`}>
   <CartIcon />
 </a>
 ```
 
 #### Inputs de formulario
+
 ```tsx
 <label htmlFor="email" className="...">
   Email
@@ -187,6 +199,7 @@ grep -n '<input' src/components/**/*.tsx | grep -v 'htmlFor\|aria-label'
 ### Problemas comunes a arreglar:
 
 #### 1. **Inputs sin label**
+
 ```tsx
 // ❌ MAL
 <input placeholder="Nombre" />
@@ -197,21 +210,27 @@ grep -n '<input' src/components/**/*.tsx | grep -v 'htmlFor\|aria-label'
 ```
 
 #### 2. **Errores no asociados**
+
 ```tsx
 // ❌ MAL
-<input type="email" />
-{error && <span>{error}</span>}
+<input type="email" />;
+{
+  error && <span>{error}</span>;
+}
 
 // ✅ BIEN
-<input
-  type="email"
-  aria-invalid={!!error}
-  aria-describedby="email-error"
-/>
-{error && <span id="email-error" role="alert">{error}</span>}
+<input type="email" aria-invalid={!!error} aria-describedby="email-error" />;
+{
+  error && (
+    <span id="email-error" role="alert">
+      {error}
+    </span>
+  );
+}
 ```
 
 #### 3. **Campos requeridos sin indicación**
+
 ```tsx
 <label htmlFor="email">
   Email <span aria-label="campo requerido">*</span>
@@ -237,6 +256,7 @@ grep -n '<input' src/components/**/*.tsx | grep -v 'htmlFor\|aria-label'
 ```
 
 #### Colores a revisar:
+
 - `text-gray-400` sobre `bg-white` ❌ (bajo contraste)
 - `text-gray-500` sobre `bg-white` ✅ (ok para texto grande)
 - `text-gray-600` sobre `bg-white` ✅ (ok)
@@ -339,16 +359,19 @@ export default function MiComponente() {
 ## 🎯 Priorización
 
 ### Semana 1 (Alta Prioridad):
+
 - [ ] LoginPanel.tsx - Flujo crítico de usuario
 - [ ] CheckoutPage.tsx - Verificar si se usa, limpiar
 - [ ] ProductDetail.tsx - Acción principal (agregar al carrito)
 
 ### Semana 2 (Media Prioridad):
+
 - [ ] Admin components (4 archivos)
 - [ ] Agregar ARIA labels faltantes
 - [ ] Mejorar navegación por teclado
 
 ### Semana 3 (Baja Prioridad):
+
 - [ ] Account components
 - [ ] Revisar contraste de colores
 - [ ] Testing completo con screen readers

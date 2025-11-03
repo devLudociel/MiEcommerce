@@ -117,7 +117,11 @@ export default function FilesPanel() {
       setUploading(true);
       const user = auth.currentUser;
       if (!user) {
-        showModal('warning', 'Autenticación requerida', 'Debes estar autenticado para subir archivos.');
+        showModal(
+          'warning',
+          'Autenticación requerida',
+          'Debes estar autenticado para subir archivos.'
+        );
         return;
       }
 
@@ -138,7 +142,11 @@ export default function FilesPanel() {
       event.target.value = '';
     } catch (error) {
       console.error('Error subiendo archivo:', error);
-      showModal('error', 'Error al subir', 'No se pudo subir el archivo. Por favor, intenta de nuevo.');
+      showModal(
+        'error',
+        'Error al subir',
+        'No se pudo subir el archivo. Por favor, intenta de nuevo.'
+      );
     } finally {
       setUploading(false);
     }
@@ -168,7 +176,11 @@ export default function FilesPanel() {
       window.URL.revokeObjectURL(urlBlob);
     } catch (error) {
       console.error('Error descargando archivo:', error);
-      showModal('error', 'Error al descargar', 'No se pudo descargar el archivo. Por favor, intenta de nuevo.');
+      showModal(
+        'error',
+        'Error al descargar',
+        'No se pudo descargar el archivo. Por favor, intenta de nuevo.'
+      );
     }
   };
 
@@ -235,110 +247,11 @@ export default function FilesPanel() {
       <div className="space-y-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold text-gradient-primary">Mis Archivos</h2>
-        <label
-          className="btn btn-primary cursor-pointer"
-          style={{ cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1 }}
-        >
-          {uploading ? 'Subiendo...' : '+ Subir Archivo'}
-          <input
-            type="file"
-            multiple
-            accept="image/*,.pdf,.doc,.docx,.txt,.xlsx,.mp4,.avi,.mov,.mkv"
-            onChange={handleFileUpload}
-            disabled={uploading}
-            className="hidden"
-          />
-        </label>
-      </div>
-
-      {/* Storage indicator */}
-      <div className="card card-cyan p-6">
-        <div className="mb-3">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-700">Espacio usado</span>
-            <span className="text-sm font-bold text-cyan-600">
-              {formatFileSize(totalSize)} / {formatFileSize(storageLimit)}
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-3">
-            <div
-              className="bg-gradient-primary h-3 rounded-full transition-all"
-              style={{ width: `${Math.min(storagePercentage, 100)}%` }}
-            />
-          </div>
-        </div>
-        <p className="text-xs text-gray-500">{(100 - storagePercentage).toFixed(1)}% disponible</p>
-      </div>
-
-      {/* Files list */}
-      {files.length > 0 ? (
-        <div className="space-y-4">
-          {files.map((file) => (
-            <div key={file.id} className="card p-6">
-              <div className="flex items-center gap-4">
-                {/* Miniatura o icono */}
-                <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  {file.type === 'image' ? (
-                    <img
-                      src={file.downloadUrl}
-                      alt={file.displayName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className={`text-3xl ${getFileTypeColor(file.type)}`}>
-                      {getFileTypeIcon(file.type)}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 mb-1 truncate">{file.displayName}</h3>
-                  <div className="flex items-center gap-3 text-sm text-gray-500 flex-wrap">
-                    <span className={getFileTypeColor(file.type)}>{file.type}</span>
-                    <span>•</span>
-                    <span>{formatFileSize(file.size)}</span>
-                    <span>•</span>
-                    <span>{new Date(file.uploadedAt).toLocaleDateString()}</span>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 flex-shrink-0">
-                  <button
-                    className="btn btn-outline btn-sm"
-                    onClick={() => handleDownload(file.downloadUrl, file.displayName)}
-                  >
-                    Descargar
-                  </button>
-                  <button
-                    className="btn btn-ghost btn-sm text-red-500"
-                    onClick={() => handleDelete(file.path)}
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {uploading && (
-            <div className="card p-6 border-2 border-cyan-300 bg-cyan-50">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full border-4 border-gray-200 border-t-cyan-500 animate-spin flex-shrink-0"></div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900">Subiendo archivo...</h4>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Por favor espera, no cierres esta ventana
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-gray-500 mb-4">No tienes archivos subidos</p>
-          <label className="btn btn-primary cursor-pointer">
-            Sube tu primer archivo
+          <label
+            className="btn btn-primary cursor-pointer"
+            style={{ cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1 }}
+          >
+            {uploading ? 'Subiendo...' : '+ Subir Archivo'}
             <input
               type="file"
               multiple
@@ -349,8 +262,111 @@ export default function FilesPanel() {
             />
           </label>
         </div>
-      )}
-    </div>
+
+        {/* Storage indicator */}
+        <div className="card card-cyan p-6">
+          <div className="mb-3">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-gray-700">Espacio usado</span>
+              <span className="text-sm font-bold text-cyan-600">
+                {formatFileSize(totalSize)} / {formatFileSize(storageLimit)}
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div
+                className="bg-gradient-primary h-3 rounded-full transition-all"
+                style={{ width: `${Math.min(storagePercentage, 100)}%` }}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-gray-500">
+            {(100 - storagePercentage).toFixed(1)}% disponible
+          </p>
+        </div>
+
+        {/* Files list */}
+        {files.length > 0 ? (
+          <div className="space-y-4">
+            {files.map((file) => (
+              <div key={file.id} className="card p-6">
+                <div className="flex items-center gap-4">
+                  {/* Miniatura o icono */}
+                  <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {file.type === 'image' ? (
+                      <img
+                        src={file.downloadUrl}
+                        alt={file.displayName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className={`text-3xl ${getFileTypeColor(file.type)}`}>
+                        {getFileTypeIcon(file.type)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 mb-1 truncate">
+                      {file.displayName}
+                    </h3>
+                    <div className="flex items-center gap-3 text-sm text-gray-500 flex-wrap">
+                      <span className={getFileTypeColor(file.type)}>{file.type}</span>
+                      <span>•</span>
+                      <span>{formatFileSize(file.size)}</span>
+                      <span>•</span>
+                      <span>{new Date(file.uploadedAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      className="btn btn-outline btn-sm"
+                      onClick={() => handleDownload(file.downloadUrl, file.displayName)}
+                    >
+                      Descargar
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-sm text-red-500"
+                      onClick={() => handleDelete(file.path)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {uploading && (
+              <div className="card p-6 border-2 border-cyan-300 bg-cyan-50">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full border-4 border-gray-200 border-t-cyan-500 animate-spin flex-shrink-0"></div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900">Subiendo archivo...</h4>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Por favor espera, no cierres esta ventana
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-500 mb-4">No tienes archivos subidos</p>
+            <label className="btn btn-primary cursor-pointer">
+              Sube tu primer archivo
+              <input
+                type="file"
+                multiple
+                accept="image/*,.pdf,.doc,.docx,.txt,.xlsx,.mp4,.avi,.mov,.mkv"
+                onChange={handleFileUpload}
+                disabled={uploading}
+                className="hidden"
+              />
+            </label>
+          </div>
+        )}
+      </div>
     </>
   );
 }

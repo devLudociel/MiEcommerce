@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { notify } from '../../lib/notifications';
+import { logger } from '../../lib/logger';
 
 interface Order {
   id: string;
@@ -6,15 +9,23 @@ interface Order {
   items: any[];
   shippingInfo: any;
   paymentInfo: any;
+  billingInfo?: any;
   subtotal: number;
   shipping: number;
+  tax?: number;
+  taxLabel?: string;
   total: number;
   status: string;
+  userId?: string;
+  accessKey?: string;
 }
 
 export default function OrderConfirmation() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+  const [guestAccessKey, setGuestAccessKey] = useState<string | null>(null);
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -25,10 +36,36 @@ export default function OrderConfirmation() {
       return;
     }
 
+    const storedOrderRaw =
+      typeof window !== 'undefined' ? sessionStorage.getItem('checkout:lastOrder') : null;
+    let storedOrder: Order | null = null;
+
+    if (storedOrderRaw) {
+      try {
+        const parsed = JSON.parse(storedOrderRaw);
+        if (parsed?.id === orderId) {
+          storedOrder = parsed;
+          if (parsed?.accessKey && typeof parsed.accessKey === 'string') {
+            setGuestAccessKey(parsed.accessKey);
+          }
+        }
+      } catch (error) {
+        console.warn('[OrderConfirmation] Unable to parse stored order', error);
+      }
+    }
+
     const loadOrder = async () => {
       try {
-        // Cargar orden desde Firebase
-        const response = await fetch(`/api/get-order?orderId=${orderId}`);
+        const headers: Record<string, string> = {};
+
+        if (user) {
+          const token = await user.getIdToken();
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`/api/get-order?orderId=${orderId}`, {
+          headers,
+        });
 
         if (!response.ok) {
           throw new Error('Orden no encontrada');
@@ -36,17 +73,34 @@ export default function OrderConfirmation() {
 
         const orderData = await response.json();
         setOrder(orderData);
+        setGuestAccessKey(null);
+        if (storedOrder && typeof window !== 'undefined') {
+          sessionStorage.removeItem('checkout:lastOrder');
+        }
       } catch (error) {
         console.error('Error loading order:', error);
-        // Si no se encuentra la orden, redirigir al inicio
+
+        if (storedOrder) {
+          setOrder(storedOrder);
+          if (storedOrder?.accessKey && typeof storedOrder.accessKey === 'string') {
+            setGuestAccessKey(storedOrder.accessKey);
+          }
+          if (user && typeof window !== 'undefined') {
+            sessionStorage.removeItem('checkout:lastOrder');
+          }
+          return;
+        }
+
         window.location.href = '/';
       } finally {
         setLoading(false);
       }
     };
 
-    loadOrder();
-  }, []);
+    if (!authLoading) {
+      loadOrder();
+    }
+  }, [authLoading, user]);
 
   if (loading) {
     return (
@@ -66,6 +120,56 @@ export default function OrderConfirmation() {
   const orderDate = new Date(order.date);
   const estimatedDelivery = new Date(orderDate);
   estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
+
+  const handleDownloadInvoice = async () => {
+    if (!order) {
+      return;
+    }
+
+    const headers: Record<string, string> = {};
+
+    if (user) {
+      const token = await user.getIdToken();
+      headers.Authorization = `Bearer ${token}`;
+    } else if (guestAccessKey) {
+      headers['X-Order-Key'] = guestAccessKey;
+    } else {
+      notify.warning('Inicia sesión para descargar tu factura.');
+      return;
+    }
+
+    setDownloadingInvoice(true);
+
+    try {
+      const response = await fetch(`/api/generate-invoice?orderId=${order.id}`, {
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error('No se pudo generar la factura.');
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Factura-${order.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      notify.success('Factura descargada correctamente');
+    } catch (error) {
+      logger.error('[OrderConfirmation] Invoice download failed', error);
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'No se pudo generar la factura. Intenta nuevamente más tarde.';
+      notify.error(message);
+    } finally {
+      setDownloadingInvoice(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-cyan-50 py-16 mt-32">
@@ -281,14 +385,14 @@ export default function OrderConfirmation() {
 
         {/* Botones de acción */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <a
-            href={`/api/generate-invoice?orderId=${order.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="py-4 px-6 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-2xl font-bold text-lg text-center shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
+          <button
+            type="button"
+            onClick={handleDownloadInvoice}
+            disabled={downloadingInvoice}
+            className={`py-4 px-6 rounded-2xl font-bold text-lg text-center shadow-lg transition-all duration-300 ${downloadingInvoice ? 'bg-purple-400 cursor-not-allowed text-white' : 'bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:shadow-2xl transform hover:scale-105'}`}
           >
-            📄 Descargar Factura
-          </a>
+            {downloadingInvoice ? 'Generando factura...' : '📄 Descargar Factura'}
+          </button>
           <a
             href="/"
             className="py-4 px-6 bg-gradient-primary text-white rounded-2xl font-bold text-lg text-center shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"

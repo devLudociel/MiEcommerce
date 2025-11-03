@@ -87,7 +87,11 @@ export default function AdminOrdersList() {
       setHasMore(result.hasMore);
     } catch (error) {
       console.error('Error cargando pedidos:', error);
-      showModal('error', 'Error al cargar', 'No se pudieron cargar los pedidos. Por favor, intenta de nuevo.');
+      showModal(
+        'error',
+        'Error al cargar',
+        'No se pudieron cargar los pedidos. Por favor, intenta de nuevo.'
+      );
     } finally {
       setLoading(false);
     }
@@ -141,10 +145,18 @@ export default function AdminOrdersList() {
 
       // Recargar pedidos
       await loadOrders();
-      showModal('success', 'Estado actualizado', 'El estado del pedido se actualizó correctamente y se envió un email al cliente.');
+      showModal(
+        'success',
+        'Estado actualizado',
+        'El estado del pedido se actualizó correctamente y se envió un email al cliente.'
+      );
     } catch (error) {
       console.error('Error actualizando estado:', error);
-      showModal('error', 'Error al actualizar', 'No se pudo actualizar el estado del pedido. Por favor, intenta de nuevo.');
+      showModal(
+        'error',
+        'Error al actualizar',
+        'No se pudo actualizar el estado del pedido. Por favor, intenta de nuevo.'
+      );
     }
   };
 
@@ -182,143 +194,145 @@ export default function AdminOrdersList() {
             </p>
           </div>
 
-        {/* Filtros */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">Filtrar por estado:</h2>
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => handleFilterChange('all')}
-              className={`px-4 py-2 rounded-xl font-bold transition-all ${
-                filter === 'all'
-                  ? 'bg-gradient-primary text-white shadow-lg scale-105'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Todos ({totalCount})
-            </button>
-            {Object.entries(statusLabels).map(([status, label]) => (
+          {/* Filtros */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <h2 className="text-lg font-bold text-gray-800 mb-4">Filtrar por estado:</h2>
+            <div className="flex flex-wrap gap-3">
               <button
-                key={status}
-                onClick={() => handleFilterChange(status)}
+                onClick={() => handleFilterChange('all')}
                 className={`px-4 py-2 rounded-xl font-bold transition-all ${
-                  filter === status
+                  filter === 'all'
                     ? 'bg-gradient-primary text-white shadow-lg scale-105'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                {label}
+                Todos ({totalCount})
               </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Lista de pedidos */}
-        {orders.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-            <p className="text-gray-500 text-lg">No hay pedidos para mostrar</p>
-          </div>
-        ) : (
-          <>
-            <div className="space-y-4 mb-6">
-              {orders.map((order) => (
-                <div
-                  key={order.id}
-                  className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-shadow"
+              {Object.entries(statusLabels).map(([status, label]) => (
+                <button
+                  key={status}
+                  onClick={() => handleFilterChange(status)}
+                  className={`px-4 py-2 rounded-xl font-bold transition-all ${
+                    filter === status
+                      ? 'bg-gradient-primary text-white shadow-lg scale-105'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
                 >
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-                    {/* ID y Fecha */}
-                    <div>
-                      <p className="text-sm text-gray-500">Pedido</p>
-                      <p className="font-bold text-gray-800 truncate">#{order.id?.slice(0, 8)}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {order.createdAt?.toDate
-                          ? order.createdAt.toDate().toLocaleDateString('es-ES', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })
-                          : 'Fecha no disponible'}
-                      </p>
-                    </div>
-
-                    {/* Cliente */}
-                    <div>
-                      <p className="text-sm text-gray-500">Cliente</p>
-                      <p className="font-bold text-gray-800">
-                        {order.shippingInfo.firstName} {order.shippingInfo.lastName}
-                      </p>
-                      <p className="text-xs text-gray-500">{order.shippingInfo.email}</p>
-                    </div>
-
-                    {/* Productos */}
-                    <div>
-                      <p className="text-sm text-gray-500">Productos</p>
-                      <p className="font-bold text-gray-800">{order.items.length} item(s)</p>
-                      <p className="text-xs text-gray-500">
-                        {order.items.reduce((sum, item) => sum + item.quantity, 0)} unidades
-                      </p>
-                    </div>
-
-                    {/* Total */}
-                    <div>
-                      <p className="text-sm text-gray-500">Total</p>
-                      <p className="font-black text-cyan-600 text-xl">€{order.total.toFixed(2)}</p>
-                    </div>
-
-                    {/* Estado y Acciones */}
-                    <div className="flex flex-col gap-2">
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-bold text-center ${
-                          statusColors[order.status] || 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {statusLabels[order.status] || order.status}
-                      </span>
-                      <div className="flex gap-2">
-                        <a
-                          href={`/admin/orders/${order.id}`}
-                          className="flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-300 transition-all text-center"
-                        >
-                          Ver Detalle
-                        </a>
-                      </div>
-                      <select
-                        value={order.status}
-                        onChange={(e) => handleStatusChange(order.id!, e.target.value)}
-                        className="px-3 py-2 border-2 border-gray-300 rounded-xl text-sm font-bold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none"
-                      >
-                        {Object.entries(statusLabels).map(([status, label]) => (
-                          <option key={status} value={status}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
+                  {label}
+                </button>
               ))}
             </div>
+          </div>
 
-            {/* Paginación */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                hasMore={hasMore}
-                hasPrevious={currentPage > 1}
-                onNextPage={handleNextPage}
-                onPreviousPage={handlePreviousPage}
-                itemsPerPage={PAGE_SIZE}
-                totalItems={totalCount}
-                isLoading={loading}
-              />
+          {/* Lista de pedidos */}
+          {orders.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+              <p className="text-gray-500 text-lg">No hay pedidos para mostrar</p>
             </div>
-          </>
-        )}
+          ) : (
+            <>
+              <div className="space-y-4 mb-6">
+                {orders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-shadow"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                      {/* ID y Fecha */}
+                      <div>
+                        <p className="text-sm text-gray-500">Pedido</p>
+                        <p className="font-bold text-gray-800 truncate">#{order.id?.slice(0, 8)}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {order.createdAt?.toDate
+                            ? order.createdAt.toDate().toLocaleDateString('es-ES', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            : 'Fecha no disponible'}
+                        </p>
+                      </div>
+
+                      {/* Cliente */}
+                      <div>
+                        <p className="text-sm text-gray-500">Cliente</p>
+                        <p className="font-bold text-gray-800">
+                          {order.shippingInfo.firstName} {order.shippingInfo.lastName}
+                        </p>
+                        <p className="text-xs text-gray-500">{order.shippingInfo.email}</p>
+                      </div>
+
+                      {/* Productos */}
+                      <div>
+                        <p className="text-sm text-gray-500">Productos</p>
+                        <p className="font-bold text-gray-800">{order.items.length} item(s)</p>
+                        <p className="text-xs text-gray-500">
+                          {order.items.reduce((sum, item) => sum + item.quantity, 0)} unidades
+                        </p>
+                      </div>
+
+                      {/* Total */}
+                      <div>
+                        <p className="text-sm text-gray-500">Total</p>
+                        <p className="font-black text-cyan-600 text-xl">
+                          €{order.total.toFixed(2)}
+                        </p>
+                      </div>
+
+                      {/* Estado y Acciones */}
+                      <div className="flex flex-col gap-2">
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-bold text-center ${
+                            statusColors[order.status] || 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {statusLabels[order.status] || order.status}
+                        </span>
+                        <div className="flex gap-2">
+                          <a
+                            href={`/admin/orders/${order.id}`}
+                            className="flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-300 transition-all text-center"
+                          >
+                            Ver Detalle
+                          </a>
+                        </div>
+                        <select
+                          value={order.status}
+                          onChange={(e) => handleStatusChange(order.id!, e.target.value)}
+                          className="px-3 py-2 border-2 border-gray-300 rounded-xl text-sm font-bold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none"
+                        >
+                          {Object.entries(statusLabels).map(([status, label]) => (
+                            <option key={status} value={status}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Paginación */}
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  hasMore={hasMore}
+                  hasPrevious={currentPage > 1}
+                  onNextPage={handleNextPage}
+                  onPreviousPage={handlePreviousPage}
+                  itemsPerPage={PAGE_SIZE}
+                  totalItems={totalCount}
+                  isLoading={loading}
+                />
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </div>
     </>
   );
 }

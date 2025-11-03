@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useStore } from '@nanostores/react';
 import { cartStore, clearCart } from '../../store/cartStore';
 import type { CartItem } from '../../store/cartStore';
@@ -288,6 +288,23 @@ export default function Checkout() {
   // REMOVED: Old insecure processCardPayment function
   // Now using Stripe Elements (PCI-DSS compliant)
 
+  const clearCartAndStorage = useCallback(() => {
+    clearCart();
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      localStorage.removeItem('cart:guest');
+      if (user?.uid) {
+        localStorage.removeItem(`cart:${user.uid}`);
+      }
+    } catch (storageError) {
+      logger.warn('[Checkout] Failed to clear cart storage', storageError);
+    }
+  }, [user]);
+
   // Stripe Elements - PCI-DSS Compliant Payment
   const securePayment = useSecureCardPayment({
     orderId: orderId ?? '',
@@ -309,15 +326,33 @@ export default function Checkout() {
         paymentIntentId,
         orderId: completedOrderId,
       });
+      if (typeof window !== 'undefined') {
+        const storedOrder = sessionStorage.getItem('checkout:lastOrder');
+        if (storedOrder) {
+          try {
+            const parsed = JSON.parse(storedOrder);
+            if (parsed?.id === completedOrderId) {
+              parsed.status = 'paid';
+              sessionStorage.setItem('checkout:lastOrder', JSON.stringify(parsed));
+            }
+          } catch (storageError) {
+            logger.warn('[Checkout] Failed to update stored order status', storageError);
+          }
+        }
+      }
       notify.success('¡Pago completado con éxito!');
-      clearCart();
+      clearCartAndStorage();
       setTimeout(() => {
         window.location.href = `/confirmacion?orderId=${completedOrderId}`;
       }, 500);
     },
     onError: (errorMessage) => {
       logger.error('[Checkout] Payment failed', { error: errorMessage });
+      notify.error(errorMessage);
       setIsProcessing(false);
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('checkout:lastOrder');
+      }
     },
   });
 
@@ -504,6 +539,26 @@ export default function Checkout() {
       const { orderId: newOrderId } = await response.json();
       setOrderId(newOrderId);
 
+      if (typeof window !== 'undefined') {
+        const fallbackOrder = {
+          id: newOrderId,
+          date: new Date().toISOString(),
+          items: orderData.items,
+          shippingInfo: orderData.shippingInfo,
+          billingInfo: orderData.billingInfo,
+          paymentInfo: { method: orderData.paymentMethod },
+          subtotal: Number(orderData.subtotal || 0),
+          shipping: Number(orderData.shippingCost || 0),
+          tax: Number(orderData.tax || 0),
+          taxLabel: orderData.taxLabel,
+          total: Number(orderData.total || 0),
+          status: orderData.status,
+          userId: orderData.userId,
+          accessKey: idempotencyKey,
+        };
+        sessionStorage.setItem('checkout:lastOrder', JSON.stringify(fallbackOrder));
+      }
+
       logger.info('[Checkout] Order saved', { orderId: newOrderId });
 
       if (paymentInfo.method === 'card') {
@@ -516,7 +571,7 @@ export default function Checkout() {
         // El onSuccess del hook maneja el resto (notificación, carrito y redirección)
       } else {
         notify.success('¡Pedido realizado con éxito!');
-        clearCart();
+        clearCartAndStorage();
         setTimeout(() => {
           window.location.href = `/confirmacion?orderId=${newOrderId}`;
         }, 500);
@@ -528,6 +583,9 @@ export default function Checkout() {
           ? error.message
           : 'Hubo un error al procesar tu pedido. Por favor, intenta de nuevo.';
       notify.error(errorMessage);
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('checkout:lastOrder');
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -1185,8 +1243,7 @@ export default function Checkout() {
                 </div>
               )}
 
-              {currentStep === 2 && (
-                <div className="space-y-6">
+              <div className={currentStep === 2 ? 'space-y-6' : 'hidden'}>
                   <div>
                     <h2 className="text-3xl font-black text-gray-800 mb-2">Método de Pago</h2>
                     <p className="text-gray-600">Elige cómo quieres pagar tu pedido</p>
@@ -1261,8 +1318,7 @@ export default function Checkout() {
                       Revisar Pedido →
                     </button>
                   </div>
-                </div>
-              )}
+              </div>
 
               {currentStep === 3 && (
                 <div className="space-y-6">

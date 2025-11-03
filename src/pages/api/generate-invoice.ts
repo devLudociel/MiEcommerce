@@ -1,4 +1,4 @@
-﻿import type { APIRoute } from 'astro';
+import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { generateInvoiceDefinition } from '../../lib/invoiceGenerator';
@@ -49,17 +49,29 @@ async function getNextInvoiceNumber(): Promise<string> {
 
 export const GET: APIRoute = async ({ request, url }) => {
   try {
-    // SECURITY: Verificar autenticación
-    const authResult = await verifyAuthToken(request);
-    if (!authResult.success) {
-      return authResult.error!;
-    }
-
     const orderId = url.searchParams.get('orderId');
-    console.log('[generate-invoice] start', { orderId, userId: authResult.uid });
     if (!orderId) {
       return createErrorResponse('Se requiere orderId', 400);
     }
+
+    const guestOrderKey = request.headers.get('x-order-key')?.trim() || null;
+
+    let authUid: string | null = null;
+    let isAdmin = false;
+
+    if (!guestOrderKey) {
+      const authResult = await verifyAuthToken(request);
+      if (!authResult.success) {
+        return authResult.error!;
+      }
+      authUid = authResult.uid || null;
+      isAdmin = !!authResult.isAdmin;
+    }
+
+    console.log('[generate-invoice] start', {
+      orderId,
+      userId: authUid ?? (guestOrderKey ? 'guest' : 'unknown'),
+    });
 
     // Leer pedido (Admin)
     const db = getAdminDb();
@@ -69,16 +81,37 @@ export const GET: APIRoute = async ({ request, url }) => {
     if (!orderSnap.exists) {
       return createErrorResponse('Pedido no encontrado', 404);
     }
-    const order = { id: orderSnap.id, ...orderSnap.data() } as OrderData;
+    const order = { id: orderSnap.id, ...orderSnap.data() } as OrderData & {
+      idempotencyKey?: string;
+    };
 
-    // SECURITY: Verificar autorización - solo admin o el usuario dueño del pedido
-    if (!authResult.isAdmin && order.userId !== authResult.uid) {
-      console.warn('[generate-invoice] Unauthorized access attempt', {
-        userId: authResult.uid,
-        orderId,
-        orderUserId: order.userId,
-      });
-      return createErrorResponse('Forbidden - No tienes acceso a esta factura', 403);
+    if (authUid) {
+      // SECURITY: Verificar autorización - solo admin o el usuario dueño del pedido
+      if (!isAdmin && order.userId !== authUid) {
+        console.warn('[generate-invoice] Unauthorized access attempt', {
+          userId: authUid,
+          orderId,
+          orderUserId: order.userId,
+        });
+        return createErrorResponse('Forbidden - No tienes acceso a esta factura', 403);
+      }
+    } else {
+      // Guest access path
+      if (order.userId !== 'guest') {
+        console.warn('[generate-invoice] Guest access rejected (non-guest order)', {
+          orderId,
+          orderUserId: order.userId,
+        });
+        return createErrorResponse('Forbidden - Se requiere autenticación', 403);
+      }
+
+      if (!guestOrderKey || order.idempotencyKey !== guestOrderKey) {
+        console.warn('[generate-invoice] Guest access rejected (invalid key)', {
+          orderId,
+          providedKey: guestOrderKey ? '[present]' : '[missing]',
+        });
+        return createErrorResponse('Forbidden - Clave de pedido inválida', 403);
+      }
     }
 
     // Asegurar número de factura

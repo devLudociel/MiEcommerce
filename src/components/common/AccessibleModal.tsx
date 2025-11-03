@@ -177,23 +177,19 @@ export default function AccessibleModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Icon */}
-        <div className={`mx-auto flex items-center justify-center h-12 w-12 rounded-full ${iconColors[type]} mb-4`}>
+        <div
+          className={`mx-auto flex items-center justify-center h-12 w-12 rounded-full ${iconColors[type]} mb-4`}
+        >
           {icons[type]}
         </div>
 
         {/* Title */}
-        <h2
-          id="modal-title"
-          className="text-xl font-bold text-gray-900 text-center mb-3"
-        >
+        <h2 id="modal-title" className="text-xl font-bold text-gray-900 text-center mb-3">
           {title}
         </h2>
 
         {/* Content */}
-        <div
-          id="modal-description"
-          className="text-gray-600 text-center mb-6"
-        >
+        <div id="modal-description" className="text-gray-600 text-center mb-6">
           {children}
         </div>
 
@@ -223,9 +219,7 @@ export default function AccessibleModal({
   );
 
   // Use portal to render at document.body level
-  return typeof document !== 'undefined'
-    ? createPortal(modalContent, document.body)
-    : null;
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
 }
 
 /**

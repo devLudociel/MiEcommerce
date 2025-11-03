@@ -129,7 +129,11 @@ export default function ProductsSection() {
     } catch (err) {
       console.error('❌ Error creando productos:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      showModal('error', 'Error al crear productos', `No se pudieron crear los productos de ejemplo: ${errorMessage}`);
+      showModal(
+        'error',
+        'Error al crear productos',
+        `No se pudieron crear los productos de ejemplo: ${errorMessage}`
+      );
     }
   };
 
@@ -219,54 +223,54 @@ export default function ProductsSection() {
             </p>
           </div>
 
-        {products.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 mb-4">No hay productos disponibles</p>
-            <button onClick={createSampleProducts} className="btn btn-primary">
-              Crear Productos de Ejemplo
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-auto-fit">
-            {products.map((product) => (
-              <div key={product.id} className="card card-product">
-                <img
-                  src={product.images?.[0] || FALLBACK_IMG_400x300}
-                  alt={product.name || 'Producto'}
-                  onError={(e) => {
-                    const img = e.currentTarget as HTMLImageElement;
-                    // Evita bucles: elimina el onerror y fija un placeholder confiable
-                    img.onerror = null;
-                    img.src = FALLBACK_IMG_400x300;
-                  }}
-                />
-                <div className="card-content">
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">
-                    {product.name || 'Sin nombre'}
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    {product.description
-                      ? product.description.length > 100
-                        ? product.description.substring(0, 100) + '...'
-                        : product.description
-                      : 'Sin descripción'}
-                  </p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-2xl font-bold text-brand-600">
-                      €{product.basePrice || 0}
-                    </span>
-                    <button className="btn btn-primary btn-sm">Personalizar</button>
-                  </div>
-                  <div className="mt-3">
-                    <span className="tag">{product.category || 'Sin categoría'}</span>
+          {products.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 mb-4">No hay productos disponibles</p>
+              <button onClick={createSampleProducts} className="btn btn-primary">
+                Crear Productos de Ejemplo
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-auto-fit">
+              {products.map((product) => (
+                <div key={product.id} className="card card-product">
+                  <img
+                    src={product.images?.[0] || FALLBACK_IMG_400x300}
+                    alt={product.name || 'Producto'}
+                    onError={(e) => {
+                      const img = e.currentTarget as HTMLImageElement;
+                      // Evita bucles: elimina el onerror y fija un placeholder confiable
+                      img.onerror = null;
+                      img.src = FALLBACK_IMG_400x300;
+                    }}
+                  />
+                  <div className="card-content">
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">
+                      {product.name || 'Sin nombre'}
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      {product.description
+                        ? product.description.length > 100
+                          ? product.description.substring(0, 100) + '...'
+                          : product.description
+                        : 'Sin descripción'}
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-2xl font-bold text-brand-600">
+                        €{product.basePrice || 0}
+                      </span>
+                      <button className="btn btn-primary btn-sm">Personalizar</button>
+                    </div>
+                    <div className="mt-3">
+                      <span className="tag">{product.category || 'Sin categoría'}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
     </>
   );
 }

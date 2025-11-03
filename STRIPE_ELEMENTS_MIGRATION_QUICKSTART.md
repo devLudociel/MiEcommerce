@@ -216,8 +216,6 @@ Después de hacer los cambios:
 
 1. **Verificar que compile**:
 
-
-
 2. **Probar flujo completo**:
    - Agregar producto al carrito
    - Ir a checkout
