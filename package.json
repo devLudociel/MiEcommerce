@@ -53,6 +53,7 @@
     "@typescript-eslint/parser": "^8.16.0",
     "@vitest/coverage-v8": "^4.0.4",
     "astro-eslint-parser": "^1.0.3",
+    "dotenv": "^17.2.3",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-astro": "^1.2.4",
