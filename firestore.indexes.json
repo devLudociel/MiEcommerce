@@ -19,16 +19,6 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "idempotencyKey",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "orders",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
           "fieldPath": "userId",
           "order": "ASCENDING"
         },
