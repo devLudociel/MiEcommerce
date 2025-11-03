@@ -2,8 +2,13 @@
 // src/pages/guia-materiales.astro
 import BaseLayout from '../layouts/BaseLayout.astro';
 import GuiaMaterialesComponent from '../components/pages/GuiaMaterialesComponent.tsx';
+
+// SEO Optimizado
+const title = 'Guía de Materiales - Elige la Mejor Opción para tu Proyecto | ImprimeArte';
+const description = 'Descubre nuestros materiales: algodón, poliéster, cerámica, resina, PLA. Conoce ventajas, usos y técnicas compatibles. Asesoramiento profesional para elegir el material perfecto en Los Llanos de Aridane.';
+const ogImage = '/og-guia-materiales.jpg';
 ---
 
-<BaseLayout title="Guía de Materiales - ImprimeArte">
+<BaseLayout title={title} description={description} ogImage={ogImage}>
   <GuiaMaterialesComponent client:load />
 </BaseLayout>

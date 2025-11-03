@@ -4,9 +4,14 @@ import HeroCarousel from '../components/sections/HeroCarousel.tsx';
 import FooterComponent from '../components/sections/Footer.tsx';
 import ProductGrid from '../components/sections/ProductGrid.tsx';
 import SpecialOffers from '../components/sections/SpecialOffert.tsx';
+
+// SEO Optimizado
+const title = 'ImprimeArte - Estampado, Bordado e Impresión 3D Personalizada';
+const description = 'Servicios profesionales de personalización en Los Llanos de Aridane: estampado textil, bordado, impresión 3D en resina y filamento, corte láser, sublimación. Calidad premium, precios desde €2. ¡Envío a toda Canarias!';
+const ogImage = '/og-home.jpg';
 ---
 
-<BaseLayout title="PersonalizaTodo - Tu idea, nuestra realidad">
+<BaseLayout title={title} description={description} ogImage={ogImage}>
   <!-- Hero Section -->
 
   <HeroCarousel client:load />

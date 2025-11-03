@@ -2,8 +2,13 @@
 // src/pages/faq.astro
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FAQComponent from '../components/pages/FAQComponent.tsx';
+
+// SEO Optimizado
+const title = 'Preguntas Frecuentes - Resuelve tus Dudas | ImprimeArte';
+const description = 'Respuestas a preguntas frecuentes sobre personalización: tiempos de entrega, métodos de pago, diseños, envíos, devoluciones. Todo lo que necesitas saber sobre nuestros servicios en Canarias.';
+const ogImage = '/og-faq.jpg';
 ---
 
-<BaseLayout title="Preguntas Frecuentes - ImprimeArte">
+<BaseLayout title={title} description={description} ogImage={ogImage}>
   <FAQComponent client:load />
 </BaseLayout>

@@ -2,8 +2,13 @@
 // src/pages/como-personalizar.astro
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ComoPersonalizarComponent from '../components/pages/ComoPersonalizarComponent.tsx';
+
+// SEO Optimizado
+const title = 'Cómo Personalizar tus Productos - Guía Paso a Paso | ImprimeArte';
+const description = 'Aprende a personalizar tus productos: sube diseños, elige tamaños, colores y técnicas (DTF, sublimación, bordado). Guía completa con consejos profesionales. Resultado garantizado en Los Llanos de Aridane.';
+const ogImage = '/og-como-personalizar.jpg';
 ---
 
-<BaseLayout title="Cómo Personalizar - ImprimeArte">
+<BaseLayout title={title} description={description} ogImage={ogImage}>
   <ComoPersonalizarComponent client:load />
 </BaseLayout>

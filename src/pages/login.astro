@@ -1,8 +1,13 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import LoginPanel from '../components/auth/LoginPanel.tsx';
+
+// SEO Optimizado
+const title = 'Iniciar Sesión - Accede a tu Cuenta | ImprimeArte';
+const description = 'Accede a tu cuenta de ImprimeArte. Gestiona tus pedidos, guarda diseños, accede a ofertas exclusivas. Registro rápido y seguro. Tienda de personalización en Los Llanos de Aridane, Canarias.';
+const ogImage = '/og-login.jpg';
 ---
 
-<BaseLayout title="Iniciar sesión">
+<BaseLayout title={title} description={description} ogImage={ogImage}>
   <LoginPanel client:load />
 </BaseLayout>

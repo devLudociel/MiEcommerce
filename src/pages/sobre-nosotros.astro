@@ -2,8 +2,13 @@
 // src/pages/sobre-nosotros.astro
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SobreNosotrosComponent from '../components/pages/SobreNosotrosComponent.tsx';
+
+// SEO Optimizado
+const title = 'Sobre Nosotros - Tu Taller de Personalización de Confianza | ImprimeArte';
+const description = 'Conoce ImprimeArte: más de X años personalizando productos en Los Llanos de Aridane. Equipo profesional, tecnología de última generación. Estampado, bordado, impresión 3D. Compromiso con la calidad en Canarias.';
+const ogImage = '/og-sobre-nosotros.jpg';
 ---
 
-<BaseLayout title="Sobre Nosotros - ImprimeArte">
+<BaseLayout title={title} description={description} ogImage={ogImage}>
   <SobreNosotrosComponent client:load />
 </BaseLayout>

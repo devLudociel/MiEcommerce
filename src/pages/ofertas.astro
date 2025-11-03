@@ -1,8 +1,13 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+// SEO Optimizado
+const title = 'Ofertas y Promociones - Descuentos hasta -30€ | ImprimeArte';
+const description = '¡Aprovecha nuestras ofertas! Descuentos hasta -30€ con código PROMO. Tarjetas de visita, ropa personalizada, tazas sublimadas y más. Ofertas válidas hasta 31 diciembre 2025. Envío a toda Canarias.';
+const ogImage = '/og-ofertas.jpg';
 ---
 
-<BaseLayout title="Ofertas y Promociones - ImprimeArte">
+<BaseLayout title={title} description={description} ogImage={ogImage}>
   <div class="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 pt-8 pb-16 px-4">
     <div class="max-w-7xl mx-auto">
       {/* Hero Section */}

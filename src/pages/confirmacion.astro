@@ -2,8 +2,12 @@
 // src/pages/confirmacion.astro
 import BaseLayout from '../layouts/BaseLayout.astro';
 import OrderConfirmation from '../components/pages/OrderConfirmation';
+
+// SEO Optimizado
+const title = '¡Pedido Confirmado! - Gracias por tu compra | ImprimeArte';
+const description = 'Tu pedido ha sido confirmado y está siendo procesado. Recibirás un email con los detalles y el seguimiento de tu envío. Descarga tu factura.';
 ---
 
-<BaseLayout title="Pedido Confirmado">
+<BaseLayout title={title} description={description}>
   <OrderConfirmation client:load />
 </BaseLayout>

@@ -2,8 +2,13 @@
 // src/pages/contacto.astro
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ContactoComponent from '../components/pages/ContactoComponent.tsx';
+
+// SEO Optimizado
+const title = 'Contacto - Solicita tu Presupuesto Personalizado | ImprimeArte';
+const description = 'Contáctanos para tu proyecto de personalización en Los Llanos de Aridane. Atención personalizada, presupuestos sin compromiso. WhatsApp, email o visítanos. Respondemos en menos de 24h. Envío a toda Canarias.';
+const ogImage = '/og-contacto.jpg';
 ---
 
-<BaseLayout title="Contacto - ImprimeArte">
+<BaseLayout title={title} description={description} ogImage={ogImage}>
   <ContactoComponent client:load />
 </BaseLayout>

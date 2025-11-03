@@ -1,8 +1,13 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProductDetailRouter from '../components/sections/ProductDetailRouter.tsx';
+
+// SEO Optimizado
+const title = 'Detalles del Producto - Personalización Premium | ImprimeArte';
+const description = 'Descubre nuestros productos personalizables: estampado DTF, bordado, sublimación, impresión 3D. Calidad profesional en Los Llanos de Aridane. Envío a toda Canarias. Precios competitivos y acabados premium.';
+const ogImage = '/og-producto.jpg';
 ---
 
-<BaseLayout title="Producto">
+<BaseLayout title={title} description={description} ogImage={ogImage}>
   <ProductDetailRouter client:load />
 </BaseLayout>

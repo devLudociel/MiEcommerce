@@ -2,8 +2,13 @@
 // src/pages/terminos-condiciones.astro
 import BaseLayout from '../layouts/BaseLayout.astro';
 import TerminosCondicionesComponent from '../components/pages/TerminosCondicionesComponent.tsx';
+
+// SEO Optimizado
+const title = 'Términos y Condiciones de Uso | ImprimeArte';
+const description = 'Términos y condiciones de compra en ImprimeArte. Derechos, obligaciones, garantías y procedimientos. Información legal completa para tu tranquilidad. Servicios de personalización en Canarias.';
+const ogImage = '/og-terminos.jpg';
 ---
 
-<BaseLayout title="Términos y Condiciones - ImprimeArte">
+<BaseLayout title={title} description={description} ogImage={ogImage}>
   <TerminosCondicionesComponent client:load />
 </BaseLayout>

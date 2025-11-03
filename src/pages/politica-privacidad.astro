@@ -2,8 +2,13 @@
 // src/pages/politica-privacidad.astro
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PoliticaPrivacidadComponent from '../components/pages/PoliticaPrivacidadComponent.tsx';
+
+// SEO Optimizado
+const title = 'Política de Privacidad - Protegemos tus Datos | ImprimeArte';
+const description = 'Política de privacidad conforme RGPD. Conoce cómo protegemos y gestionamos tus datos personales. Transparencia total en el tratamiento de información. ImprimeArte, Los Llanos de Aridane.';
+const ogImage = '/og-privacidad.jpg';
 ---
 
-<BaseLayout title="Política de Privacidad - ImprimeArte">
+<BaseLayout title={title} description={description} ogImage={ogImage}>
   <PoliticaPrivacidadComponent client:load />
 </BaseLayout>

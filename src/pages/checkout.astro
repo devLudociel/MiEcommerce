@@ -1,8 +1,12 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CheckoutWithStripe from '../components/pages/CheckoutWithStripe';
+
+// SEO Optimizado
+const title = 'Finalizar Compra - Pago Seguro | ImprimeArte';
+const description = 'Completa tu pedido de forma segura. Pago con tarjeta, PayPal o transferencia. Envío rápido a toda Canarias. Compra 100% protegida y cifrada.';
 ---
 
-<BaseLayout title="Checkout - Finalizar Compra">
+<BaseLayout title={title} description={description}>
   <CheckoutWithStripe client:load />
 </BaseLayout>

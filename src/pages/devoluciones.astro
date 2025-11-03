@@ -2,8 +2,13 @@
 // src/pages/devoluciones.astro
 import BaseLayout from '../layouts/BaseLayout.astro';
 import DevolucionesComponent from '../components/pages/DevolucionesComponent.tsx';
+
+// SEO Optimizado
+const title = 'Política de Devoluciones - Compra con Confianza | ImprimeArte';
+const description = 'Política de devoluciones clara y transparente. 14 días para cambios y devoluciones. Reembolso completo garantizado. Conoce tus derechos como consumidor. Servicio de atención al cliente en Los Llanos de Aridane.';
+const ogImage = '/og-devoluciones.jpg';
 ---
 
-<BaseLayout title="Política de Devoluciones - ImprimeArte">
+<BaseLayout title={title} description={description} ogImage={ogImage}>
   <DevolucionesComponent client:load />
 </BaseLayout>
