@@ -66,6 +66,7 @@ export default function Checkout() {
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState<CheckoutStep>(1);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   // Coupon state
   const [couponCode, setCouponCode] = useState('');
@@ -127,11 +128,23 @@ export default function Checkout() {
 
   // Payment validation removed - Stripe Elements validates card data securely
 
+  // Initialize and wait for cart to load from Firestore before redirecting
   useEffect(() => {
-    if (cart.items.length === 0 && typeof window !== 'undefined') {
+    // Give time for cart to sync from Firestore (especially for authenticated users)
+    const timer = setTimeout(() => {
+      setIsInitializing(false);
+    }, 1000); // Wait 1 second for Firestore sync
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Redirect to home if cart is empty (after initialization)
+  useEffect(() => {
+    if (!isInitializing && cart.items.length === 0 && typeof window !== 'undefined') {
+      logger.warn('[Checkout] Cart is empty, redirecting to home');
       window.location.href = '/';
     }
-  }, [cart.items.length]);
+  }, [cart.items.length, isInitializing]);
 
   // Load wallet balance when user is authenticated
   useEffect(() => {
@@ -594,6 +607,18 @@ export default function Checkout() {
   };
   if (cart.items.length === 0) {
     return null;
+  }
+
+  // Show loading while cart is initializing from Firestore
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-8 mt-32 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Cargando carrito...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
