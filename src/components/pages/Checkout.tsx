@@ -1235,6 +1235,7 @@ export default function Checkout() {
                   </div>
 
                   <button
+                    data-testid="checkout-continue-to-payment"
                     onClick={handleNextStep}
                     className="w-full py-4 bg-gradient-rainbow text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
                   >
@@ -1278,6 +1279,7 @@ export default function Checkout() {
                     ].map((option) => (
                       <button
                         key={option.method}
+                        data-testid={`payment-method-${option.method}`}
                         onClick={() =>
                           setPaymentInfo({ ...paymentInfo, method: option.method as any })
                         }
@@ -1432,12 +1434,14 @@ export default function Checkout() {
 
                   <div className="flex gap-4">
                     <button
+                      data-testid="checkout-back"
                       onClick={handlePreviousStep}
                       className="flex-1 py-4 bg-gray-200 text-gray-700 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all duration-300"
                     >
                       ← Volver
                     </button>
                     <button
+                      data-testid="checkout-place-order"
                       onClick={handlePlaceOrder}
                       disabled={!acceptTerms || isProcessing}
                       className={`flex-1 py-4 rounded-2xl font-black text-lg transition-all duration-300 ${!acceptTerms || isProcessing ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-gradient-rainbow text-white shadow-lg hover:shadow-2xl transform hover:scale-105'}`}
@@ -1518,6 +1522,7 @@ export default function Checkout() {
                         disabled={validatingCoupon}
                       />
                       <button
+                        data-testid="checkout-apply-coupon"
                         onClick={handleApplyCoupon}
                         disabled={validatingCoupon || !couponCode.trim()}
                         className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1546,6 +1551,7 @@ export default function Checkout() {
                         <p className="text-sm text-green-700">{appliedCoupon.description}</p>
                       </div>
                       <button
+                        data-testid="checkout-remove-coupon"
                         onClick={handleRemoveCoupon}
                         className="text-red-500 hover:text-red-700 font-bold text-sm ml-2"
                       >

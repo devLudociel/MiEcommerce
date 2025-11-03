@@ -525,6 +525,7 @@ export default function ProductDetail({ id, slug }: Props) {
                 {product.images.map((image, i) => (
                   <button
                     key={image.id}
+                    data-testid={`product-image-${i}`}
                     onClick={() => setSelectedImage(i)}
                     className={`relative rounded-xl overflow-hidden aspect-square group ${i === selectedImage ? 'ring-4 ring-cyan-500 shadow-cyan' : 'ring-2 ring-gray-200 hover:ring-cyan-300'} transition-all duration-300 hover:scale-105`}
                   >
@@ -689,6 +690,7 @@ export default function ProductDetail({ id, slug }: Props) {
                   {product.variants.map((variant, i) => (
                     <button
                       key={variant.id}
+                      data-testid={`product-variant-${i}`}
                       onClick={() => setSelectedVariant(i)}
                       className={`relative p-4 rounded-xl border-2 text-left transition-all duration-300 ${i === selectedVariant ? 'border-cyan-500 bg-cyan-50 shadow-cyan' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'} group hover:scale-105 hover:-translate-y-1`}
                     >
@@ -724,6 +726,7 @@ export default function ProductDetail({ id, slug }: Props) {
                   <div className="flex items-center gap-4">
                     <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
                       <button
+                        data-testid="product-decrease-quantity"
                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
                         className="p-3 hover:bg-gray-100 transition-colors text-gray-600 hover:text-cyan-500"
                       >
@@ -745,6 +748,7 @@ export default function ProductDetail({ id, slug }: Props) {
                         {quantity}
                       </div>
                       <button
+                        data-testid="product-increase-quantity"
                         onClick={() => setQuantity(Math.min(currentVariant.stock, quantity + 1))}
                         className="p-3 hover:bg-gray-100 transition-colors text-gray-600 hover:text-cyan-500"
                       >
@@ -773,6 +777,7 @@ export default function ProductDetail({ id, slug }: Props) {
                   {/* Botón Personalizar - PRINCIPAL */}
                   {product.customizable && (
                     <button
+                      data-testid="product-customize"
                       onClick={handleCustomize}
                       className="w-full py-4 px-8 rounded-2xl font-black text-lg bg-gradient-to-r from-purple-600 via-magenta-600 to-pink-600 text-white shadow-lg hover:shadow-2xl transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group"
                     >
@@ -786,6 +791,7 @@ export default function ProductDetail({ id, slug }: Props) {
 
                   {/* Botón Agregar al Carrito */}
                   <button
+                    data-testid="product-add-to-cart"
                     onClick={handleAddToCart}
                     disabled={isAddingToCart || currentVariant.stock === 0}
                     className={`w-full py-4 px-8 rounded-2xl font-black text-lg transition-all duration-300 ${currentVariant.stock > 0 ? 'bg-gradient-rainbow text-white shadow-lg hover:shadow-2xl transform hover:scale-105 hover:-translate-y-1' : 'bg-gray-400 text-gray-600 cursor-not-allowed'} relative overflow-hidden group`}
@@ -807,6 +813,7 @@ export default function ProductDetail({ id, slug }: Props) {
 
                   <div className="grid grid-cols-2 gap-4">
                     <button
+                      data-testid="product-add-to-wishlist"
                       onClick={() => {
                         if (uiProduct)
                           toggleWishlist({
@@ -826,6 +833,7 @@ export default function ProductDetail({ id, slug }: Props) {
                     </button>
 
                     <button
+                      data-testid="product-share"
                       onClick={handleShare}
                       className="py-3 px-6 rounded-xl font-bold bg-white border-2 border-gray-200 text-gray-700 hover:border-purple-500 hover:text-purple-500 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
                     >
@@ -836,6 +844,7 @@ export default function ProductDetail({ id, slug }: Props) {
 
                   {/* Botón Comprar Ahora */}
                   <button
+                    data-testid="product-buy-now"
                     onClick={handleBuyNow}
                     disabled={currentVariant.stock === 0}
                     className={`w-full py-4 px-8 rounded-2xl font-black text-lg transition-all duration-300 ${currentVariant.stock > 0 ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-purple hover:shadow-2xl transform hover:scale-105' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}

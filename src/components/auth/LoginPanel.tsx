@@ -310,13 +310,19 @@ export default function LoginPanel() {
                 </p>
                 <div className="flex" style={{ gap: 12 }}>
                   <button
+                    data-testid="login-continue"
                     className="btn btn-primary"
                     onClick={redirectAfterLogin}
                     disabled={loading}
                   >
                     Continuar
                   </button>
-                  <button className="btn btn-ghost" onClick={changeAccount} disabled={loading}>
+                  <button
+                    data-testid="login-change-account"
+                    className="btn btn-ghost"
+                    onClick={changeAccount}
+                    disabled={loading}
+                  >
                     Cambiar de cuenta
                   </button>
                 </div>
@@ -325,13 +331,19 @@ export default function LoginPanel() {
               <div className="space-y-4">
                 <div className="grid gap-3">
                   <button
+                    data-testid="login-google"
                     className="btn btn-primary"
                     onClick={() => signInWithGoogle(true)}
                     disabled={loading}
                   >
                     {loading ? 'Conectando...' : 'Continuar con Google'}
                   </button>
-                  <button className="btn btn-ghost" onClick={signInWithGithub} disabled={loading}>
+                  <button
+                    data-testid="login-github"
+                    className="btn btn-ghost"
+                    onClick={signInWithGithub}
+                    disabled={loading}
+                  >
                     {loading ? 'Conectando...' : 'Continuar con GitHub'}
                   </button>
                 </div>
@@ -341,6 +353,7 @@ export default function LoginPanel() {
                 <div className="space-y-3">
                   <div className="grid gap-2">
                     <input
+                      data-testid="login-email"
                       type="email"
                       className="input"
                       placeholder="tu@email.com"
@@ -349,6 +362,7 @@ export default function LoginPanel() {
                     />
                     {mode !== 'magic' && (
                       <input
+                        data-testid="login-password"
                         type="password"
                         className="input"
                         placeholder="••••••••"
@@ -361,6 +375,7 @@ export default function LoginPanel() {
                   {mode === 'magic' ? (
                     <div className="grid gap-2">
                       <button
+                        data-testid="login-magic-link"
                         className="btn btn-primary"
                         onClick={handleMagicLink}
                         disabled={loading}
@@ -368,6 +383,7 @@ export default function LoginPanel() {
                         Enviar enlace de acceso
                       </button>
                       <button
+                        data-testid="login-use-password"
                         className="btn btn-ghost"
                         onClick={() => setMode('login')}
                         disabled={loading}
@@ -378,6 +394,7 @@ export default function LoginPanel() {
                   ) : (
                     <div className="grid gap-2">
                       <button
+                        data-testid="login-submit"
                         className="btn btn-primary"
                         onClick={handleEmailPasswordLogin}
                         disabled={loading}
@@ -386,16 +403,22 @@ export default function LoginPanel() {
                       </button>
                       <div className="flex justify-between text-sm">
                         <button
+                          data-testid="login-toggle-mode"
                           className="link"
                           onClick={() => setMode(mode === 'register' ? 'login' : 'register')}
                         >
                           {mode === 'register' ? 'Ya tengo cuenta' : 'Crear una cuenta'}
                         </button>
-                        <button className="link" onClick={() => setMode('magic')}>
+                        <button
+                          data-testid="login-switch-to-magic"
+                          className="link"
+                          onClick={() => setMode('magic')}
+                        >
                           Acceder con enlace
                         </button>
                       </div>
                       <button
+                        data-testid="login-forgot-password"
                         className="btn btn-ghost"
                         onClick={handleForgotPassword}
                         disabled={loading}
