@@ -4,8 +4,7 @@ import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { rateLimit } from '../../lib/rateLimit';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
-
-const CASHBACK_PERCENTAGE = 0.05; // 5% de cashback
+import { finalizeOrder } from '../../lib/orders/finalizeOrder';
 
 export const POST: APIRoute = async ({ request }) => {
   // SECURITY: CSRF protection
@@ -145,224 +144,29 @@ export const POST: APIRoute = async ({ request }) => {
 
     console.log('API save-order: Pedido guardado con ID:', docRef.id);
 
-    // Procesar wallet debit si se usó saldo (nueva estructura del checkout)
-    // SECURITY FIX: Use Firestore transaction to prevent race conditions
-    if (
-      orderData.usedWallet &&
-      orderData.walletDiscount &&
-      orderData.userId &&
-      orderData.userId !== 'guest'
-    ) {
+    const paymentMethod = String(orderData.paymentMethod || 'card');
+    const orderStatus = String(orderData.status || 'pending');
+    const shouldDeferPostPaymentActions =
+      paymentMethod === 'card' &&
+      (orderStatus === 'pending' || String(orderData.paymentStatus || '').toLowerCase() === 'pending');
+
+    if (shouldDeferPostPaymentActions) {
+      console.log(
+        `[save-order] Post-payment actions deferred for order ${docRef.id} until payment confirmation`
+      );
+    } else {
       try {
-        console.log('[save-order] Processing wallet debit...');
-        const userId: string = String(orderData.userId);
-        const walletAmount: number = Number(orderData.walletDiscount) || 0;
-
-        if (walletAmount > 0) {
-          const walletRef = adminDb.collection('wallets').doc(userId);
-
-          // Use transaction to prevent double-spend attacks
-          await adminDb.runTransaction(async (transaction) => {
-            const snap = await transaction.get(walletRef);
-
-            if (!snap.exists) {
-              console.warn('[save-order] Wallet document does not exist for user, creating...');
-              throw new Error('Wallet no encontrado. Por favor, recarga la página.');
-            }
-
-            const current = snap.data() as any;
-            const currentBalance = Number(current.balance || 0);
-
-            // Ensure we don't go negative
-            if (currentBalance < walletAmount) {
-              console.error(
-                `[save-order] Insufficient wallet balance. Current: €${currentBalance}, Required: €${walletAmount}`
-              );
-              throw new Error('Saldo insuficiente en el monedero');
-            }
-
-            const newBalance = currentBalance - walletAmount;
-
-            transaction.set(
-              walletRef,
-              {
-                userId,
-                balance: newBalance,
-                totalSpent: Number(current.totalSpent || 0) + walletAmount,
-                totalEarned: Number(current.totalEarned || 0),
-                updatedAt: FieldValue.serverTimestamp(),
-              },
-              { merge: true }
-            );
-          });
-
-          // Transaction succeeded, now add transaction record
-          await adminDb.collection('wallet_transactions').add({
-            userId,
-            type: 'debit',
-            amount: walletAmount,
-            description: `Pago de pedido #${docRef.id}`,
-            orderId: docRef.id,
-            createdAt: FieldValue.serverTimestamp(),
-          });
-
-          console.log(`[save-order] Wallet debited (atomic): €${walletAmount.toFixed(2)}`);
-        }
-      } catch (walletError) {
-        console.error('[save-order] Error processing wallet debit:', walletError);
-        // This IS critical - throw to prevent order from completing
-        throw new Error(
-          `Error al procesar el pago con monedero: ${(walletError as Error).message}`
-        );
-      }
-    }
-
-    // Procesar cupón si se usó (actualizado con nueva estructura)
-    // SECURITY FIX: Use Firestore transaction to prevent exceeding usage limits
-    if (
-      orderData.couponCode &&
-      orderData.couponId &&
-      orderData.userId &&
-      orderData.userId !== 'guest'
-    ) {
-      try {
-        console.log('[save-order] Processing coupon usage...');
-        const couponId: string = String(orderData.couponId);
-        const couponCode: string = String(orderData.couponCode);
-        const discountAmount: number = Number(orderData.couponDiscount) || 0;
-        const userId: string = String(orderData.userId);
-
-        const couponRef = adminDb.collection('coupons').doc(couponId);
-
-        // Use transaction to enforce usage limits atomically
-        await adminDb.runTransaction(async (transaction) => {
-          const couponSnap = await transaction.get(couponRef);
-
-          if (!couponSnap.exists) {
-            throw new Error('Cupón no encontrado');
-          }
-
-          const couponData = couponSnap.data() as any;
-          const currentUses = Number(couponData.currentUses || 0);
-          const maxUses = Number(couponData.maxUses || 0);
-
-          // Check if coupon has reached usage limit
-          if (maxUses > 0 && currentUses >= maxUses) {
-            console.error(`[save-order] Coupon usage limit exceeded: ${currentUses}/${maxUses}`);
-            throw new Error('Este cupón ha alcanzado su límite de usos');
-          }
-
-          transaction.set(
-            couponRef,
-            {
-              timesUsed: FieldValue.increment(1),
-              currentUses: FieldValue.increment(1),
-              updatedAt: FieldValue.serverTimestamp(),
-            },
-            { merge: true }
-          );
-        });
-
-        // Transaction succeeded, now add usage record
-        await adminDb.collection('coupon_usage').add({
-          couponId,
-          couponCode,
-          userId,
+        await finalizeOrder({
+          db: adminDb,
           orderId: docRef.id,
-          discountAmount,
-          createdAt: FieldValue.serverTimestamp(),
-          usedAt: FieldValue.serverTimestamp(),
+          orderData: { ...orderData, items: sanitizedItems },
+          requestUrl: request.url,
         });
-
-        console.log(
-          `[save-order] Coupon processed (atomic): ${couponCode} (-€${discountAmount.toFixed(2)})`
-        );
-      } catch (couponError) {
-        console.error('[save-order] Error processing coupon:', couponError);
-        // This IS critical - throw to prevent order from completing with invalid discount
-        throw new Error(`Error al procesar el cupón: ${(couponError as Error).message}`);
+      } catch (finalizeError) {
+        console.error('[save-order] Error running post-payment actions. Rolling back order.', finalizeError);
+        await docRef.delete();
+        throw finalizeError;
       }
-    }
-
-    // Agregar cashback al wallet (5% del subtotal después de descuentos, solo para usuarios autenticados)
-    // SECURITY FIX: Use Firestore transaction to prevent race conditions
-    if (orderData.userId && orderData.userId !== 'guest' && orderData.subtotal) {
-      try {
-        console.log('[save-order] Calculating cashback...');
-
-        // Calculate cashback on subtotal after coupon discount, before shipping and IVA
-        const subtotal = Number(orderData.subtotal) || 0;
-        const couponDiscount = Number(orderData.couponDiscount) || 0;
-        const subtotalAfterDiscount = subtotal - couponDiscount;
-        const cashbackAmount = subtotalAfterDiscount * CASHBACK_PERCENTAGE;
-
-        if (cashbackAmount > 0) {
-          const userId: string = String(orderData.userId);
-          const walletRef = adminDb.collection('wallets').doc(userId);
-
-          // Use transaction to prevent duplicate cashback on concurrent orders
-          await adminDb.runTransaction(async (transaction) => {
-            const snap = await transaction.get(walletRef);
-            const current = snap.exists
-              ? (snap.data() as any)
-              : { balance: 0, totalEarned: 0, totalSpent: 0, userId };
-            const newBalance = Number(current.balance || 0) + cashbackAmount;
-
-            transaction.set(
-              walletRef,
-              {
-                userId,
-                balance: newBalance,
-                totalEarned: Number(current.totalEarned || 0) + cashbackAmount,
-                totalSpent: Number(current.totalSpent || 0),
-                updatedAt: FieldValue.serverTimestamp(),
-                ...(snap.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
-              },
-              { merge: true }
-            );
-          });
-
-          // Transaction succeeded, now add transaction record
-          await adminDb.collection('wallet_transactions').add({
-            userId,
-            type: 'cashback',
-            amount: cashbackAmount,
-            description: `Cashback 5% del pedido #${docRef.id}`,
-            orderId: docRef.id,
-            createdAt: FieldValue.serverTimestamp(),
-          });
-
-          console.log(
-            `[save-order] Cashback added (atomic): €${cashbackAmount.toFixed(2)} (5% of €${subtotalAfterDiscount.toFixed(2)})`
-          );
-        }
-      } catch (cashbackError) {
-        console.error('[save-order] Error adding cashback:', cashbackError);
-        // Don't throw - cashback failure shouldn't block order
-      }
-    }
-
-    // Enviar email de confirmación automáticamente
-    try {
-      console.log('API save-order: Enviando email de confirmación...');
-
-      const emailResponse = await fetch(new URL('/api/send-email', request.url).toString(), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId: docRef.id,
-          type: 'confirmation',
-        }),
-      });
-
-      if (emailResponse.ok) {
-        console.log('API save-order: Email de confirmación enviado');
-      } else {
-        console.error('API save-order: Error enviando email (no crítico)');
-      }
-    } catch (emailError) {
-      console.error('API save-order: Error enviando email (no crítico):', emailError);
-      // No falla la operación si el email falla
     }
 
     return new Response(

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useStore } from '@nanostores/react';
-import { cartStore, clearCart } from '../../store/cartStore';
+import { cartStore, cartLoadingStore, clearCart } from '../../store/cartStore';
 import type { CartItem } from '../../store/cartStore';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { shippingInfoSchema } from '../../lib/validation/schemas';
@@ -63,10 +63,10 @@ const FREE_SHIPPING_THRESHOLD = 50;
 
 export default function Checkout() {
   const cart = useStore(cartStore);
-  const { user } = useAuth();
+  const isCartSyncing = useStore(cartLoadingStore);
+  const { user, loading: authLoading } = useAuth();
   const [currentStep, setCurrentStep] = useState<CheckoutStep>(1);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
 
   // Coupon state
   const [couponCode, setCouponCode] = useState('');
@@ -128,23 +128,18 @@ export default function Checkout() {
 
   // Payment validation removed - Stripe Elements validates card data securely
 
-  // Initialize and wait for cart to load from Firestore before redirecting
-  useEffect(() => {
-    // Give time for cart to sync from Firestore (especially for authenticated users)
-    const timer = setTimeout(() => {
-      setIsInitializing(false);
-    }, 1000); // Wait 1 second for Firestore sync
-
-    return () => clearTimeout(timer);
-  }, []);
-
   // Redirect to home if cart is empty (after initialization)
   useEffect(() => {
-    if (!isInitializing && cart.items.length === 0 && typeof window !== 'undefined') {
+    if (
+      !authLoading &&
+      !isCartSyncing &&
+      cart.items.length === 0 &&
+      typeof window !== 'undefined'
+    ) {
       logger.warn('[Checkout] Cart is empty, redirecting to home');
       window.location.href = '/';
     }
-  }, [cart.items.length, isInitializing]);
+  }, [authLoading, cart.items.length, isCartSyncing]);
 
   // Load wallet balance when user is authenticated
   useEffect(() => {
@@ -371,6 +366,42 @@ export default function Checkout() {
     },
   });
 
+  const cancelPendingOrder = useCallback(async (orderIdToCancel: string, key: string) => {
+    if (!orderIdToCancel || !key) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/cancel-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({
+          orderId: orderIdToCancel,
+          idempotencyKey: key,
+          reason: 'payment_failed',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.warn('[Checkout] Failed to auto-cancel pending order', {
+          orderId: orderIdToCancel,
+          status: response.status,
+          body: errorText,
+        });
+      } else {
+        logger.info('[Checkout] Pending order cancelled after payment failure', {
+          orderId: orderIdToCancel,
+        });
+      }
+    } catch (error) {
+      logger.error('[Checkout] Error cancelling pending order', error);
+    }
+  }, []);
+
   const validateStep1 = async (): Promise<boolean> => {
     logger.debug('[Checkout] Validating step 1 (shipping info)', shippingInfo);
 
@@ -480,6 +511,9 @@ export default function Checkout() {
     logger.info('[Checkout] Placing order', { total, itemCount: cart.items.length });
     setIsProcessing(true);
 
+    let cleanupOrderId: string | null = null;
+    let cleanupIdempotency: string | null = null;
+
     try {
       const idempotencyKey = `order_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
       logger.info('[Checkout] Generated idempotency key:', idempotencyKey);
@@ -553,6 +587,8 @@ export default function Checkout() {
 
       const { orderId: newOrderId } = await response.json();
       setOrderId(newOrderId);
+      cleanupOrderId = newOrderId;
+      cleanupIdempotency = idempotencyKey;
 
       if (typeof window !== 'undefined') {
         const fallbackOrder = {
@@ -581,8 +617,13 @@ export default function Checkout() {
         const paymentResult = await securePayment.processPayment(newOrderId);
 
         if (!paymentResult.success) {
+          await cancelPendingOrder(newOrderId, idempotencyKey);
+          cleanupOrderId = null;
+          cleanupIdempotency = null;
           throw new Error(paymentResult.error || 'Error procesando pago');
         }
+        cleanupOrderId = null;
+        cleanupIdempotency = null;
         // El onSuccess del hook maneja el resto (notificación, carrito y redirección)
       } else {
         notify.success('¡Pedido realizado con éxito!');
@@ -601,16 +642,16 @@ export default function Checkout() {
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('checkout:lastOrder');
       }
+      if (cleanupOrderId && cleanupIdempotency) {
+        await cancelPendingOrder(cleanupOrderId, cleanupIdempotency);
+        cleanupOrderId = null;
+        cleanupIdempotency = null;
+      }
     } finally {
       setIsProcessing(false);
     }
   };
-  if (cart.items.length === 0) {
-    return null;
-  }
-
-  // Show loading while cart is initializing from Firestore
-  if (isInitializing) {
+  if (authLoading || isCartSyncing) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-8 mt-32 flex items-center justify-center">
         <div className="text-center">
@@ -619,6 +660,10 @@ export default function Checkout() {
         </div>
       </div>
     );
+  }
+
+  if (cart.items.length === 0) {
+    return null;
   }
 
   return (

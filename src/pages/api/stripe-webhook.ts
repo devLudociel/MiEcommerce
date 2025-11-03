@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { getAdminDb } from '../../lib/firebase-admin';
+import { finalizeOrder } from '../../lib/orders/finalizeOrder';
+import { FieldValue } from 'firebase-admin/firestore';
 
 // Importante: configurar STRIPE_WEBHOOK_SECRET en el entorno de producción
 const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
@@ -50,23 +52,58 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const orderRef = db.collection('orders').doc(orderId);
+    const orderSnap = await orderRef.get();
+
+    if (!orderSnap.exists) {
+      console.warn('[Stripe Webhook] Order not found for event', orderId, type);
+      await evtRef.set({
+        processedAt: new Date(),
+        type,
+        orderId,
+        note: 'order_not_found',
+      });
+      return new Response(JSON.stringify({ received: true }), { status: 200 });
+    }
+
+    const orderData = orderSnap.data() || {};
 
     if (type === 'payment_intent.succeeded') {
+      try {
+        await finalizeOrder({
+          db,
+          orderId,
+          orderData,
+          requestUrl: request.url,
+        });
+      } catch (finalizeError) {
+        console.error('[Stripe Webhook] Error applying post-payment actions:', finalizeError);
+        return new Response(JSON.stringify({ error: 'Post-payment actions failed' }), {
+          status: 500,
+        });
+      }
+
       await orderRef.set(
         {
           paymentStatus: 'paid',
+          status: orderData?.status === 'pending' ? 'processing' : orderData?.status || 'processing',
           updatedAt: new Date(),
         },
         { merge: true }
       );
     } else if (type === 'payment_intent.payment_failed' || type === 'charge.failed') {
-      await orderRef.set(
-        {
-          paymentStatus: 'failed',
-          updatedAt: new Date(),
-        },
-        { merge: true }
-      );
+      if (orderData?.paymentStatus === 'paid') {
+        console.warn(
+          '[Stripe Webhook] Received payment failure for already paid order. Skipping deletion.',
+          orderId
+        );
+      } else {
+        await orderRef.delete();
+        await db.collection('order_cancellations').add({
+          orderId,
+          reason: 'payment_failed_webhook',
+          createdAt: FieldValue.serverTimestamp(),
+        });
+      }
     }
 
     await evtRef.set({ processedAt: new Date(), type, orderId });

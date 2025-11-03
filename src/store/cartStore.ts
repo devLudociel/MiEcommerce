@@ -110,10 +110,28 @@ const calculateTotal = (items: CartItem[]): number => {
 };
 
 // Atom del carrito
-export const cartStore = atom<CartState>(loadCartFromStorage());
+const initialCartState = loadCartFromStorage();
+
+export const cartStore = atom<CartState>(initialCartState);
+export const cartLoadingStore = atom(false);
 
 // Track current user ID
 let currentUserId: string | null = null;
+let activeCartSyncs = 0;
+
+const beginCartSync = (): void => {
+  activeCartSyncs += 1;
+  if (activeCartSyncs === 1) {
+    cartLoadingStore.set(true);
+  }
+};
+
+const endCartSync = (): void => {
+  activeCartSyncs = Math.max(0, activeCartSyncs - 1);
+  if (activeCartSyncs === 0) {
+    cartLoadingStore.set(false);
+  }
+};
 
 // Save cart to Firestore for authenticated users
 const saveCartToFirestore = async (userId: string, state: CartState): Promise<void> => {
@@ -162,71 +180,76 @@ export const syncCartWithUser = async (userId: string | null): Promise<void> => 
     return;
   }
 
-  const previousUserId = currentUserId;
+  beginCartSync();
+  try {
+    const previousUserId = currentUserId;
 
-  logger.info('[CartStore] Syncing cart with user', { userId, previousUserId });
+    logger.info('[CartStore] Syncing cart with user', { userId, previousUserId });
 
-  if (userId) {
-    const storedCart = loadCartFromStorage(userId);
-    const guestCart = loadCartFromStorage(null);
-    const firestoreCart = await loadCartFromFirestore(userId);
+    if (userId) {
+      const storedCart = loadCartFromStorage(userId);
+      const guestCart = loadCartFromStorage(null);
+      const firestoreCart = await loadCartFromFirestore(userId);
 
-    let source: 'firestore' | 'stored' | 'guest' | 'empty' = 'empty';
-    let resolvedCart: CartState = { items: [], total: 0 };
+      let source: 'firestore' | 'stored' | 'guest' | 'empty' = 'empty';
+      let resolvedCart: CartState = { items: [], total: 0 };
 
-    if (firestoreCart && firestoreCart.items.length > 0) {
-      resolvedCart = {
-        items: firestoreCart.items,
-        total: calculateTotal(firestoreCart.items),
-      };
-      source = 'firestore';
-      logger.info('[CartStore] Using Firestore cart', {
-        userId,
-        itemCount: resolvedCart.items.length,
-      });
-    } else if (storedCart.items.length > 0) {
-      resolvedCart = {
-        items: storedCart.items,
-        total: calculateTotal(storedCart.items),
-      };
-      source = 'stored';
-      logger.info('[CartStore] Using locally stored cart for user', {
-        userId,
-        itemCount: resolvedCart.items.length,
-      });
-    } else if (guestCart.items.length > 0) {
-      resolvedCart = {
-        items: guestCart.items,
-        total: calculateTotal(guestCart.items),
-      };
-      source = 'guest';
-      logger.info('[CartStore] Promoting guest cart to user cart', {
-        userId,
-        itemCount: resolvedCart.items.length,
-      });
+      if (firestoreCart && firestoreCart.items.length > 0) {
+        resolvedCart = {
+          items: firestoreCart.items,
+          total: calculateTotal(firestoreCart.items),
+        };
+        source = 'firestore';
+        logger.info('[CartStore] Using Firestore cart', {
+          userId,
+          itemCount: resolvedCart.items.length,
+        });
+      } else if (storedCart.items.length > 0) {
+        resolvedCart = {
+          items: storedCart.items,
+          total: calculateTotal(storedCart.items),
+        };
+        source = 'stored';
+        logger.info('[CartStore] Using locally stored cart for user', {
+          userId,
+          itemCount: resolvedCart.items.length,
+        });
+      } else if (guestCart.items.length > 0) {
+        resolvedCart = {
+          items: guestCart.items,
+          total: calculateTotal(guestCart.items),
+        };
+        source = 'guest';
+        logger.info('[CartStore] Promoting guest cart to user cart', {
+          userId,
+          itemCount: resolvedCart.items.length,
+        });
+      }
+
+      cartStore.set(resolvedCart);
+      saveCartToStorage(resolvedCart, userId);
+
+      if (source === 'guest') {
+        saveCartToStorage({ items: [], total: 0 }, null);
+      }
+
+      if (source !== 'firestore' && resolvedCart.items.length > 0) {
+        await saveCartToFirestore(userId, resolvedCart);
+      }
+    } else {
+      const emptyCart: CartState = { items: [], total: 0 };
+      cartStore.set(emptyCart);
+      if (previousUserId) {
+        saveCartToStorage(emptyCart, previousUserId);
+      }
+      saveCartToStorage(emptyCart, null);
+      logger.info('[CartStore] Cleared cart after logout');
     }
 
-    cartStore.set(resolvedCart);
-    saveCartToStorage(resolvedCart, userId);
-
-    if (source === 'guest') {
-      saveCartToStorage({ items: [], total: 0 }, null);
-    }
-
-    if (source !== 'firestore' && resolvedCart.items.length > 0) {
-      await saveCartToFirestore(userId, resolvedCart);
-    }
-  } else {
-    const emptyCart: CartState = { items: [], total: 0 };
-    cartStore.set(emptyCart);
-    if (previousUserId) {
-      saveCartToStorage(emptyCart, previousUserId);
-    }
-    saveCartToStorage(emptyCart, null);
-    logger.info('[CartStore] Cleared cart after logout');
+    currentUserId = userId;
+  } finally {
+    endCartSync();
   }
-
-  currentUserId = userId;
 };
 
 // Get current user ID

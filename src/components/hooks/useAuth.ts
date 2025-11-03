@@ -12,8 +12,8 @@ export function useAuth() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setLoading(true);
       setUser(currentUser);
-      setLoading(false);
       try {
         if (currentUser) {
           const token = await getIdTokenResult(currentUser, true);
@@ -41,6 +41,8 @@ export function useAuth() {
         } else {
           await Promise.all([syncCartWithUser(null), syncWishlistWithUser(null)]);
         }
+      } finally {
+        setLoading(false);
       }
     });
 
