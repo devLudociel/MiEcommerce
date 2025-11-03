@@ -288,8 +288,9 @@ export default function Checkout() {
   // REMOVED: Old insecure processCardPayment function
   // Now using Stripe Elements (PCI-DSS compliant)
 
-  const clearCartAndStorage = useCallback(() => {
-    clearCart();
+  const clearCartAndStorage = useCallback(async () => {
+    // Wait for cart to clear in both localStorage AND Firestore
+    await clearCart();
 
     if (typeof window === 'undefined') {
       return;
@@ -300,6 +301,7 @@ export default function Checkout() {
       if (user?.uid) {
         localStorage.removeItem(`cart:${user.uid}`);
       }
+      logger.info('[Checkout] Cart storage cleared successfully');
     } catch (storageError) {
       logger.warn('[Checkout] Failed to clear cart storage', storageError);
     }
@@ -341,7 +343,7 @@ export default function Checkout() {
         }
       }
       notify.success('¡Pago completado con éxito!');
-      clearCartAndStorage();
+      await clearCartAndStorage();
       setTimeout(() => {
         window.location.href = `/confirmacion?orderId=${completedOrderId}`;
       }, 500);
@@ -571,7 +573,7 @@ export default function Checkout() {
         // El onSuccess del hook maneja el resto (notificación, carrito y redirección)
       } else {
         notify.success('¡Pedido realizado con éxito!');
-        clearCartAndStorage();
+        await clearCartAndStorage();
         setTimeout(() => {
           window.location.href = `/confirmacion?orderId=${newOrderId}`;
         }, 500);

@@ -339,7 +339,7 @@ export function removeFromCart(itemId: string, variantId?: number): void {
 }
 
 // Limpiar carrito
-export function clearCart(): void {
+export async function clearCart(): Promise<void> {
   const currentState = cartStore.get();
   const itemCount = currentState.items.length;
 
@@ -347,14 +347,15 @@ export function clearCart(): void {
   cartStore.set(newState);
   saveCartToStorage(newState, currentUserId);
 
+  // Save to Firestore if user is authenticated (WAIT for it to complete)
+  if (currentUserId) {
+    await saveCartToFirestore(currentUserId, newState);
+    logger.info('[CartStore] Cart cleared in Firestore', { userId: currentUserId });
+  }
+
   if (itemCount > 0) {
     logger.info('[CartStore] Cart cleared', { itemCount });
     notify.info('Carrito vaciado');
-  }
-
-  // Save to Firestore if user is authenticated
-  if (currentUserId) {
-    saveCartToFirestore(currentUserId, newState);
   }
 }
 
