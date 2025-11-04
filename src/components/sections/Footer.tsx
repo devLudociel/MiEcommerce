@@ -66,17 +66,47 @@ const Footer: React.FC = () => {
     e.preventDefault();
     if (!email) return;
 
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      alert('Por favor, introduce un email válido');
+      return;
+    }
+
     setIsSubscribing(true);
 
-    setTimeout(() => {
-      setIsSubscribing(false);
+    try {
+      const response = await fetch('/api/subscribe-newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim(),
+          source: 'footer',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al suscribirse');
+      }
+
+      // Success!
       setIsSubscribed(true);
       setEmail('');
 
+      // Show success message for 5 seconds
       setTimeout(() => {
         setIsSubscribed(false);
-      }, 3000);
-    }, 1500);
+      }, 5000);
+
+      console.log('Newsletter subscription successful:', data.message);
+    } catch (error) {
+      console.error('Newsletter subscription error:', error);
+      alert(error instanceof Error ? error.message : 'Error al suscribirse. Por favor, intenta de nuevo.');
+    } finally {
+      setIsSubscribing(false);
+    }
   };
 
   return (
