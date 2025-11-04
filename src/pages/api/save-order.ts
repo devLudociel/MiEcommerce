@@ -7,25 +7,36 @@ import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { finalizeOrder } from '../../lib/orders/finalizeOrder';
 import { z } from 'zod';
 
-// Zod schema para validar datos de pedido
+// SECURITY: Zod schema para validar datos de pedido
+// Schema matches actual Checkout.tsx data structure
 const shippingInfoSchema = z.object({
-  firstName: z.string().min(1).max(100),
-  lastName: z.string().min(1).max(100),
+  fullName: z.string().min(1).max(200),
   email: z.string().email().max(255),
   phone: z.string().min(9).max(20),
   address: z.string().min(5).max(500),
   city: z.string().min(2).max(100),
-  postalCode: z.string().min(4).max(10),
-  province: z.string().min(2).max(100),
+  state: z.string().min(2).max(100),
+  zipCode: z.string().min(4).max(10),
   country: z.string().min(2).max(100).default('España'),
+  shippingMethod: z.string().optional(),
+});
+
+const billingInfoSchema = z.object({
+  fiscalName: z.string().min(1).max(200),
+  nifCif: z.string().max(50).optional(),
+  address: z.string().min(5).max(500),
+  city: z.string().min(2).max(100),
+  state: z.string().min(2).max(100),
+  zipCode: z.string().min(4).max(10),
+  country: z.string().min(2).max(100),
 });
 
 const orderItemSchema = z.object({
-  id: z.string(),
+  productId: z.string(),
   name: z.string().min(1).max(500),
   price: z.number().min(0).max(1000000),
   quantity: z.number().int().min(1).max(1000),
-  image: z.string().url().optional(),
+  image: z.string().optional(), // Not always a valid URL, can be relative path
   variantId: z.number().optional(),
   variantName: z.string().optional(),
   customization: z.record(z.any()).optional(),
@@ -35,16 +46,24 @@ const orderDataSchema = z.object({
   idempotencyKey: z.string().min(10).max(255),
   items: z.array(orderItemSchema).min(1).max(100),
   shippingInfo: shippingInfoSchema,
-  subtotal: z.number().min(0).max(1000000),
-  shipping: z.number().min(0).max(10000),
-  total: z.number().min(0).max(1000000),
-  paymentMethod: z.enum(['card', 'wallet', 'transfer', 'cash']).default('card'),
-  paymentStatus: z.string().optional(),
-  status: z.string().optional(),
+  billingInfo: billingInfoSchema.optional(),
   userId: z.string().optional(),
   customerEmail: z.string().email().optional(),
-  discount: z.number().min(0).optional(),
+  paymentMethod: z.enum(['card', 'wallet', 'transfer', 'cash']).default('card'),
+  subtotal: z.number().min(0).max(1000000),
+  shippingCost: z.number().min(0).max(10000).optional(),
+  tax: z.number().min(0).optional(),
+  taxType: z.string().optional(),
+  taxRate: z.number().min(0).max(1).optional(),
+  taxLabel: z.string().optional(),
+  total: z.number().min(0).max(1000000),
+  couponDiscount: z.number().min(0).optional(),
   couponCode: z.string().optional(),
+  couponId: z.string().optional(),
+  walletDiscount: z.number().min(0).optional(),
+  usedWallet: z.boolean().optional(),
+  status: z.string().optional(),
+  paymentStatus: z.string().optional(),
   notes: z.string().max(1000).optional(),
 });
 
@@ -168,7 +187,8 @@ export const POST: APIRoute = async ({ request }) => {
       ...orderData,
       items: sanitizedItems,
       subtotal: Number(orderData.subtotal) || 0,
-      shipping: Number(orderData.shipping) || 0,
+      shipping: Number(orderData.shippingCost) || 0,
+      shippingCost: Number(orderData.shippingCost) || 0,
       total: Number(orderData.total) || 0,
       idempotencyKey, // Store the idempotency key with the order
       createdAt: FieldValue.serverTimestamp(),
