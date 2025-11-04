@@ -80,6 +80,48 @@ service cloud.firestore {
       allow read: if isAdmin();
     }
 
+    // Newsletter subscribers (solo lectura/escritura via API con Admin SDK)
+    match /newsletter_subscribers/{subscriberId} {
+      allow read: if isAdmin();
+      allow write: if false; // Solo vía Admin SDK desde API endpoints
+    }
+
+    // Order status history (auditoría de cambios de estado)
+    match /order_status_history/{historyId} {
+      allow read: if isAdmin();
+      allow write: if false; // Solo vía Admin SDK
+    }
+
+    // Stripe events (webhooks)
+    match /stripe_events/{eventId} {
+      allow read: if isAdmin();
+      allow write: if false; // Solo vía webhook handler
+    }
+
+    // Order cancellations
+    match /order_cancellations/{cancellationId} {
+      allow read: if isAdmin();
+      allow write: if false; // Solo vía Admin SDK
+    }
+
+    // Special offers
+    match /special_offers/{offerId} {
+      allow read: if true; // Cualquiera puede ver ofertas
+      allow write: if isAdmin();
+    }
+
+    // Categories
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Tracking events (admin para gestión de pedidos)
+    match /tracking_events/{eventId} {
+      allow read: if isAdmin();
+      allow write: if false; // Solo vía Admin SDK
+    }
+
     // Denegar por defecto
     match /{document=**} {
       allow read, write: if false;
