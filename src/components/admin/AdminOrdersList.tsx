@@ -125,7 +125,20 @@ export default function AdminOrdersList() {
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
-      await updateOrderStatus(orderId, newStatus);
+      // Use API endpoint instead of direct Firestore update (bypasses security rules)
+      const response = await fetch('/api/update-order-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          status: newStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || 'Error actualizando el estado');
+      }
 
       // Enviar email de notificación
       try {
@@ -155,7 +168,7 @@ export default function AdminOrdersList() {
       showModal(
         'error',
         'Error al actualizar',
-        'No se pudo actualizar el estado del pedido. Por favor, intenta de nuevo.'
+        error instanceof Error ? error.message : 'No se pudo actualizar el estado del pedido. Por favor, intenta de nuevo.'
       );
     }
   };
