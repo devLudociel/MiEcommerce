@@ -297,6 +297,8 @@ export default function Checkout() {
   // Now using Stripe Elements (PCI-DSS compliant)
 
   const clearCartAndStorage = useCallback(async () => {
+    logger.info('[Checkout] Starting cart clear process...');
+
     // Wait for cart to clear in both localStorage AND Firestore
     await clearCart();
 
@@ -309,6 +311,14 @@ export default function Checkout() {
       if (user?.uid) {
         localStorage.removeItem(`cart:${user.uid}`);
       }
+
+      // Force a final check to ensure cart is empty
+      const finalState = cartStore.get();
+      if (finalState.items.length > 0) {
+        logger.warn('[Checkout] Cart still has items after clear, forcing empty state');
+        cartStore.set({ items: [], total: 0 });
+      }
+
       logger.info('[Checkout] Cart storage cleared successfully');
     } catch (storageError) {
       logger.warn('[Checkout] Failed to clear cart storage', storageError);
@@ -336,6 +346,8 @@ export default function Checkout() {
         paymentIntentId,
         orderId: completedOrderId,
       });
+
+      // Update stored order status
       if (typeof window !== 'undefined') {
         const storedOrder = sessionStorage.getItem('checkout:lastOrder');
         if (storedOrder) {
@@ -350,11 +362,38 @@ export default function Checkout() {
           }
         }
       }
+
+      // Show success notification
       notify.success('¡Pago completado con éxito!');
-      await clearCartAndStorage();
-      setTimeout(() => {
-        window.location.href = `/confirmacion?orderId=${completedOrderId}`;
-      }, 500);
+
+      // Clear cart with timeout protection
+      try {
+        logger.info('[Checkout] Clearing cart...');
+        await Promise.race([
+          clearCartAndStorage(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Cart clear timeout')), 3000))
+        ]);
+        logger.info('[Checkout] Cart cleared successfully');
+      } catch (clearError) {
+        logger.error('[Checkout] Error clearing cart (continuing anyway)', clearError);
+      }
+
+      // Redirect to confirmation page (ensure this always happens)
+      logger.info('[Checkout] Redirecting to confirmation page...', { orderId: completedOrderId });
+      const redirectUrl = `/confirmacion?orderId=${completedOrderId}`;
+
+      // Use both methods to ensure redirect works
+      if (typeof window !== 'undefined') {
+        // Try navigation first, then fallback to location.href
+        setTimeout(() => {
+          try {
+            window.location.href = redirectUrl;
+          } catch (redirectError) {
+            logger.error('[Checkout] Redirect failed, trying alternative method', redirectError);
+            window.location.assign(redirectUrl);
+          }
+        }, 500);
+      }
     },
     onError: (errorMessage) => {
       logger.error('[Checkout] Payment failed', { error: errorMessage });
