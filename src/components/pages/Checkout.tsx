@@ -129,17 +129,20 @@ export default function Checkout() {
   // Payment validation removed - Stripe Elements validates card data securely
 
   // Redirect to home if cart is empty (after initialization)
+  // BUT: Don't redirect if we're processing a payment or already have an order
   useEffect(() => {
     if (
       !authLoading &&
       !isCartSyncing &&
       cart.items.length === 0 &&
+      !isProcessing &&
+      !orderId &&
       typeof window !== 'undefined'
     ) {
       logger.warn('[Checkout] Cart is empty, redirecting to home');
       window.location.href = '/';
     }
-  }, [authLoading, cart.items.length, isCartSyncing]);
+  }, [authLoading, cart.items.length, isCartSyncing, isProcessing, orderId]);
 
   // Load wallet balance when user is authenticated
   useEffect(() => {
