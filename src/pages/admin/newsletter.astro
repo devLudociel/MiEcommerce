@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import RequireAdmin from '../../components/auth/RequireAdmin';
+import NewsletterCampaignPanel from '../../components/admin/NewsletterCampaignPanel';
+---
+
+<BaseLayout title="Newsletter - Administración">
+  <RequireAdmin client:only="react">
+    <div class="min-h-screen bg-gray-50 py-8">
+      <div class="max-w-4xl mx-auto">
+        <NewsletterCampaignPanel client:load />
+      </div>
+    </div>
+  </RequireAdmin>
+</BaseLayout>

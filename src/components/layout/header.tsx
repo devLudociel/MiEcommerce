@@ -650,6 +650,13 @@ const Header: React.FC<HeaderProps> = () => {
                             >
                               Gestión de productos
                             </a>
+                            <a
+                              href="/admin/newsletter"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              Newsletter Campaigns
+                            </a>
                           </div>
                         )}
 

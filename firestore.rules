@@ -122,6 +122,12 @@ service cloud.firestore {
       allow write: if false; // Solo vía Admin SDK
     }
 
+    // Newsletter campaigns (historial de campañas enviadas)
+    match /newsletter_campaigns/{campaignId} {
+      allow read: if isAdmin();
+      allow write: if false; // Solo vía Admin SDK
+    }
+
     // Denegar por defecto
     match /{document=**} {
       allow read, write: if false;
