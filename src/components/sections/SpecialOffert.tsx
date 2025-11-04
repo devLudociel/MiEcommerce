@@ -60,6 +60,9 @@ const SpecialOffers: React.FC<SpecialOffersProps> = ({
   const [floatingElements, setFloatingElements] = useState<FloatingElement[]>([]);
   const [isClient, setIsClient] = useState(false);
 
+  // 🔄 Estado para forzar actualización del filtro de ofertas expiradas
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
   // ✅ Inicializar elementos flotantes solo en el cliente
   useEffect(() => {
     setIsClient(true);
@@ -204,10 +207,16 @@ const SpecialOffers: React.FC<SpecialOffersProps> = ({
   );
 
   // Usar ofertas de Firebase si están disponibles, sino usar ofertas de respaldo
-  const displayOffers = useMemo(
-    () => (offers.length > 0 ? offers : fallbackOffers),
-    [offers, fallbackOffers]
-  );
+  // IMPORTANT: Filter out expired offers (recalculates every second via currentTime)
+  const displayOffers = useMemo(() => {
+    const availableOffers = offers.length > 0 ? offers : fallbackOffers;
+
+    // Filter out offers that have already expired
+    return availableOffers.filter((offer) => {
+      const endTime = offer.endDate.getTime();
+      return endTime > currentTime;
+    });
+  }, [offers, fallbackOffers, currentTime]);
 
   const featuredOffers = useMemo(
     () => displayOffers.filter((offer) => offer.featured),
@@ -230,9 +239,12 @@ const SpecialOffers: React.FC<SpecialOffersProps> = ({
     return { days: 0, hours: 0, minutes: 0, seconds: 0 };
   }, []);
 
-  // Update countdown every second
+  // Update countdown every second AND update current time to refresh expired offers filter
   useEffect(() => {
     const timer = setInterval(() => {
+      const now = Date.now();
+      setCurrentTime(now); // Update current time to trigger filter recalculation
+
       const newTimeLeft: { [key: string | number]: TimeLeft } = {};
       displayOffers.forEach((offer) => {
         newTimeLeft[offer.id] = calculateTimeLeft(offer.endDate);
