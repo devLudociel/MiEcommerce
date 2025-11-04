@@ -7,6 +7,61 @@ export interface RateLimitOptions {
   max?: number; // peticiones por ventana, por defecto 30
 }
 
+// In-memory fallback for when Firestore is unavailable
+interface MemoryRateLimitWindow {
+  count: number;
+  resetAt: number;
+}
+
+const memoryStore = new Map<string, MemoryRateLimitWindow>();
+
+// Clean up expired memory entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, window] of memoryStore.entries()) {
+    if (now > window.resetAt) {
+      memoryStore.delete(key);
+    }
+  }
+}, 60_000); // Clean every minute
+
+/**
+ * In-memory rate limiting fallback
+ * Used when Firestore is unavailable
+ */
+function rateLimitMemory(
+  key: string,
+  max: number,
+  interval: number,
+  now: number
+): { ok: boolean; remaining: number; resetAt: number } {
+  const existing = memoryStore.get(key);
+
+  if (!existing || now > existing.resetAt) {
+    // New window
+    const newWindow: MemoryRateLimitWindow = {
+      count: 1,
+      resetAt: now + interval,
+    };
+    memoryStore.set(key, newWindow);
+    return {
+      ok: true,
+      remaining: max - 1,
+      resetAt: newWindow.resetAt,
+    };
+  }
+
+  // Increment count in existing window
+  existing.count += 1;
+  memoryStore.set(key, existing);
+
+  return {
+    ok: existing.count <= max,
+    remaining: Math.max(0, max - existing.count),
+    resetAt: existing.resetAt,
+  };
+}
+
 interface RateLimitWindow {
   count: number;
   resetAt: number;
@@ -103,15 +158,18 @@ export async function rateLimitPersistent(
 
     return result;
   } catch (error) {
-    console.error('[rateLimitPersistent] Error checking rate limit:', error);
+    console.error('[rateLimitPersistent] Firestore error, falling back to in-memory rate limiting:', error);
 
-    // IMPORTANT: Fail open - don't block requests if rate limiting system fails
-    // This prevents outages when Firestore is down
-    return {
-      ok: true,
-      remaining: max,
-      resetAt: now + interval,
-    };
+    // SECURITY FIX: Fallback to in-memory rate limiting instead of failing open
+    // This ensures we still have some rate limiting protection even if Firestore is down
+    const fallbackResult = rateLimitMemory(key, max, interval, now);
+
+    console.warn('[rateLimitPersistent] Using in-memory fallback for key:', key, {
+      ok: fallbackResult.ok,
+      remaining: fallbackResult.remaining,
+    });
+
+    return fallbackResult;
   }
 }
 

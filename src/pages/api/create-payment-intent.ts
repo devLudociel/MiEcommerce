@@ -3,9 +3,17 @@ import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
+import { z } from 'zod';
 
 const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
   apiVersion: '2024-12-18.acacia',
+});
+
+// Zod schema para validar datos de Payment Intent
+const paymentIntentSchema = z.object({
+  orderId: z.string().min(1).max(255),
+  amount: z.number().min(0.5).max(1000000), // Mínimo €0.50, máximo €1M
+  currency: z.enum(['eur', 'usd', 'gbp']).default('eur'),
 });
 
 /**
@@ -13,6 +21,7 @@ const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
  *
  * SEGURIDAD:
  * - Protección CSRF
+ * - Validación Zod de inputs
  * - Valida que el orderId exista en Firestore
  * - Valida que el monto coincida con el total del pedido
  * - Previene manipulación de montos
@@ -26,22 +35,26 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   try {
-    const { orderId, amount, currency = 'eur' } = await request.json();
+    const rawData = await request.json();
 
-    // Validar datos requeridos
-    if (!orderId) {
-      return new Response(JSON.stringify({ error: 'Order ID es requerido' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    // SECURITY: Validar datos con Zod
+    const validationResult = paymentIntentSchema.safeParse(rawData);
+
+    if (!validationResult.success) {
+      console.error('[create-payment-intent] Validación Zod falló:', validationResult.error.format());
+      return new Response(
+        JSON.stringify({
+          error: 'Datos inválidos',
+          details: import.meta.env.PROD ? undefined : validationResult.error.format(),
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
-    if (!amount || amount < 0.5) {
-      return new Response(JSON.stringify({ error: 'Monto inválido. Mínimo €0.50' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const { orderId, amount, currency } = validationResult.data;
 
     // Validar que el pedido existe y obtener el monto real
     const db = getAdminDb();

@@ -6,6 +6,18 @@ import { notify } from '../lib/notifications';
 import { db } from '../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
+// Simple debounce implementation
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  return function (...args: Parameters<T>) {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+
 export interface CartItem {
   id: string;
   name: string;
@@ -150,6 +162,10 @@ const saveCartToFirestore = async (userId: string, state: CartState): Promise<vo
     logger.error('[CartStore] Error saving cart to Firestore', error);
   }
 };
+
+// PERFORMANCE: Debounced version to avoid excessive Firestore writes
+// Waits 500ms after last cart change before saving to Firestore
+const saveCartToFirestoreDebounced = debounce(saveCartToFirestore, 500);
 
 // Load cart from Firestore for authenticated users
 const loadCartFromFirestore = async (userId: string): Promise<CartState | null> => {
@@ -296,9 +312,9 @@ export function addToCart(item: CartItem): void {
   cartStore.set(newState);
   saveCartToStorage(newState, currentUserId);
 
-  // Save to Firestore if user is authenticated
+  // PERFORMANCE: Save to Firestore with debounce (non-blocking)
   if (currentUserId) {
-    saveCartToFirestore(currentUserId, newState);
+    saveCartToFirestoreDebounced(currentUserId, newState);
   }
 }
 
@@ -324,9 +340,9 @@ export function updateCartItemQuantity(
   cartStore.set(newState);
   saveCartToStorage(newState, currentUserId);
 
-  // Save to Firestore if user is authenticated
+  // PERFORMANCE: Save to Firestore with debounce (non-blocking)
   if (currentUserId) {
-    saveCartToFirestore(currentUserId, newState);
+    saveCartToFirestoreDebounced(currentUserId, newState);
   }
 }
 
@@ -355,9 +371,9 @@ export function removeFromCart(itemId: string, variantId?: number): void {
     notify.info(`${removedItem.name} eliminado del carrito`);
   }
 
-  // Save to Firestore if user is authenticated
+  // PERFORMANCE: Save to Firestore with debounce (non-blocking)
   if (currentUserId) {
-    saveCartToFirestore(currentUserId, newState);
+    saveCartToFirestoreDebounced(currentUserId, newState);
   }
 }
 

@@ -5,6 +5,48 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { rateLimit } from '../../lib/rateLimit';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { finalizeOrder } from '../../lib/orders/finalizeOrder';
+import { z } from 'zod';
+
+// Zod schema para validar datos de pedido
+const shippingInfoSchema = z.object({
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().min(1).max(100),
+  email: z.string().email().max(255),
+  phone: z.string().min(9).max(20),
+  address: z.string().min(5).max(500),
+  city: z.string().min(2).max(100),
+  postalCode: z.string().min(4).max(10),
+  province: z.string().min(2).max(100),
+  country: z.string().min(2).max(100).default('España'),
+});
+
+const orderItemSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1).max(500),
+  price: z.number().min(0).max(1000000),
+  quantity: z.number().int().min(1).max(1000),
+  image: z.string().url().optional(),
+  variantId: z.number().optional(),
+  variantName: z.string().optional(),
+  customization: z.record(z.any()).optional(),
+});
+
+const orderDataSchema = z.object({
+  idempotencyKey: z.string().min(10).max(255),
+  items: z.array(orderItemSchema).min(1).max(100),
+  shippingInfo: shippingInfoSchema,
+  subtotal: z.number().min(0).max(1000000),
+  shipping: z.number().min(0).max(10000),
+  total: z.number().min(0).max(1000000),
+  paymentMethod: z.enum(['card', 'wallet', 'transfer', 'cash']).default('card'),
+  paymentStatus: z.string().optional(),
+  status: z.string().optional(),
+  userId: z.string().optional(),
+  customerEmail: z.string().email().optional(),
+  discount: z.number().min(0).optional(),
+  couponCode: z.string().optional(),
+  notes: z.string().max(1000).optional(),
+});
 
 export const POST: APIRoute = async ({ request }) => {
   // SECURITY: CSRF protection
@@ -39,16 +81,17 @@ export const POST: APIRoute = async ({ request }) => {
   console.log('API save-order: Solicitud recibida');
 
   try {
-    const orderData = await request.json();
+    const rawData = await request.json();
 
-    // IDEMPOTENCY: Check for idempotency key to prevent duplicate orders
-    const idempotencyKey = orderData.idempotencyKey;
-    if (!idempotencyKey || typeof idempotencyKey !== 'string') {
-      console.error('API save-order: Missing or invalid idempotency key');
+    // SECURITY: Validar datos con Zod para prevenir inyección y datos maliciosos
+    const validationResult = orderDataSchema.safeParse(rawData);
+
+    if (!validationResult.success) {
+      console.error('API save-order: Validación Zod falló:', validationResult.error.format());
       return new Response(
         JSON.stringify({
-          error: 'Idempotency key is required',
-          hint: 'Include a unique idempotencyKey in your request to prevent duplicate orders',
+          error: 'Datos de pedido inválidos',
+          details: isProd ? undefined : validationResult.error.format(),
         }),
         {
           status: 400,
@@ -56,29 +99,20 @@ export const POST: APIRoute = async ({ request }) => {
         }
       );
     }
+
+    // Datos validados y sanitizados por Zod
+    const orderData = validationResult.data;
+    const idempotencyKey = orderData.idempotencyKey;
+
     if (isProd) {
       const redacted = {
-        itemsCount: Array.isArray(orderData.items) ? orderData.items.length : 0,
-        total: typeof orderData.total === 'number' ? orderData.total : undefined,
-        hasShippingInfo: Boolean(orderData?.shippingInfo),
+        itemsCount: orderData.items.length,
+        total: orderData.total,
+        hasShippingInfo: Boolean(orderData.shippingInfo),
       };
       console.log('API save-order: Datos recibidos (redacted):', redacted);
     } else {
-      console.log('API save-order: Datos recibidos:', JSON.stringify(orderData, null, 2));
-    }
-
-    // Validar datos básicos
-    if (
-      !Array.isArray(orderData.items) ||
-      orderData.items.length === 0 ||
-      !orderData.shippingInfo ||
-      typeof orderData.total !== 'number'
-    ) {
-      console.error('API save-order: Datos incompletos o inválidos');
-      return new Response(JSON.stringify({ error: 'Datos de pedido incompletos' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      console.log('API save-order: Datos validados:', JSON.stringify(orderData, null, 2));
     }
 
     console.log('API save-order: Intentando guardar en Firestore con Admin SDK...');
