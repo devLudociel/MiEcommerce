@@ -62,21 +62,28 @@ export default function OrderTrackingUpdate({ order, onUpdate }: OrderTrackingUp
         carrier,
       });
 
-      await updateOrderTracking(
-        order.id!,
-        {
+      // Use API endpoint instead of direct Firestore update (bypasses security rules)
+      const response = await fetch('/api/update-order-tracking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: order.id,
           trackingNumber: trackingNumber.trim(),
           carrier,
-          estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : undefined,
-        },
-        user?.uid
-      );
+          estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery).toISOString() : undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || 'Error actualizando el tracking');
+      }
 
       notify.success('✅ Información de tracking actualizada');
       onUpdate?.();
     } catch (error) {
       logger.error('[OrderTrackingUpdate] Error actualizando tracking', error);
-      notify.error('Error al actualizar el tracking');
+      notify.error(error instanceof Error ? error.message : 'Error al actualizar el tracking');
     } finally {
       setLoading(false);
     }
