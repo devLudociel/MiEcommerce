@@ -56,6 +56,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
         <img
           src={product.images[0] || FALLBACK_IMG_400x300}
           alt={product.name}
+          loading="lazy"
           style={{
             position: 'absolute',
             top: 0,

@@ -131,6 +131,7 @@ export const ProductGallery = memo(function ProductGallery({
             <img
               src={img.url || FALLBACK_IMG_400x300}
               alt={img.alt}
+              loading="lazy"
               className="w-full h-20 sm:h-24 object-cover"
               onError={(e) => {
                 const imgEl = e.currentTarget as HTMLImageElement;
