@@ -3,6 +3,44 @@ import { GET } from '../get-order';
 
 vi.mock('../../../lib/firebase', () => ({ db: {} }));
 
+// Mock Firebase Admin Auth (authentication required for get-order endpoint)
+vi.mock('../../../lib/firebase-admin', () => ({
+  getAdminAuth: () => ({
+    verifyIdToken: vi.fn(async (token: string) => {
+      if (token === 'valid-token') {
+        return { uid: 'test-user-123', email: 'test@example.com' };
+      }
+      throw new Error('Invalid token');
+    }),
+  }),
+  getAdminDb: () => ({
+    collection: (name: string) => ({
+      doc: (id: string) => ({
+        get: async () => {
+          if (id === 'exists') {
+            return {
+              exists: true,
+              id: 'exists',
+              data: () => ({
+                createdAt: new Date('2024-01-01'),
+                items: [{ name: 'A' }],
+                shippingInfo: { city: 'Madrid' },
+                paymentMethod: 'card',
+                subtotal: 10,
+                shippingCost: 0,
+                total: 10,
+                status: 'pending',
+                userId: 'test-user-123',
+              }),
+            };
+          }
+          return { exists: false };
+        },
+      }),
+    }),
+  }),
+}));
+
 vi.mock('firebase/firestore', () => {
   return {
     doc: vi.fn((db: any, col: string, id: string) => ({ db, col, id })),
@@ -29,21 +67,43 @@ vi.mock('firebase/firestore', () => {
 });
 
 describe('API get-order', () => {
+  it('401 cuando falta authorization header', async () => {
+    const url = new URL('http://local/api/get-order?orderId=exists');
+    const request = new Request(url.toString(), {
+      method: 'GET',
+      headers: {},
+    });
+    const res = await GET({ url, request } as any);
+    expect(res.status).toBe(401);
+  });
+
   it('400 cuando falta orderId', async () => {
     const url = new URL('http://local/api/get-order');
-    const res = await GET({ url } as any);
+    const request = new Request(url.toString(), {
+      method: 'GET',
+      headers: { Authorization: 'Bearer valid-token' },
+    });
+    const res = await GET({ url, request } as any);
     expect(res.status).toBe(400);
   });
 
   it('404 cuando no existe', async () => {
     const url = new URL('http://local/api/get-order?orderId=missing');
-    const res = await GET({ url } as any);
+    const request = new Request(url.toString(), {
+      method: 'GET',
+      headers: { Authorization: 'Bearer valid-token' },
+    });
+    const res = await GET({ url, request } as any);
     expect(res.status).toBe(404);
   });
 
   it('200 y da formato esperado cuando existe', async () => {
     const url = new URL('http://local/api/get-order?orderId=exists');
-    const res = await GET({ url } as any);
+    const request = new Request(url.toString(), {
+      method: 'GET',
+      headers: { Authorization: 'Bearer valid-token' },
+    });
+    const res = await GET({ url, request } as any);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.id).toBe('exists');

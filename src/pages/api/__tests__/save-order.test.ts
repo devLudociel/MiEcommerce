@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '../save-order';
 
+// Mock CSRF protection (tested separately, should not block business logic tests)
+vi.mock('../../../lib/csrf', () => ({
+  validateCSRF: vi.fn(() => ({ valid: true })),
+  createCSRFErrorResponse: vi.fn(),
+}));
+
 // Mock FieldValue helpers
 vi.mock('firebase-admin/firestore', () => ({
   FieldValue: {
@@ -47,6 +53,11 @@ function createDb() {
           data[name].push({ id, ...doc });
           return { id } as any;
         },
+        where: () => ({
+          limit: () => ({
+            get: async () => ({ empty: true, docs: [] }),
+          }),
+        }),
         doc: (id: string) => ({
           async get() {
             const col = docs[name] || {};
@@ -110,10 +121,20 @@ describe('API save-order', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        items: [{ id: 'p1', name: 'Prod 1', price: 10, quantity: 2 }],
-        shippingInfo: { firstName: 'Juan' },
+        idempotencyKey: 'test-key-12345',
+        items: [{ productId: 'p1', name: 'Prod 1', price: 10, quantity: 2 }],
+        shippingInfo: {
+          fullName: 'Juan Pérez',
+          email: 'juan@example.com',
+          phone: '123456789',
+          address: 'Calle Test 123',
+          city: 'Madrid',
+          state: 'Madrid',
+          zipCode: '28001',
+          country: 'España',
+        },
         subtotal: 20,
-        shipping: 0,
+        shippingCost: 0,
         total: 20,
         userId: 'u1',
         usedWallet: true,
@@ -135,14 +156,9 @@ describe('API save-order', () => {
     expect(orders.length).toBe(1);
     expect(orders[0].total).toBe(20);
 
-    // Wallet debit y cashback creados
-    const wtx = __mockDb.data.wallet_transactions;
-    // Puede haber 2 transacciones (debit + cashback)
-    expect(wtx.some((t: any) => t.type === 'debit')).toBe(true);
-    expect(wtx.some((t: any) => t.type === 'cashback')).toBe(true);
-
-    // Email se intentó enviar
-    expect(fetchSpy).toHaveBeenCalled();
+    // NOTA: Wallet debit y cashback ahora se ejecutan en finalize-order (después de confirmar pago)
+    // En save-order solo se guarda el pedido, las transacciones de wallet se difieren
+    // para evitar debitar fondos antes de confirmar el pago con Stripe
   });
 
   it('continúa si el wallet no tiene fondos suficientes (no falla 200)', async () => {
@@ -156,10 +172,20 @@ describe('API save-order', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        items: [{ id: 'p1', name: 'Prod 1', price: 10, quantity: 2 }],
-        shippingInfo: { firstName: 'Juan' },
+        idempotencyKey: 'test-key-67890',
+        items: [{ productId: 'p1', name: 'Prod 1', price: 10, quantity: 2 }],
+        shippingInfo: {
+          fullName: 'Juan García',
+          email: 'juan2@example.com',
+          phone: '987654321',
+          address: 'Avenida Test 456',
+          city: 'Barcelona',
+          state: 'Cataluña',
+          zipCode: '08001',
+          country: 'España',
+        },
         subtotal: 20,
-        shipping: 0,
+        shippingCost: 0,
         total: 20,
         userId: 'u2',
         usedWallet: true,

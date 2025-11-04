@@ -1,7 +1,10 @@
 // src/lib/campaignEmailTemplates.ts
 /**
  * Plantillas de email para campañas de marketing
+ * SECURITY: All user inputs are sanitized to prevent XSS attacks
  */
+
+import { escapeHtml, sanitizeUrl } from './utils/sanitize';
 
 /**
  * Plantilla de email para nuevo cupón
@@ -12,7 +15,11 @@ export function newCouponCampaignTemplate(params: {
   expiryDate: string;
   description?: string;
 }): { subject: string; html: string } {
-  const { couponCode, discountValue, expiryDate, description } = params;
+  // SECURITY: Sanitize all inputs to prevent XSS
+  const couponCode = escapeHtml(params.couponCode);
+  const discountValue = escapeHtml(params.discountValue);
+  const expiryDate = escapeHtml(params.expiryDate);
+  const description = params.description ? escapeHtml(params.description) : undefined;
 
   return {
     subject: `🎁 ¡Nuevo Cupón! ${discountValue} de Descuento - ImprimeArte`,
@@ -106,7 +113,12 @@ export function newProductCampaignTemplate(params: {
   productPrice: string;
   productUrl: string;
 }): { subject: string; html: string } {
-  const { productName, productDescription, productImage, productPrice, productUrl } = params;
+  // SECURITY: Sanitize all inputs to prevent XSS
+  const productName = escapeHtml(params.productName);
+  const productDescription = escapeHtml(params.productDescription);
+  const productImage = sanitizeUrl(params.productImage);
+  const productPrice = escapeHtml(params.productPrice);
+  const productUrl = sanitizeUrl(params.productUrl);
 
   return {
     subject: `🚀 ¡Nuevo Producto! ${productName} - ImprimeArte`,

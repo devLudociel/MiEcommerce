@@ -38,6 +38,12 @@ vi.mock('../../../lib/firebase-admin', () => {
   return { getAdminDb: () => db, __mockDb: db } as any;
 });
 
+// Mock CSRF protection (tested separately, should not block business logic tests)
+vi.mock('../../../lib/csrf', () => ({
+  validateCSRF: vi.fn(() => ({ valid: true })),
+  createCSRFErrorResponse: vi.fn(),
+}));
+
 describe('API create-payment-intent', () => {
   beforeEach(async () => {
     vi.restoreAllMocks();

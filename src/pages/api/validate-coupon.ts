@@ -3,8 +3,16 @@ import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { validateCouponCodeSchema } from '../../lib/validation/schemas';
 import { rateLimit } from '../../lib/rateLimit';
+import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 
 export const POST: APIRoute = async ({ request }) => {
+  // SECURITY: CSRF protection
+  const csrfCheck = validateCSRF(request);
+  if (!csrfCheck.valid) {
+    console.warn('[validate-coupon] CSRF validation failed:', csrfCheck.reason);
+    return createCSRFErrorResponse();
+  }
+
   // Rate limit básico: 30/min por IP para este endpoint
   try {
     const { ok, remaining, resetAt } = await rateLimit(request, 'validate-coupon', {

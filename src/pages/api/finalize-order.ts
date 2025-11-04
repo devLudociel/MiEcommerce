@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { finalizeOrder } from '../../lib/orders/finalizeOrder';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
+import { verifyAuthToken } from '../../lib/auth/authHelpers';
 import { z } from 'zod';
 
 const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
@@ -29,6 +30,8 @@ const finalizeOrderSchema = z.object({
  *
  * SECURITY:
  * - CSRF protection
+ * - User authentication required
+ * - Validates order ownership (user must own the order OR be admin)
  * - Validates payment was actually successful with Stripe
  * - Validates order exists and belongs to the payment
  */
@@ -38,6 +41,13 @@ export const POST: APIRoute = async ({ request }) => {
   if (!csrfCheck.valid) {
     console.warn('[finalize-order] CSRF validation failed:', csrfCheck.reason);
     return createCSRFErrorResponse();
+  }
+
+  // SECURITY: User authentication required
+  const authResult = await verifyAuthToken(request);
+  if (!authResult.success) {
+    console.warn('[finalize-order] Unauthenticated access attempt');
+    return authResult.error!;
   }
 
   try {
@@ -112,6 +122,28 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const orderData = orderSnap.data() || {};
+
+    // SECURITY: Verify order ownership (user must own the order OR be admin)
+    const orderUserId = orderData.userId;
+    const requestingUserId = authResult.uid;
+
+    if (orderUserId !== requestingUserId && !authResult.isAdmin) {
+      console.warn('[finalize-order] Unauthorized order access attempt', {
+        orderId,
+        orderUserId,
+        requestingUserId,
+      });
+      return new Response(
+        JSON.stringify({ error: 'No tienes permiso para finalizar este pedido' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('[finalize-order] Order ownership verified', {
+      orderId,
+      userId: requestingUserId,
+      isAdmin: authResult.isAdmin,
+    });
 
     // Execute post-payment actions (idempotent)
     try {

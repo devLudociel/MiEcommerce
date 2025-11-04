@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '../validate-coupon';
 
+// Mock CSRF protection (tested separately, should not block business logic tests)
+vi.mock('../../../lib/csrf', () => ({
+  validateCSRF: vi.fn(() => ({ valid: true })),
+  createCSRFErrorResponse: vi.fn(),
+}));
+
 // Mock Firebase Admin DB
 vi.mock('../../../lib/firebase-admin', () => {
   const state: any = { code: null };

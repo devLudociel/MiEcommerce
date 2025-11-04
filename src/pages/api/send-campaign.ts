@@ -4,6 +4,7 @@ import { Resend } from 'resend';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
+import { verifyAdminAuth } from '../../lib/auth/authHelpers';
 import { z } from 'zod';
 import {
   newCouponCampaignTemplate,
@@ -37,7 +38,7 @@ const sendCampaignSchema = z.discriminatedUnion('type', [
  *
  * SECURITY:
  * - CSRF protection
- * - Requires authentication (TODO: Add admin role check)
+ * - Admin authentication required
  * - Uses Admin SDK to query subscribers
  * - Batch email sending with rate limiting
  */
@@ -48,6 +49,15 @@ export const POST: APIRoute = async ({ request }) => {
     console.warn('[send-campaign] CSRF validation failed:', csrfCheck.reason);
     return createCSRFErrorResponse();
   }
+
+  // SECURITY: Admin authentication required
+  const authResult = await verifyAdminAuth(request);
+  if (!authResult.success) {
+    console.warn('[send-campaign] Unauthorized admin access attempt');
+    return authResult.error!;
+  }
+
+  console.log('[send-campaign] Authorized admin user:', authResult.email);
 
   try {
     const rawData = await request.json();
