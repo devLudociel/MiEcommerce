@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { doc, getDoc, collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { db, getProductReviewStats } from '../../lib/firebase';
 import type { FirebaseProduct } from '../../types/firebase';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { addToCart } from '../../store/cartStore';
 import { useWishlist, toggleWishlist } from '../../store/wishlistStore';
-import ProductReviews from '../products/ProductReviews';
-import AddReviewForm from '../products/AddReviewForm';
-import Icon from '../ui/Icon';
 import AccessibleModal from '../common/AccessibleModal';
+// PERFORMANCE: Memoized components for better re-render control
+import { ProductGallery } from '../products/ProductGallery';
+import { ProductInfo } from '../products/ProductInfo';
+import { ProductTabs } from '../products/ProductTabs';
+import { RelatedProducts } from '../products/RelatedProducts';
 
 interface ProductImage {
   id: number;
@@ -144,8 +146,6 @@ export default function ProductDetail({ id, slug }: Props) {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const wishlist = useWishlist();
   const [isInWishlist, setIsInWishlist] = useState(false);
-  const [isZoomed, setIsZoomed] = useState(false);
-  const imageRef = useRef<HTMLDivElement>(null);
   const [reviewStats, setReviewStats] = useState({ averageRating: 0, totalReviews: 0 });
 
   // Modal state
@@ -248,7 +248,8 @@ export default function ProductDetail({ id, slug }: Props) {
     if (mounted && (id || slug)) load(); // ✅ AÑADE mounted &&
   }, [id, slug, mounted]); // ✅ AÑADE mounted a las dependencias
 
-  const handleAddToCart = async () => {
+  // PERFORMANCE: useCallback para prevenir re-creación de funciones en cada render
+  const handleAddToCart = useCallback(async () => {
     if (!uiProduct) return;
     const product = uiProduct;
     const variant = product.variants[selectedVariant];
@@ -267,19 +268,19 @@ export default function ProductDetail({ id, slug }: Props) {
     } finally {
       setTimeout(() => setIsAddingToCart(false), 600);
     }
-  };
+  }, [uiProduct, selectedVariant, selectedImage, quantity]);
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = useCallback(async () => {
     await handleAddToCart();
     window.location.href = '/checkout';
-  };
+  }, [handleAddToCart]);
 
-  const handleCustomize = () => {
+  const handleCustomize = useCallback(() => {
     if (!uiProduct) return;
-    window.location.href = `/personalizar/${uiProduct.slug || uiProduct.id}`; // ✅ BIEN
-  };
+    window.location.href = `/personalizar/${uiProduct.slug || uiProduct.id}`;
+  }, [uiProduct]);
 
-  const handleShare = async () => {
+  const handleShare = useCallback(async () => {
     if (navigator.share) {
       try {
         await navigator.share({
@@ -298,7 +299,13 @@ export default function ProductDetail({ id, slug }: Props) {
         showModal('error', 'Error al copiar', 'No se pudo copiar el link al portapapeles');
       }
     }
-  };
+  }, [uiProduct]);
+
+  const handleToggleWishlist = useCallback(() => {
+    if (uiProduct) {
+      toggleWishlist({ id: uiProduct.id, name: uiProduct.name, image: uiProduct.images[0]?.url || '' });
+    }
+  }, [uiProduct]);
 
   useEffect(() => {
     const id = uiProduct?.id;
@@ -308,14 +315,6 @@ export default function ProductDetail({ id, slug }: Props) {
     }
     setIsInWishlist(wishlist.items.some((w) => String(w.id) === String(id)));
   }, [uiProduct?.id, wishlist.items]);
-
-  const handleImageZoom = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!imageRef.current || !isZoomed) return;
-    const r = imageRef.current.getBoundingClientRect();
-    const x = ((e.clientX - r.left) / r.width) * 100;
-    const y = ((e.clientY - r.top) / r.height) * 100;
-    imageRef.current.style.transformOrigin = `${x}% ${y}%`;
-  };
 
   // ✅ AÑADE TODO ESTO ANTES DEL if (loading)
   if (!mounted) {
