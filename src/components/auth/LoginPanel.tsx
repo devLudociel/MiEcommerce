@@ -10,7 +10,6 @@ import {
 } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import AccessibleModal from '../common/AccessibleModal';
-import CursorFollowMascot from '../common/CursorFollowMascot';
 
 type TabMode = 'login' | 'register';
 
@@ -261,8 +260,6 @@ export default function LoginPanel() {
         {modal.message}
       </AccessibleModal>
 
-      <CursorFollowMascot />
-
       <section className="min-h-screen py-20 bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 relative overflow-hidden">
         {/* Decorative background shapes */}
         <div className="absolute top-20 left-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
@@ -272,7 +269,13 @@ export default function LoginPanel() {
         <div className="container mx-auto px-4 relative z-10" style={{ maxWidth: 480 }}>
           <div className="bg-white rounded-3xl shadow-2xl p-8 backdrop-blur-sm bg-opacity-95">
             <div className="text-center mb-8">
-              <div className="text-6xl mb-4 animate-bounce-slow">🎨</div>
+              <div className="mb-4 flex justify-center">
+                <img
+                  src="/logoFac.png"
+                  alt="ImprimeArte Logo"
+                  className="w-24 h-24 object-contain animate-bounce-slow"
+                />
+              </div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent mb-2">
                 ¡Bienvenido!
               </h1>
@@ -511,7 +514,7 @@ export default function LoginPanel() {
           {/* Info message */}
           <div className="mt-6 text-center text-sm text-gray-600 bg-white bg-opacity-70 rounded-2xl p-4 backdrop-blur-sm">
             <p className="flex items-center justify-center gap-2">
-              <span className="text-lg">🎨</span>
+              <img src="/logoFac.png" alt="ImprimeArte" className="w-5 h-5 object-contain" />
               <span>
                 {tabMode === 'register'
                   ? 'Al crear una cuenta, aceptas nuestros términos de servicio'
