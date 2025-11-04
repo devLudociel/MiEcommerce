@@ -350,6 +350,35 @@ export default function Checkout() {
         orderId: completedOrderId,
       });
 
+      // Execute post-payment actions (wallet debit, coupon tracking, cashback, email)
+      try {
+        logger.info('[Checkout] Executing post-payment actions...', {
+          orderId: completedOrderId,
+          paymentIntentId,
+        });
+
+        const finalizeResponse = await fetch('/api/finalize-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: completedOrderId,
+            paymentIntentId,
+          }),
+        });
+
+        if (!finalizeResponse.ok) {
+          const errorData = await finalizeResponse.json().catch(() => ({}));
+          logger.error('[Checkout] Failed to execute post-payment actions', errorData);
+          // Continue anyway - webhook will handle it
+          notify.warning('El pedido se completó pero algunas acciones están pendientes');
+        } else {
+          logger.info('[Checkout] Post-payment actions completed successfully');
+        }
+      } catch (finalizeError) {
+        logger.error('[Checkout] Error calling finalize-order endpoint', finalizeError);
+        // Continue anyway - webhook will handle it
+      }
+
       // Update stored order status
       if (typeof window !== 'undefined') {
         const storedOrder = sessionStorage.getItem('checkout:lastOrder');
