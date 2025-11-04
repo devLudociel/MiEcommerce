@@ -102,15 +102,22 @@ export default function OrderTrackingUpdate({ order, onUpdate }: OrderTrackingUp
         status: eventStatus,
       });
 
-      await addTrackingEvent(
-        order.id!,
-        {
+      // Use API endpoint instead of direct Firestore update (bypasses security rules)
+      const response = await fetch('/api/add-tracking-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: order.id,
           status: eventStatus,
           location: eventLocation.trim() || undefined,
           description: eventDescription.trim(),
-        },
-        user?.uid
-      );
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || 'Error agregando evento');
+      }
 
       notify.success('✅ Evento de tracking agregado');
       setEventDescription('');
@@ -118,7 +125,7 @@ export default function OrderTrackingUpdate({ order, onUpdate }: OrderTrackingUp
       onUpdate?.();
     } catch (error) {
       logger.error('[OrderTrackingUpdate] Error agregando evento', error);
-      notify.error('Error al agregar evento');
+      notify.error(error instanceof Error ? error.message : 'Error al agregar evento');
     } finally {
       setLoading(false);
     }
