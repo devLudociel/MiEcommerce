@@ -2,7 +2,7 @@
 import type { APIRoute } from 'astro';
 import { Resend } from 'resend';
 import { getAdminDb } from '../../lib/firebase-admin';
-import { orderConfirmationTemplate, orderStatusUpdateTemplate } from '../../lib/emailTemplates';
+import { orderConfirmationTemplate, orderStatusUpdateTemplate, newsletterWelcomeTemplate } from '../../lib/emailTemplates';
 
 const resend = new Resend(import.meta.env.RESEND_API_KEY);
 
@@ -10,9 +10,38 @@ export const POST: APIRoute = async ({ request }) => {
   console.log('📧 API send-email: Solicitud recibida');
 
   try {
-    const { orderId, type, newStatus } = await request.json();
-    console.log('📧 Datos recibidos:', { orderId, type, newStatus });
+    const { orderId, type, newStatus, email } = await request.json();
+    console.log('📧 Datos recibidos:', { orderId, type, newStatus, email });
 
+    // Newsletter welcome doesn't need orderId, just email
+    if (type === 'newsletter-welcome') {
+      if (!email) {
+        return new Response(JSON.stringify({ error: 'Email requerido para newsletter' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      const template = newsletterWelcomeTemplate(email);
+      console.log('📧 Enviando email de bienvenida a:', email);
+
+      const response = await resend.emails.send({
+        from: import.meta.env.EMAIL_FROM || 'noreply@imprimearte.es',
+        to: [email],
+        subject: template.subject,
+        html: template.html,
+      });
+
+      console.log('📧 Email de newsletter enviado correctamente:', response);
+
+      const emailId = (response as any).data?.id || (response as any).id;
+      return new Response(JSON.stringify({ success: true, emailId }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Order emails need orderId
     if (!orderId || !type) {
       return new Response(JSON.stringify({ error: 'Datos incompletos' }), {
         status: 400,
