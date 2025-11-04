@@ -165,12 +165,16 @@ export async function finalizeOrder({
   }
 
   // Cashback credit
+  // Only give cashback on the amount actually paid (after wallet and coupon discounts)
   if (data.userId && data.userId !== 'guest' && Number(data.subtotal) > 0) {
     try {
       const subtotal = Number(data.subtotal) || 0;
       const couponDiscount = Number(data.couponDiscount) || 0;
-      const subtotalAfterDiscount = subtotal - couponDiscount;
-      const cashbackAmount = subtotalAfterDiscount * CASHBACK_PERCENTAGE;
+      const walletDiscount = Number(data.walletDiscount) || 0;
+
+      // Calculate amount actually paid with card (not from wallet or coupons)
+      const amountPaidWithCard = subtotal - couponDiscount - walletDiscount;
+      const cashbackAmount = amountPaidWithCard * CASHBACK_PERCENTAGE;
 
       if (cashbackAmount > 0) {
         const userId: string = String(data.userId);
@@ -201,13 +205,17 @@ export async function finalizeOrder({
           userId,
           type: 'cashback',
           amount: cashbackAmount,
-          description: `Cashback 5% del pedido #${orderId}`,
+          description: `Cashback 5% del pedido #${orderId} (€${amountPaidWithCard.toFixed(2)} pagado)`,
           orderId,
           createdAt: FieldValue.serverTimestamp(),
         });
 
         console.log(
-          `[finalizeOrder] Cashback added for order ${orderId}: €${cashbackAmount.toFixed(2)}`
+          `[finalizeOrder] Cashback added for order ${orderId}: €${cashbackAmount.toFixed(2)} (5% of €${amountPaidWithCard.toFixed(2)} paid)`
+        );
+      } else if (amountPaidWithCard <= 0) {
+        console.log(
+          `[finalizeOrder] No cashback for order ${orderId}: Paid entirely with wallet/coupons`
         );
       }
     } catch (cashbackError) {
