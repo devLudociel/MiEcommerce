@@ -6,11 +6,14 @@ import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { addToCart } from '../../store/cartStore';
 import { useWishlist, toggleWishlist } from '../../store/wishlistStore';
 import AccessibleModal from '../common/AccessibleModal';
+import Icon from '../ui/Icon';
 // PERFORMANCE: Memoized components for better re-render control
 import { ProductGallery } from '../products/ProductGallery';
 import { ProductInfo } from '../products/ProductInfo';
 import { ProductTabs } from '../products/ProductTabs';
 import { RelatedProducts } from '../products/RelatedProducts';
+import AddReviewForm from '../products/AddReviewForm';
+import ProductReviews from '../products/ProductReviews';
 
 interface ProductImage {
   id: number;
@@ -429,125 +432,34 @@ export default function ProductDetail({ id, slug }: Props) {
 
         <div className="container mx-auto px-6 py-10 md:py-12 mt-8 md:mt-12 lg:mt-120 sm:mt-160">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
-            {/* Galería de imágenes */}
-            <div className="space-y-4 lg:space-y-6">
-              <div className="relative group">
-                <div
-                  ref={imageRef}
-                  className={`relative bg-white rounded-3xl overflow-hidden shadow-xl border-4 border-transparent ${isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'} hover:border-cyan-500/50 transition-all duration-500`}
-                  onClick={() => setIsZoomed(!isZoomed)}
-                  onMouseMove={handleImageZoom}
-                >
-                  <img
-                    src={currentImage?.url || FALLBACK_IMG_400x300}
-                    alt={currentImage?.alt || product.name}
-                    className={`w-full h-80 md:h-[380px] lg:h-[420px] object-cover transition-all duration-700 ${isZoomed ? 'scale-150' : 'scale-100 group-hover:scale-105'}`}
-                    onError={(e) => {
-                      const img = e.currentTarget as HTMLImageElement;
-                      img.onerror = null;
-                      img.src = FALLBACK_IMG_400x300;
-                    }}
-                  />
-                  <div
-                    className={`absolute top-4 right-4 p-2 bg-black/50 text-white rounded-full transition-opacity duration-300 ${isZoomed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="absolute bottom-4 left-4 px-3 py-1 bg-black/50 text-white text-sm rounded-full backdrop-blur-sm">
-                    {selectedImage + 1} / {product.images.length}
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedImage(
-                        (p) => (p - 1 + product.images.length) % product.images.length
-                      );
-                    }}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-all opacity-0 group-hover:opacity-100"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedImage((p) => (p + 1) % product.images.length);
-                    }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-all opacity-0 group-hover:opacity-100"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
+            {/* Galería de imágenes - PERFORMANCE: Componente memoizado */}
+            <div className="relative">
+              <ProductGallery
+                images={product.images}
+                productName={product.name}
+                selectedImage={selectedImage}
+                onImageChange={setSelectedImage}
+              />
+
+              {/* Badge de Oferta */}
+              {product.onSale && product.salePrice && (
+                <div className="absolute top-4 left-4 px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-full flex items-center gap-2 shadow-lg z-20">
+                  <span>🔥</span>
+                  <span>
+                    -{Math.round((1 - product.salePrice / product.basePrice) * 100)}% OFERTA
+                  </span>
                 </div>
+              )}
 
-                {/* Badge de Oferta */}
-                {product.onSale && product.salePrice && (
-                  <div className="absolute top-4 left-4 px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-full flex items-center gap-2 shadow-lg z-20">
-                    <span>🔥</span>
-                    <span>
-                      -{Math.round((1 - product.salePrice / product.basePrice) * 100)}% OFERTA
-                    </span>
-                  </div>
-                )}
-
-                {/* Badge de Personalizable */}
-                {product.customizable && (
-                  <div
-                    className={`absolute ${product.onSale ? 'top-16' : 'top-4'} left-4 px-4 py-2 bg-gradient-to-r from-purple-600 via-magenta-600 to-pink-600 text-white text-sm font-bold rounded-full flex items-center gap-2 shadow-lg animate-pulse`}
-                  >
-                    <span>✨</span>
-                    <span>100% Personalizable</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-4 gap-3 lg:gap-4">
-                {product.images.map((image, i) => (
-                  <button
-                    key={image.id}
-                    data-testid={`product-image-${i}`}
-                    onClick={() => setSelectedImage(i)}
-                    className={`relative rounded-xl overflow-hidden aspect-square group ${i === selectedImage ? 'ring-4 ring-cyan-500 shadow-cyan' : 'ring-2 ring-gray-200 hover:ring-cyan-300'} transition-all duration-300 hover:scale-105`}
-                  >
-                    <img
-                      src={image.url}
-                      alt={image.alt}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      onError={(e) => {
-                        const img = e.currentTarget as HTMLImageElement;
-                        img.onerror = null;
-                        img.src = FALLBACK_IMG_400x300;
-                      }}
-                    />
-                    {i === selectedImage && (
-                      <div className="absolute inset-0 bg-cyan-500/20 flex items-center justify-center">
-                        <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center text-white animate-pulse">
-                          ✓
-                        </div>
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
+              {/* Badge de Personalizable */}
+              {product.customizable && (
+                <div
+                  className={`absolute ${product.onSale ? 'top-16' : 'top-4'} left-4 px-4 py-2 bg-gradient-to-r from-purple-600 via-magenta-600 to-pink-600 text-white text-sm font-bold rounded-full flex items-center gap-2 shadow-lg animate-pulse z-20`}
+                >
+                  <span>✨</span>
+                  <span>100% Personalizable</span>
+                </div>
+              )}
             </div>
 
             {/* Información del producto */}
