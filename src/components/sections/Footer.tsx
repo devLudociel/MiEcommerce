@@ -64,18 +64,28 @@ const Footer: React.FC = () => {
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+
+    console.log('[Newsletter] Form submitted', { email });
+
+    if (!email) {
+      console.warn('[Newsletter] No email provided');
+      return;
+    }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      console.error('[Newsletter] Invalid email format', { email });
       alert('Por favor, introduce un email válido');
       return;
     }
 
+    console.log('[Newsletter] Starting subscription...', { email });
     setIsSubscribing(true);
 
     try {
+      console.log('[Newsletter] Calling API...');
+
       const response = await fetch('/api/subscribe-newsletter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -85,13 +95,20 @@ const Footer: React.FC = () => {
         }),
       });
 
+      console.log('[Newsletter] API response received', {
+        status: response.status,
+        ok: response.ok
+      });
+
       const data = await response.json();
+      console.log('[Newsletter] Response data:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Error al suscribirse');
       }
 
       // Success!
+      console.log('[Newsletter] Subscription successful!');
       setIsSubscribed(true);
       setEmail('');
 
@@ -100,9 +117,8 @@ const Footer: React.FC = () => {
         setIsSubscribed(false);
       }, 5000);
 
-      console.log('Newsletter subscription successful:', data.message);
     } catch (error) {
-      console.error('Newsletter subscription error:', error);
+      console.error('[Newsletter] Subscription error:', error);
       alert(error instanceof Error ? error.message : 'Error al suscribirse. Por favor, intenta de nuevo.');
     } finally {
       setIsSubscribing(false);
