@@ -3,6 +3,18 @@ import { db } from '../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { logger } from '../lib/logger';
 
+// PERFORMANCE: Simple debounce implementation for Firestore writes
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  return function (...args: Parameters<T>) {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+
 export interface WishlistItem {
   id: string | number;
   name: string;
@@ -58,8 +70,8 @@ function writeWishlist(
   }
 }
 
-// Save wishlist to Firestore for authenticated users
-const saveWishlistToFirestore = async (userId: string, items: WishlistItem[]): Promise<void> => {
+// Save wishlist to Firestore for authenticated users (internal function)
+const saveWishlistToFirestoreImmediate = async (userId: string, items: WishlistItem[]): Promise<void> => {
   try {
     const userRef = doc(db, 'users', userId);
     await setDoc(
@@ -78,6 +90,11 @@ const saveWishlistToFirestore = async (userId: string, items: WishlistItem[]): P
     logger.error('[WishlistStore] Error saving wishlist to Firestore', error);
   }
 };
+
+// PERFORMANCE: Debounced version to prevent excessive Firestore writes
+// Waits 2 seconds after last change before saving to Firestore
+// This prevents multiple writes when user rapidly adds/removes items
+const saveWishlistToFirestore = debounce(saveWishlistToFirestoreImmediate, 2000);
 
 // Load wishlist from Firestore for authenticated users
 const loadWishlistFromFirestore = async (userId: string): Promise<WishlistItem[] | null> => {
