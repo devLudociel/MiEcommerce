@@ -1,10 +1,13 @@
 // src/components/customizers/ProductCustomizer.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense, lazy } from 'react';
 import { doc, getDoc, collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import ShirtCustomizer from './ShirtCustomizer.tsx';
-import FrameCustomizer from './FrameCustomizer.tsx';
-import ResinCustomizer from './ResinCustomizer.tsx';
+
+// PERFORMANCE: Lazy load customizer components for code splitting
+// Only the needed customizer will be loaded, reducing initial bundle size
+const ShirtCustomizer = lazy(() => import('./ShirtCustomizer.tsx'));
+const FrameCustomizer = lazy(() => import('./FrameCustomizer.tsx'));
+const ResinCustomizer = lazy(() => import('./ResinCustomizer.tsx'));
 
 interface FirebaseProduct {
   id: string;
@@ -166,18 +169,33 @@ export default function ProductCustomizer({ slug }: Props) {
     );
   }
 
-  // Renderizar el personalizador correcto según el tipo detectado
-  switch (customizerType) {
-    case 'shirt':
-      return <ShirtCustomizer product={product} />;
+  // PERFORMANCE: Render customizer with Suspense for lazy loading
+  // Only the selected customizer will be loaded and rendered
+  const CustomizerComponent = (() => {
+    switch (customizerType) {
+      case 'shirt':
+        return <ShirtCustomizer product={product} />;
+      case 'frame':
+        return <FrameCustomizer product={product} />;
+      case 'resin':
+        return <ResinCustomizer product={product} />;
+      default:
+        return <ShirtCustomizer product={product} />;
+    }
+  })();
 
-    case 'frame':
-      return <FrameCustomizer product={product} />;
-
-    case 'resin':
-      return <ResinCustomizer product={product} />;
-
-    default:
-      return <ShirtCustomizer product={product} />;
-  }
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
+          <div className="text-center">
+            <div className="loading-spinner mb-4" />
+            <p className="text-gray-600">Cargando herramientas de personalización...</p>
+          </div>
+        </div>
+      }
+    >
+      {CustomizerComponent}
+    </Suspense>
+  );
 }
