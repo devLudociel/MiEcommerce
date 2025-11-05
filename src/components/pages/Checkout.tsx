@@ -1,16 +1,16 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useStore } from '@nanostores/react';
-import { cartStore, clearCart } from '../../store/cartStore';
+import { cartStore, cartLoadingStore, clearCart } from '../../store/cartStore';
 import type { CartItem } from '../../store/cartStore';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
-import { shippingInfoSchema, paymentInfoSchema } from '../../lib/validation/schemas';
+import { shippingInfoSchema } from '../../lib/validation/schemas';
 import { useFormValidation } from '../../hooks/useFormValidation';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import { lookupZipES, autocompleteStreetES, debounce } from '../../utils/address';
 import type { AddressSuggestion } from '../../utils/address';
 import { useAuth } from '../hooks/useAuth';
-import { stripePromise } from '../../lib/stripe';
+import { useSecureCardPayment } from '../checkout/SecureCardPayment';
 
 interface ShippingInfo {
   firstName: string;
@@ -38,10 +38,8 @@ interface BillingInfo {
 
 interface PaymentInfo {
   method: 'card' | 'paypal' | 'transfer' | 'cash';
-  cardNumber?: string;
-  cardName?: string;
-  cardExpiry?: string;
-  cardCVV?: string;
+  // Card data removed - now handled securely by Stripe Elements
+  // No card data in state = PCI-DSS compliant ✓
 }
 
 type CheckoutStep = 1 | 2 | 3;
@@ -65,7 +63,8 @@ const FREE_SHIPPING_THRESHOLD = 50;
 
 export default function Checkout() {
   const cart = useStore(cartStore);
-  const { user } = useAuth();
+  const isCartSyncing = useStore(cartLoadingStore);
+  const { user, loading: authLoading } = useAuth();
   const [currentStep, setCurrentStep] = useState<CheckoutStep>(1);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -111,13 +110,13 @@ export default function Checkout() {
 
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>({
     method: 'card',
-    cardNumber: '',
-    cardName: '',
-    cardExpiry: '',
-    cardCVV: '',
+    // Card fields removed - Stripe Elements handles them securely
   });
 
   const [acceptTerms, setAcceptTerms] = useState(false);
+
+  // Order tracking for Stripe Elements payments
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   // Validación con Zod para el formulario de envío
   const shippingValidation = useFormValidation(shippingInfoSchema, {
@@ -127,19 +126,23 @@ export default function Checkout() {
     formName: 'Checkout-Shipping',
   });
 
-  // Validación con Zod para el formulario de pago
-  const paymentValidation = useFormValidation(paymentInfoSchema, {
-    validateOnChange: false,
-    validateOnBlur: true,
-    showToastOnError: false,
-    formName: 'Checkout-Payment',
-  });
+  // Payment validation removed - Stripe Elements validates card data securely
 
+  // Redirect to home if cart is empty (after initialization)
+  // BUT: Don't redirect if we're processing a payment or already have an order
   useEffect(() => {
-    if (cart.items.length === 0 && typeof window !== 'undefined') {
+    if (
+      !authLoading &&
+      !isCartSyncing &&
+      cart.items.length === 0 &&
+      !isProcessing &&
+      !orderId &&
+      typeof window !== 'undefined'
+    ) {
+      logger.warn('[Checkout] Cart is empty, redirecting to home');
       window.location.href = '/';
     }
-  }, [cart.items.length]);
+  }, [authLoading, cart.items.length, isCartSyncing, isProcessing, orderId]);
 
   // Load wallet balance when user is authenticated
   useEffect(() => {
@@ -293,131 +296,192 @@ export default function Checkout() {
   // Total includes: subtotal - coupon discount + shipping + tax - wallet discount
   const total = totalBeforeWallet - walletDiscount;
 
-  /**
-   * Procesa el pago con tarjeta de forma segura usando Stripe
-   * Flujo correcto para producción:
-   * 1. Crear PaymentMethod en el servidor (tokenización segura)
-   * 2. Crear PaymentIntent con el monto del pedido
-   * 3. Confirmar el pago usando el PaymentMethod ID
-   */
-  const processCardPayment = useCallback(
-    async (orderId: string, orderTotal: number) => {
-      if (paymentInfo.method !== 'card') {
-        return;
+  // REMOVED: Old insecure processCardPayment function
+  // Now using Stripe Elements (PCI-DSS compliant)
+
+  const clearCartAndStorage = useCallback(async () => {
+    logger.info('[Checkout] Starting cart clear process...');
+
+    // Wait for cart to clear in both localStorage AND Firestore
+    await clearCart();
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      localStorage.removeItem('cart:guest');
+      if (user?.uid) {
+        localStorage.removeItem(`cart:${user.uid}`);
       }
 
-      const stripe = await stripePromise;
-      if (!stripe) {
-        logger.error('[Checkout] Stripe no se inicializó');
-        throw new Error('No se pudo inicializar el sistema de pagos');
+      // Force a final check to ensure cart is empty
+      const finalState = cartStore.get();
+      if (finalState.items.length > 0) {
+        logger.warn('[Checkout] Cart still has items after clear, forcing empty state');
+        cartStore.set({ items: [], total: 0 });
       }
 
-      // Validar datos de tarjeta
-      const cardNumber = paymentInfo.cardNumber?.replace(/\s/g, '');
-      if (!cardNumber || cardNumber.length < 13) {
-        throw new Error('Número de tarjeta inválido');
-      }
+      logger.info('[Checkout] Cart storage cleared successfully');
+    } catch (storageError) {
+      logger.warn('[Checkout] Failed to clear cart storage', storageError);
+    }
+  }, [user]);
 
-      const [expMonthStr, expYearStr] = (paymentInfo.cardExpiry || '').split('/');
-      const expMonth = Number(expMonthStr);
-      const expYearDigits = Number(expYearStr);
-      if (!expMonth || !expYearDigits || expMonth < 1 || expMonth > 12) {
-        throw new Error('Fecha de vencimiento inválida');
-      }
-      const expYear = expYearDigits < 100 ? 2000 + expYearDigits : expYearDigits;
-
-      if (!paymentInfo.cardCVV || paymentInfo.cardCVV.length < 3) {
-        throw new Error('CVV inválido');
-      }
-
-      logger.info('[Checkout] Creando Payment Method seguro en el servidor');
-
-      // Paso 1: Crear Payment Method en el servidor (tokenización segura)
-      const paymentMethodResponse = await fetch('/api/create-payment-method', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cardNumber,
-          expMonth,
-          expYear,
-          cvc: paymentInfo.cardCVV,
-          billingDetails: {
-            name: `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim(),
-            email: shippingInfo.email,
-            phone: shippingInfo.phone,
-            address: {
-              line1: shippingInfo.address,
-              city: shippingInfo.city,
-              postal_code: shippingInfo.zipCode,
-              state: shippingInfo.state,
-              country: shippingInfo.country?.toLowerCase().includes('es')
-                ? 'ES'
-                : shippingInfo.country,
-            },
-          },
-        }),
-      });
-
-      const paymentMethodData = await paymentMethodResponse.json();
-
-      if (!paymentMethodResponse.ok) {
-        logger.error('[Checkout] Error creando Payment Method', paymentMethodData);
-        throw new Error(paymentMethodData.error || 'Error procesando los datos de la tarjeta');
-      }
-
-      const { paymentMethodId } = paymentMethodData;
-      logger.info('[Checkout] Payment Method creado', {
-        paymentMethodId,
-        last4: paymentMethodData.card?.last4,
-      });
-
-      // Paso 2: Crear Payment Intent
-      const paymentIntentResponse = await fetch('/api/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId,
-          amount: Number(orderTotal.toFixed(2)),
-          currency: 'eur',
-        }),
-      });
-
-      const paymentIntentData = await paymentIntentResponse.json();
-
-      if (!paymentIntentResponse.ok) {
-        logger.error('[Checkout] Error creando Payment Intent', paymentIntentData);
-        throw new Error(paymentIntentData.error || 'Error al iniciar el pago');
-      }
-
-      const { clientSecret, paymentIntentId } = paymentIntentData;
-      logger.info('[Checkout] Payment Intent creado', { orderId, paymentIntentId });
-
-      // Paso 3: Confirmar el pago con el Payment Method ID
-      const confirmation = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: paymentMethodId, // ✅ CORRECTO: usar payment_method, no payment_method_data
-      });
-
-      if (confirmation.error) {
-        logger.error('[Checkout] Error al confirmar el pago', confirmation.error);
-        throw new Error(
-          confirmation.error.message ||
-            'El pago fue rechazado. Verifica los datos e intenta nuevamente.'
-        );
-      }
-
-      const status = confirmation.paymentIntent?.status;
-      logger.info('[Checkout] Pago confirmado', { orderId, paymentIntentId, status });
-
-      if (status !== 'succeeded' && status !== 'processing' && status !== 'requires_capture') {
-        throw new Error(
-          `El pago tiene estado "${status || 'desconocido'}". Por favor contacta con soporte.`
-        );
-      }
-
-      logger.info('[Checkout] ✅ Pago completado exitosamente', { orderId, status });
+  // Stripe Elements - PCI-DSS Compliant Payment
+  const securePayment = useSecureCardPayment({
+    orderId: orderId ?? '',
+    orderTotal: total,
+    billingDetails: {
+      name: `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim(),
+      email: shippingInfo.email,
+      phone: shippingInfo.phone,
+      address: {
+        line1: shippingInfo.address,
+        city: shippingInfo.city,
+        postal_code: shippingInfo.zipCode,
+        state: shippingInfo.state,
+        country: 'ES',
+      },
     },
-    [paymentInfo, shippingInfo]
-  );
+    onSuccess: async (paymentIntentId, completedOrderId) => {
+      logger.info('[Checkout] Payment successful', {
+        paymentIntentId,
+        orderId: completedOrderId,
+      });
+
+      // Execute post-payment actions (wallet debit, coupon tracking, cashback, email)
+      try {
+        logger.info('[Checkout] Executing post-payment actions...', {
+          orderId: completedOrderId,
+          paymentIntentId,
+        });
+
+        // Get authentication token
+        const token = user ? await user.getIdToken() : null;
+        if (!token) {
+          logger.error('[Checkout] No authentication token available');
+          throw new Error('No se pudo autenticar la solicitud');
+        }
+
+        const finalizeResponse = await fetch('/api/finalize-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            orderId: completedOrderId,
+            paymentIntentId,
+          }),
+        });
+
+        if (!finalizeResponse.ok) {
+          const errorData = await finalizeResponse.json().catch(() => ({}));
+          logger.error('[Checkout] Failed to execute post-payment actions', errorData);
+          // Continue anyway - webhook will handle it
+          notify.warning('El pedido se completó pero algunas acciones están pendientes');
+        } else {
+          logger.info('[Checkout] Post-payment actions completed successfully');
+        }
+      } catch (finalizeError) {
+        logger.error('[Checkout] Error calling finalize-order endpoint', finalizeError);
+        // Continue anyway - webhook will handle it
+      }
+
+      // Update stored order status
+      if (typeof window !== 'undefined') {
+        const storedOrder = sessionStorage.getItem('checkout:lastOrder');
+        if (storedOrder) {
+          try {
+            const parsed = JSON.parse(storedOrder);
+            if (parsed?.id === completedOrderId) {
+              parsed.status = 'paid';
+              sessionStorage.setItem('checkout:lastOrder', JSON.stringify(parsed));
+            }
+          } catch (storageError) {
+            logger.warn('[Checkout] Failed to update stored order status', storageError);
+          }
+        }
+      }
+
+      // Show success notification
+      notify.success('¡Pago completado con éxito!');
+
+      // Clear cart with timeout protection
+      try {
+        logger.info('[Checkout] Clearing cart...');
+        await Promise.race([
+          clearCartAndStorage(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Cart clear timeout')), 3000))
+        ]);
+        logger.info('[Checkout] Cart cleared successfully');
+      } catch (clearError) {
+        logger.error('[Checkout] Error clearing cart (continuing anyway)', clearError);
+      }
+
+      // Redirect to confirmation page (ensure this always happens)
+      logger.info('[Checkout] Redirecting to confirmation page...', { orderId: completedOrderId });
+      const redirectUrl = `/confirmacion?orderId=${completedOrderId}`;
+
+      // Use both methods to ensure redirect works
+      if (typeof window !== 'undefined') {
+        // Try navigation first, then fallback to location.href
+        setTimeout(() => {
+          try {
+            window.location.href = redirectUrl;
+          } catch (redirectError) {
+            logger.error('[Checkout] Redirect failed, trying alternative method', redirectError);
+            window.location.assign(redirectUrl);
+          }
+        }, 500);
+      }
+    },
+    onError: (errorMessage) => {
+      logger.error('[Checkout] Payment failed', { error: errorMessage });
+      notify.error(errorMessage);
+      setIsProcessing(false);
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('checkout:lastOrder');
+      }
+    },
+  });
+
+  const cancelPendingOrder = useCallback(async (orderIdToCancel: string, key: string) => {
+    if (!orderIdToCancel || !key) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/cancel-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({
+          orderId: orderIdToCancel,
+          idempotencyKey: key,
+          reason: 'payment_failed',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.warn('[Checkout] Failed to auto-cancel pending order', {
+          orderId: orderIdToCancel,
+          status: response.status,
+          body: errorText,
+        });
+      } else {
+        logger.info('[Checkout] Pending order cancelled after payment failure', {
+          orderId: orderIdToCancel,
+        });
+      }
+    } catch (error) {
+      logger.error('[Checkout] Error cancelling pending order', error);
+    }
+  }, []);
 
   const validateStep1 = async (): Promise<boolean> => {
     logger.debug('[Checkout] Validating step 1 (shipping info)', shippingInfo);
@@ -436,18 +500,15 @@ export default function Checkout() {
   };
 
   const validateStep2 = async (): Promise<boolean> => {
-    logger.debug('[Checkout] Validating step 2 (payment info)', paymentInfo);
+    logger.debug('[Checkout] Validating step 2 (payment method)', paymentInfo);
 
-    const result = await paymentValidation.validate(paymentInfo);
-
-    if (!result.success) {
-      const firstError = Object.values(result.errors!)[0];
-      notify.error(firstError || 'Por favor, corrige los errores de pago');
-      logger.warn('[Checkout] Step 2 validation failed', result.errors);
+    // Payment method validation only
+    if (!paymentInfo.method) {
+      notify.error('Selecciona un método de pago');
       return false;
     }
 
-    logger.info('[Checkout] Step 2 validation successful');
+    // Card validation handled by Stripe Elements
     return true;
   };
 
@@ -530,9 +591,16 @@ export default function Checkout() {
 
     logger.info('[Checkout] Placing order', { total, itemCount: cart.items.length });
     setIsProcessing(true);
+
+    let cleanupOrderId: string | null = null;
+    let cleanupIdempotency: string | null = null;
+
     try {
-      // Preparar datos de la orden para Firebase
+      const idempotencyKey = `order_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+      logger.info('[Checkout] Generated idempotency key:', idempotencyKey);
+
       const orderData = {
+        idempotencyKey,
         items: cart.items.map((item) => ({
           productId: item.id,
           name: item.name,
@@ -588,7 +656,6 @@ export default function Checkout() {
         status: 'pending',
       };
 
-      // Guardar orden en Firebase
       const response = await fetch('/api/save-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -599,30 +666,82 @@ export default function Checkout() {
         throw new Error('Error al guardar la orden');
       }
 
-      const { orderId } = await response.json();
+      const { orderId: newOrderId } = await response.json();
+      setOrderId(newOrderId);
+      cleanupOrderId = newOrderId;
+      cleanupIdempotency = idempotencyKey;
 
-      // Limpiar carrito y redirigir
-      logger.info('[Checkout] Order placed successfully', { orderId });
-      notify.success('¡Pedido realizado con éxito!');
-      clearCart();
+      if (typeof window !== 'undefined') {
+        const fallbackOrder = {
+          id: newOrderId,
+          date: new Date().toISOString(),
+          items: orderData.items,
+          shippingInfo: orderData.shippingInfo,
+          billingInfo: orderData.billingInfo,
+          paymentInfo: { method: orderData.paymentMethod },
+          subtotal: Number(orderData.subtotal || 0),
+          shipping: Number(orderData.shippingCost || 0),
+          tax: Number(orderData.tax || 0),
+          taxLabel: orderData.taxLabel,
+          total: Number(orderData.total || 0),
+          status: orderData.status,
+          userId: orderData.userId,
+          accessKey: idempotencyKey,
+        };
+        sessionStorage.setItem('checkout:lastOrder', JSON.stringify(fallbackOrder));
+      }
 
-      // Pequeña pausa para que el usuario vea la notificación
-      setTimeout(() => {
-        window.location.href = `/confirmacion?orderId=${orderId}`;
-      }, 500);
+      logger.info('[Checkout] Order saved', { orderId: newOrderId });
+
+      if (paymentInfo.method === 'card') {
+        logger.info('[Checkout] Processing card payment...');
+        const paymentResult = await securePayment.processPayment(newOrderId);
+
+        if (!paymentResult.success) {
+          await cancelPendingOrder(newOrderId, idempotencyKey);
+          cleanupOrderId = null;
+          cleanupIdempotency = null;
+          throw new Error(paymentResult.error || 'Error procesando pago');
+        }
+        cleanupOrderId = null;
+        cleanupIdempotency = null;
+        // El onSuccess del hook maneja el resto (notificación, carrito y redirección)
+      } else {
+        notify.success('¡Pedido realizado con éxito!');
+        await clearCartAndStorage();
+        setTimeout(() => {
+          window.location.href = `/confirmacion?orderId=${newOrderId}`;
+        }, 500);
+      }
     } catch (error) {
       logger.error('[Checkout] Error placing order', error);
-      notify.error('Hubo un error al procesar tu pedido. Por favor, intenta de nuevo.');
+      const errorMessage =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Hubo un error al procesar tu pedido. Por favor, intenta de nuevo.';
+      notify.error(errorMessage);
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('checkout:lastOrder');
+      }
+      if (cleanupOrderId && cleanupIdempotency) {
+        await cancelPendingOrder(cleanupOrderId, cleanupIdempotency);
+        cleanupOrderId = null;
+        cleanupIdempotency = null;
+      }
     } finally {
       setIsProcessing(false);
     }
   };
-
-  const formatCardNumber = (value: string) => {
-    const cleaned = value.replace(/\s/g, '');
-    const formatted = cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
-    return formatted.substring(0, 19);
-  };
+  if (authLoading || isCartSyncing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-8 mt-32 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Cargando carrito...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (cart.items.length === 0) {
     return null;
@@ -1269,6 +1388,7 @@ export default function Checkout() {
                   </div>
 
                   <button
+                    data-testid="checkout-continue-to-payment"
                     onClick={handleNextStep}
                     className="w-full py-4 bg-gradient-rainbow text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
                   >
@@ -1277,8 +1397,7 @@ export default function Checkout() {
                 </div>
               )}
 
-              {currentStep === 2 && (
-                <div className="space-y-6">
+              <div className={currentStep === 2 ? 'space-y-6' : 'hidden'}>
                   <div>
                     <h2 className="text-3xl font-black text-gray-800 mb-2">Método de Pago</h2>
                     <p className="text-gray-600">Elige cómo quieres pagar tu pedido</p>
@@ -1313,6 +1432,7 @@ export default function Checkout() {
                     ].map((option) => (
                       <button
                         key={option.method}
+                        data-testid={`payment-method-${option.method}`}
                         onClick={() =>
                           setPaymentInfo({ ...paymentInfo, method: option.method as any })
                         }
@@ -1334,108 +1454,9 @@ export default function Checkout() {
                     ))}
                   </div>
 
-                  {paymentInfo.method === 'card' && (
-                    <div className="space-y-4 mt-6 p-6 bg-gray-50 rounded-2xl border-2 border-gray-200">
-                      <h3 className="font-bold text-gray-800 mb-4">Datos de la Tarjeta</h3>
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">
-                          Número de Tarjeta *
-                        </label>
-                        <input
-                          type="text"
-                          value={paymentInfo.cardNumber}
-                          onChange={(e) => {
-                            const formatted = formatCardNumber(e.target.value);
-                            setPaymentInfo({ ...paymentInfo, cardNumber: formatted });
-                            paymentValidation.handleChange('cardNumber', formatted);
-                          }}
-                          onBlur={(e) => paymentValidation.handleBlur('cardNumber', e.target.value)}
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${paymentValidation.errors.cardNumber ? 'border-red-500' : 'border-gray-300'}`}
-                          placeholder="1234 5678 9012 3456"
-                          maxLength={19}
-                        />
-                        {paymentValidation.errors.cardNumber && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {paymentValidation.errors.cardNumber}
-                          </p>
-                        )}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">
-                          Nombre en la Tarjeta *
-                        </label>
-                        <input
-                          type="text"
-                          value={paymentInfo.cardName}
-                          onChange={(e) => {
-                            const upperValue = e.target.value.toUpperCase();
-                            setPaymentInfo({ ...paymentInfo, cardName: upperValue });
-                            paymentValidation.handleChange('cardName', upperValue);
-                          }}
-                          onBlur={(e) => paymentValidation.handleBlur('cardName', e.target.value)}
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all ${paymentValidation.errors.cardName ? 'border-red-500' : 'border-gray-300'}`}
-                          placeholder="JUAN GARCIA"
-                        />
-                        {paymentValidation.errors.cardName && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {paymentValidation.errors.cardName}
-                          </p>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-bold text-gray-700 mb-2">
-                            Fecha de Vencimiento *
-                          </label>
-                          <input
-                            type="text"
-                            value={paymentInfo.cardExpiry}
-                            onChange={(e) => {
-                              let value = e.target.value.replace(/\D/g, '');
-                              if (value.length >= 2) {
-                                value = value.slice(0, 2) + '/' + value.slice(2, 4);
-                              }
-                              setPaymentInfo({ ...paymentInfo, cardExpiry: value });
-                              paymentValidation.handleChange('cardExpiry', value);
-                            }}
-                            onBlur={(e) =>
-                              paymentValidation.handleBlur('cardExpiry', e.target.value)
-                            }
-                            className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${paymentValidation.errors.cardExpiry ? 'border-red-500' : 'border-gray-300'}`}
-                            placeholder="MM/AA"
-                            maxLength={5}
-                          />
-                          {paymentValidation.errors.cardExpiry && (
-                            <p className="text-red-500 text-sm mt-1">
-                              {paymentValidation.errors.cardExpiry}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold text-gray-700 mb-2">
-                            CVV *
-                          </label>
-                          <input
-                            type="text"
-                            value={paymentInfo.cardCVV}
-                            onChange={(e) => {
-                              const cvv = e.target.value.replace(/\D/g, '').slice(0, 4);
-                              setPaymentInfo({ ...paymentInfo, cardCVV: cvv });
-                              paymentValidation.handleChange('cardCVV', cvv);
-                            }}
-                            onBlur={(e) => paymentValidation.handleBlur('cardCVV', e.target.value)}
-                            className={`w-full px-4 py-3 border-2 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all font-mono ${paymentValidation.errors.cardCVV ? 'border-red-500' : 'border-gray-300'}`}
-                            placeholder="123"
-                            maxLength={4}
-                          />
-                          {paymentValidation.errors.cardCVV && (
-                            <p className="text-red-500 text-sm mt-1">
-                              {paymentValidation.errors.cardCVV}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                  {/* PCI-DSS Compliant Card Input */}
+                  {paymentInfo.method === 'card' && securePayment && (
+                    <div className="mt-4">{securePayment.CardElement}</div>
                   )}
 
                   <div className="flex gap-4">
@@ -1452,8 +1473,7 @@ export default function Checkout() {
                       Revisar Pedido →
                     </button>
                   </div>
-                </div>
-              )}
+              </div>
 
               {currentStep === 3 && (
                 <div className="space-y-6">
@@ -1567,12 +1587,14 @@ export default function Checkout() {
 
                   <div className="flex gap-4">
                     <button
+                      data-testid="checkout-back"
                       onClick={handlePreviousStep}
                       className="flex-1 py-4 bg-gray-200 text-gray-700 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all duration-300"
                     >
                       ← Volver
                     </button>
                     <button
+                      data-testid="checkout-place-order"
                       onClick={handlePlaceOrder}
                       disabled={!acceptTerms || isProcessing}
                       className={`flex-1 py-4 rounded-2xl font-black text-lg transition-all duration-300 ${!acceptTerms || isProcessing ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-gradient-rainbow text-white shadow-lg hover:shadow-2xl transform hover:scale-105'}`}
@@ -1653,6 +1675,7 @@ export default function Checkout() {
                         disabled={validatingCoupon}
                       />
                       <button
+                        data-testid="checkout-apply-coupon"
                         onClick={handleApplyCoupon}
                         disabled={validatingCoupon || !couponCode.trim()}
                         className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1681,6 +1704,7 @@ export default function Checkout() {
                         <p className="text-sm text-green-700">{appliedCoupon.description}</p>
                       </div>
                       <button
+                        data-testid="checkout-remove-coupon"
                         onClick={handleRemoveCoupon}
                         className="text-red-500 hover:text-red-700 font-bold text-sm ml-2"
                       >
