@@ -1,5 +1,27 @@
 import * as React from 'react';
-import * as Icons from 'lucide-react';
+// PERFORMANCE: Import only icons actually used in the project (tree-shaking friendly)
+import {
+  ArrowLeft,
+  ChevronRight,
+  CreditCard,
+  Edit,
+  FileText,
+  Folder,
+  Heart,
+  Mail,
+  MapPin,
+  Package,
+  Printer,
+  Search,
+  Share,
+  Share2,
+  Shield,
+  ShoppingCart,
+  Truck,
+  User,
+  X,
+  Circle, // Fallback icon
+} from 'lucide-react';
 
 interface IconProps extends React.SVGProps<SVGSVGElement> {
   // Accept flexible names: 'Heart', 'heart', 'folder-open', etc.
@@ -7,6 +29,52 @@ interface IconProps extends React.SVGProps<SVGSVGElement> {
   size?: number;
   strokeWidth?: number;
 }
+
+// PERFORMANCE: Explicit icon map for tree-shaking
+// Only icons actually used in the project are included here
+const iconMap: Record<string, React.ComponentType<any>> = {
+  'arrow-left': ArrowLeft,
+  ArrowLeft,
+  'chevron-right': ChevronRight,
+  ChevronRight,
+  'credit-card': CreditCard,
+  CreditCard,
+  edit: Edit,
+  Edit,
+  'file-text': FileText,
+  FileText,
+  folder: Folder,
+  Folder,
+  heart: Heart,
+  Heart,
+  mail: Mail,
+  Mail,
+  'map-pin': MapPin,
+  MapPin,
+  package: Package,
+  Package,
+  printer: Printer,
+  Printer,
+  search: Search,
+  Search,
+  share: Share,
+  Share,
+  'share-2': Share2,
+  Share2,
+  shield: Shield,
+  Shield,
+  'shopping-cart': ShoppingCart,
+  ShoppingCart,
+  truck: Truck,
+  Truck,
+  user: User,
+  User,
+  x: X,
+  X,
+  // Fallback
+  circle: Circle,
+  Circle,
+};
 
 function normalizeName(input: string): string {
   if (!input) return '';
@@ -21,14 +89,13 @@ function normalizeName(input: string): string {
 
 export default function Icon({ name, size = 20, strokeWidth = 2, className, ...rest }: IconProps) {
   const normalized = normalizeName(name);
-  const LucideIcon = (Icons as any)[normalized] || (Icons as any)[name];
-  const Fallback = (Icons as any)['Circle'] as React.ComponentType<any>;
-  const Comp = (LucideIcon as React.ComponentType<any>) || Fallback;
+  const LucideIcon = iconMap[name] || iconMap[normalized];
+  const Comp = LucideIcon || Circle;
 
-  if (!LucideIcon && typeof console !== 'undefined') {
+  if (!LucideIcon && import.meta.env.DEV) {
     // Útil para detectar nombres inválidos o no importados
     // Ej: name="folder-open" se normaliza a "FolderOpen"
-    console.warn(`[Icon] Unknown icon: "${name}" (normalized: "${normalized}")`);
+    console.warn(`[Icon] Unknown icon: "${name}" (normalized: "${normalized}"). Add to iconMap in Icon.tsx`);
   }
 
   return <Comp size={size} strokeWidth={strokeWidth} className={className} {...rest} />;
