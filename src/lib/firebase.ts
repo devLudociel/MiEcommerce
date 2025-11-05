@@ -494,6 +494,61 @@ export async function getUserOrders(userId: string, limitCount: number = 50): Pr
 }
 
 /**
+ * PERFORMANCE: Obtener pedidos de un usuario con paginación
+ * @param userId - ID del usuario
+ * @param pageSize - Número de pedidos por página
+ * @param lastDoc - Último documento de la página anterior (para paginación)
+ * @returns Objeto con pedidos, si hay más páginas, y el cursor para la siguiente página
+ */
+export async function getUserOrdersPaginated(
+  userId: string,
+  pageSize: number = 10,
+  lastDoc?: QueryDocumentSnapshot<DocumentData>
+): Promise<{
+  orders: OrderData[];
+  hasMore: boolean;
+  lastVisible: QueryDocumentSnapshot<DocumentData> | null;
+}> {
+  try {
+    let q = query(
+      collection(db, 'orders'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc'),
+      limit(pageSize + 1) // Fetch one extra to know if there are more
+    );
+
+    // Add cursor for pagination
+    if (lastDoc) {
+      q = query(q, startAfter(lastDoc));
+    }
+
+    const querySnapshot = await getDocs(q);
+    const orders: OrderData[] = [];
+    const docs: QueryDocumentSnapshot<DocumentData>[] = [];
+
+    querySnapshot.forEach((doc) => {
+      docs.push(doc);
+      orders.push({ id: doc.id, ...doc.data() } as OrderData);
+    });
+
+    // Check if there are more pages
+    const hasMore = orders.length > pageSize;
+    if (hasMore) {
+      orders.pop(); // Remove the extra item
+      docs.pop();
+    }
+
+    const lastVisible = docs.length > 0 ? docs[docs.length - 1] : null;
+
+    console.log(`✅ ${orders.length} pedidos cargados (página), hasMore: ${hasMore}`);
+    return { orders, hasMore, lastVisible };
+  } catch (error) {
+    console.error('❌ Error obteniendo pedidos paginados:', error);
+    throw error;
+  }
+}
+
+/**
  * Actualizar estado de pedido
  */
 export async function updateOrderStatus(orderId: string, status: string): Promise<boolean> {

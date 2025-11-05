@@ -1,19 +1,28 @@
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth, getUserOrders } from '../../lib/firebase';
+import { auth, getUserOrdersPaginated } from '../../lib/firebase';
 import type { OrderData } from '../../lib/firebase';
+import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { logger } from '../../lib/logger';
+
+const PAGE_SIZE = 10; // Number of orders per page
 
 export default function OrdersPanel() {
   const [uid, setUid] = useState<string | null>(null);
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
 
+  // PERFORMANCE: Load initial page on auth change
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) {
         setUid(null);
         setOrders([]);
+        setHasMore(false);
+        setLastDoc(null);
         setLoading(false);
         return;
       }
@@ -23,18 +32,46 @@ export default function OrdersPanel() {
 
       try {
         logger.info('[OrdersPanel] Cargando pedidos del usuario', { userId: u.uid });
-        const userOrders = await getUserOrders(u.uid);
-        setOrders(userOrders);
-        logger.info('[OrdersPanel] Pedidos cargados', { count: userOrders.length });
+        const result = await getUserOrdersPaginated(u.uid, PAGE_SIZE);
+        setOrders(result.orders);
+        setHasMore(result.hasMore);
+        setLastDoc(result.lastVisible);
+        logger.info('[OrdersPanel] Pedidos cargados', {
+          count: result.orders.length,
+          hasMore: result.hasMore
+        });
       } catch (error) {
         logger.error('[OrdersPanel] Error cargando pedidos', error);
         setOrders([]);
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
     });
     return () => unsub();
   }, []);
+
+  // PERFORMANCE: Load more orders (pagination)
+  const loadMoreOrders = async () => {
+    if (!uid || !lastDoc || loadingMore) return;
+
+    setLoadingMore(true);
+    try {
+      logger.info('[OrdersPanel] Cargando más pedidos');
+      const result = await getUserOrdersPaginated(uid, PAGE_SIZE, lastDoc);
+      setOrders((prev) => [...prev, ...result.orders]);
+      setHasMore(result.hasMore);
+      setLastDoc(result.lastVisible);
+      logger.info('[OrdersPanel] Más pedidos cargados', {
+        count: result.orders.length,
+        total: orders.length + result.orders.length
+      });
+    } catch (error) {
+      logger.error('[OrdersPanel] Error cargando más pedidos', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   if (!uid) {
     return (
@@ -269,6 +306,26 @@ export default function OrdersPanel() {
               </div>
             </div>
           ))}
+
+          {/* PERFORMANCE: Load More button for pagination */}
+          {hasMore && (
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={loadMoreOrders}
+                disabled={loadingMore}
+                className="btn bg-gradient-to-r from-cyan-500 to-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loadingMore ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Cargando...</span>
+                  </div>
+                ) : (
+                  <>Ver más pedidos</>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
