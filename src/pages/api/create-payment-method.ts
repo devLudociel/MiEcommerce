@@ -95,26 +95,27 @@ export const POST: APIRoute = async ({ request }) => {
         headers: { 'Content-Type': 'application/json' },
       }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[API] Error creando Payment Method', error);
 
     // Mejorar mensajes de error de Stripe
     let errorMessage = 'Error procesando los datos de la tarjeta';
+    const errorObj = error as Record<string, any>;
 
-    if (error.type === 'StripeCardError') {
-      errorMessage = error.message || 'Tarjeta inválida';
-    } else if (error.code === 'incorrect_number') {
+    if (errorObj.type === 'StripeCardError') {
+      errorMessage = errorObj.message || 'Tarjeta inválida';
+    } else if (errorObj.code === 'incorrect_number') {
       errorMessage = 'Número de tarjeta incorrecto';
-    } else if (error.code === 'invalid_expiry_month' || error.code === 'invalid_expiry_year') {
+    } else if (errorObj.code === 'invalid_expiry_month' || errorObj.code === 'invalid_expiry_year') {
       errorMessage = 'Fecha de vencimiento inválida';
-    } else if (error.code === 'invalid_cvc') {
+    } else if (errorObj.code === 'invalid_cvc') {
       errorMessage = 'CVV inválido';
     }
 
     return new Response(
       JSON.stringify({
         error: errorMessage,
-        details: import.meta.env.DEV ? error.message : undefined,
+        details: import.meta.env.DEV ? errorObj.message : undefined,
       }),
       {
         status: 400,

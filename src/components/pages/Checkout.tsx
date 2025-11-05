@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useStore } from '@nanostores/react';
 import { cartStore, cartLoadingStore, clearCart } from '../../store/cartStore';
 import type { CartItem } from '../../store/cartStore';
@@ -255,20 +255,18 @@ export default function Checkout() {
   const subtotal = cart.total;
   const couponDiscount = appliedCoupon?.discountAmount || 0;
 
-  // Calculate shipping cost based on method and free shipping conditions
-  const getShippingCost = () => {
+  // PERFORMANCE: Memoize shipping cost calculation
+  const shippingCost = useMemo(() => {
     // Free shipping from coupon or cart threshold
     if (appliedCoupon?.freeShipping || subtotal >= FREE_SHIPPING_THRESHOLD) {
       return 0;
     }
     // Return cost based on selected method
     return SHIPPING_COSTS[shippingInfo.shippingMethod || 'standard'];
-  };
+  }, [appliedCoupon?.freeShipping, subtotal, shippingInfo.shippingMethod]);
 
-  const shippingCost = getShippingCost();
-
-  // Calculate tax based on province (different tax regimes in Spain)
-  const getTaxInfo = () => {
+  // PERFORMANCE: Memoize tax calculation
+  const taxInfo = useMemo(() => {
     const province = shippingInfo.state;
 
     // Canarias: IGIC exempt (0% - not registered for IGIC)
@@ -283,9 +281,7 @@ export default function Checkout() {
 
     // Rest of Spain: IVA 21%
     return { rate: 0.21, name: 'IVA', label: 'IVA (21%)' };
-  };
-
-  const taxInfo = getTaxInfo();
+  }, [shippingInfo.state]);
   const subtotalAfterDiscount = subtotal - couponDiscount;
   const tax = subtotalAfterDiscount * taxInfo.rate;
 
@@ -502,7 +498,8 @@ export default function Checkout() {
     return true;
   };
 
-  const handleNextStep = async () => {
+  // PERFORMANCE: Memoize step navigation handlers
+  const handleNextStep = useCallback(async () => {
     if (currentStep === 1) {
       const isValid = await validateStep1();
       if (isValid) {
@@ -518,16 +515,17 @@ export default function Checkout() {
         logger.info('[Checkout] Moved to step 3');
       }
     }
-  };
+  }, [currentStep, validateStep1, validateStep2]);
 
-  const handlePreviousStep = () => {
+  const handlePreviousStep = useCallback(() => {
     if (currentStep > 1) {
       setCurrentStep((currentStep - 1) as CheckoutStep);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  };
+  }, [currentStep]);
 
-  const handleApplyCoupon = async () => {
+  // PERFORMANCE: Memoize coupon handlers
+  const handleApplyCoupon = useCallback(async () => {
     if (!couponCode.trim()) {
       notify.warning('Introduce un código de cupón');
       return;
@@ -565,15 +563,16 @@ export default function Checkout() {
     } finally {
       setValidatingCoupon(false);
     }
-  };
+  }, [couponCode, subtotal]);
 
-  const handleRemoveCoupon = () => {
+  const handleRemoveCoupon = useCallback(() => {
     logger.info('[Checkout] Removing coupon', appliedCoupon);
     setAppliedCoupon(null);
     notify.success('Cupón eliminado');
-  };
+  }, [appliedCoupon]);
 
-  const handlePlaceOrder = async () => {
+  // PERFORMANCE: Memoize order placement handler
+  const handlePlaceOrder = useCallback(async () => {
     if (!acceptTerms) {
       notify.warning('Debes aceptar los términos y condiciones');
       return;
@@ -721,7 +720,24 @@ export default function Checkout() {
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [
+    acceptTerms,
+    total,
+    cart.items,
+    user?.uid,
+    shippingInfo,
+    appliedCoupon,
+    useWallet,
+    walletDiscount,
+    paymentMethod,
+    currentPaymentMethod,
+    subtotal,
+    shippingCost,
+    tax,
+    taxInfo,
+    clearCartAndStorage,
+  ]);
+
   if (authLoading || isCartSyncing) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-8 mt-32 flex items-center justify-center">

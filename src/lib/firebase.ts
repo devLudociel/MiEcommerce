@@ -71,7 +71,7 @@ try {
 try {
   // Mostrar emails en español (restablecer contraseña, etc.)
   // Nota: puedes sobreescribir por usuario si lo necesitas
-  (auth as any).languageCode = 'es';
+  auth.languageCode = 'es';
 } catch {}
 
 // Initialize Analytics (only in browser)
@@ -104,8 +104,8 @@ export interface CustomizationDoc extends DocumentData {
   id: string;
   userId: string;
   productType: string;
-  createdAt: any;
-  updatedAt?: any;
+  createdAt: import('firebase/firestore').Timestamp | import('firebase/firestore').FieldValue;
+  updatedAt?: import('firebase/firestore').Timestamp | import('firebase/firestore').FieldValue;
   status: string;
 }
 
@@ -402,7 +402,7 @@ export async function getAllProducts(): Promise<ProductData[]> {
  *
  * @returns Array de productos de oferta especial con todos sus datos
  */
-export async function getSpecialOffers(): Promise<any[]> {
+export async function getSpecialOffers(): Promise<ProductData[]> {
   try {
     const q = query(
       collection(db, 'products'),
@@ -413,7 +413,7 @@ export async function getSpecialOffers(): Promise<any[]> {
     );
 
     const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
-    const offers: any[] = [];
+    const offers: ProductData[] = [];
 
     querySnapshot.forEach((doc) => {
       const data = doc.data();
@@ -436,46 +436,15 @@ export async function getSpecialOffers(): Promise<any[]> {
 // 📦 FUNCIONES PARA PEDIDOS
 // ============================================
 
-export interface TrackingEvent {
-  status:
-    | 'pending'
-    | 'confirmed'
-    | 'processing'
-    | 'packed'
-    | 'shipped'
-    | 'in_transit'
-    | 'out_for_delivery'
-    | 'delivered'
-    | 'failed'
-    | 'returned';
-  timestamp: any;
-  location?: string;
-  description: string;
-  updatedBy?: string; // userId del admin que hizo el update
-}
-
-export interface OrderData {
-  id?: string;
-  userId?: string;
-  items: any[];
-  shippingInfo: any;
-  paymentInfo: any;
-  subtotal: number;
-  shipping: number;
-  total: number;
-  status: string;
-  paymentStatus: string;
-  createdAt?: any;
-  updatedAt?: any;
-  invoiceNumber?: string;
-  invoiceDate?: any;
-  // Tracking información
-  trackingNumber?: string;
-  carrier?: string; // 'correos' | 'seur' | 'dhl' | 'ups' | 'fedex' | 'mrw' | 'other'
-  trackingUrl?: string;
-  estimatedDelivery?: any;
-  trackingHistory?: TrackingEvent[];
-}
+// Import type definitions from centralized types file
+import type {
+  OrderData,
+  OrderItem,
+  TrackingEvent,
+  ShippingInfo,
+  PaymentInfo,
+} from '../types/firebase';
+export type { OrderData, OrderItem, TrackingEvent, ShippingInfo, PaymentInfo } from '../types/firebase';
 
 /**
  * Obtener pedido por ID
@@ -558,7 +527,7 @@ export async function updateOrderTracking(
 ): Promise<boolean> {
   try {
     const docRef = doc(db, 'orders', orderId);
-    const updateData: any = {
+    const updateData: Record<string, any> = {
       ...trackingData,
       updatedAt: serverTimestamp(),
     };
@@ -910,15 +879,90 @@ export async function getProductReviewStats(productId: string): Promise<ReviewSt
 
     stats.averageRating = Number((totalRating / reviews.length).toFixed(1));
 
-    console.log(
-      `✅ Stats calculadas: ${stats.averageRating} estrellas (${stats.totalReviews} reviews)`
-    );
     return stats;
   } catch (error) {
     console.error('❌ Error obteniendo stats de reviews:', error);
     throw error;
   }
 }
+
+/**
+ * PERFORMANCE: Batch get review stats for multiple products
+ * Solves N+1 query problem by fetching all reviews in a single query
+ */
+export async function batchGetProductReviewStats(
+  productIds: string[]
+): Promise<Map<string, ReviewStats>> {
+  const statsMap = new Map<string, ReviewStats>();
+
+  // Initialize empty stats for all products
+  productIds.forEach((id) => {
+    statsMap.set(id, {
+      averageRating: 0,
+      totalReviews: 0,
+      ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+    });
+  });
+
+  if (productIds.length === 0) {
+    return statsMap;
+  }
+
+  try {
+    // PERFORMANCE: Single query for all reviews instead of N queries
+    // Firestore 'in' operator supports up to 10 values, so we need to batch
+    const batchSize = 10;
+    const batches: string[][] = [];
+
+    for (let i = 0; i < productIds.length; i += batchSize) {
+      batches.push(productIds.slice(i, i + batchSize));
+    }
+
+    // Execute all batch queries in parallel
+    const allReviewsPromises = batches.map(async (batch) => {
+      const q = query(collection(db, 'reviews'), where('productId', 'in', batch));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Review));
+    });
+
+    const allReviewsArrays = await Promise.all(allReviewsPromises);
+    const allReviews = allReviewsArrays.flat();
+
+    // Group reviews by productId and calculate stats
+    allReviews.forEach((review) => {
+      const stats = statsMap.get(review.productId);
+      if (!stats) return;
+
+      stats.totalReviews++;
+      stats.ratingDistribution[review.rating as keyof typeof stats.ratingDistribution]++;
+    });
+
+    // Calculate average ratings
+    statsMap.forEach((stats, productId) => {
+      if (stats.totalReviews === 0) return;
+
+      let totalRating = 0;
+      Object.entries(stats.ratingDistribution).forEach(([rating, count]) => {
+        totalRating += Number(rating) * count;
+      });
+
+      stats.averageRating = Number((totalRating / stats.totalReviews).toFixed(1));
+    });
+
+    if (import.meta.env.DEV) {
+      console.log(
+        `[batchGetProductReviewStats] Loaded stats for ${productIds.length} products, ${allReviews.length} total reviews`
+      );
+    }
+
+    return statsMap;
+  } catch (error) {
+    console.error('❌ Error in batchGetProductReviewStats:', error);
+    // Return empty stats instead of throwing to avoid breaking product display
+    return statsMap;
+  }
+}
+
 
 /**
  * Verificar si el usuario ya dejó review en un producto
@@ -1208,7 +1252,7 @@ export async function createCoupon(
     console.log('🔍 [v3-FINAL] Datos recibidos:', couponData);
 
     // Preparar datos base
-    const baseData: any = {
+    const baseData: Record<string, any> = {
       code: couponData.code.toUpperCase(),
       description: couponData.description,
       type: couponData.type,
@@ -1234,7 +1278,7 @@ export async function createCoupon(
         acc[key] = value;
       }
       return acc;
-    }, {} as any);
+    }, {} as Record<string, any>);
 
     console.log('🧹 [v3-FINAL] Datos limpios:', cleanData);
     console.log(

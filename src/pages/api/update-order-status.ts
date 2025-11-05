@@ -110,11 +110,11 @@ export const POST: APIRoute = async ({ request }) => {
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[update-order-status] Error:', error);
     return new Response(
       JSON.stringify({
-        error: error?.message || 'Error actualizando estado del pedido',
+        error: error instanceof Error ? error.message : 'Error actualizando estado del pedido',
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

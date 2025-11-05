@@ -109,11 +109,11 @@ export const POST: APIRoute = async ({ request }) => {
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[add-tracking-event] Error:', error);
     return new Response(
       JSON.stringify({
-        error: error?.message || 'Error agregando evento de tracking',
+        error: error instanceof Error ? error.message : 'Error agregando evento de tracking',
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

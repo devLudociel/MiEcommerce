@@ -1,5 +1,5 @@
 ﻿// Header.tsx - Versión actualizada con búsqueda integrada
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo, useCallback } from 'react';
 import SearchDropdown from '../navigation/SearchDropdown';
 import Icon from '../ui/Icon';
 import { useAuth } from '../../components/hooks/useAuth';
@@ -47,8 +47,23 @@ function CartBadge() {
   );
 }
 
-function CartDropdown({ onClose }: { onClose: () => void }) {
+// PERFORMANCE: Memoize CartDropdown to prevent re-renders when header state changes
+const CartDropdown = memo(function CartDropdown({ onClose }: { onClose: () => void }) {
   const cart = useStore(cartStore);
+
+  // PERFORMANCE: Memoize handlers to prevent recreating on every render
+  const handleDecrease = useCallback((id: string, variantId: number | undefined, currentQty: number) => {
+    updateCartItemQuantity(id, variantId, Math.max(1, currentQty - 1));
+  }, []);
+
+  const handleIncrease = useCallback((id: string, variantId: number | undefined, currentQty: number) => {
+    updateCartItemQuantity(id, variantId, currentQty + 1);
+  }, []);
+
+  const handleRemove = useCallback((id: string, variantId: number | undefined) => {
+    removeFromCart(id, variantId);
+  }, []);
+
   return (
     <div
       className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-50"
@@ -82,13 +97,7 @@ function CartDropdown({ onClose }: { onClose: () => void }) {
                     <button
                       type="button"
                       className="w-6 h-6 rounded border text-gray-700 hover:bg-gray-50"
-                      onClick={() =>
-                        updateCartItemQuantity(
-                          item.id,
-                          item.variantId,
-                          Math.max(1, item.quantity - 1)
-                        )
-                      }
+                      onClick={() => handleDecrease(item.id, item.variantId, item.quantity)}
                       aria-label="Disminuir"
                     >
                       −
@@ -97,9 +106,7 @@ function CartDropdown({ onClose }: { onClose: () => void }) {
                     <button
                       type="button"
                       className="w-6 h-6 rounded border text-gray-700 hover:bg-gray-50"
-                      onClick={() =>
-                        updateCartItemQuantity(item.id, item.variantId, item.quantity + 1)
-                      }
+                      onClick={() => handleIncrease(item.id, item.variantId, item.quantity)}
                       aria-label="Aumentar"
                     >
                       +
@@ -107,7 +114,7 @@ function CartDropdown({ onClose }: { onClose: () => void }) {
                     <button
                       type="button"
                       className="ml-2 text-xs text-red-600 hover:underline"
-                      onClick={() => removeFromCart(item.id, item.variantId)}
+                      onClick={() => handleRemove(item.id, item.variantId)}
                     >
                       Eliminar
                     </button>
@@ -140,7 +147,7 @@ function CartDropdown({ onClose }: { onClose: () => void }) {
       </div>
     </div>
   );
-}
+});
 
 // Después de estos componentes continúa con el resto de tu Header.tsx tal cual está
 

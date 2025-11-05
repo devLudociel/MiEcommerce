@@ -233,13 +233,13 @@ export const POST: APIRoute = async ({ request }) => {
         headers: { 'Content-Type': 'application/json' },
       }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     // SECURITY: No exponer stack traces en producción
     console.error('API save-order: Error:', error);
-    console.error('API save-order: Stack:', error?.stack);
+    console.error('API save-order: Stack:', error instanceof Error ? error.stack : undefined);
     return new Response(
       JSON.stringify({
-        error: error.message || 'Error guardando pedido',
+        error: error instanceof Error ? error.message : 'Error guardando pedido',
       }),
       {
         status: 500,

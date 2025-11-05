@@ -91,10 +91,13 @@ export const POST: APIRoute = async ({ request }) => {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Error enviando email:', error);
     return new Response(
-      JSON.stringify({ error: error?.message || 'Error enviando email', details: error?.stack }),
+      JSON.stringify({
+        error: error instanceof Error ? error.message : 'Error enviando email',
+        details: error instanceof Error ? error.stack : undefined,
+      }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }

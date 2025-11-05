@@ -139,11 +139,11 @@ export const POST: APIRoute = async ({ request }) => {
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[subscribe-newsletter] Error:', error);
     return new Response(
       JSON.stringify({
-        error: error?.message || 'Error al procesar la suscripción',
+        error: error instanceof Error ? error.message : 'Error al procesar la suscripción',
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

@@ -183,11 +183,11 @@ export const POST: APIRoute = async ({ request }) => {
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[finalize-order] Unexpected error:', error);
     return new Response(
       JSON.stringify({
-        error: error?.message || 'Error procesando solicitud',
+        error: error instanceof Error ? error.message : 'Error procesando solicitud',
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

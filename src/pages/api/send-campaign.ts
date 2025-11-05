@@ -189,16 +189,16 @@ export const POST: APIRoute = async ({ request }) => {
 
           successCount++;
           return { success: true, email: subscriber.email };
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('[send-campaign] Failed to send email', {
             email: subscriber.email,
-            error: error?.message,
+            error: error instanceof Error ? error.message : 'Unknown error',
           });
 
           errorCount++;
           errors.push({
             email: subscriber.email,
-            error: error?.message || 'Unknown error',
+            error: error instanceof Error ? error.message : 'Unknown error',
           });
 
           return { success: false, email: subscriber.email };
@@ -251,11 +251,11 @@ export const POST: APIRoute = async ({ request }) => {
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[send-campaign] Error:', error);
     return new Response(
       JSON.stringify({
-        error: error?.message || 'Error enviando campaña',
+        error: error instanceof Error ? error.message : 'Error enviando campaña',
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

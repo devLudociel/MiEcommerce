@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db, getProductReviewStats } from '../../lib/firebase';
+import { db, batchGetProductReviewStats } from '../../lib/firebase';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { ProductGridSkeleton } from '../ui/SkeletonLoader';
@@ -99,21 +99,17 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
         const q = query(collection(db, 'products'), where('active', '==', true), limit(maxItems));
         const snap = await getDocs(q);
 
-        // Cargar productos básicos
-        const productsPromises = snap.docs.map(async (d: any) => {
-          const data = d.data() || {};
+        // PERFORMANCE: Batch get all review stats in a single query instead of N queries
+        const productIds = snap.docs.map((d) => d.id);
+        const reviewStatsMap = await batchGetProductReviewStats(productIds);
 
-          // Cargar estadísticas de reseñas para este producto
-          let reviewStats = { averageRating: 0, totalReviews: 0 };
-          try {
-            const stats = await getProductReviewStats(d.id);
-            reviewStats = {
-              averageRating: stats.averageRating,
-              totalReviews: stats.totalReviews,
-            };
-          } catch (reviewError) {
-            logger.warn(`[ProductGrid] Error loading reviews for product ${d.id}`, reviewError);
-          }
+        // Map products with their review stats
+        const list: Product[] = snap.docs.map((d: any) => {
+          const data = d.data() || {};
+          const reviewStats = reviewStatsMap.get(d.id) || {
+            averageRating: 0,
+            totalReviews: 0,
+          };
 
           const onSale = !!data.onSale;
           const salePrice = data.salePrice ? Number(data.salePrice) : undefined;
@@ -137,8 +133,6 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
             salePrice,
           } as Product;
         });
-
-        const list = await Promise.all(productsPromises);
         setProducts(list);
         setFilteredProducts(list);
         logger.info('[ProductGrid] Products loaded successfully', { count: list.length });

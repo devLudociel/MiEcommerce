@@ -93,11 +93,11 @@ export const POST: APIRoute = async ({ request }) => {
         headers: { 'Content-Type': 'application/json' },
       }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[cancel-order] Error cancelling order:', error);
     return new Response(
       JSON.stringify({
-        error: error?.message || 'Error cancelando el pedido',
+        error: error instanceof Error ? error.message : 'Error cancelando el pedido',
       }),
       {
         status: 500,

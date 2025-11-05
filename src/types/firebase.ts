@@ -63,8 +63,59 @@ export interface OrderItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
-  customization?: Record<string, any>;
+  image?: string;
+  variantId?: number;
+  variantName?: string;
+  customization?: {
+    customizationId?: string;
+    uploadedImage?: string | null;
+    text?: string;
+    textColor?: string;
+    textFont?: string;
+    textSize?: number;
+    backgroundColor?: string;
+    selectedColor?: string;
+    selectedSize?: string;
+    selectedMaterial?: string;
+    selectedFinish?: string;
+    position?: { x: number; y: number };
+    rotation?: number;
+    scale?: number;
+    [key: string]: any; // Allow additional customization fields
+  };
   uploadedFiles?: string[]; // URLs de los archivos subidos
+}
+
+// CHECKOUT & ORDER: Shipping information
+export interface ShippingInfo {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  shippingMethod?: 'standard' | 'express' | 'urgent';
+  notes?: string;
+}
+
+// CHECKOUT & ORDER: Billing information
+export interface BillingInfo {
+  fiscalName: string;
+  nifCif: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
+
+// CHECKOUT & ORDER: Payment information
+export interface PaymentInfo {
+  method: 'card' | 'paypal' | 'transfer' | 'cash';
+  // Card data removed - handled securely by Stripe Elements (PCI-DSS compliant)
 }
 
 // Para reseñas y ratings
@@ -79,8 +130,8 @@ export interface Review {
   images?: string[];
   verified: boolean;
   helpful: number;
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export interface ReviewStats {
@@ -145,4 +196,60 @@ export interface CouponUsage {
   orderId: string;
   discountAmount: number;
   usedAt: Timestamp;
+}
+
+// TRACKING: Event tracking for order shipments
+export interface TrackingEvent {
+  status:
+    | 'pending'
+    | 'confirmed'
+    | 'processing'
+    | 'packed'
+    | 'shipped'
+    | 'in_transit'
+    | 'out_for_delivery'
+    | 'delivered'
+    | 'failed'
+    | 'returned';
+  timestamp: Timestamp;
+  location?: string;
+  description: string;
+  updatedBy?: string; // userId del admin que hizo el update
+}
+
+// ORDERS: Complete order data structure
+export interface OrderData {
+  id?: string;
+  userId?: string;
+  items: OrderItem[];
+  shippingInfo: ShippingInfo;
+  paymentInfo: PaymentInfo;
+  subtotal: number;
+  shipping: number;
+  tax?: number;
+  taxInfo?: {
+    rate: number;
+    name: string;
+    label: string;
+  };
+  discount?: number;
+  total: number;
+  status: string;
+  paymentStatus: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+  invoiceNumber?: string;
+  invoiceDate?: Timestamp;
+  // Tracking información
+  trackingNumber?: string;
+  carrier?: 'correos' | 'seur' | 'dhl' | 'ups' | 'fedex' | 'mrw' | 'other';
+  trackingUrl?: string;
+  estimatedDelivery?: Timestamp;
+  trackingHistory?: TrackingEvent[];
+  // Coupon information
+  couponId?: string;
+  couponCode?: string;
+  couponDiscount?: number;
+  // Wallet information
+  walletDiscount?: number;
 }
