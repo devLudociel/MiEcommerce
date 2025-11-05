@@ -1,12 +1,18 @@
 // hooks/useAuth.ts
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged, signOut, getIdTokenResult } from 'firebase/auth';
+import { onAuthStateChanged, signOut, getIdTokenResult, User } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import { syncCartWithUser } from '../../store/cartStore';
 import { syncWishlistWithUser } from '../../store/wishlistStore';
 
+// TYPES: Firebase token claims structure
+interface FirebaseTokenClaims {
+  admin?: boolean;
+  [key: string]: unknown;
+}
+
 export function useAuth() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdminClaim, setIsAdminClaim] = useState(false);
 
@@ -17,7 +23,8 @@ export function useAuth() {
       try {
         if (currentUser) {
           const token = await getIdTokenResult(currentUser, true);
-          setIsAdminClaim(!!(token.claims as any)?.admin);
+          const claims = token.claims as FirebaseTokenClaims;
+          setIsAdminClaim(!!claims.admin);
 
           // Sync cart and wishlist with authenticated user
           await Promise.all([
