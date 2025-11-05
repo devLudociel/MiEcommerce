@@ -42,6 +42,15 @@ export async function finalizeOrder({
   const data = { ...existingData, ...(orderData || {}) };
 
   // Wallet debit (only for authenticated users with wallet usage)
+  console.log('[finalizeOrder] Checking wallet conditions:', {
+    orderId,
+    usedWallet: data.usedWallet,
+    walletDiscount: data.walletDiscount,
+    userId: data.userId,
+    isGuest: data.userId === 'guest',
+    walletAmount: Number(data.walletDiscount),
+  });
+
   if (
     data.usedWallet &&
     data.walletDiscount &&

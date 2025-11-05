@@ -4,6 +4,7 @@ import { auth, getOrderById } from '../../lib/firebase';
 import type { OrderData } from '../../lib/firebase';
 import { logger } from '../../lib/logger';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import ShipmentTracking from './ShipmentTracking';
 
 interface OrderDetailProps {
   orderId?: string;
