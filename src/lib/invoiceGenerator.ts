@@ -42,15 +42,18 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
   const total = Number((order as any).total ?? 0);
 
   try {
-    console.log('[invoiceGenerator] data', {
-      invoiceNumber,
-      items: items.length,
-      subtotal,
-      shipping: shippingCost,
-      total,
-      hasShippingInfo: !!(order as any).shippingInfo,
-      method: (order as any)?.paymentInfo?.method ?? undefined,
-    });
+    // Log only in development
+    if (import.meta.env.DEV) {
+      console.log('[invoiceGenerator] data', {
+        invoiceNumber,
+        items: items.length,
+        subtotal,
+        shipping: shippingCost,
+        total,
+        hasShippingInfo: !!(order as any).shippingInfo,
+        method: (order as any)?.paymentInfo?.method ?? undefined,
+      });
+    }
   } catch {}
 
   return {

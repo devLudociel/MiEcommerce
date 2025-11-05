@@ -33,38 +33,29 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month' | 'year'>('month');
   const [error, setError] = useState<string | null>(null);
+  const [ordersLimit, setOrdersLimit] = useState(100); // PERFORMANCE: Limitar carga inicial
+  const [isLoadingAll, setIsLoadingAll] = useState(false);
 
   useEffect(() => {
     // Verificar usuario autenticado
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        console.log('✅ [Dashboard] Usuario autenticado:', {
-          email: user.email,
-          uid: user.uid,
-          emailVerified: user.emailVerified,
-        });
-      } else {
-        console.warn('⚠️ [Dashboard] Usuario NO autenticado');
-      }
+      // Silently verify authentication (logs removed for production)
     });
 
     loadDashboardData();
 
     return () => unsubscribe();
-  }, [timeRange]);
+  }, [timeRange, ordersLimit]); // PERFORMANCE: Recargar cuando cambie el límite
 
   const loadDashboardData = async () => {
-    console.log('🔵 [Dashboard] Iniciando carga de datos...');
     setLoading(true);
     setError(null);
 
     try {
       // Verificar que db esté disponible
       if (!db) {
-        console.error('🔴 [Dashboard] Error: db is undefined');
         throw new Error('Firebase no está inicializado');
       }
-      console.log('✅ [Dashboard] Firebase DB disponible');
 
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -72,13 +63,17 @@ export default function AdminDashboard() {
       const yearStart = new Date(now.getFullYear(), 0, 1);
       const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-      // Obtener todos los pedidos
-      console.log('🔵 [Dashboard] Consultando colección "orders"...');
+      // PERFORMANCE: Obtener pedidos con límite y ordenamiento
       const ordersRef = collection(db, 'orders');
-      console.log('🔵 [Dashboard] Referencia creada:', ordersRef.path);
 
-      const ordersSnapshot = await getDocs(ordersRef);
-      console.log(`✅ [Dashboard] Pedidos obtenidos: ${ordersSnapshot.size} documentos`);
+      // Ordenar por fecha descendente y limitar
+      const ordersQuery = query(
+        ordersRef,
+        orderBy('createdAt', 'desc'),
+        limit(ordersLimit)
+      );
+
+      const ordersSnapshot = await getDocs(ordersQuery);
 
       const allOrders = ordersSnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -154,10 +149,8 @@ export default function AdminDashboard() {
         .sort((a, b) => a.date.localeCompare(b.date));
 
       // Obtener total de productos
-      console.log('🔵 [Dashboard] Consultando colección "products"...');
       const productsRef = collection(db, 'products');
       const productsSnapshot = await getDocs(productsRef);
-      console.log(`✅ [Dashboard] Productos obtenidos: ${productsSnapshot.size} documentos`);
       const totalProducts = productsSnapshot.size;
 
       // Calcular métricas
@@ -178,12 +171,11 @@ export default function AdminDashboard() {
         conversionRate: 0, // Esto requeriría tracking de visitas
         ordersLastWeek,
       });
-      console.log('✅ [Dashboard] Datos cargados exitosamente');
     } catch (error: any) {
-      console.error('🔴 [Dashboard] Error loading dashboard data:', error);
-      console.error('🔴 [Dashboard] Error code:', error?.code);
-      console.error('🔴 [Dashboard] Error message:', error?.message);
-      console.error('🔴 [Dashboard] Error stack:', error?.stack);
+      // Log only in development
+      if (import.meta.env.DEV) {
+        console.error('[Dashboard] Error loading data:', error);
+      }
 
       const errorMessage = error?.message || 'Error desconocido';
       const errorCode = error?.code || 'unknown';
@@ -519,14 +511,76 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* Botón de actualizar */}
-      <div className="mt-8 text-center">
-        <button
-          onClick={loadDashboardData}
-          className="px-6 py-3 bg-cyan-500 text-white rounded-xl font-semibold hover:bg-cyan-600 transition-colors shadow-md hover:shadow-lg"
-        >
-          🔄 Actualizar Datos
-        </button>
+      {/* Controles de carga y actualización */}
+      <div className="mt-8 space-y-4">
+        {/* Información de datos cargados */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
+          <p className="text-sm text-blue-800">
+            📊 Mostrando estadísticas basadas en los últimos <strong>{ordersLimit} pedidos</strong>
+            {stats.totalOrders >= ordersLimit && (
+              <span className="text-blue-600">
+                {' '}
+                (puede haber más pedidos en la base de datos)
+              </span>
+            )}
+          </p>
+        </div>
+
+        {/* Botones de acción */}
+        <div className="flex flex-wrap gap-3 justify-center">
+          <button
+            onClick={loadDashboardData}
+            disabled={loading}
+            className="px-6 py-3 bg-cyan-500 text-white rounded-xl font-semibold hover:bg-cyan-600 transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            🔄 Actualizar Datos
+          </button>
+
+          {ordersLimit < 1000 && (
+            <button
+              onClick={() => {
+                setOrdersLimit(ordersLimit + 100);
+                setIsLoadingAll(false);
+              }}
+              disabled={loading}
+              className="px-6 py-3 bg-purple-500 text-white rounded-xl font-semibold hover:bg-purple-600 transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ➕ Cargar 100 más
+            </button>
+          )}
+
+          {!isLoadingAll && (
+            <button
+              onClick={() => {
+                if (
+                  confirm(
+                    '⚠️ Esto puede cargar miles de pedidos y afectar el rendimiento. ¿Estás seguro?'
+                  )
+                ) {
+                  setOrdersLimit(10000);
+                  setIsLoadingAll(true);
+                }
+              }}
+              disabled={loading}
+              className="px-6 py-3 bg-orange-500 text-white rounded-xl font-semibold hover:bg-orange-600 transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              📈 Cargar Todos
+            </button>
+          )}
+
+          {ordersLimit > 100 && (
+            <button
+              onClick={() => {
+                setOrdersLimit(100);
+                setIsLoadingAll(false);
+              }}
+              disabled={loading}
+              className="px-6 py-3 bg-gray-500 text-white rounded-xl font-semibold hover:bg-gray-600 transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ↩️ Restablecer (100)
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

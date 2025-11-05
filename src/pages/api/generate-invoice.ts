@@ -4,7 +4,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { generateInvoiceDefinition } from '../../lib/invoiceGenerator';
 import type { InvoiceData } from '../../lib/invoiceGenerator';
 import type { OrderData } from '../../lib/firebase';
-import PdfPrinter from 'pdfmake/src/printer';
+// PERFORMANCE: PdfPrinter se carga dinámicamente cuando se necesita (ver línea ~140)
 import { verifyAuthToken, logErrorSafely, createErrorResponse } from '../../lib/auth-helpers';
 
 // Fuentes estándar de PDFKit (no requieren archivos externos)
@@ -68,16 +68,10 @@ export const GET: APIRoute = async ({ request, url }) => {
       isAdmin = !!authResult.isAdmin;
     }
 
-    console.log('[generate-invoice] start', {
-      orderId,
-      userId: authUid ?? (guestOrderKey ? 'guest' : 'unknown'),
-    });
-
     // Leer pedido (Admin)
     const db = getAdminDb();
     const orderRef = db.collection('orders').doc(orderId);
     const orderSnap = await orderRef.get();
-    console.log('[generate-invoice] order loaded', { exists: orderSnap.exists });
     if (!orderSnap.exists) {
       return createErrorResponse('Pedido no encontrado', 404);
     }
@@ -88,28 +82,24 @@ export const GET: APIRoute = async ({ request, url }) => {
     if (authUid) {
       // SECURITY: Verificar autorización - solo admin o el usuario dueño del pedido
       if (!isAdmin && order.userId !== authUid) {
-        console.warn('[generate-invoice] Unauthorized access attempt', {
-          userId: authUid,
-          orderId,
-          orderUserId: order.userId,
-        });
+        if (import.meta.env.DEV) {
+          console.warn('[generate-invoice] Unauthorized access attempt');
+        }
         return createErrorResponse('Forbidden - No tienes acceso a esta factura', 403);
       }
     } else {
       // Guest access path
       if (order.userId !== 'guest') {
-        console.warn('[generate-invoice] Guest access rejected (non-guest order)', {
-          orderId,
-          orderUserId: order.userId,
-        });
+        if (import.meta.env.DEV) {
+          console.warn('[generate-invoice] Guest access rejected (non-guest order)');
+        }
         return createErrorResponse('Forbidden - Se requiere autenticación', 403);
       }
 
       if (!guestOrderKey || order.idempotencyKey !== guestOrderKey) {
-        console.warn('[generate-invoice] Guest access rejected (invalid key)', {
-          orderId,
-          providedKey: guestOrderKey ? '[present]' : '[missing]',
-        });
+        if (import.meta.env.DEV) {
+          console.warn('[generate-invoice] Guest access rejected (invalid key)');
+        }
         return createErrorResponse('Forbidden - Clave de pedido inválida', 403);
       }
     }
@@ -118,7 +108,6 @@ export const GET: APIRoute = async ({ request, url }) => {
     let invoiceNumber = order.invoiceNumber as string | undefined;
     if (!invoiceNumber) {
       invoiceNumber = await getNextInvoiceNumber();
-      console.log('[generate-invoice] assigning invoice number', { invoiceNumber });
       await orderRef.set(
         {
           invoiceNumber,
@@ -138,7 +127,10 @@ export const GET: APIRoute = async ({ request, url }) => {
 
     const docDefinition = generateInvoiceDefinition(invoiceData);
     const itemsLen = Array.isArray((order as any).items) ? (order as any).items.length : 0;
-    console.log('[generate-invoice] building pdf', { items: itemsLen, invoiceNumber });
+
+    // PERFORMANCE: Lazy load PdfPrinter solo cuando se necesita generar PDF
+    // Esto mejora el cold start del servidor
+    const { default: PdfPrinter } = await import('pdfmake/src/printer');
     const printer = new PdfPrinter(fonts);
     const pdfDoc = printer.createPdfKitDocument(docDefinition);
 
@@ -147,7 +139,6 @@ export const GET: APIRoute = async ({ request, url }) => {
       pdfDoc.on('data', (chunk: Buffer) => chunks.push(chunk));
       pdfDoc.on('end', () => {
         const pdfBuffer = Buffer.concat(chunks);
-        console.log('[generate-invoice] pdf ready', { bytes: pdfBuffer.length, invoiceNumber });
         resolve(
           new Response(pdfBuffer, {
             status: 200,
