@@ -52,7 +52,10 @@ service cloud.firestore {
 
     // Cupones y uso
     match /coupons/{couponId} {
-      allow read: if resource.data.active == true;
+      // SECURITY: Solo mostrar cupones activos y no expirados
+      allow read: if resource.data.active == true
+                  && (!('expiryDate' in resource.data)
+                      || resource.data.expiryDate > request.time);
       allow write: if isAdmin();
     }
     match /coupon_usage/{usageId} {
@@ -124,6 +127,18 @@ service cloud.firestore {
 
     // Newsletter campaigns (historial de campañas enviadas)
     match /newsletter_campaigns/{campaignId} {
+      allow read: if isAdmin();
+      allow write: if false; // Solo vía Admin SDK
+    }
+
+    // Rate limiting data (usado por API endpoints)
+    match /rate_limits/{limitId} {
+      allow read: if false; // Solo vía Admin SDK
+      allow write: if false; // Solo vía Admin SDK
+    }
+
+    // System collections (contadores, configuración)
+    match /system/{document} {
       allow read: if isAdmin();
       allow write: if false; // Solo vía Admin SDK
     }
