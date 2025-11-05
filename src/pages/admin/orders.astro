@@ -6,6 +6,7 @@ import AdminOrdersList from '../../components/admin/AdminOrdersList';
 
 <BaseLayout title="Administración de Pedidos">
   <RequireAdmin client:only="react">
-    <AdminOrdersList client:load />
+    <!-- PERFORMANCE: Load orders list when browser is idle -->
+    <AdminOrdersList client:idle />
   </RequireAdmin>
 </BaseLayout>

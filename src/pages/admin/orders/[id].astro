@@ -6,6 +6,7 @@ import AdminOrderDetail from '../../../components/admin/AdminOrderDetail';
 
 <BaseLayout title="Detalle del Pedido">
   <RequireAdmin client:only="react">
-    <AdminOrderDetail client:load />
+    <!-- PERFORMANCE: Load order detail when browser is idle -->
+    <AdminOrderDetail client:idle />
   </RequireAdmin>
 </BaseLayout>

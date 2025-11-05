@@ -5,6 +5,7 @@ import AdminDashboard from '../../components/admin/AdminDashboard';
 
 <BaseLayout title="Dashboard Admin - ImprimeArte">
   <div class="min-h-screen bg-gray-50">
-    <AdminDashboard client:load />
+    <!-- PERFORMANCE: client:idle instead of client:load to not block initial interactivity -->
+    <AdminDashboard client:idle />
   </div>
 </BaseLayout>

@@ -5,8 +5,8 @@ import RequireAdmin from '../../components/auth/RequireAdmin.tsx';
 ---
 
 <BaseLayout title="Admin | Productos">
-  <!-- Monta el guard (redirige si no es admin) -->
+  <!-- PERFORMANCE: Auth check needs immediate load -->
   <RequireAdmin client:load />
-  <!-- Monta el panel con hidratación propia para manejar eventos -->
-  <AdminProductsPanel client:load />
+  <!-- PERFORMANCE: Panel can wait until browser is idle -->
+  <AdminProductsPanel client:idle />
 </BaseLayout>
