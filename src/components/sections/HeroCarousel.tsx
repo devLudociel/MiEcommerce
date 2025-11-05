@@ -1,78 +1,44 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo, useCallback } from 'react';
+import { heroSlides } from '../../data/heroSlides';
 
-const HeroCarousel = () => {
+// PERFORMANCE: Memoize component to prevent unnecessary re-renders
+const HeroCarousel = memo(() => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  const slides = [
-    {
-      id: 1,
-      title: 'Tecnología del Futuro',
-      subtitle: 'Nueva Colección 2025',
-      description: 'Descubre los productos más innovadores con diseño futurista y calidad premium',
-      ctaPrimary: 'Explorar Ahora',
-      ctaSecondary: 'Ver Catálogo',
-      backgroundImage:
-        'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=1920&h=1080&fit=crop',
-      accentColor: 'cyan',
-    },
-    {
-      id: 2,
-      title: 'Estilo Único',
-      subtitle: 'Edición Limitada',
-      description:
-        'Productos exclusivos que combinan elegancia, funcionalidad y diseño vanguardista',
-      ctaPrimary: 'Comprar Ya',
-      ctaSecondary: 'Más Info',
-      backgroundImage:
-        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&h=1080&fit=crop',
-      accentColor: 'magenta',
-    },
-    {
-      id: 3,
-      title: 'Ofertas Increíbles',
-      subtitle: 'Hasta 70% de Descuento',
-      description:
-        'No te pierdas nuestras ofertas especiales en los mejores productos seleccionados',
-      ctaPrimary: 'Ver Ofertas',
-      ctaSecondary: 'Suscribirse',
-      backgroundImage:
-        'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=1920&h=1080&fit=crop',
-      accentColor: 'yellow',
-    },
-    {
-      id: 4,
-      title: 'Experiencia Premium',
-      subtitle: 'Calidad Garantizada',
-      description:
-        'Productos premium con la mejor calidad, diseño excepcional y servicio al cliente 24/7',
-      ctaPrimary: 'Descubrir',
-      ctaSecondary: 'Contactar',
-      backgroundImage:
-        'https://images.unsplash.com/photo-1560472355-536de3962603?w=1920&h=1080&fit=crop',
-      accentColor: 'rainbow',
-    },
-  ];
+  // PERFORMANCE: Wrap event handlers in useCallback
+  const nextSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+  }, []);
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
-  };
+  const prevSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+  }, []);
 
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-  };
-
-  const goToSlide = (index: number) => {
+  const goToSlide = useCallback((index: number) => {
     setCurrentSlide(index);
-  };
+  }, []);
 
   useEffect(() => {
     if (!isAutoPlaying) return;
     const interval = setInterval(nextSlide, 5000);
     return () => clearInterval(interval);
-  }, [isAutoPlaying, currentSlide]);
+  }, [isAutoPlaying, currentSlide, nextSlide]);
 
-  const getGradientClass = (color: string) => {
+  // PERFORMANCE: Wrap toggle handler in useCallback
+  const toggleAutoPlay = useCallback(() => {
+    setIsAutoPlaying((prev) => !prev);
+  }, []);
+
+  const pauseAutoPlay = useCallback(() => {
+    setIsAutoPlaying(false);
+  }, []);
+
+  const resumeAutoPlay = useCallback(() => {
+    setIsAutoPlaying(true);
+  }, []);
+
+  const getGradientClass = useCallback((color: string) => {
     const gradients = {
       cyan: 'bg-gradient-primary',
       magenta: 'bg-gradient-secondary',
@@ -80,9 +46,9 @@ const HeroCarousel = () => {
       rainbow: 'bg-gradient-rainbow',
     };
     return gradients[color as keyof typeof gradients] || gradients.cyan;
-  };
+  }, []);
 
-  const getTextClass = (color: string) => {
+  const getTextClass = useCallback((color: string) => {
     const textColors = {
       cyan: 'text-cyan',
       magenta: 'text-magenta',
@@ -90,7 +56,7 @@ const HeroCarousel = () => {
       rainbow: 'text-gradient',
     };
     return textColors[color as keyof typeof textColors] || textColors.cyan;
-  };
+  }, []);
 
   return (
     <section
@@ -99,7 +65,7 @@ const HeroCarousel = () => {
     >
       {/* Slides Container */}
       <div className="relative h-full">
-        {slides.map((slide, index) => {
+        {heroSlides.map((slide, index) => {
           const isActive = index === currentSlide;
           const gradientClass = getGradientClass(slide.accentColor);
           const textClass = getTextClass(slide.accentColor);
@@ -213,7 +179,7 @@ const HeroCarousel = () => {
         <div className="flex items-center gap-4">
           {/* Dots */}
           <div className="flex items-center gap-2">
-            {slides.map((_, index) => (
+            {heroSlides.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
@@ -230,7 +196,7 @@ const HeroCarousel = () => {
 
           {/* Play/Pause */}
           <button
-            onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+            onClick={toggleAutoPlay}
             className="ml-4 p-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 text-white hover:bg-white/30 transition-all"
             type="button"
             aria-label={isAutoPlaying ? 'Pausar carrusel' : 'Reproducir carrusel'}
@@ -262,8 +228,8 @@ const HeroCarousel = () => {
       {/* Arrow Navigation */}
       <button
         onClick={nextSlide}
-        onMouseEnter={() => setIsAutoPlaying(false)}
-        onMouseLeave={() => setIsAutoPlaying(true)}
+        onMouseEnter={pauseAutoPlay}
+        onMouseLeave={resumeAutoPlay}
         className="absolute right-4 top-1/2 transform -translate-y-1/2 z-30 p-2.5 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 text-white hover:bg-white/30 transition-all hover:scale-110"
         type="button"
         aria-label="Siguiente diapositiva"
@@ -281,8 +247,8 @@ const HeroCarousel = () => {
 
       <button
         onClick={prevSlide}
-        onMouseEnter={() => setIsAutoPlaying(false)}
-        onMouseLeave={() => setIsAutoPlaying(true)}
+        onMouseEnter={pauseAutoPlay}
+        onMouseLeave={resumeAutoPlay}
         className="absolute left-4 top-1/2 transform -translate-y-1/2 z-30 p-2.5 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 text-white hover:bg-white/30 transition-all hover:scale-110"
         type="button"
         aria-label="Diapositiva anterior"
@@ -299,6 +265,9 @@ const HeroCarousel = () => {
       </button>
     </section>
   );
-};
+});
+
+// Add display name for debugging
+HeroCarousel.displayName = 'HeroCarousel';
 
 export default HeroCarousel;
