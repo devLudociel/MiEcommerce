@@ -4,7 +4,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { generateInvoiceDefinition } from '../../lib/invoiceGenerator';
 import type { InvoiceData } from '../../lib/invoiceGenerator';
 import type { OrderData } from '../../lib/firebase';
-// PERFORMANCE: PdfPrinter se carga dinámicamente cuando se necesita (ver línea ~140)
+// PERFORMANCE: PdfPrinter se carga dinámicamente cuando se necesita (línea 133)
 import { verifyAuthToken, logErrorSafely, createErrorResponse } from '../../lib/auth-helpers';
 
 // Fuentes estándar de PDFKit (no requieren archivos externos)
