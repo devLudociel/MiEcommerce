@@ -1,5 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+// Mock Firebase to avoid invalid API key error in tests
+vi.mock('../../lib/firebase', () => ({
+  auth: {},
+  db: {},
+  storage: {},
+}));
+
 // Mocks mínimos para logger y notificaciones para no tocar el DOM ni consola
 vi.mock('../../lib/notifications', () => ({
   notify: {

@@ -1,5 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+// Mock Firebase to avoid invalid API key error in tests
+vi.mock('../../lib/firebase', () => ({
+  auth: {},
+  db: {},
+  storage: {},
+}));
+
 function createLocalStorageMock() {
   let store: Record<string, string> = {};
   return {
