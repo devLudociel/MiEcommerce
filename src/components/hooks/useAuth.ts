@@ -1,6 +1,7 @@
 // hooks/useAuth.ts
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged, signOut, getIdTokenResult, User } from 'firebase/auth';
+import { onAuthStateChanged, signOut, getIdTokenResult } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import { syncCartWithUser } from '../../store/cartStore';
 import { syncWishlistWithUser } from '../../store/wishlistStore';
