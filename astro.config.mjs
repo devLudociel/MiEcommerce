@@ -2,9 +2,27 @@ import { defineConfig } from 'astro/config';
 import node from '@astrojs/node';
 import tailwind from '@astrojs/tailwind';
 import react from '@astrojs/react';
+import { visualizer } from 'rollup-plugin-visualizer';
+
+// PERFORMANCE: Enable bundle analyzer when ANALYZE env var is set
+// Run: npm run build:analyze
+const shouldAnalyze = process.env.ANALYZE === 'true';
 
 export default defineConfig({
   integrations: [tailwind(), react()],
   output: 'server',
   adapter: node({ mode: 'standalone' }),
+  vite: {
+    plugins: shouldAnalyze
+      ? [
+          visualizer({
+            filename: './dist/stats.html',
+            open: true,
+            gzipSize: true,
+            brotliSize: true,
+            template: 'treemap', // sunburst, treemap, network
+          }),
+        ]
+      : [],
+  },
 });
