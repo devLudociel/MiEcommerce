@@ -51,8 +51,9 @@ export const POST: APIRoute = async ({ request }) => {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
-  } catch (e: any) {
-    return new Response(JSON.stringify({ error: e?.message || 'Error actualizando estado' }), {
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : 'Error actualizando estado';
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
