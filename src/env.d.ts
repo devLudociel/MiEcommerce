@@ -33,6 +33,7 @@ interface ImportMetaEnv {
   // Resend (Email)
   readonly RESEND_API_KEY: string;
   readonly RESEND_FROM_EMAIL?: string;
+  readonly EMAIL_FROM?: string; // Alternative email from address
 
   // Admin
   readonly PUBLIC_ADMIN_EMAILS?: string;
