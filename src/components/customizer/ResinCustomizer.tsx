@@ -8,6 +8,9 @@ import { addToCart } from '../../store/cartStore';
 import { attributes, subcategoryAttributes } from '../../data/productAttributes';
 import type { ProductAttributeValue } from '../../data/productAttributes';
 
+// Additional product properties that may come from Firestore
+type AdditionalProductProps = Record<string, string | number | boolean | string[] | null | undefined>;
+
 interface FirebaseProduct {
   id: string;
   name: string;
@@ -17,7 +20,8 @@ interface FirebaseProduct {
   basePrice: number;
   images: string[];
   slug: string;
-  [key: string]: any;
+  // Allow additional dynamic properties from Firestore
+  [key: string]: string | number | boolean | string[] | null | undefined;
 }
 
 interface Props {
