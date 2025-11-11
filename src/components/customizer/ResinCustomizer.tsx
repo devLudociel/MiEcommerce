@@ -73,23 +73,27 @@ export default function ResinCustomizer({ product }: Props) {
   useEffect(() => {
     async function loadBoxImages() {
       setLoadingImages(true);
-      const imageUrls: Record<string, string> = {};
 
-      console.log('Cargando imágenes de cajas...');
+      try {
+        const imageUrls: Record<string, string> = {};
 
-      for (const colorKey of Object.keys(BOX_COLORS)) {
-        try {
-          const imageRef = ref(storage, `variants/cajas/${colorKey}/preview.jpg`);
-          const url = await getDownloadURL(imageRef);
-          imageUrls[colorKey] = url;
-          console.log(`Cargada imagen de caja ${colorKey}`);
-        } catch (error) {
-          console.log(`No se encontró imagen para caja ${colorKey}`);
+        console.log('Cargando imágenes de cajas...');
+
+        for (const colorKey of Object.keys(BOX_COLORS)) {
+          try {
+            const imageRef = ref(storage, `variants/cajas/${colorKey}/preview.jpg`);
+            const url = await getDownloadURL(imageRef);
+            imageUrls[colorKey] = url;
+            console.log(`Cargada imagen de caja ${colorKey}`);
+          } catch (error) {
+            console.log(`No se encontró imagen para caja ${colorKey}`);
+          }
         }
-      }
 
-      setBoxImages(imageUrls);
-      setLoadingImages(false);
+        setBoxImages(imageUrls);
+      } finally {
+        setLoadingImages(false);
+      }
     }
 
     loadBoxImages();
@@ -113,21 +117,19 @@ export default function ResinCustomizer({ product }: Props) {
   }, [product.subcategoryId]);
 
   const handleImageUpload = async (file: File) => {
-    try {
-      setError(null);
-      setIsLoading(true);
+    setError(null);
+    setIsLoading(true);
 
+    try {
       const user = auth.currentUser;
       if (!user) {
         setError('Debes estar autenticado para subir imágenes');
-        setIsLoading(false);
         return;
       }
 
       const validation = validateImageFile(file, { maxSizeMB: 10 });
       if (!validation.valid) {
         setError(validation.error || 'Error de validación');
-        setIsLoading(false);
         return;
       }
 
@@ -138,10 +140,10 @@ export default function ResinCustomizer({ product }: Props) {
       const { url, path } = await uploadCustomImage(compressedFile, user.uid, 'resina');
 
       setConfig((prev) => ({ ...prev, imageUrl: url, imagePath: path }));
-      setIsLoading(false);
     } catch (err: any) {
       console.error('Error subiendo imagen:', err);
       setError('Error al subir la imagen. Intenta de nuevo.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -200,20 +202,17 @@ export default function ResinCustomizer({ product }: Props) {
         );
         if (!hasValue) {
           setError(`El campo "${reqAttr.name}" es obligatorio`);
-          setIsAddingToCart(false);
           return;
         }
       }
 
       if (!config.imageUrl) {
         setError('Por favor sube una foto para la figura de resina');
-        setIsAddingToCart(false);
         return;
       }
 
       if (!config.personName.trim()) {
         setError('Por favor añade un nombre personalizado');
-        setIsAddingToCart(false);
         return;
       }
 
