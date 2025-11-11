@@ -198,6 +198,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
           src={product.images[0] || FALLBACK_IMG_400x300}
           alt={product.name}
           loading="lazy"
+          decoding="async"
           style={imageStyle}
           onError={handleImageError}
         />

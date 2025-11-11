@@ -12,6 +12,18 @@ export default defineConfig({
   integrations: [tailwind(), react()],
   output: 'server',
   adapter: node({ mode: 'standalone' }),
+  // PERFORMANCE: Image optimization configuration
+  image: {
+    service: {
+      entrypoint: 'astro/assets/services/sharp',
+    },
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+      },
+    ],
+  },
   vite: {
     plugins: shouldAnalyze
       ? [

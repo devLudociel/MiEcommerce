@@ -53,13 +53,14 @@ export const RelatedProducts = memo(function RelatedProducts({ products }: Relat
                 <img
                   src={imageUrl}
                   alt={product.name}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   onError={(e) => {
                     const img = e.currentTarget as HTMLImageElement;
                     img.onerror = null;
                     img.src = FALLBACK_IMG_400x300;
                   }}
-                  loading="lazy"
                 />
 
                 {/* Discount Badge */}

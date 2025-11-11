@@ -20,15 +20,16 @@ interface ValidationResult {
 }
 
 /**
- * Comprimir imagen antes de subirla a Firebase
+ * PERFORMANCE: Comprimir imagen antes de subirla a Firebase
+ * Uses WebP format for 30% better compression than JPEG
  */
 export async function compressImage(file: File, options: CompressionOptions = {}): Promise<File> {
   const defaultOptions: CompressionOptions = {
-    maxSizeMB: 1,
+    maxSizeMB: 0.8, // Reduced from 1MB for better performance
     maxWidthOrHeight: 1920,
     useWebWorker: true,
-    fileType: 'image/jpeg',
-    initialQuality: 0.8,
+    fileType: 'image/webp', // WebP provides better compression
+    initialQuality: 0.85, // Slightly higher quality for WebP
   };
 
   const finalOptions = { ...defaultOptions, ...options };
@@ -40,6 +41,7 @@ export async function compressImage(file: File, options: CompressionOptions = {}
     const compressedFile = await imageCompression(file, finalOptions);
 
     console.log('Tamaño comprimido:', (compressedFile.size / 1024 / 1024).toFixed(2), 'MB');
+    console.log('Reducción:', ((1 - compressedFile.size / file.size) * 100).toFixed(1), '%');
 
     return compressedFile;
   } catch (error) {

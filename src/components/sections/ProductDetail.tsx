@@ -797,6 +797,8 @@ export default function ProductDetail({ id, slug }: Props) {
                     <img
                       src={example.image}
                       alt={example.description}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-48 object-cover"
                     />
                     <div className="p-3 bg-white">

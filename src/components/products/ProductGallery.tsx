@@ -63,6 +63,8 @@ export const ProductGallery = memo(function ProductGallery({
           <img
             src={currentImage?.url || FALLBACK_IMG_400x300}
             alt={currentImage?.alt || productName}
+            loading="eager"
+            decoding="async"
             className={`w-full h-80 md:h-[380px] lg:h-[420px] object-cover transition-all duration-700 ${
               isZoomed ? 'scale-150' : 'scale-100 group-hover:scale-105'
             }`}
@@ -132,6 +134,7 @@ export const ProductGallery = memo(function ProductGallery({
               src={img.url || FALLBACK_IMG_400x300}
               alt={img.alt}
               loading="lazy"
+              decoding="async"
               className="w-full h-20 sm:h-24 object-cover"
               onError={(e) => {
                 const imgEl = e.currentTarget as HTMLImageElement;
