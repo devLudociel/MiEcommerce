@@ -11,6 +11,8 @@ import { lookupZipES, autocompleteStreetES, debounce } from '../../utils/address
 import type { AddressSuggestion } from '../../utils/address';
 import { useAuth } from '../hooks/useAuth';
 import { useSecureCardPayment } from '../checkout/SecureCardPayment';
+import { getUserData } from '../../lib/userProfile';
+import type { Address } from '../../lib/userProfile';
 
 interface ShippingInfo {
   firstName: string;
@@ -76,6 +78,10 @@ export default function Checkout() {
   // Wallet state
   const [walletBalance, setWalletBalance] = useState(0);
   const [useWallet, setUseWallet] = useState(false);
+
+  // Saved addresses state
+  const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
+  const [showAddressSelector, setShowAddressSelector] = useState(false);
 
   // Address autocomplete state
   const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
@@ -182,6 +188,62 @@ export default function Checkout() {
     };
 
     loadWalletBalance();
+  }, [user]);
+
+  // Load saved addresses and auto-fill with default shipping address
+  useEffect(() => {
+    if (!user) {
+      setSavedAddresses([]);
+      return;
+    }
+
+    const loadSavedAddresses = async () => {
+      try {
+        logger.info('[Checkout] Loading saved addresses', { userId: user.uid });
+        const userData = await getUserData(user.uid);
+
+        if (userData?.addresses && userData.addresses.length > 0) {
+          setSavedAddresses(userData.addresses);
+
+          // Auto-fill with default shipping address if form is empty
+          const defaultShipping = userData.addresses.find(addr => addr.isDefaultShipping);
+          if (defaultShipping && !shippingInfo.firstName) {
+            fillAddressFromSaved(defaultShipping);
+            logger.info('[Checkout] Auto-filled with default shipping address');
+          }
+        }
+      } catch (error) {
+        logger.error('[Checkout] Error loading saved addresses', error);
+      }
+    };
+
+    loadSavedAddresses();
+  }, [user]);
+
+  // Helper function to fill shipping form from saved address
+  const fillAddressFromSaved = (address: Address) => {
+    const [firstName, ...lastNameParts] = (address.fullName || '').split(' ');
+    setShippingInfo(prev => ({
+      ...prev,
+      firstName: firstName || '',
+      lastName: lastNameParts.join(' ') || '',
+      email: prev.email || user?.email || '', // Keep existing email or use user's
+      phone: address.phone || '',
+      address: address.line1 || '',
+      city: address.city || '',
+      state: address.state || '',
+      zipCode: address.zip || '',
+      country: address.country || 'España',
+    }));
+    setShowAddressSelector(false);
+    notify.success('Dirección cargada correctamente');
+  };
+
+  // Auto-fill email for logged-in users
+  useEffect(() => {
+    if (user && user.email && !shippingInfo.email) {
+      setShippingInfo(prev => ({ ...prev, email: user.email || '' }));
+    }
   }, [user]);
 
   // ZIP code lookup effect
@@ -794,10 +856,56 @@ export default function Checkout() {
             <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-200">
               {currentStep === 1 && (
                 <div className="space-y-6">
-                  <div>
-                    <h2 className="text-3xl font-black text-gray-800 mb-2">Información de Envío</h2>
-                    <p className="text-gray-600">Completa tus datos para recibir tu pedido</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-3xl font-black text-gray-800 mb-2">Información de Envío</h2>
+                      <p className="text-gray-600">Completa tus datos para recibir tu pedido</p>
+                    </div>
+                    {user && savedAddresses.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAddressSelector(!showAddressSelector)}
+                        className="px-4 py-2 bg-cyan-100 text-cyan-700 rounded-lg hover:bg-cyan-200 transition-colors font-medium text-sm whitespace-nowrap"
+                      >
+                        📍 Usar dirección guardada
+                      </button>
+                    )}
                   </div>
+
+                  {/* Saved addresses selector */}
+                  {showAddressSelector && savedAddresses.length > 0 && (
+                    <div className="bg-gray-50 rounded-xl p-4 border-2 border-cyan-200">
+                      <h3 className="font-bold text-gray-800 mb-3">Selecciona una dirección:</h3>
+                      <div className="space-y-2">
+                        {savedAddresses.map((addr) => (
+                          <button
+                            key={addr.id}
+                            type="button"
+                            onClick={() => fillAddressFromSaved(addr)}
+                            className="w-full text-left p-3 bg-white rounded-lg hover:bg-cyan-50 border-2 border-gray-200 hover:border-cyan-400 transition-all"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <p className="font-bold text-gray-900">{addr.fullName}</p>
+                                <p className="text-sm text-gray-600">{addr.line1}</p>
+                                <p className="text-sm text-gray-600">
+                                  {addr.city}, {addr.state} {addr.zip}
+                                </p>
+                                {addr.phone && (
+                                  <p className="text-sm text-gray-500">📞 {addr.phone}</p>
+                                )}
+                              </div>
+                              {addr.isDefaultShipping && (
+                                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-medium">
+                                  Por defecto
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
