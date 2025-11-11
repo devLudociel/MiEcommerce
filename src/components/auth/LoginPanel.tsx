@@ -1,3 +1,4 @@
+import { logger } from '../../lib/logger';
 import { useEffect, useState } from 'react';
 import {
   GoogleAuthProvider,
@@ -63,7 +64,7 @@ export default function LoginPanel() {
   useEffect(() => {
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      console.log('[LoginPanel] env', {
+      logger.info('[LoginPanel] env', {
         authDomain: (import.meta as any).env.PUBLIC_FIREBASE_AUTH_DOMAIN,
         projectId: (import.meta as any).env.PUBLIC_FIREBASE_PROJECT_ID,
         appUrl: (import.meta as any).env.PUBLIC_APP_URL,
@@ -74,7 +75,7 @@ export default function LoginPanel() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
-      console.log('[LoginPanel] onAuthStateChanged', {
+      logger.info('[LoginPanel] onAuthStateChanged', {
         hasUser: !!user,
         email: user?.email || null,
         uid: user?.uid || null,
@@ -92,12 +93,12 @@ export default function LoginPanel() {
       const provider = new GoogleAuthProvider();
       if (selectAccount) provider.setCustomParameters({ prompt: 'select_account' });
       try {
-        console.log('[LoginPanel] signInWithGoogle via popup: start');
+        logger.info('[LoginPanel] signInWithGoogle via popup: start');
         await signInWithPopup(auth, provider);
-        console.log('[LoginPanel] signInWithGoogle via popup: success');
+        logger.info('[LoginPanel] signInWithGoogle via popup: success');
       } catch (e: any) {
         const code = e?.code || '';
-        console.warn('[LoginPanel] signInWithGoogle popup error', { code, message: e?.message });
+        logger.warn('[LoginPanel] signInWithGoogle popup error', { code, message: e?.message });
         if (
           code.includes('auth/popup-blocked') ||
           code.includes('auth/popup-closed-by-user') ||
@@ -112,7 +113,7 @@ export default function LoginPanel() {
       }
       await redirectAfterLogin();
     } catch (error: unknown) {
-      console.error('[LoginPanel] signInWithGoogle fatal error', {
+      logger.error('[LoginPanel] signInWithGoogle fatal error', {
         code: err?.code,
         message: err?.message,
       });
@@ -237,7 +238,7 @@ export default function LoginPanel() {
     const desired = url.searchParams.get('redirect') || '/admin/products';
     // Si NO es admin, redirige al panel de cuenta
     const target = allowedByEmail ? desired : '/account';
-    console.log('[LoginPanel] redirectAfterLogin', {
+    logger.info('[LoginPanel] redirectAfterLogin', {
       email,
       allowedByEmail,
       desired,

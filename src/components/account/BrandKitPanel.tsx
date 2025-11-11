@@ -1,3 +1,4 @@
+import { logger } from '../../lib/logger';
 import { useState, useEffect, useRef } from 'react';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
@@ -106,12 +107,12 @@ export default function BrandKitPanel() {
       if (docSnap.exists()) {
         const data = docSnap.data() as BrandKitData;
         setBrandKit(data);
-        console.log('✅ Brand Kit cargado');
+        logger.info('✅ Brand Kit cargado');
       } else {
-        console.log('ℹ️ No hay Brand Kit guardado aún');
+        logger.info('ℹ️ No hay Brand Kit guardado aún');
       }
     } catch (err: any) {
-      console.error('❌ Error cargando Brand Kit:', err);
+      logger.error('❌ Error cargando Brand Kit:', err);
       setError('Error al cargar tu Brand Kit');
     } finally {
       setIsLoading(false);
@@ -138,9 +139,9 @@ export default function BrandKitPanel() {
       setSuccess('✅ Brand Kit guardado correctamente');
       setTimeout(() => setSuccess(null), 3000);
 
-      console.log('✅ Brand Kit guardado en Firestore');
+      logger.info('✅ Brand Kit guardado en Firestore');
     } catch (err: any) {
-      console.error('❌ Error guardando Brand Kit:', err);
+      logger.error('❌ Error guardando Brand Kit:', err);
       setError('Error al guardar. Intenta de nuevo.');
     } finally {
       setIsSaving(false);
@@ -191,11 +192,11 @@ export default function BrandKitPanel() {
         logos: [...prev.logos, newLogo],
       }));
 
-      console.log('✅ Logo subido correctamente');
+      logger.info('✅ Logo subido correctamente');
       setSuccess('✅ Logo añadido');
       setTimeout(() => setSuccess(null), 2000);
     } catch (err: any) {
-      console.error('❌ Error subiendo logo:', err);
+      logger.error('❌ Error subiendo logo:', err);
       setError('Error al subir el logo');
     } finally {
       setIsLoading(false);
@@ -219,11 +220,11 @@ export default function BrandKitPanel() {
         logos: prev.logos.filter((l) => l.id !== logo.id),
       }));
 
-      console.log('✅ Logo eliminado');
+      logger.info('✅ Logo eliminado');
       setSuccess('✅ Logo eliminado');
       setTimeout(() => setSuccess(null), 2000);
     } catch (err: any) {
-      console.error('❌ Error eliminando logo:', err);
+      logger.error('❌ Error eliminando logo:', err);
       setError('Error al eliminar el logo');
     } finally {
       setIsLoading(false);
@@ -342,7 +343,7 @@ export default function BrandKitPanel() {
           const storageRef = ref(storage, logo.path);
           await deleteObject(storageRef);
         } catch (err) {
-          console.warn('Error eliminando logo:', err);
+          logger.warn('Error eliminando logo:', err);
         }
       }
 
@@ -366,7 +367,7 @@ export default function BrandKitPanel() {
 
       setSuccess('✅ Brand Kit eliminado completamente');
     } catch (err: any) {
-      console.error('❌ Error eliminando Brand Kit:', err);
+      logger.error('❌ Error eliminando Brand Kit:', err);
       setError('Error al eliminar el Brand Kit');
     } finally {
       setIsLoading(false);

@@ -1,3 +1,4 @@
+import { logger } from '../../lib/logger';
 import { useEffect, useState } from 'react';
 import { db } from '../../lib/firebase';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
@@ -40,7 +41,7 @@ export default function ProductsSection() {
 
   const loadProducts = async () => {
     try {
-      console.log('📦 Cargando productos desde Firebase...');
+      logger.info('📦 Cargando productos desde Firebase...');
       setLoading(true);
       setError(null);
 
@@ -56,10 +57,10 @@ export default function ProductsSection() {
         });
       });
 
-      console.log(`📊 ${productsData.length} productos encontrados`);
+      logger.info(`📊 ${productsData.length} productos encontrados`);
       setProducts(productsData);
     } catch (err) {
-      console.error('❌ Error cargando productos:', err);
+      logger.error('❌ Error cargando productos:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
       setLoading(false);
@@ -68,7 +69,7 @@ export default function ProductsSection() {
 
   const createSampleProducts = async () => {
     try {
-      console.log('🌱 Creando productos de ejemplo...');
+      logger.info('🌱 Creando productos de ejemplo...');
 
       // db ya está inicializado desde el SDK modular
 
@@ -119,15 +120,15 @@ export default function ProductsSection() {
 
       for (const product of sampleProducts) {
         await addDoc(collection(db, 'products'), product);
-        console.log(`✅ Creado: ${product.name}`);
+        logger.info(`✅ Creado: ${product.name}`);
       }
 
-      console.log('🎉 Productos de ejemplo creados!');
+      logger.info('🎉 Productos de ejemplo creados!');
 
       // Recargar productos
       loadProducts();
     } catch (err) {
-      console.error('❌ Error creando productos:', err);
+      logger.error('❌ Error creando productos:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
       showModal(
         'error',

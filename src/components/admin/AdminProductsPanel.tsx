@@ -529,7 +529,7 @@ export default function AdminProductsPanel() {
 
   const logInfo = (...args: any[]) => logger.info.bind(logger, '[AdminProductsPanel]');
   const logError = (label: string, err: any) => {
-    console.error('[AdminProductsPanel]', label, {
+    logger.error('[AdminProductsPanel]', label, {
       name: err?.name,
       code: err?.code,
       message: err?.message,
@@ -568,7 +568,7 @@ export default function AdminProductsPanel() {
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      console.log('🔄 Estado de autenticación cambió:', {
+      logger.info('🔄 Estado de autenticación cambió:', {
         user: !!user,
         uid: user?.uid,
         email: user?.email,
@@ -659,40 +659,40 @@ export default function AdminProductsPanel() {
 
   async function testStorageConnection() {
     try {
-      console.log('🧪 Probando conexión a Storage...');
+      logger.info('🧪 Probando conexión a Storage...');
       const user = auth.currentUser;
       if (!user) {
-        console.log('❌ No hay usuario autenticado');
+        logger.info('❌ No hay usuario autenticado');
         setError('No hay usuario autenticado para probar Storage');
         return;
       }
 
-      console.log('👤 Usuario autenticado:', {
+      logger.info('👤 Usuario autenticado:', {
         uid: user.uid,
         email: user.email,
         emailVerified: user.emailVerified,
       });
 
       const token = await user.getIdToken(true);
-      console.log('🔑 Token obtenido, longitud:', token.length);
+      logger.info('🔑 Token obtenido, longitud:', token.length);
 
       const testFile = new Blob(['test-' + Date.now()], { type: 'text/plain' });
       const testRef = ref(storage, `products/test-upload-${Date.now()}.txt`);
 
-      console.log('📍 Intentando subir a:', testRef.fullPath);
+      logger.info('📍 Intentando subir a:', testRef.fullPath);
 
       const snapshot = await uploadBytes(testRef, testFile);
-      console.log('✅ Upload de prueba exitoso:', snapshot.metadata.name);
+      logger.info('✅ Upload de prueba exitoso:', snapshot.metadata.name);
 
       const url = await getDownloadURL(testRef);
-      console.log('✅ URL de prueba obtenida:', url);
+      logger.info('✅ URL de prueba obtenida:', url);
 
       await deleteObject(testRef);
-      console.log('✅ Archivo de prueba eliminado');
+      logger.info('✅ Archivo de prueba eliminado');
 
       setSuccess('✅ Conexión a Storage funcionando correctamente');
     } catch (error: any) {
-      console.error('❌ Error en test de Storage:', {
+      logger.error('❌ Error en test de Storage:', {
         name: error.name,
         code: error.code,
         message: error.message,
@@ -714,7 +714,7 @@ export default function AdminProductsPanel() {
       setLoading(true);
       setError(null);
       setSuccess(null);
-      console.log('[AdminProductsPanel] quickTestCreate start');
+      logger.info('[AdminProductsPanel] quickTestCreate start');
       const createdAt = Timestamp.now();
       const docRef = await addDoc(collection(db, 'products'), {
         name: 'Test producto',
@@ -737,10 +737,10 @@ export default function AdminProductsPanel() {
         createdAt,
         updatedAt: createdAt,
       });
-      console.log('[AdminProductsPanel] quickTestCreate created id=', docRef.id);
+      logger.info('[AdminProductsPanel] quickTestCreate created id=', docRef.id);
       setSuccess('Producto de prueba creado: ' + docRef.id);
     } catch (e: any) {
-      console.error('[AdminProductsPanel] quickTestCreate error:', {
+      logger.error('[AdminProductsPanel] quickTestCreate error:', {
         code: e?.code,
         message: e?.message,
         name: e?.name,
@@ -1004,7 +1004,7 @@ export default function AdminProductsPanel() {
 
   async function uploadImages(productId: string, files: File[]): Promise<string[]> {
     const currentUser = auth.currentUser;
-    console.log('🔐 Estado de autenticación:', {
+    logger.info('🔐 Estado de autenticación:', {
       user: currentUser,
       uid: currentUser?.uid,
       email: currentUser?.email,
@@ -1017,16 +1017,16 @@ export default function AdminProductsPanel() {
 
     try {
       const token = await currentUser.getIdToken();
-      console.log('✅ Token de autenticación obtenido correctamente');
+      logger.info('✅ Token de autenticación obtenido correctamente');
     } catch (tokenError) {
-      console.error('❌ Error obteniendo token:', tokenError);
+      logger.error('❌ Error obteniendo token:', tokenError);
       throw new Error('Sesión de usuario inválida');
     }
 
     const urls: string[] = [];
 
     for (const file of files) {
-      console.log(`📤 Procesando archivo: ${file.name} (${file.size} bytes, tipo: ${file.type})`);
+      logger.info(`📤 Procesando archivo: ${file.name} (${file.size} bytes, tipo: ${file.type})`);
 
       const providedType = (file.type || '').toLowerCase();
       const isImage = providedType.startsWith('image/');
@@ -1039,21 +1039,21 @@ export default function AdminProductsPanel() {
       const key = `${Date.now()}_${file.name}`.replace(/\s+/g, '_');
       const storagePath = `products/${productId}/${key}`;
 
-      console.log(`📍 Intentando subir a: ${storagePath}`);
+      logger.info(`📍 Intentando subir a: ${storagePath}`);
 
       try {
         const objectRef = ref(storage, storagePath);
-        console.log('📋 Referencia de Storage creada');
+        logger.info('📋 Referencia de Storage creada');
 
         const snapshot = await uploadBytes(objectRef, file, { contentType });
-        console.log('✅ uploadBytes exitoso:', snapshot.metadata);
+        logger.info('✅ uploadBytes exitoso:', snapshot.metadata);
 
         const url = await getDownloadURL(objectRef);
-        console.log('🔗 getDownloadURL exitoso:', url);
+        logger.info('🔗 getDownloadURL exitoso:', url);
 
         urls.push(url);
       } catch (uploadError: any) {
-        console.error('❌ Error específico en upload:', {
+        logger.error('❌ Error específico en upload:', {
           name: uploadError.name,
           code: uploadError.code,
           message: uploadError.message,
@@ -1076,7 +1076,7 @@ export default function AdminProductsPanel() {
         ...res.prefixes.map((sub) => deleteAllInFolder(sub.fullPath)),
       ]);
     } catch (e: any) {
-      console.error('[AdminProductsPanel] deleteAllInFolder error:', {
+      logger.error('[AdminProductsPanel] deleteAllInFolder error:', {
         code: e?.code,
         message: e?.message,
       });

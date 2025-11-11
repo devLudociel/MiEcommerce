@@ -1,3 +1,4 @@
+import { logger } from '../../lib/logger';
 import { useState } from 'react';
 
 interface FooterLink {
@@ -65,26 +66,26 @@ const Footer: React.FC = () => {
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log('[Newsletter] Form submitted', { email });
+    logger.info('[Newsletter] Form submitted', { email });
 
     if (!email) {
-      console.warn('[Newsletter] No email provided');
+      logger.warn('[Newsletter] No email provided');
       return;
     }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      console.error('[Newsletter] Invalid email format', { email });
+      logger.error('[Newsletter] Invalid email format', { email });
       alert('Por favor, introduce un email válido');
       return;
     }
 
-    console.log('[Newsletter] Starting subscription...', { email });
+    logger.info('[Newsletter] Starting subscription...', { email });
     setIsSubscribing(true);
 
     try {
-      console.log('[Newsletter] Calling API...');
+      logger.info('[Newsletter] Calling API...');
 
       const response = await fetch('/api/subscribe-newsletter', {
         method: 'POST',
@@ -95,20 +96,20 @@ const Footer: React.FC = () => {
         }),
       });
 
-      console.log('[Newsletter] API response received', {
+      logger.info('[Newsletter] API response received', {
         status: response.status,
         ok: response.ok
       });
 
       const data = await response.json();
-      console.log('[Newsletter] Response data:', data);
+      logger.info('[Newsletter] Response data:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Error al suscribirse');
       }
 
       // Success!
-      console.log('[Newsletter] Subscription successful!');
+      logger.info('[Newsletter] Subscription successful!');
       setIsSubscribed(true);
       setEmail('');
 
@@ -118,7 +119,7 @@ const Footer: React.FC = () => {
       }, 5000);
 
     } catch (error) {
-      console.error('[Newsletter] Subscription error:', error);
+      logger.error('[Newsletter] Subscription error:', error);
       alert(error instanceof Error ? error.message : 'Error al suscribirse. Por favor, intenta de nuevo.');
     } finally {
       setIsSubscribing(false);
