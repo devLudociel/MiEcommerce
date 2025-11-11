@@ -12,8 +12,6 @@ import { ProductGallery } from '../products/ProductGallery';
 import { ProductInfo } from '../products/ProductInfo';
 import { ProductTabs } from '../products/ProductTabs';
 import { RelatedProducts } from '../products/RelatedProducts';
-import AddReviewForm from '../products/AddReviewForm';
-import ProductReviews from '../products/ProductReviews';
 
 interface ProductImage {
   id: number;
@@ -812,87 +810,16 @@ export default function ProductDetail({ id, slug }: Props) {
             </div>
           )}
 
-          {/* Tabs de información */}
+          {/* Tabs de información - PERFORMANCE: Usando componente memoizado */}
           <div className="mt-20">
-            <div className="flex justify-center mb-8 lg:mb-12">
-              <div className="bg-white rounded-2xl p-2 shadow-lg border border-gray-200">
-                {(['description', 'specifications', 'reviews'] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`px-8 py-3 rounded-xl font-bold transition-all duration-300 capitalize ${activeTab === tab ? 'bg-gradient-primary text-white shadow-cyan transform scale-105' : 'text-gray-600 hover:text-cyan-500 hover:bg-gray-50'}`}
-                  >
-                    {tab === 'description' && '📝 Descripción'}
-                    {tab === 'specifications' && '🔧 Especificaciones'}
-                    {tab === 'reviews' && `⭐ Reseñas (${reviewStats.totalReviews})`}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {activeTab === 'description' && (
-              <div className="animate-in slide-in-from-bottom-5 duration-500">
-                <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-200">
-                  <h2 className="text-3xl font-black text-gray-800 mb-6">Descripción Detallada</h2>
-                  <p className="text-gray-700 leading-relaxed mb-8 text-lg">
-                    {product.longDescription || product.description}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'specifications' && (
-              <div className="animate-in slide-in-from-bottom-5 duration-500">
-                <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-200">
-                  <h2 className="text-3xl font-black text-gray-800 mb-8">
-                    Especificaciones Técnicas
-                  </h2>
-                  {Object.keys(product.specifications || {}).length > 0 ? (
-                    <div className="grid gap-4">
-                      {Object.entries(product.specifications || {}).map(([k, v], i) => (
-                        <div
-                          key={k}
-                          className={`grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl transition-all duration-300 hover:bg-gray-50 ${i % 2 === 0 ? 'bg-gray-50/50' : 'bg-white'}`}
-                        >
-                          <div className="font-bold text-gray-800 flex items-center gap-2">
-                            <div className="w-3 h-3 bg-gradient-primary rounded-full" />
-                            {k}
-                          </div>
-                          <div className="md:col-span-2 text-gray-700 font-medium">{v}</div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-center py-8">
-                      No hay especificaciones técnicas disponibles.
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'reviews' && (
-              <div className="animate-in slide-in-from-bottom-5 duration-500">
-                <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-200 space-y-8">
-                  <AddReviewForm
-                    productId={product.id}
-                    onReviewAdded={async () => {
-                      // Recargar estadísticas cuando se agrega una nueva reseña
-                      try {
-                        const stats = await getProductReviewStats(product.id);
-                        setReviewStats({
-                          averageRating: stats.averageRating,
-                          totalReviews: stats.totalReviews,
-                        });
-                      } catch (error) {
-                        console.error('Error recargando estadísticas:', error);
-                      }
-                    }}
-                  />
-                  <ProductReviews productId={product.id} />
-                </div>
-              </div>
-            )}
+            <ProductTabs
+              productId={product.id}
+              description={product.description}
+              longDescription={product.longDescription}
+              specifications={product.specifications}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+            />
           </div>
 
           {/* FAQ del Producto */}
@@ -939,52 +866,18 @@ export default function ProductDetail({ id, slug }: Props) {
             </div>
           </div>
 
-          {/* Productos Relacionados */}
-          {relatedProducts.length > 0 && (
-            <div className="mt-20">
-              <h2 className="text-3xl font-black text-gray-800 mb-8 text-center">
-                Productos Relacionados
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {relatedProducts.map((relProduct) => (
-                  <a
-                    key={relProduct.id}
-                    href={`/producto/${relProduct.slug || relProduct.id}`}
-                    className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 group"
-                  >
-                    <div className="relative overflow-hidden">
-                      <img
-                        src={relProduct.images[0]?.url || FALLBACK_IMG_400x300}
-                        alt={relProduct.name}
-                        className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
-                        onError={(e) => {
-                          const img = e.currentTarget as HTMLImageElement;
-                          img.onerror = null;
-                          img.src = FALLBACK_IMG_400x300;
-                        }}
-                      />
-                      {relProduct.customizable && (
-                        <div className="absolute top-2 right-2 px-2 py-1 bg-purple-600 text-white text-xs font-bold rounded-full">
-                          ✨ Personalizable
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-800 mb-2 line-clamp-2">
-                        {relProduct.name}
-                      </h3>
-                      <div className="flex items-center justify-between">
-                        <span className="text-2xl font-black text-cyan-600">
-                          ${relProduct.variants[0].price}
-                        </span>
-                        <span className="text-sm text-gray-500">{relProduct.category}</span>
-                      </div>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Productos Relacionados - PERFORMANCE: Usando componente memoizado */}
+          <RelatedProducts
+            products={relatedProducts.map((p) => ({
+              id: p.id,
+              name: p.name,
+              slug: p.slug,
+              basePrice: p.basePrice,
+              onSale: p.onSale,
+              salePrice: p.salePrice,
+              images: p.images,
+            }))}
+          />
         </div>
 
         {/* Barra móvil fija */}
