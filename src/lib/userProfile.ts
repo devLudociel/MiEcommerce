@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { serverTimestamp } from 'firebase/firestore';
+import { withRetry } from './resilience';
 
 export interface UserProfile {
   firstName?: string;
@@ -54,39 +55,58 @@ export function userDocRef(uid: string) {
 }
 
 export async function ensureUserDoc(uid: string, email: string, displayName?: string) {
-  const ref = userDocRef(uid);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) {
-    const data: UserDataDoc = {
-      email,
-      displayName,
-      createdAt: serverTimestamp(),
-      profile: {},
-      addresses: [],
-      wishlist: [],
-      taxIds: [],
-      whiteLabelShipping: false,
-      creditBalance: 0,
-    };
-    await setDoc(ref, data);
-  }
+  await withRetry(
+    async () => {
+      const ref = userDocRef(uid);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        const data: UserDataDoc = {
+          email,
+          displayName,
+          createdAt: serverTimestamp(),
+          profile: {},
+          addresses: [],
+          wishlist: [],
+          taxIds: [],
+          whiteLabelShipping: false,
+          creditBalance: 0,
+        };
+        await setDoc(ref, data);
+      }
+    },
+    { context: 'Ensure user document', maxAttempts: 3 }
+  );
 }
 
 export async function getUserData(uid: string): Promise<UserDataDoc | null> {
-  const snap = await getDoc(userDocRef(uid));
-  return snap.exists() ? (snap.data() as UserDataDoc) : null;
+  return withRetry(
+    async () => {
+      const snap = await getDoc(userDocRef(uid));
+      return snap.exists() ? (snap.data() as UserDataDoc) : null;
+    },
+    { context: 'Get user data', maxAttempts: 3 }
+  );
 }
 
 export async function upsertProfile(uid: string, profile: UserProfile) {
-  await updateDoc(userDocRef(uid), { profile });
+  await withRetry(
+    async () => updateDoc(userDocRef(uid), { profile }),
+    { context: 'Update user profile', maxAttempts: 3 }
+  );
 }
 
 export async function saveAddresses(uid: string, addresses: Address[]) {
-  await updateDoc(userDocRef(uid), { addresses });
+  await withRetry(
+    async () => updateDoc(userDocRef(uid), { addresses }),
+    { context: 'Save addresses', maxAttempts: 3 }
+  );
 }
 
 export async function saveWishlist(uid: string, wishlist: UserDataDoc['wishlist']) {
-  await updateDoc(userDocRef(uid), { wishlist });
+  await withRetry(
+    async () => updateDoc(userDocRef(uid), { wishlist }),
+    { context: 'Save wishlist', maxAttempts: 3 }
+  );
 }
 
 export async function getAddresses(uid: string): Promise<Address[]> {
@@ -104,9 +124,15 @@ export async function getDefaultAddresses(
 }
 
 export async function saveTaxIds(uid: string, taxIds: TaxId[]) {
-  await updateDoc(userDocRef(uid), { taxIds });
+  await withRetry(
+    async () => updateDoc(userDocRef(uid), { taxIds }),
+    { context: 'Save tax IDs', maxAttempts: 3 }
+  );
 }
 
 export async function updateUserSettings(uid: string, patch: Partial<UserDataDoc>) {
-  await updateDoc(userDocRef(uid), patch as any);
+  await withRetry(
+    async () => updateDoc(userDocRef(uid), patch as any),
+    { context: 'Update user settings', maxAttempts: 3 }
+  );
 }

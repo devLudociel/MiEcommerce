@@ -7,6 +7,7 @@ import { shippingInfoSchema } from '../../lib/validation/schemas';
 import { useFormValidation } from '../../hooks/useFormValidation';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
+import { withRetry } from '../../lib/resilience';
 import { lookupZipES, autocompleteStreetES, debounce } from '../../utils/address';
 import type { AddressSuggestion } from '../../utils/address';
 import { useAuth } from '../hooks/useAuth';
@@ -421,26 +422,38 @@ export default function Checkout() {
           logger.warn('[Checkout] No authentication token available for finalize-order');
         }
 
-        const finalizeResponse = await fetch('/api/finalize-order', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            orderId: completedOrderId,
-            paymentIntentId,
-          }),
-        });
+        await withRetry(
+          async () => {
+            const finalizeResponse = await fetch('/api/finalize-order', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+              },
+              body: JSON.stringify({
+                orderId: completedOrderId,
+                paymentIntentId,
+              }),
+            });
 
-        if (!finalizeResponse.ok) {
-          const errorData = await finalizeResponse.json().catch(() => ({}));
-          logger.error('[Checkout] Failed to execute post-payment actions', errorData);
-          // Continue anyway - webhook will handle it
-          notify.warning('El pedido se completó pero algunas acciones están pendientes');
-        } else {
-          logger.info('[Checkout] Post-payment actions completed successfully');
-        }
+            if (!finalizeResponse.ok) {
+              const errorData = await finalizeResponse.json().catch(() => ({}));
+              logger.error('[Checkout] Failed to execute post-payment actions', errorData);
+              // Continue anyway - webhook will handle it
+              notify.warning('El pedido se completó pero algunas acciones están pendientes');
+              const error: any = new Error('Finalize order failed');
+              error.status = finalizeResponse.status;
+              throw error;
+            } else {
+              logger.info('[Checkout] Post-payment actions completed successfully');
+            }
+          },
+          {
+            context: 'Finalize order post-payment',
+            maxAttempts: 3,
+            backoffMs: 1000,
+          }
+        );
       } catch (finalizeError) {
         logger.error('[Checkout] Error calling finalize-order endpoint', finalizeError);
         // Continue anyway - webhook will handle it

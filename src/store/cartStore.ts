@@ -5,6 +5,7 @@ import { logger } from '../lib/logger';
 import { notify } from '../lib/notifications';
 import { db } from '../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { withRetry } from '../lib/resilience';
 
 // Simple debounce implementation
 function debounce<T extends (...args: any[]) => any>(
@@ -148,12 +149,20 @@ const endCartSync = (): void => {
 // Save cart to Firestore for authenticated users
 const saveCartToFirestore = async (userId: string, state: CartState): Promise<void> => {
   try {
-    const cartRef = doc(db, 'carts', userId);
-    await setDoc(cartRef, {
-      items: state.items,
-      total: state.total,
-      updatedAt: new Date(),
-    });
+    await withRetry(
+      async () => {
+        const cartRef = doc(db, 'carts', userId);
+        await setDoc(cartRef, {
+          items: state.items,
+          total: state.total,
+          updatedAt: new Date(),
+        });
+      },
+      {
+        context: 'Save cart to Firestore',
+        maxAttempts: 3,
+      }
+    );
     logger.debug('[CartStore] Cart saved to Firestore', {
       userId,
       itemCount: state.items.length,
@@ -170,24 +179,33 @@ const saveCartToFirestoreDebounced = debounce(saveCartToFirestore, 500);
 // Load cart from Firestore for authenticated users
 const loadCartFromFirestore = async (userId: string): Promise<CartState | null> => {
   try {
-    const cartRef = doc(db, 'carts', userId);
-    const cartSnap = await getDoc(cartRef);
+    return await withRetry(
+      async () => {
+        const cartRef = doc(db, 'carts', userId);
+        const cartSnap = await getDoc(cartRef);
 
-    if (cartSnap.exists()) {
-      const data = cartSnap.data();
-      logger.debug('[CartStore] Cart loaded from Firestore', {
-        userId,
-        itemCount: data.items?.length || 0,
-      });
-      return {
-        items: data.items || [],
-        total: data.total || 0,
-      };
-    }
+        if (cartSnap.exists()) {
+          const data = cartSnap.data();
+          logger.debug('[CartStore] Cart loaded from Firestore', {
+            userId,
+            itemCount: data.items?.length || 0,
+          });
+          return {
+            items: data.items || [],
+            total: data.total || 0,
+          };
+        }
+        return null;
+      },
+      {
+        context: 'Load cart from Firestore',
+        maxAttempts: 3,
+      }
+    );
   } catch (error) {
     logger.error('[CartStore] Error loading cart from Firestore', error);
+    return null;
   }
-  return null;
 };
 
 // Sync cart when user logs in or out

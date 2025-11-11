@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import type { Stripe, StripeElements } from '@stripe/stripe-js';
 import { logger } from '../../lib/logger';
+import { withRetry } from '../../lib/resilience';
 import StripeCardElement from './StripeCardElement';
 
 interface SecureCardPaymentProps {
@@ -118,22 +119,35 @@ export default function SecureCardPayment({
         orderTotal,
       });
 
-      const paymentIntentResponse = await fetch('/api/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId: effectiveOrderId,
-          amount: Number(orderTotal.toFixed(2)),
-          currency: 'eur',
-        }),
-      });
+      const paymentIntentData = await withRetry(
+        async () => {
+          const paymentIntentResponse = await fetch('/api/create-payment-intent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId: effectiveOrderId,
+              amount: Number(orderTotal.toFixed(2)),
+              currency: 'eur',
+            }),
+          });
 
-      const paymentIntentData = await paymentIntentResponse.json();
+          const data = await paymentIntentResponse.json();
 
-      if (!paymentIntentResponse.ok) {
-        logger.error('[SecureCardPayment] Error creating PaymentIntent', paymentIntentData);
-        throw new Error(paymentIntentData.error || 'Error al iniciar el pago');
-      }
+          if (!paymentIntentResponse.ok) {
+            logger.error('[SecureCardPayment] Error creating PaymentIntent', data);
+            const error: any = new Error(data.error || 'Error al iniciar el pago');
+            error.status = paymentIntentResponse.status;
+            throw error;
+          }
+
+          return data;
+        },
+        {
+          context: 'Create PaymentIntent',
+          maxAttempts: 3,
+          backoffMs: 1000,
+        }
+      );
 
       const { clientSecret, paymentIntentId } = paymentIntentData;
       logger.info('[SecureCardPayment] PaymentIntent created', {

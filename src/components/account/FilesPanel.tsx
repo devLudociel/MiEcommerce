@@ -8,6 +8,7 @@ import {
   getDownloadURL,
 } from 'firebase/storage';
 import { storage, auth } from '../../lib/firebase';
+import { withRetry } from '../../lib/resilience';
 import AccessibleModal from '../common/AccessibleModal';
 
 interface File {
@@ -131,7 +132,14 @@ export default function FilesPanel() {
         const uniqueName = `${timestamp}-${file.name}`;
         const fileRef = ref(storage, `users/${user.uid}/files/${uniqueName}`);
 
-        await uploadBytes(fileRef, file);
+        await withRetry(
+          async () => uploadBytes(fileRef, file),
+          {
+            context: `Upload file ${file.name}`,
+            maxAttempts: 3,
+            backoffMs: 1500,
+          }
+        );
         console.log(`Archivo subido: ${file.name}`);
       }
 
