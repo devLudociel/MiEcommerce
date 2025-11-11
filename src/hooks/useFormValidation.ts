@@ -129,7 +129,8 @@ export function useFormValidation<T>(
       logger.debug(`[${formName}] Validating field`, { fieldName, value });
 
       // Crear un schema temporal para validar solo este campo
-      const fieldSchema = (schema as any).shape?.[fieldName];
+      // ZodObject schemas have a .shape property, but it's not exposed in the base ZodSchema type
+      const fieldSchema = (schema as z.ZodObject<z.ZodRawShape>).shape?.[fieldName];
 
       if (!fieldSchema) {
         logger.warn(`[${formName}] No schema found for field ${fieldName}`);

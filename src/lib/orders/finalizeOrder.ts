@@ -6,7 +6,7 @@ const CASHBACK_PERCENTAGE = 0.05; // 5% cashback
 interface FinalizeOrderParams {
   db: Firestore;
   orderId: string;
-  orderData?: Record<string, any> | null;
+  orderData?: Record<string, unknown> | null;
   requestUrl?: string;
 }
 
@@ -70,7 +70,7 @@ export async function finalizeOrder({
           throw new Error('Wallet no encontrado. Por favor, recarga la página.');
         }
 
-        const current = snap.data() as any;
+        const current = snap.data() as Record<string, unknown>;
         const currentBalance = Number(current.balance || 0);
 
         if (currentBalance < walletAmount) {
@@ -133,7 +133,7 @@ export async function finalizeOrder({
           throw new Error('Cupón no encontrado');
         }
 
-        const couponData = couponSnap.data() as any;
+        const couponData = couponSnap.data() as Record<string, unknown>;
         const currentUses = Number(couponData.currentUses || 0);
         const maxUses = Number(couponData.maxUses || 0);
 
@@ -192,7 +192,7 @@ export async function finalizeOrder({
         await db.runTransaction(async (transaction) => {
           const snap = await transaction.get(walletRef);
           const current = snap.exists
-            ? (snap.data() as any)
+            ? (snap.data() as Record<string, unknown>)
             : { balance: 0, totalEarned: 0, totalSpent: 0, userId };
           const newBalance = Number(current.balance || 0) + cashbackAmount;
 
