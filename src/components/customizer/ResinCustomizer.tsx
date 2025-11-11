@@ -140,8 +140,8 @@ export default function ResinCustomizer({ product }: Props) {
       const { url, path } = await uploadCustomImage(compressedFile, user.uid, 'resina');
 
       setConfig((prev) => ({ ...prev, imageUrl: url, imagePath: path }));
-    } catch (err: any) {
-      console.error('Error subiendo imagen:', err);
+    } catch (error: unknown) {
+      console.error('Error subiendo imagen:', error);
       setError('Error al subir la imagen. Intenta de nuevo.');
     } finally {
       setIsLoading(false);
@@ -277,8 +277,8 @@ export default function ResinCustomizer({ product }: Props) {
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) {
-      console.error('Error:', err);
+    } catch (error: unknown) {
+      console.error('Error:', error);
       setError('Error al guardar. Intenta de nuevo.');
     } finally {
       setIsAddingToCart(false);

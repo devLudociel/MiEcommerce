@@ -217,8 +217,8 @@ export default function FrameCustomizer({ product }: Props) {
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) {
-      console.error('Error:', err);
+    } catch (error: unknown) {
+      console.error('Error:', error);
       setError('Error al guardar. Intenta de nuevo.');
     } finally {
       setIsAddingToCart(false);

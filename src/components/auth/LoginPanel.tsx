@@ -13,6 +13,16 @@ import AccessibleModal from '../common/AccessibleModal';
 
 type TabMode = 'login' | 'register';
 
+// Type guard for Firebase Auth errors
+interface FirebaseError {
+  code?: string;
+  message?: string;
+}
+
+function isFirebaseError(error: unknown): error is FirebaseError {
+  return typeof error === 'object' && error !== null && ('code' in error || 'message' in error);
+}
+
 export default function LoginPanel() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -101,12 +111,12 @@ export default function LoginPanel() {
         throw e;
       }
       await redirectAfterLogin();
-    } catch (err: any) {
+    } catch (error: unknown) {
       console.error('[LoginPanel] signInWithGoogle fatal error', {
         code: err?.code,
         message: err?.message,
       });
-      setError(err?.message || 'Error iniciando sesión con Google');
+      setError(isFirebaseError(error) ? error.message || 'Error iniciando sesión con Google' : 'Error iniciando sesión con Google');
     } finally {
       setLoading(false);
     }
@@ -151,9 +161,9 @@ export default function LoginPanel() {
       }
 
       await redirectAfterLogin();
-    } catch (err: any) {
-      const code = err?.code || '';
-      let errorMessage = err?.message || 'Error de autenticación';
+    } catch (error: unknown) {
+      const code = isFirebaseError(error) ? error.code || '' : '';
+      let errorMessage = isFirebaseError(error) ? error.message || 'Error de autenticación' : 'Error de autenticación';
 
       if (code.includes('auth/email-already-in-use')) {
         errorMessage = 'Este email ya está registrado. Intenta iniciar sesión.';
@@ -197,8 +207,8 @@ export default function LoginPanel() {
         'Email enviado',
         'Te enviamos un email para restablecer tu contraseña. Revisa tu bandeja de entrada.'
       );
-    } catch (err: any) {
-      const code = err?.code || '';
+    } catch (error: unknown) {
+      const code = isFirebaseError(error) ? error.code || '' : '';
       let errorMessage = 'Error al enviar el email';
 
       if (code.includes('auth/invalid-email')) {
@@ -242,8 +252,8 @@ export default function LoginPanel() {
       setLoading(true);
       await signOut(auth);
       await signInWithGoogle(true);
-    } catch (err: any) {
-      setError(err?.message || 'No se pudo cambiar de cuenta');
+    } catch (error: unknown) {
+      setError(isFirebaseError(error) ? error.message || 'No se pudo cambiar de cuenta' : 'No se pudo cambiar de cuenta');
     } finally {
       setLoading(false);
     }
