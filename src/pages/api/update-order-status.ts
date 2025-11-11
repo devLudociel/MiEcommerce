@@ -1,4 +1,5 @@
 // src/pages/api/update-order-status.ts
+import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -34,7 +35,7 @@ export const POST: APIRoute = async ({ request }) => {
   // SECURITY: CSRF protection
   const csrfCheck = validateCSRF(request);
   if (!csrfCheck.valid) {
-    console.warn('[update-order-status] CSRF validation failed:', csrfCheck.reason);
+    logger.warn('[update-order-status] CSRF validation failed:', csrfCheck.reason);
     return createCSRFErrorResponse();
   }
 
@@ -44,7 +45,7 @@ export const POST: APIRoute = async ({ request }) => {
     // SECURITY: Validate input
     const validationResult = updateOrderStatusSchema.safeParse(rawData);
     if (!validationResult.success) {
-      console.error('[update-order-status] Validation failed:', validationResult.error.format());
+      logger.error('[update-order-status] Validation failed:', validationResult.error.format());
       return new Response(
         JSON.stringify({
           error: 'Datos inválidos',
@@ -56,7 +57,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     const { orderId, status, adminNotes } = validationResult.data;
 
-    console.log('[update-order-status] Updating order status', { orderId, status });
+    logger.info('[update-order-status] Updating order status', { orderId, status });
 
     // Get order from Firestore
     const db = getAdminDb();
@@ -64,7 +65,7 @@ export const POST: APIRoute = async ({ request }) => {
     const orderSnap = await orderRef.get();
 
     if (!orderSnap.exists) {
-      console.error('[update-order-status] Order not found', { orderId });
+      logger.error('[update-order-status] Order not found', { orderId });
       return new Response(
         JSON.stringify({ error: 'Pedido no encontrado' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
@@ -95,7 +96,7 @@ export const POST: APIRoute = async ({ request }) => {
       notes: adminNotes || null,
     });
 
-    console.log('[update-order-status] Order status updated successfully', {
+    logger.info('[update-order-status] Order status updated successfully', {
       orderId,
       previousStatus,
       newStatus: status,
@@ -111,7 +112,7 @@ export const POST: APIRoute = async ({ request }) => {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error: unknown) {
-    console.error('[update-order-status] Error:', error);
+    logger.error('[update-order-status] Error:', error);
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Error actualizando estado del pedido',

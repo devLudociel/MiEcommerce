@@ -1,4 +1,5 @@
 // src/pages/api/send-email.ts
+import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import { Resend } from 'resend';
 import { getAdminDb } from '../../lib/firebase-admin';
@@ -7,11 +8,11 @@ import { orderConfirmationTemplate, orderStatusUpdateTemplate, newsletterWelcome
 const resend = new Resend(import.meta.env.RESEND_API_KEY);
 
 export const POST: APIRoute = async ({ request }) => {
-  console.log('📧 API send-email: Solicitud recibida');
+  logger.info('📧 API send-email: Solicitud recibida');
 
   try {
     const { orderId, type, newStatus, email } = await request.json();
-    console.log('📧 Datos recibidos:', { orderId, type, newStatus, email });
+    logger.info('📧 Datos recibidos:', { orderId, type, newStatus, email });
 
     // Newsletter welcome doesn't need orderId, just email
     if (type === 'newsletter-welcome') {
@@ -23,7 +24,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
 
       const template = newsletterWelcomeTemplate(email);
-      console.log('📧 Enviando email de bienvenida a:', email);
+      logger.info('📧 Enviando email de bienvenida a:', email);
 
       const response = await resend.emails.send({
         from: import.meta.env.EMAIL_FROM || 'noreply@imprimearte.es',
@@ -32,7 +33,7 @@ export const POST: APIRoute = async ({ request }) => {
         html: template.html,
       });
 
-      console.log('📧 Email de newsletter enviado correctamente:', response);
+      logger.info('📧 Email de newsletter enviado correctamente:', response);
 
       const emailId = (response as any).data?.id || (response as any).id;
       return new Response(JSON.stringify({ success: true, emailId }), {
@@ -77,14 +78,14 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    console.log('📧 Enviando email a:', order.shippingInfo?.email);
+    logger.info('📧 Enviando email a:', order.shippingInfo?.email);
     const response = await resend.emails.send({
       from: import.meta.env.EMAIL_FROM || 'noreply@imprimearte.es',
       to: [order.shippingInfo?.email || ''],
       subject,
       html,
     });
-    console.log('📧 Email enviado correctamente:', response);
+    logger.info('📧 Email enviado correctamente:', response);
 
     const emailId = (response as any).data?.id || (response as any).id;
     return new Response(JSON.stringify({ success: true, emailId }), {
@@ -92,7 +93,7 @@ export const POST: APIRoute = async ({ request }) => {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error: unknown) {
-    console.error('❌ Error enviando email:', error);
+    logger.error('❌ Error enviando email:', error);
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Error enviando email',

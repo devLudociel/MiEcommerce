@@ -1,4 +1,5 @@
 // src/pages/api/update-order-tracking.ts
+import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -27,7 +28,7 @@ export const POST: APIRoute = async ({ request }) => {
   // SECURITY: CSRF protection
   const csrfCheck = validateCSRF(request);
   if (!csrfCheck.valid) {
-    console.warn('[update-order-tracking] CSRF validation failed:', csrfCheck.reason);
+    logger.warn('[update-order-tracking] CSRF validation failed:', csrfCheck.reason);
     return createCSRFErrorResponse();
   }
 
@@ -37,7 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
     // SECURITY: Validate input
     const validationResult = updateOrderTrackingSchema.safeParse(rawData);
     if (!validationResult.success) {
-      console.error('[update-order-tracking] Validation failed:', validationResult.error.format());
+      logger.error('[update-order-tracking] Validation failed:', validationResult.error.format());
       return new Response(
         JSON.stringify({
           error: 'Datos inválidos',
@@ -50,7 +51,7 @@ export const POST: APIRoute = async ({ request }) => {
     const { orderId, trackingNumber, carrier, trackingUrl, estimatedDelivery, notes } =
       validationResult.data;
 
-    console.log('[update-order-tracking] Updating order tracking', { orderId });
+    logger.info('[update-order-tracking] Updating order tracking', { orderId });
 
     // Get order from Firestore
     const db = getAdminDb();
@@ -58,7 +59,7 @@ export const POST: APIRoute = async ({ request }) => {
     const orderSnap = await orderRef.get();
 
     if (!orderSnap.exists) {
-      console.error('[update-order-tracking] Order not found', { orderId });
+      logger.error('[update-order-tracking] Order not found', { orderId });
       return new Response(
         JSON.stringify({ error: 'Pedido no encontrado' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
@@ -81,7 +82,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Update order tracking
     await orderRef.update(updateData);
 
-    console.log('[update-order-tracking] Order tracking updated successfully', { orderId });
+    logger.info('[update-order-tracking] Order tracking updated successfully', { orderId });
 
     // Optionally send tracking update email to customer
     if (trackingNumber && carrier) {
@@ -99,9 +100,9 @@ export const POST: APIRoute = async ({ request }) => {
             customerEmail: orderData?.customerEmail,
           }),
         });
-        console.log('[update-order-tracking] Tracking email sent');
+        logger.info('[update-order-tracking] Tracking email sent');
       } catch (emailError) {
-        console.error('[update-order-tracking] Error sending tracking email (non-critical):', emailError);
+        logger.error('[update-order-tracking] Error sending tracking email (non-critical):', emailError);
       }
     }
 
@@ -113,7 +114,7 @@ export const POST: APIRoute = async ({ request }) => {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error: unknown) {
-    console.error('[update-order-tracking] Error:', error);
+    logger.error('[update-order-tracking] Error:', error);
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Error actualizando tracking del pedido',

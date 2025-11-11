@@ -1,4 +1,5 @@
 // src/pages/api/subscribe-newsletter.ts
+import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -23,7 +24,7 @@ export const POST: APIRoute = async ({ request }) => {
   // SECURITY: CSRF protection
   const csrfCheck = validateCSRF(request);
   if (!csrfCheck.valid) {
-    console.warn('[subscribe-newsletter] CSRF validation failed:', csrfCheck.reason);
+    logger.warn('[subscribe-newsletter] CSRF validation failed', { reason: csrfCheck.reason });
     return createCSRFErrorResponse();
   }
 
@@ -33,7 +34,7 @@ export const POST: APIRoute = async ({ request }) => {
     // SECURITY: Validate email
     const validationResult = subscribeSchema.safeParse(rawData);
     if (!validationResult.success) {
-      console.error('[subscribe-newsletter] Validation failed:', validationResult.error.format());
+      logger.error('[subscribe-newsletter] Validation failed', validationResult.error.format());
       return new Response(
         JSON.stringify({
           error: 'Email inválido',
@@ -46,7 +47,7 @@ export const POST: APIRoute = async ({ request }) => {
     const { email, source } = validationResult.data;
     const emailLower = email.toLowerCase().trim();
 
-    console.log('[subscribe-newsletter] Processing subscription', { email: emailLower, source });
+    logger.info('[subscribe-newsletter] Processing subscription', { email: emailLower, source });
 
     const db = getAdminDb();
     const subscribersRef = db.collection('newsletter_subscribers');
@@ -66,7 +67,7 @@ export const POST: APIRoute = async ({ request }) => {
           updatedAt: FieldValue.serverTimestamp(),
         });
 
-        console.log('[subscribe-newsletter] Reactivated subscription', { email: emailLower });
+        logger.info('[subscribe-newsletter] Reactivated subscription', { email: emailLower });
 
         return new Response(
           JSON.stringify({
@@ -79,7 +80,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
 
       // Already active subscription
-      console.log('[subscribe-newsletter] Email already subscribed', { email: emailLower });
+      logger.info('[subscribe-newsletter] Email already subscribed', { email: emailLower });
 
       return new Response(
         JSON.stringify({
@@ -114,7 +115,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     await subscribersRef.add(subscriptionData);
 
-    console.log('[subscribe-newsletter] New subscription created', { email: emailLower });
+    logger.info('[subscribe-newsletter] New subscription created', { email: emailLower });
 
     // Optionally send welcome email
     try {
@@ -126,9 +127,9 @@ export const POST: APIRoute = async ({ request }) => {
           type: 'newsletter-welcome',
         }),
       });
-      console.log('[subscribe-newsletter] Welcome email sent');
+      logger.info('[subscribe-newsletter] Welcome email sent');
     } catch (emailError) {
-      console.error('[subscribe-newsletter] Error sending welcome email (non-critical):', emailError);
+      logger.warn('[subscribe-newsletter] Error sending welcome email (non-critical)', emailError);
     }
 
     return new Response(
@@ -140,7 +141,7 @@ export const POST: APIRoute = async ({ request }) => {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error: unknown) {
-    console.error('[subscribe-newsletter] Error:', error);
+    logger.error('[subscribe-newsletter] Error', error);
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Error al procesar la suscripción',

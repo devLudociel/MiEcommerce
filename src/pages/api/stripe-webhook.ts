@@ -1,3 +1,4 @@
+import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { getAdminDb } from '../../lib/firebase-admin';
@@ -28,7 +29,7 @@ export const POST: APIRoute = async ({ request }) => {
     event = stripe.webhooks.constructEvent(body, sig as string, webhookSecret);
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    console.error('[Stripe Webhook] Signature verification failed:', errorMessage);
+    logger.error('[Stripe Webhook] Signature verification failed:', errorMessage);
     return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 400 });
   }
 
@@ -47,7 +48,7 @@ export const POST: APIRoute = async ({ request }) => {
     const orderId: string | undefined = data?.metadata?.orderId || data?.metadata?.order_id;
 
     if (!orderId) {
-      console.warn('[Stripe Webhook] Missing orderId in metadata for event', event.id, type);
+      logger.warn('[Stripe Webhook] Missing orderId in metadata for event', event.id, type);
       await evtRef.set({ processedAt: new Date(), type, note: 'No orderId metadata' });
       return new Response(JSON.stringify({ received: true }), { status: 200 });
     }
@@ -56,7 +57,7 @@ export const POST: APIRoute = async ({ request }) => {
     const orderSnap = await orderRef.get();
 
     if (!orderSnap.exists) {
-      console.warn('[Stripe Webhook] Order not found for event', orderId, type);
+      logger.warn('[Stripe Webhook] Order not found for event', orderId, type);
       await evtRef.set({
         processedAt: new Date(),
         type,
@@ -77,7 +78,7 @@ export const POST: APIRoute = async ({ request }) => {
           requestUrl: request.url,
         });
       } catch (finalizeError) {
-        console.error('[Stripe Webhook] Error applying post-payment actions:', finalizeError);
+        logger.error('[Stripe Webhook] Error applying post-payment actions:', finalizeError);
         return new Response(JSON.stringify({ error: 'Post-payment actions failed' }), {
           status: 500,
         });
@@ -93,7 +94,7 @@ export const POST: APIRoute = async ({ request }) => {
       );
     } else if (type === 'payment_intent.payment_failed' || type === 'charge.failed') {
       if (orderData?.paymentStatus === 'paid') {
-        console.warn(
+        logger.warn(
           '[Stripe Webhook] Received payment failure for already paid order. Skipping deletion.',
           orderId
         );
@@ -110,7 +111,7 @@ export const POST: APIRoute = async ({ request }) => {
     await evtRef.set({ processedAt: new Date(), type, orderId });
     return new Response(JSON.stringify({ received: true }), { status: 200 });
   } catch (error) {
-    console.error('[Stripe Webhook] Error handling event:', error);
+    logger.error('[Stripe Webhook] Error handling event:', error);
     return new Response(JSON.stringify({ error: 'Webhook handler error' }), { status: 500 });
   }
 };

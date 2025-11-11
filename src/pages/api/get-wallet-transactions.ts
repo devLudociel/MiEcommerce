@@ -1,9 +1,10 @@
 // src/pages/api/get-wallet-transactions.ts
+import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import { getAdminAuth, getAdminDb } from '../../lib/firebase-admin';
 
 export const GET: APIRoute = async ({ request }) => {
-  console.log('[API get-wallet-transactions] Request received');
+  logger.info('[API get-wallet-transactions] Request received');
 
   try {
     const url = new URL(request.url);
@@ -24,7 +25,7 @@ export const GET: APIRoute = async ({ request }) => {
     try {
       decodedToken = await getAdminAuth().verifyIdToken(idToken);
     } catch (verificationError) {
-      console.error('[API get-wallet-transactions] Invalid token:', verificationError);
+      logger.error('[API get-wallet-transactions] Invalid token:', verificationError);
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
@@ -45,7 +46,7 @@ export const GET: APIRoute = async ({ request }) => {
     try {
       adminDb = getAdminDb();
     } catch (adminInitError) {
-      console.error(
+      logger.error(
         '[API get-wallet-transactions] Error initializing Firebase Admin:',
         adminInitError
       );
@@ -81,7 +82,7 @@ export const GET: APIRoute = async ({ request }) => {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, limit);
 
-    console.log('[API get-wallet-transactions] Transactions retrieved', {
+    logger.info('[API get-wallet-transactions] Transactions retrieved', {
       userId: requestedUserId,
       count: transactions.length,
     });
@@ -92,7 +93,7 @@ export const GET: APIRoute = async ({ request }) => {
     });
   } catch (error) {
     // SECURITY: No exponer detalles internos
-    console.error('[API get-wallet-transactions] Unexpected error:', error);
+    logger.error('[API get-wallet-transactions] Unexpected error:', error);
     return new Response(
       JSON.stringify({
         error: 'Error al obtener las transacciones',

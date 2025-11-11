@@ -1,4 +1,5 @@
 // src/pages/api/add-tracking-event.ts
+import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -39,7 +40,7 @@ export const POST: APIRoute = async ({ request }) => {
   // SECURITY: CSRF protection
   const csrfCheck = validateCSRF(request);
   if (!csrfCheck.valid) {
-    console.warn('[add-tracking-event] CSRF validation failed:', csrfCheck.reason);
+    logger.warn('[add-tracking-event] CSRF validation failed:', csrfCheck.reason);
     return createCSRFErrorResponse();
   }
 
@@ -49,7 +50,7 @@ export const POST: APIRoute = async ({ request }) => {
     // SECURITY: Validate input
     const validationResult = addTrackingEventSchema.safeParse(rawData);
     if (!validationResult.success) {
-      console.error('[add-tracking-event] Validation failed:', validationResult.error.format());
+      logger.error('[add-tracking-event] Validation failed:', validationResult.error.format());
       return new Response(
         JSON.stringify({
           error: 'Datos inválidos',
@@ -61,7 +62,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     const { orderId, status, location, description } = validationResult.data;
 
-    console.log('[add-tracking-event] Adding tracking event', { orderId, status });
+    logger.info('[add-tracking-event] Adding tracking event', { orderId, status });
 
     // Get order from Firestore
     const db = getAdminDb();
@@ -69,7 +70,7 @@ export const POST: APIRoute = async ({ request }) => {
     const orderSnap = await orderRef.get();
 
     if (!orderSnap.exists) {
-      console.error('[add-tracking-event] Order not found', { orderId });
+      logger.error('[add-tracking-event] Order not found', { orderId });
       return new Response(
         JSON.stringify({ error: 'Pedido no encontrado' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
@@ -96,7 +97,7 @@ export const POST: APIRoute = async ({ request }) => {
       updatedAt: FieldValue.serverTimestamp(),
     });
 
-    console.log('[add-tracking-event] Tracking event added successfully', {
+    logger.info('[add-tracking-event] Tracking event added successfully', {
       orderId,
       status,
       eventsCount: updatedHistory.length,
@@ -110,7 +111,7 @@ export const POST: APIRoute = async ({ request }) => {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error: unknown) {
-    console.error('[add-tracking-event] Error:', error);
+    logger.error('[add-tracking-event] Error:', error);
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Error agregando evento de tracking',

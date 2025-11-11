@@ -1,4 +1,5 @@
 // src/pages/api/finalize-order.ts
+import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { getAdminDb } from '../../lib/firebase-admin';
@@ -39,14 +40,14 @@ export const POST: APIRoute = async ({ request }) => {
   // SECURITY: CSRF protection
   const csrfCheck = validateCSRF(request);
   if (!csrfCheck.valid) {
-    console.warn('[finalize-order] CSRF validation failed:', csrfCheck.reason);
+    logger.warn('[finalize-order] CSRF validation failed', { reason: csrfCheck.reason });
     return createCSRFErrorResponse();
   }
 
   // SECURITY: User authentication required
   const authResult = await verifyAuthToken(request);
   if (!authResult.success) {
-    console.warn('[finalize-order] Unauthenticated access attempt');
+    logger.warn('[finalize-order] Unauthenticated access attempt');
     return authResult.error!;
   }
 
@@ -56,7 +57,7 @@ export const POST: APIRoute = async ({ request }) => {
     // SECURITY: Validate input
     const validationResult = finalizeOrderSchema.safeParse(rawData);
     if (!validationResult.success) {
-      console.error('[finalize-order] Validation failed:', validationResult.error.format());
+      logger.error('[finalize-order] Validation failed', validationResult.error.format());
       return new Response(
         JSON.stringify({
           error: 'Datos inválidos',
@@ -68,14 +69,14 @@ export const POST: APIRoute = async ({ request }) => {
 
     const { orderId, paymentIntentId } = validationResult.data;
 
-    console.log('[finalize-order] Processing finalization', { orderId, paymentIntentId });
+    logger.info('[finalize-order] Processing finalization', { orderId, paymentIntentId });
 
     // Verify payment intent status with Stripe
     let paymentIntent: Stripe.PaymentIntent;
     try {
       paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     } catch (stripeError: any) {
-      console.error('[finalize-order] Error retrieving payment intent:', stripeError);
+      logger.error('[finalize-order] Error retrieving payment intent', stripeError);
       return new Response(
         JSON.stringify({ error: 'Error verificando el pago' }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
@@ -84,7 +85,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     // SECURITY: Verify payment was successful
     if (paymentIntent.status !== 'succeeded') {
-      console.warn('[finalize-order] Payment not succeeded', {
+      logger.warn('[finalize-order] Payment not succeeded', {
         orderId,
         paymentIntentId,
         status: paymentIntent.status,
@@ -98,7 +99,7 @@ export const POST: APIRoute = async ({ request }) => {
     // SECURITY: Verify payment is for this order
     const paymentOrderId = paymentIntent.metadata?.orderId || paymentIntent.metadata?.order_id;
     if (paymentOrderId !== orderId) {
-      console.error('[finalize-order] Order ID mismatch', {
+      logger.error('[finalize-order] Order ID mismatch', {
         requestedOrderId: orderId,
         paymentOrderId,
       });
@@ -114,7 +115,7 @@ export const POST: APIRoute = async ({ request }) => {
     const orderSnap = await orderRef.get();
 
     if (!orderSnap.exists) {
-      console.error('[finalize-order] Order not found', { orderId });
+      logger.error('[finalize-order] Order not found', { orderId });
       return new Response(
         JSON.stringify({ error: 'Pedido no encontrado' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
@@ -128,7 +129,7 @@ export const POST: APIRoute = async ({ request }) => {
     const requestingUserId = authResult.uid;
 
     if (orderUserId !== requestingUserId && !authResult.isAdmin) {
-      console.warn('[finalize-order] Unauthorized order access attempt', {
+      logger.warn('[finalize-order] Unauthorized order access attempt', {
         orderId,
         orderUserId,
         requestingUserId,
@@ -139,7 +140,7 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    console.log('[finalize-order] Order ownership verified', {
+    logger.info('[finalize-order] Order ownership verified', {
       orderId,
       userId: requestingUserId,
       isAdmin: authResult.isAdmin,
@@ -154,9 +155,9 @@ export const POST: APIRoute = async ({ request }) => {
         requestUrl: request.url,
       });
 
-      console.log('[finalize-order] Post-payment actions completed', { orderId });
+      logger.info('[finalize-order] Post-payment actions completed', { orderId });
     } catch (finalizeError: any) {
-      console.error('[finalize-order] Error executing finalizeOrder:', finalizeError);
+      logger.error('[finalize-order] Error executing finalizeOrder', finalizeError);
       return new Response(
         JSON.stringify({
           error: 'Error ejecutando acciones post-pago',
@@ -184,7 +185,7 @@ export const POST: APIRoute = async ({ request }) => {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error: unknown) {
-    console.error('[finalize-order] Unexpected error:', error);
+    logger.error('[finalize-order] Unexpected error', error);
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Error procesando solicitud',
