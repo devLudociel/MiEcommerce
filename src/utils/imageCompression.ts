@@ -1,5 +1,6 @@
 // src/utils/imageCompression.ts
 import imageCompression from 'browser-image-compression';
+import { logger } from '../lib/logger';
 
 interface CompressionOptions {
   maxSizeMB?: number;
@@ -35,17 +36,23 @@ export async function compressImage(file: File, options: CompressionOptions = {}
   const finalOptions = { ...defaultOptions, ...options };
 
   try {
-    console.log('Comprimiendo imagen...');
-    console.log('Tamaño original:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+    logger.debug('[ImageCompression] Comprimiendo imagen...', {
+      originalSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      fileName: file.name,
+    });
 
     const compressedFile = await imageCompression(file, finalOptions);
 
-    console.log('Tamaño comprimido:', (compressedFile.size / 1024 / 1024).toFixed(2), 'MB');
-    console.log('Reducción:', ((1 - compressedFile.size / file.size) * 100).toFixed(1), '%');
+    const reductionPercent = ((1 - compressedFile.size / file.size) * 100).toFixed(1);
+    logger.info('[ImageCompression] Imagen comprimida exitosamente', {
+      originalSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      compressedSize: `${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`,
+      reduction: `${reductionPercent}%`,
+    });
 
     return compressedFile;
   } catch (error) {
-    console.error('Error comprimiendo imagen:', error);
+    logger.error('[ImageCompression] Error comprimiendo imagen', error);
     throw error;
   }
 }

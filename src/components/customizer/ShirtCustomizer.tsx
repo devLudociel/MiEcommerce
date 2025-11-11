@@ -5,6 +5,7 @@ import { compressImage, validateImageFile, fileToBase64 } from '../../utils/imag
 import { addToCart } from '../../store/cartStore';
 import { attributes, subcategoryAttributes } from '../../data/productAttributes';
 import type { ProductAttributeValue } from '../../data/productAttributes';
+import { logger } from '../../lib/logger';
 
 interface FirebaseProduct {
   id: string;
@@ -83,7 +84,7 @@ export default function ShirtCustomizer({ product }: Props) {
             imageUrls[colorKey] = url;
           }
         } catch (error) {
-          console.log(`No se encontró imagen para color ${colorKey}`);
+          logger.debug(`[ShirtCustomizer] No se encontró imagen para color ${colorKey}`);
         }
       }
 
@@ -135,7 +136,7 @@ export default function ShirtCustomizer({ product }: Props) {
 
       setConfig((prev) => ({ ...prev, imageUrl: url, imagePath: path }));
     } catch (error: unknown) {
-      console.error('Error subiendo imagen:', error);
+      logger.error('[ShirtCustomizer] Error subiendo imagen', error);
       setError('Error al subir la imagen. Intenta de nuevo.');
     } finally {
       setIsLoading(false);
@@ -251,7 +252,7 @@ export default function ShirtCustomizer({ product }: Props) {
       };
 
       const customizationId = await saveCustomization(customizationData);
-      console.log('Personalización guardada:', customizationId);
+      logger.info('[ShirtCustomizer] Personalización guardada', { customizationId });
 
       const customDetails = config.attributes
         .map((attrValue) => {
@@ -278,7 +279,7 @@ export default function ShirtCustomizer({ product }: Props) {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (error: unknown) {
-      console.error('Error:', error);
+      logger.error('[ShirtCustomizer] Error al guardar personalización', error);
       setError('Error al guardar. Intenta de nuevo.');
     } finally {
       setIsAddingToCart(false);

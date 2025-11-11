@@ -4,6 +4,7 @@ import { saveCustomization, getProductImageUrl } from '../../lib/firebase';
 import { addToCart } from '../../store/cartStore';
 import { attributes, subcategoryAttributes } from '../../data/productAttributes';
 import type { ProductAttributeValue } from '../../data/productAttributes';
+import { logger } from '../../lib/logger';
 
 interface FirebaseProduct {
   id: string;
@@ -94,7 +95,7 @@ export default function FrameCustomizer({ product }: Props) {
             imageUrls[colorKey] = url;
           }
         } catch (error) {
-          console.log(`No se encontró imagen para flores ${colorKey}`);
+          logger.debug(`[FrameCustomizer] No se encontró imagen para flores ${colorKey}`);
         }
       }
 
@@ -188,7 +189,7 @@ export default function FrameCustomizer({ product }: Props) {
       };
 
       const customizationId = await saveCustomization(customizationData);
-      console.log('✅ Personalización guardada:', customizationId);
+      logger.info('[FrameCustomizer] Personalización guardada', { customizationId });
 
       // Añadir al carrito
       const customDetails = [
@@ -218,7 +219,7 @@ export default function FrameCustomizer({ product }: Props) {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (error: unknown) {
-      console.error('Error:', error);
+      logger.error('[FrameCustomizer] Error al guardar personalización', error);
       setError('Error al guardar. Intenta de nuevo.');
     } finally {
       setIsAddingToCart(false);

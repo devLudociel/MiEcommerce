@@ -7,6 +7,7 @@ import { compressImage, validateImageFile, fileToBase64 } from '../../utils/imag
 import { addToCart } from '../../store/cartStore';
 import { attributes, subcategoryAttributes } from '../../data/productAttributes';
 import type { ProductAttributeValue } from '../../data/productAttributes';
+import { logger } from '../../lib/logger';
 
 // Additional product properties that may come from Firestore
 type AdditionalProductProps = Record<string, string | number | boolean | string[] | null | undefined>;
@@ -81,16 +82,16 @@ export default function ResinCustomizer({ product }: Props) {
       try {
         const imageUrls: Record<string, string> = {};
 
-        console.log('Cargando imágenes de cajas...');
+        logger.debug('[ResinCustomizer] Cargando imágenes de cajas...');
 
         for (const colorKey of Object.keys(BOX_COLORS)) {
           try {
             const imageRef = ref(storage, `variants/cajas/${colorKey}/preview.jpg`);
             const url = await getDownloadURL(imageRef);
             imageUrls[colorKey] = url;
-            console.log(`Cargada imagen de caja ${colorKey}`);
+            logger.debug(`[ResinCustomizer] Cargada imagen de caja ${colorKey}`);
           } catch (error) {
-            console.log(`No se encontró imagen para caja ${colorKey}`);
+            logger.debug(`[ResinCustomizer] No se encontró imagen para caja ${colorKey}`);
           }
         }
 
@@ -145,7 +146,7 @@ export default function ResinCustomizer({ product }: Props) {
 
       setConfig((prev) => ({ ...prev, imageUrl: url, imagePath: path }));
     } catch (error: unknown) {
-      console.error('Error subiendo imagen:', error);
+      logger.error('[ResinCustomizer] Error subiendo imagen', error);
       setError('Error al subir la imagen. Intenta de nuevo.');
     } finally {
       setIsLoading(false);
@@ -282,7 +283,7 @@ export default function ResinCustomizer({ product }: Props) {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (error: unknown) {
-      console.error('Error:', error);
+      logger.error('[ResinCustomizer] Error al guardar personalización', error);
       setError('Error al guardar. Intenta de nuevo.');
     } finally {
       setIsAddingToCart(false);

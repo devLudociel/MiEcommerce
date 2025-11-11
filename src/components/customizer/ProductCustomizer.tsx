@@ -3,6 +3,7 @@ import { useEffect, useState, Suspense, lazy } from 'react';
 import { doc, getDoc, collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import type { ProductAttributeValue } from '../../data/productAttributes';
+import { logger } from '../../lib/logger';
 
 // PERFORMANCE: Lazy load customizer components for code splitting
 // Only the needed customizer will be loaded, reducing initial bundle size
@@ -130,7 +131,7 @@ export default function ProductCustomizer({ slug }: Props) {
         const type = detectCustomizerType(productData);
         setCustomizerType(type);
 
-        console.log('🎨 Tipo de personalizador detectado:', type);
+        logger.debug('[ProductCustomizer] Tipo de personalizador detectado:', type);
       } catch (e: any) {
         setError(e?.message || 'Error cargando producto');
       } finally {
