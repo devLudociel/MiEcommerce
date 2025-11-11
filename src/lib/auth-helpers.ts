@@ -1,4 +1,5 @@
 // src/lib/auth-helpers.ts
+import { logger } from '../../lib/logger';
 import { getAdminAuth } from './firebase-admin';
 
 export interface AuthResult {
@@ -34,7 +35,7 @@ export async function verifyAuthToken(request: Request): Promise<AuthResult> {
       isAdmin: !!decodedToken.admin,
     };
   } catch (verificationError) {
-    console.error('[auth-helpers] Invalid token:', verificationError);
+    logger.error('[auth-helpers] Invalid token:', verificationError);
     return {
       success: false,
       error: new Response(JSON.stringify({ error: 'Unauthorized - Invalid token' }), {
@@ -56,7 +57,7 @@ export async function verifyAdminAuth(request: Request): Promise<AuthResult> {
   }
 
   if (!authResult.isAdmin) {
-    console.warn('[auth-helpers] Non-admin user attempted admin access:', authResult.uid);
+    logger.warn('[auth-helpers] Non-admin user attempted admin access:', authResult.uid);
     return {
       success: false,
       error: new Response(JSON.stringify({ error: 'Forbidden - Admin access required' }), {
@@ -84,10 +85,10 @@ export function createErrorResponse(message: string, status: number = 500): Resp
  */
 export function logErrorSafely(context: string, error: unknown): void {
   // Log completo en servidor para debugging
-  console.error(`[${context}] Error:`, error);
+  logger.error(`[${context}] Error:`, error);
 
   // Si es producción, no enviar stack traces al cliente
   if (import.meta.env.PROD) {
-    console.log(`[${context}] Stack traces ocultos en producción`);
+    logger.info(`[${context}] Stack traces ocultos en producción`);
   }
 }

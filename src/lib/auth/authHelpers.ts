@@ -2,6 +2,7 @@
  * Authentication and authorization helpers for API endpoints
  */
 
+import { logger } from '../../lib/logger';
 import { getAdminAuth } from '../firebase-admin';
 
 export interface AuthResult {
@@ -22,7 +23,7 @@ export async function verifyAuthToken(request: Request): Promise<AuthResult> {
     const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.warn('[verifyAuthToken] Missing or invalid authorization header');
+      logger.warn('[verifyAuthToken] Missing or invalid authorization header');
       return {
         success: false,
         error: new Response(
@@ -44,7 +45,7 @@ export async function verifyAuthToken(request: Request): Promise<AuthResult> {
         isAdmin: decodedToken.admin === true,
       };
     } catch (verificationError) {
-      console.error('[verifyAuthToken] Token verification failed:', verificationError);
+      logger.error('[verifyAuthToken] Token verification failed:', verificationError);
       return {
         success: false,
         error: new Response(
@@ -54,7 +55,7 @@ export async function verifyAuthToken(request: Request): Promise<AuthResult> {
       };
     }
   } catch (error) {
-    console.error('[verifyAuthToken] Unexpected error:', error);
+    logger.error('[verifyAuthToken] Unexpected error:', error);
     return {
       success: false,
       error: new Response(
@@ -99,7 +100,7 @@ export async function verifyAdminAuth(request: Request): Promise<AuthResult> {
   }
 
   // Not an admin
-  console.warn('[verifyAdminAuth] Non-admin user attempted admin action:', {
+  logger.warn('[verifyAdminAuth] Non-admin user attempted admin action:', {
     uid: authResult.uid,
     email: authResult.email,
   });

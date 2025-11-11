@@ -1,4 +1,5 @@
 // src/lib/firebase.ts
+import { logger } from '../lib/logger';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import type { FirebaseApp } from 'firebase/app';
 import {
@@ -139,10 +140,10 @@ export async function getProductImageUrl(
       `variants/${categoria}/${variante}/preview.jpg`
     );
     const url: string = await getDownloadURL(storageRef);
-    console.log(`✅ Imagen cargada: variants/${categoria}/${variante}/preview.jpg`);
+    logger.info(`✅ Imagen cargada: variants/${categoria}/${variante}/preview.jpg`);
     return url;
   } catch (error) {
-    console.error(`❌ Error obteniendo imagen de variants/${categoria}/${variante}:`, error);
+    logger.error(`❌ Error obteniendo imagen de variants/${categoria}/${variante}:`, error);
     return null;
   }
 }
@@ -169,7 +170,7 @@ export async function uploadCustomImage(
     const snapshot: UploadResult = await uploadBytes(storageRef, file);
     const url: string = await getDownloadURL(snapshot.ref);
 
-    console.log('✅ Imagen personalizada subida:', url);
+    logger.info('✅ Imagen personalizada subida:', url);
 
     return {
       url,
@@ -177,7 +178,7 @@ export async function uploadCustomImage(
       name: fileName,
     };
   } catch (error) {
-    console.error('❌ Error subiendo imagen personalizada:', error);
+    logger.error('❌ Error subiendo imagen personalizada:', error);
     throw error;
   }
 }
@@ -190,10 +191,10 @@ export async function deleteCustomImage(imagePath: string): Promise<boolean> {
   try {
     const storageRef: StorageReference = ref(storage, imagePath);
     await deleteObject(storageRef);
-    console.log('✅ Imagen eliminada:', imagePath);
+    logger.info('✅ Imagen eliminada:', imagePath);
     return true;
   } catch (error) {
-    console.error('❌ Error eliminando imagen:', error);
+    logger.error('❌ Error eliminando imagen:', error);
     return false;
   }
 }
@@ -221,10 +222,10 @@ export async function uploadProductImages(
     });
 
     const urls: string[] = await Promise.all(uploadPromises);
-    console.log(`✅ ${urls.length} imágenes de variantes subidas para ${categoria}`);
+    logger.info(`✅ ${urls.length} imágenes de variantes subidas para ${categoria}`);
     return urls;
   } catch (error) {
-    console.error('❌ Error subiendo imágenes de productos:', error);
+    logger.error('❌ Error subiendo imágenes de productos:', error);
     throw error;
   }
 }
@@ -246,10 +247,10 @@ export async function saveCustomization(customizationData: CustomizationData): P
       status: 'pending',
     });
 
-    console.log('✅ Personalización guardada con ID:', docRef.id);
+    logger.info('✅ Personalización guardada con ID:', docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error('❌ Error guardando personalización:', error);
+    logger.error('❌ Error guardando personalización:', error);
     throw error;
   }
 }
@@ -270,10 +271,10 @@ export async function updateCustomization(
       updatedAt: serverTimestamp(),
     });
 
-    console.log('✅ Personalización actualizada:', customizationId);
+    logger.info('✅ Personalización actualizada:', customizationId);
     return true;
   } catch (error) {
-    console.error('❌ Error actualizando personalización:', error);
+    logger.error('❌ Error actualizando personalización:', error);
     throw error;
   }
 }
@@ -290,11 +291,11 @@ export async function getCustomization(customizationId: string): Promise<Customi
     if (docSnap.exists()) {
       return { id: docSnap.id, ...docSnap.data() } as CustomizationDoc;
     } else {
-      console.log('⚠️ Personalización no encontrada:', customizationId);
+      logger.info('⚠️ Personalización no encontrada:', customizationId);
       return null;
     }
   } catch (error) {
-    console.error('❌ Error obteniendo personalización:', error);
+    logger.error('❌ Error obteniendo personalización:', error);
     throw error;
   }
 }
@@ -314,10 +315,10 @@ export async function getUserCustomizations(userId: string): Promise<Customizati
       customizations.push({ id: doc.id, ...doc.data() } as CustomizationDoc);
     });
 
-    console.log(`✅ ${customizations.length} personalizaciones encontradas para usuario ${userId}`);
+    logger.info(`✅ ${customizations.length} personalizaciones encontradas para usuario ${userId}`);
     return customizations;
   } catch (error) {
-    console.error('❌ Error obteniendo personalizaciones:', error);
+    logger.error('❌ Error obteniendo personalizaciones:', error);
     throw error;
   }
 }
@@ -333,10 +334,10 @@ export async function saveProduct(productData: ProductData): Promise<string> {
       createdAt: serverTimestamp(),
     });
 
-    console.log('✅ Producto guardado con ID:', docRef.id);
+    logger.info('✅ Producto guardado con ID:', docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error('❌ Error guardando producto:', error);
+    logger.error('❌ Error guardando producto:', error);
     throw error;
   }
 }
@@ -361,10 +362,10 @@ export async function getProductsByCategory(categoria: string): Promise<ProductD
       } as ProductData);
     });
 
-    console.log(`✅ ${products.length} productos encontrados en categoría ${categoria}`);
+    logger.info(`✅ ${products.length} productos encontrados en categoría ${categoria}`);
     return products;
   } catch (error) {
-    console.error('❌ Error obteniendo productos:', error);
+    logger.error('❌ Error obteniendo productos:', error);
     throw error;
   }
 }
@@ -386,10 +387,10 @@ export async function getAllProducts(): Promise<ProductData[]> {
       } as ProductData);
     });
 
-    console.log(`✅ ${products.length} productos totales encontrados`);
+    logger.info(`✅ ${products.length} productos totales encontrados`);
     return products;
   } catch (error) {
-    console.error('❌ Error obteniendo todos los productos:', error);
+    logger.error('❌ Error obteniendo todos los productos:', error);
     throw error;
   }
 }
@@ -423,10 +424,10 @@ export async function getSpecialOffers(): Promise<ProductData[]> {
       });
     });
 
-    console.log(`✅ ${offers.length} ofertas especiales encontradas`);
+    logger.info(`✅ ${offers.length} ofertas especiales encontradas`);
     return offers;
   } catch (error) {
-    console.error('❌ Error obteniendo ofertas especiales:', error);
+    logger.error('❌ Error obteniendo ofertas especiales:', error);
     // Si falla por falta de índice, devolver array vacío
     return [];
   }
@@ -457,11 +458,11 @@ export async function getOrderById(orderId: string): Promise<OrderData | null> {
     if (docSnap.exists()) {
       return { id: docSnap.id, ...docSnap.data() } as OrderData;
     } else {
-      console.log('⚠️ Pedido no encontrado:', orderId);
+      logger.info('⚠️ Pedido no encontrado:', orderId);
       return null;
     }
   } catch (error) {
-    console.error('❌ Error obteniendo pedido:', error);
+    logger.error('❌ Error obteniendo pedido:', error);
     throw error;
   }
 }
@@ -485,10 +486,10 @@ export async function getUserOrders(userId: string, limitCount: number = 50): Pr
       orders.push({ id: doc.id, ...doc.data() } as OrderData);
     });
 
-    console.log(`✅ ${orders.length} pedidos encontrados para usuario ${userId}`);
+    logger.info(`✅ ${orders.length} pedidos encontrados para usuario ${userId}`);
     return orders;
   } catch (error) {
-    console.error('❌ Error obteniendo pedidos del usuario:', error);
+    logger.error('❌ Error obteniendo pedidos del usuario:', error);
     throw error;
   }
 }
@@ -540,10 +541,10 @@ export async function getUserOrdersPaginated(
 
     const lastVisible = docs.length > 0 ? docs[docs.length - 1] : null;
 
-    console.log(`✅ ${orders.length} pedidos cargados (página), hasMore: ${hasMore}`);
+    logger.info(`✅ ${orders.length} pedidos cargados (página), hasMore: ${hasMore}`);
     return { orders, hasMore, lastVisible };
   } catch (error) {
-    console.error('❌ Error obteniendo pedidos paginados:', error);
+    logger.error('❌ Error obteniendo pedidos paginados:', error);
     throw error;
   }
 }
@@ -559,10 +560,10 @@ export async function updateOrderStatus(orderId: string, status: string): Promis
       updatedAt: serverTimestamp(),
     });
 
-    console.log('✅ Estado de pedido actualizado:', orderId);
+    logger.info('✅ Estado de pedido actualizado:', orderId);
     return true;
   } catch (error) {
-    console.error('❌ Error actualizando estado de pedido:', error);
+    logger.error('❌ Error actualizando estado de pedido:', error);
     throw error;
   }
 }
@@ -593,10 +594,10 @@ export async function updateOrderTracking(
 
     await updateDoc(docRef, updateData);
 
-    console.log('✅ Tracking actualizado para pedido:', orderId);
+    logger.info('✅ Tracking actualizado para pedido:', orderId);
     return true;
   } catch (error) {
-    console.error('❌ Error actualizando tracking:', error);
+    logger.error('❌ Error actualizando tracking:', error);
     throw error;
   }
 }
@@ -638,10 +639,10 @@ export async function addTrackingEvent(
       updatedAt: serverTimestamp(),
     });
 
-    console.log('✅ Evento de tracking agregado:', orderId, event.status);
+    logger.info('✅ Evento de tracking agregado:', orderId, event.status);
     return true;
   } catch (error) {
-    console.error('❌ Error agregando evento de tracking:', error);
+    logger.error('❌ Error agregando evento de tracking:', error);
     throw error;
   }
 }
@@ -709,10 +710,10 @@ export async function getAllOrders(): Promise<OrderData[]> {
       return dateB.getTime() - dateA.getTime();
     });
 
-    console.log(`✅ ${orders.length} pedidos totales encontrados`);
+    logger.info(`✅ ${orders.length} pedidos totales encontrados`);
     return orders;
   } catch (error) {
-    console.error('❌ Error obteniendo todos los pedidos:', error);
+    logger.error('❌ Error obteniendo todos los pedidos:', error);
     throw error;
   }
 }
@@ -731,10 +732,10 @@ export async function getOrdersByStatus(status: string): Promise<OrderData[]> {
       orders.push({ id: doc.id, ...doc.data() } as OrderData);
     });
 
-    console.log(`✅ ${orders.length} pedidos con estado ${status}`);
+    logger.info(`✅ ${orders.length} pedidos con estado ${status}`);
     return orders;
   } catch (error) {
-    console.error('❌ Error obteniendo pedidos por estado:', error);
+    logger.error('❌ Error obteniendo pedidos por estado:', error);
     throw error;
   }
 }
@@ -765,7 +766,7 @@ export async function getOrdersCount(statusFilter?: string): Promise<number> {
     const snapshot = await getCountFromServer(q);
     return snapshot.data().count;
   } catch (error) {
-    console.error('❌ Error obteniendo conteo de pedidos:', error);
+    logger.error('❌ Error obteniendo conteo de pedidos:', error);
     return 0;
   }
 }
@@ -838,7 +839,7 @@ export async function getOrdersPaginated(
       newLastDoc = doc;
     });
 
-    console.log(`✅ ${orders.length} pedidos obtenidos (página), hasMore: ${hasMore}`);
+    logger.info(`✅ ${orders.length} pedidos obtenidos (página), hasMore: ${hasMore}`);
 
     return {
       data: orders,
@@ -846,7 +847,7 @@ export async function getOrdersPaginated(
       hasMore,
     };
   } catch (error) {
-    console.error('❌ Error obteniendo pedidos paginados:', error);
+    logger.error('❌ Error obteniendo pedidos paginados:', error);
     throw error;
   }
 }
@@ -872,10 +873,10 @@ export async function addReview(
       updatedAt: serverTimestamp(),
     });
 
-    console.log('✅ Review agregada:', docRef.id);
+    logger.info('✅ Review agregada:', docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error('❌ Error agregando review:', error);
+    logger.error('❌ Error agregando review:', error);
     throw error;
   }
 }
@@ -901,10 +902,10 @@ export async function getProductReviews(productId: string): Promise<Review[]> {
       return dateB.getTime() - dateA.getTime();
     });
 
-    console.log(`✅ ${reviews.length} reviews encontradas para producto ${productId}`);
+    logger.info(`✅ ${reviews.length} reviews encontradas para producto ${productId}`);
     return reviews;
   } catch (error) {
-    console.error('❌ Error obteniendo reviews:', error);
+    logger.error('❌ Error obteniendo reviews:', error);
     throw error;
   }
 }
@@ -936,7 +937,7 @@ export async function getProductReviewStats(productId: string): Promise<ReviewSt
 
     return stats;
   } catch (error) {
-    console.error('❌ Error obteniendo stats de reviews:', error);
+    logger.error('❌ Error obteniendo stats de reviews:', error);
     throw error;
   }
 }
@@ -1005,14 +1006,14 @@ export async function batchGetProductReviewStats(
     });
 
     if (import.meta.env.DEV) {
-      console.log(
+      logger.info(
         `[batchGetProductReviewStats] Loaded stats for ${productIds.length} products, ${allReviews.length} total reviews`
       );
     }
 
     return statsMap;
   } catch (error) {
-    console.error('❌ Error in batchGetProductReviewStats:', error);
+    logger.error('❌ Error in batchGetProductReviewStats:', error);
     // Return empty stats instead of throwing to avoid breaking product display
     return statsMap;
   }
@@ -1033,7 +1034,7 @@ export async function hasUserReviewed(productId: string, userId: string): Promis
     const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
     return !querySnapshot.empty;
   } catch (error) {
-    console.error('❌ Error verificando review del usuario:', error);
+    logger.error('❌ Error verificando review del usuario:', error);
     throw error;
   }
 }
@@ -1052,10 +1053,10 @@ export async function markReviewHelpful(reviewId: string): Promise<void> {
         helpful: currentHelpful + 1,
         updatedAt: serverTimestamp(),
       });
-      console.log('✅ Review marcada como útil');
+      logger.info('✅ Review marcada como útil');
     }
   } catch (error) {
-    console.error('❌ Error marcando review como útil:', error);
+    logger.error('❌ Error marcando review como útil:', error);
     throw error;
   }
 }
@@ -1093,10 +1094,10 @@ export async function getOrCreateWallet(userId: string): Promise<Wallet> {
       updatedAt: serverTimestamp(),
     });
 
-    console.log('✅ Wallet creado para usuario:', userId);
+    logger.info('✅ Wallet creado para usuario:', userId);
     return newWallet;
   } catch (error) {
-    console.error('❌ Error obteniendo/creando wallet:', error);
+    logger.error('❌ Error obteniendo/creando wallet:', error);
     throw error;
   }
 }
@@ -1109,7 +1110,7 @@ export async function getWalletBalance(userId: string): Promise<number> {
     const wallet = await getOrCreateWallet(userId);
     return wallet.balance;
   } catch (error) {
-    console.error('❌ Error obteniendo saldo del wallet:', error);
+    logger.error('❌ Error obteniendo saldo del wallet:', error);
     return 0;
   }
 }
@@ -1164,10 +1165,10 @@ export async function getWalletTransactions(
       return dateB.getTime() - dateA.getTime();
     });
 
-    console.log(`✅ ${transactions.length} transacciones encontradas`);
+    logger.info(`✅ ${transactions.length} transacciones encontradas`);
     return transactions;
   } catch (error) {
-    console.error('❌ Error obteniendo transacciones del wallet:', error);
+    logger.error('❌ Error obteniendo transacciones del wallet:', error);
     throw error;
   }
 }
@@ -1255,7 +1256,7 @@ export async function validateCoupon(
 
     return { valid: true, coupon, discount };
   } catch (error) {
-    console.error('❌ Error validando cupón:', error);
+    logger.error('❌ Error validando cupón:', error);
     return { valid: false, error: 'Error al validar cupón' };
   }
 }
@@ -1289,10 +1290,10 @@ export async function recordCouponUsage(
       usedAt: serverTimestamp(),
     });
 
-    console.log(`✅ Cupón ${couponCode} usado por usuario ${userId}`);
+    logger.info(`✅ Cupón ${couponCode} usado por usuario ${userId}`);
     return true;
   } catch (error) {
-    console.error('❌ Error usando cupón:', error);
+    logger.error('❌ Error usando cupón:', error);
     return false;
   }
 }
@@ -1304,7 +1305,7 @@ export async function createCoupon(
   couponData: Omit<Coupon, 'id' | 'currentUses' | 'createdAt' | 'updatedAt'>
 ): Promise<string> {
   try {
-    console.log('🔍 [v3-FINAL] Datos recibidos:', couponData);
+    logger.info('🔍 [v3-FINAL] Datos recibidos:', couponData);
 
     // Preparar datos base
     const baseData: Record<string, any> = {
@@ -1335,18 +1336,18 @@ export async function createCoupon(
       return acc;
     }, {} as Record<string, any>);
 
-    console.log('🧹 [v3-FINAL] Datos limpios:', cleanData);
-    console.log(
+    logger.info('🧹 [v3-FINAL] Datos limpios:', cleanData);
+    logger.info(
       '🔍 [v3-FINAL] Campos undefined restantes:',
       Object.entries(cleanData).filter(([k, v]) => v === undefined).length
     );
 
     const docRef = await addDoc(collection(db, 'coupons'), cleanData);
 
-    console.log('✅ Cupón creado:', docRef.id);
+    logger.info('✅ Cupón creado:', docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error('❌ [v3-FINAL] Error creando cupón:', error);
+    logger.error('❌ [v3-FINAL] Error creando cupón:', error);
     throw error;
   }
 }
@@ -1365,10 +1366,10 @@ export async function getActiveCoupons(): Promise<Coupon[]> {
       coupons.push({ id: doc.id, ...doc.data() } as Coupon);
     });
 
-    console.log(`✅ ${coupons.length} cupones activos encontrados`);
+    logger.info(`✅ ${coupons.length} cupones activos encontrados`);
     return coupons;
   } catch (error) {
-    console.error('❌ Error obteniendo cupones:', error);
+    logger.error('❌ Error obteniendo cupones:', error);
     throw error;
   }
 }
@@ -1385,10 +1386,10 @@ export async function updateCoupon(couponId: string, updates: Partial<Coupon>): 
       updatedAt: serverTimestamp(),
     });
 
-    console.log('✅ Cupón actualizado:', couponId);
+    logger.info('✅ Cupón actualizado:', couponId);
     return true;
   } catch (error) {
-    console.error('❌ Error actualizando cupón:', error);
+    logger.error('❌ Error actualizando cupón:', error);
     return false;
   }
 }
@@ -1400,7 +1401,7 @@ export async function deactivateCoupon(couponId: string): Promise<boolean> {
   try {
     return await updateCoupon(couponId, { active: false });
   } catch (error) {
-    console.error('❌ Error desactivando cupón:', error);
+    logger.error('❌ Error desactivando cupón:', error);
     return false;
   }
 }

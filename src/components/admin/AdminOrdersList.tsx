@@ -1,3 +1,4 @@
+import { logger } from '../../lib/logger';
 import { useEffect, useState } from 'react';
 import { getOrdersPaginated, getOrdersCount, updateOrderStatus } from '../../lib/firebase';
 import type { OrderData } from '../../lib/firebase';
@@ -74,7 +75,7 @@ export default function AdminOrdersList() {
       const count = await getOrdersCount(filter);
       setTotalCount(count);
     } catch (error) {
-      console.error('Error cargando conteo:', error);
+      logger.error('Error cargando conteo:', error);
     }
   };
 
@@ -86,7 +87,7 @@ export default function AdminOrdersList() {
       setLastDoc(result.lastDoc);
       setHasMore(result.hasMore);
     } catch (error) {
-      console.error('Error cargando pedidos:', error);
+      logger.error('Error cargando pedidos:', error);
       showModal(
         'error',
         'Error al cargar',
@@ -151,9 +152,9 @@ export default function AdminOrdersList() {
             newStatus,
           }),
         });
-        console.log('✅ Email de notificación enviado');
+        logger.info('✅ Email de notificación enviado');
       } catch (emailError) {
-        console.error('⚠️ Error enviando email (no crítico):', emailError);
+        logger.error('⚠️ Error enviando email (no crítico):', emailError);
       }
 
       // Recargar pedidos
@@ -164,7 +165,7 @@ export default function AdminOrdersList() {
         'El estado del pedido se actualizó correctamente y se envió un email al cliente.'
       );
     } catch (error) {
-      console.error('Error actualizando estado:', error);
+      logger.error('Error actualizando estado:', error);
       showModal(
         'error',
         'Error al actualizar',

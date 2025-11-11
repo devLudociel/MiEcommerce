@@ -1,3 +1,4 @@
+import { logger } from '../../lib/logger';
 import type { App } from 'firebase-admin/app';
 import { getApps, initializeApp, cert, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
@@ -31,7 +32,7 @@ export function getAdminApp(): App {
         credential: cert(serviceAccount),
         projectId: serviceAccount.project_id || projectId,
       });
-      console.log('Firebase Admin inicializado con Service Account');
+      logger.info('Firebase Admin inicializado con Service Account');
       return adminApp;
     }
 
@@ -44,19 +45,19 @@ export function getAdminApp(): App {
         credential: cert({ projectId, clientEmail, privateKey }),
         projectId,
       });
-      console.log('Firebase Admin inicializado con credenciales individuales');
+      logger.info('Firebase Admin inicializado con credenciales individuales');
       return adminApp;
     }
 
     // Opción 3: Application Default Credentials (ADC)
-    console.warn('Intentando usar Application Default Credentials');
+    logger.warn('Intentando usar Application Default Credentials');
     adminApp = initializeApp({
       credential: applicationDefault(),
       projectId,
     });
     return adminApp;
   } catch (error) {
-    console.error('Error inicializando Firebase Admin:', error);
+    logger.error('Error inicializando Firebase Admin:', error);
     throw new Error(
       'Firebase Admin no pudo inicializarse. Configura FIREBASE_SERVICE_ACCOUNT o (FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY) en .env'
     );

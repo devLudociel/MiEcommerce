@@ -1,3 +1,4 @@
+import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -83,7 +84,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       // SECURITY: Verificar autorización - solo admin o el usuario dueño del pedido
       if (!isAdmin && order.userId !== authUid) {
         if (import.meta.env.DEV) {
-          console.warn('[generate-invoice] Unauthorized access attempt');
+          logger.warn('[generate-invoice] Unauthorized access attempt');
         }
         return createErrorResponse('Forbidden - No tienes acceso a esta factura', 403);
       }
@@ -91,14 +92,14 @@ export const GET: APIRoute = async ({ request, url }) => {
       // Guest access path
       if (order.userId !== 'guest') {
         if (import.meta.env.DEV) {
-          console.warn('[generate-invoice] Guest access rejected (non-guest order)');
+          logger.warn('[generate-invoice] Guest access rejected (non-guest order)');
         }
         return createErrorResponse('Forbidden - Se requiere autenticación', 403);
       }
 
       if (!guestOrderKey || order.idempotencyKey !== guestOrderKey) {
         if (import.meta.env.DEV) {
-          console.warn('[generate-invoice] Guest access rejected (invalid key)');
+          logger.warn('[generate-invoice] Guest access rejected (invalid key)');
         }
         return createErrorResponse('Forbidden - Clave de pedido inválida', 403);
       }

@@ -1,3 +1,4 @@
+import { logger } from '../../lib/logger';
 import { useState, useEffect } from 'react';
 import {
   ref,
@@ -96,7 +97,7 @@ export default function FilesPanel() {
         )
       );
     } catch (error) {
-      console.error('Error cargando archivos:', error);
+      logger.error('Error cargando archivos:', error);
     } finally {
       setLoading(false);
     }
@@ -140,7 +141,7 @@ export default function FilesPanel() {
             backoffMs: 1500,
           }
         );
-        console.log(`Archivo subido: ${file.name}`);
+        logger.info(`Archivo subido: ${file.name}`);
       }
 
       // Recargar la lista después de subir
@@ -149,7 +150,7 @@ export default function FilesPanel() {
       // Limpiar el input
       event.target.value = '';
     } catch (error) {
-      console.error('Error subiendo archivo:', error);
+      logger.error('Error subiendo archivo:', error);
       showModal(
         'error',
         'Error al subir',
@@ -166,7 +167,7 @@ export default function FilesPanel() {
       await deleteObject(fileRef);
       setFiles(files.filter((f) => f.path !== filePath));
     } catch (error) {
-      console.error('Error eliminando archivo:', error);
+      logger.error('Error eliminando archivo:', error);
     }
   };
 
@@ -183,7 +184,7 @@ export default function FilesPanel() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(urlBlob);
     } catch (error) {
-      console.error('Error descargando archivo:', error);
+      logger.error('Error descargando archivo:', error);
       showModal(
         'error',
         'Error al descargar',

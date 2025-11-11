@@ -1,4 +1,5 @@
 // src/lib/env.ts
+import { logger } from '../../lib/logger';
 import { z } from 'zod';
 
 /**
@@ -180,8 +181,8 @@ export function validateEnv() {
     const result = envSchema.safeParse(import.meta.env);
 
     if (!result.success) {
-      console.error('❌ Error de validación de variables de entorno:');
-      console.error(result.error.flatten().fieldErrors);
+      logger.error('❌ Error de validación de variables de entorno:');
+      logger.error(result.error.flatten().fieldErrors);
 
       // Mostrar un mensaje de error más amigable
       const errors = result.error.flatten().fieldErrors;
@@ -200,18 +201,18 @@ export function validateEnv() {
 
     // Log de confirmación en desarrollo
     if (isDev) {
-      console.log('✅ Variables de entorno validadas correctamente');
-      console.log('📦 Firebase Project:', env.PUBLIC_FIREBASE_PROJECT_ID);
-      console.log(
+      logger.info('✅ Variables de entorno validadas correctamente');
+      logger.info('📦 Firebase Project:', env.PUBLIC_FIREBASE_PROJECT_ID);
+      logger.info(
         '🔑 Stripe Mode:',
         env.PUBLIC_STRIPE_PUBLISHABLE_KEY.startsWith('pk_live_') ? 'LIVE 🔴' : 'TEST 🟢'
       );
-      console.log('📧 Email From:', env.RESEND_FROM_EMAIL);
+      logger.info('📧 Email From:', env.RESEND_FROM_EMAIL);
     }
 
     return env;
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     process.exit(1);
   }
 }

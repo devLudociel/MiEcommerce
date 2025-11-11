@@ -1,4 +1,5 @@
 // src/pages/api/save-order.ts
+import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -71,7 +72,7 @@ export const POST: APIRoute = async ({ request }) => {
   // SECURITY: CSRF protection
   const csrfCheck = validateCSRF(request);
   if (!csrfCheck.valid) {
-    console.warn('[save-order] CSRF validation failed:', csrfCheck.reason);
+    logger.warn('[save-order] CSRF validation failed:', csrfCheck.reason);
     return createCSRFErrorResponse();
   }
 
@@ -93,11 +94,11 @@ export const POST: APIRoute = async ({ request }) => {
     }
   } catch (rateLimitError) {
     // SECURITY FIX: Log rate limit failures instead of silently ignoring
-    console.error('[save-order] Rate limit check failed:', rateLimitError);
+    logger.error('[save-order] Rate limit check failed:', rateLimitError);
     // Continue anyway - don't block orders if rate limiting system fails
   }
   const isProd = import.meta.env.PROD === true;
-  console.log('API save-order: Solicitud recibida');
+  logger.info('API save-order: Solicitud recibida');
 
   try {
     const rawData = await request.json();
@@ -106,7 +107,7 @@ export const POST: APIRoute = async ({ request }) => {
     const validationResult = orderDataSchema.safeParse(rawData);
 
     if (!validationResult.success) {
-      console.error('API save-order: Validación Zod falló:', validationResult.error.format());
+      logger.error('API save-order: Validación Zod falló:', validationResult.error.format());
       return new Response(
         JSON.stringify({
           error: 'Datos de pedido inválidos',
@@ -129,19 +130,19 @@ export const POST: APIRoute = async ({ request }) => {
         total: orderData.total,
         hasShippingInfo: Boolean(orderData.shippingInfo),
       };
-      console.log('API save-order: Datos recibidos (redacted):', redacted);
+      logger.info('API save-order: Datos recibidos (redacted):', redacted);
     } else {
-      console.log('API save-order: Datos validados:', JSON.stringify(orderData, null, 2));
+      logger.info('API save-order: Datos validados:', JSON.stringify(orderData, null, 2));
     }
 
-    console.log('API save-order: Intentando guardar en Firestore con Admin SDK...');
+    logger.info('API save-order: Intentando guardar en Firestore con Admin SDK...');
 
     // Guardar pedido en Firestore usando Admin SDK (bypasa reglas de seguridad)
     let adminDb;
     try {
       adminDb = getAdminDb();
     } catch (adminInitError: any) {
-      console.error('API save-order: Error inicializando Firebase Admin:', adminInitError);
+      logger.error('API save-order: Error inicializando Firebase Admin:', adminInitError);
       return new Response(
         JSON.stringify({
           error: 'El servidor no pudo inicializar Firebase Admin.',
@@ -152,7 +153,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // IDEMPOTENCY: Check if an order with this idempotency key already exists
-    console.log('[save-order] Checking idempotency key:', idempotencyKey);
+    logger.info('[save-order] Checking idempotency key:', idempotencyKey);
     const existingOrderQuery = await adminDb
       .collection('orders')
       .where('idempotencyKey', '==', idempotencyKey)
@@ -161,7 +162,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!existingOrderQuery.empty) {
       const existingOrder = existingOrderQuery.docs[0];
-      console.log('[save-order] Order with this idempotency key already exists:', existingOrder.id);
+      logger.info('[save-order] Order with this idempotency key already exists:', existingOrder.id);
       return new Response(
         JSON.stringify({
           success: true,
@@ -196,7 +197,7 @@ export const POST: APIRoute = async ({ request }) => {
       status: orderData.status || 'pending',
     });
 
-    console.log('API save-order: Pedido guardado con ID:', docRef.id);
+    logger.info('API save-order: Pedido guardado con ID:', docRef.id);
 
     const paymentMethod = String(orderData.paymentMethod || 'card');
     const orderStatus = String(orderData.status || 'pending');
@@ -205,7 +206,7 @@ export const POST: APIRoute = async ({ request }) => {
       (orderStatus === 'pending' || String(orderData.paymentStatus || '').toLowerCase() === 'pending');
 
     if (shouldDeferPostPaymentActions) {
-      console.log(
+      logger.info(
         `[save-order] Post-payment actions deferred for order ${docRef.id} until payment confirmation`
       );
     } else {
@@ -217,7 +218,7 @@ export const POST: APIRoute = async ({ request }) => {
           requestUrl: request.url,
         });
       } catch (finalizeError) {
-        console.error('[save-order] Error running post-payment actions. Rolling back order.', finalizeError);
+        logger.error('[save-order] Error running post-payment actions. Rolling back order.', finalizeError);
         await docRef.delete();
         throw finalizeError;
       }
@@ -235,8 +236,8 @@ export const POST: APIRoute = async ({ request }) => {
     );
   } catch (error: unknown) {
     // SECURITY: No exponer stack traces en producción
-    console.error('API save-order: Error:', error);
-    console.error('API save-order: Stack:', error instanceof Error ? error.stack : undefined);
+    logger.error('API save-order: Error:', error);
+    logger.error('API save-order: Stack:', error instanceof Error ? error.stack : undefined);
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Error guardando pedido',

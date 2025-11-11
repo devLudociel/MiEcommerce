@@ -1,4 +1,5 @@
 // src/pages/api/admin/set-admin-claims.ts
+import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import { getAdminApp } from '../../../lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
@@ -38,7 +39,7 @@ export const POST: APIRoute = async ({ request }) => {
     });
 
     if (!rateLimitResult.ok) {
-      console.warn('[set-admin-claims] Rate limit exceeded', {
+      logger.warn('[set-admin-claims] Rate limit exceeded', {
         resetAt: new Date(rateLimitResult.resetAt).toISOString(),
       });
       return createErrorResponse('Too many requests. Please try again later.', 429);
@@ -48,7 +49,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     // SECURITY: Validar secret key primero
     if (!secret || secret !== ADMIN_SECRET) {
-      console.warn('[set-admin-claims] Invalid secret attempt', {
+      logger.warn('[set-admin-claims] Invalid secret attempt', {
         hasSecret: !!secret,
         timestamp: new Date().toISOString(),
       });
@@ -75,7 +76,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Asignar o remover custom claim de admin
     if (remove) {
       await auth.setCustomUserClaims(user.uid, { admin: false });
-      console.log(`✅ Admin claims removed from user: ${email}`);
+      logger.info(`✅ Admin claims removed from user: ${email}`);
 
       return new Response(
         JSON.stringify({
@@ -90,7 +91,7 @@ export const POST: APIRoute = async ({ request }) => {
       );
     } else {
       await auth.setCustomUserClaims(user.uid, { admin: true });
-      console.log(`✅ Admin claims set for user: ${email}`);
+      logger.info(`✅ Admin claims set for user: ${email}`);
 
       return new Response(
         JSON.stringify({

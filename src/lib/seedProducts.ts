@@ -1,3 +1,4 @@
+import { logger } from '../../lib/logger';
 import { ProductService } from './services/productService.ts';
 import type { FirebaseProduct } from '../types/firebase';
 
@@ -113,25 +114,25 @@ const initialProducts: Omit<FirebaseProduct, 'id' | 'createdAt' | 'updatedAt'>[]
 
 // Función para poblar la base de datos con productos iniciales
 export async function seedProducts() {
-  console.log('🌱 Iniciando seed de productos...');
+  logger.info('🌱 Iniciando seed de productos...');
 
   try {
     for (const product of initialProducts) {
       const productId = await ProductService.createProduct(product);
       if (productId) {
-        console.log(`✅ Producto creado: ${product.name} (ID: ${productId})`);
+        logger.info(`✅ Producto creado: ${product.name} (ID: ${productId})`);
       } else {
-        console.log(`❌ Error creando: ${product.name}`);
+        logger.info(`❌ Error creando: ${product.name}`);
       }
     }
-    console.log('🎉 Seed completado!');
+    logger.info('🎉 Seed completado!');
   } catch (error) {
-    console.error('❌ Error durante el seed:', error);
+    logger.error('❌ Error durante el seed:', error);
   }
 }
 
 // Función para limpiar todos los productos (usar con cuidado)
 export async function clearProducts() {
-  console.log('🧹 Limpiando productos...');
+  logger.info('🧹 Limpiando productos...');
   // Implementaremos esto después si lo necesitas
 }

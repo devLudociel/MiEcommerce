@@ -1,4 +1,5 @@
 // src/pages/api/create-payment-intent.ts
+import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { getAdminDb } from '../../lib/firebase-admin';
@@ -30,7 +31,7 @@ export const POST: APIRoute = async ({ request }) => {
   // SECURITY: CSRF protection
   const csrfCheck = validateCSRF(request);
   if (!csrfCheck.valid) {
-    console.warn('[create-payment-intent] CSRF validation failed:', csrfCheck.reason);
+    logger.warn('[create-payment-intent] CSRF validation failed:', csrfCheck.reason);
     return createCSRFErrorResponse();
   }
 
@@ -41,7 +42,7 @@ export const POST: APIRoute = async ({ request }) => {
     const validationResult = paymentIntentSchema.safeParse(rawData);
 
     if (!validationResult.success) {
-      console.error('[create-payment-intent] Validación Zod falló:', validationResult.error.format());
+      logger.error('[create-payment-intent] Validación Zod falló:', validationResult.error.format());
       return new Response(
         JSON.stringify({
           error: 'Datos inválidos',
@@ -74,7 +75,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Validar que el monto coincide con el total del pedido
     // Permitir pequeña diferencia por redondeo (0.01 EUR)
     if (Math.abs(orderTotal - amount) > 0.01) {
-      console.error(`Mismatch de monto: order=${orderTotal}, requested=${amount}`, { orderId });
+      logger.error(`Mismatch de monto: order=${orderTotal}, requested=${amount}`, { orderId });
       return new Response(
         JSON.stringify({
           error: 'El monto no coincide con el total del pedido',
@@ -120,7 +121,7 @@ export const POST: APIRoute = async ({ request }) => {
       updatedAt: new Date(),
     });
 
-    console.log(`✅ Payment Intent creado para pedido ${orderId}: ${paymentIntent.id}`);
+    logger.info(`✅ Payment Intent creado para pedido ${orderId}: ${paymentIntent.id}`);
 
     return new Response(
       JSON.stringify({
@@ -134,7 +135,7 @@ export const POST: APIRoute = async ({ request }) => {
     );
   } catch (error: unknown) {
     // SECURITY: No exponer detalles internos
-    console.error('❌ Error creando Payment Intent:', error);
+    logger.error('❌ Error creando Payment Intent:', error);
 
     // Si es error de Stripe, podemos dar feedback más útil sin exponer detalles internos
     let userMessage = 'Error procesando pago';

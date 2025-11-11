@@ -1,3 +1,4 @@
+import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import { getAdminDb, getAdminAuth } from '../../lib/firebase-admin';
 
@@ -18,7 +19,7 @@ export const GET: APIRoute = async ({ url, request }) => {
     try {
       decodedToken = await getAdminAuth().verifyIdToken(idToken);
     } catch (verificationError) {
-      console.error('[get-order] Invalid token:', verificationError);
+      logger.error('[get-order] Invalid token:', verificationError);
       return new Response(JSON.stringify({ error: 'Unauthorized - Invalid token' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
@@ -50,7 +51,7 @@ export const GET: APIRoute = async ({ url, request }) => {
 
     // SECURITY: Verify user owns this order or is admin
     if (orderData.userId !== decodedToken.uid && !decodedToken.admin) {
-      console.warn('[get-order] Unauthorized access attempt:', {
+      logger.warn('[get-order] Unauthorized access attempt:', {
         orderId,
         orderUserId: orderData.userId,
         requestUserId: decodedToken.uid,
@@ -82,7 +83,7 @@ export const GET: APIRoute = async ({ url, request }) => {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error: unknown) {
-    console.error('Error fetching order:', error);
+    logger.error('Error fetching order:', error);
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Internal server error',

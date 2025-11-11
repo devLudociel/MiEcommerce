@@ -1,9 +1,10 @@
 // src/pages/api/get-wallet-balance.ts
+import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import { getAdminAuth, getAdminDb } from '../../lib/firebase-admin';
 
 export const GET: APIRoute = async ({ request }) => {
-  console.log('[API get-wallet-balance] Request received');
+  logger.info('[API get-wallet-balance] Request received');
 
   try {
     const url = new URL(request.url);
@@ -23,7 +24,7 @@ export const GET: APIRoute = async ({ request }) => {
     try {
       decodedToken = await getAdminAuth().verifyIdToken(idToken);
     } catch (verificationError) {
-      console.error('[API get-wallet-balance] Invalid token:', verificationError);
+      logger.error('[API get-wallet-balance] Invalid token:', verificationError);
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
@@ -44,7 +45,7 @@ export const GET: APIRoute = async ({ request }) => {
     try {
       adminDb = getAdminDb();
     } catch (adminInitError) {
-      console.error('[API get-wallet-balance] Error initializing Firebase Admin:', adminInitError);
+      logger.error('[API get-wallet-balance] Error initializing Firebase Admin:', adminInitError);
       return new Response(JSON.stringify({ error: 'Error del servidor' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
@@ -69,7 +70,7 @@ export const GET: APIRoute = async ({ request }) => {
       });
     }
 
-    console.log('[API get-wallet-balance] Balance retrieved', { userId: requestedUserId, balance });
+    logger.info('[API get-wallet-balance] Balance retrieved', { userId: requestedUserId, balance });
 
     return new Response(JSON.stringify({ balance }), {
       status: 200,
@@ -77,7 +78,7 @@ export const GET: APIRoute = async ({ request }) => {
     });
   } catch (error) {
     // SECURITY: No exponer detalles internos
-    console.error('[API get-wallet-balance] Unexpected error:', error);
+    logger.error('[API get-wallet-balance] Unexpected error:', error);
     return new Response(
       JSON.stringify({
         error: 'Error al obtener el saldo',

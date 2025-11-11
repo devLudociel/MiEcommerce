@@ -1,3 +1,4 @@
+import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
@@ -6,7 +7,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 export const POST: APIRoute = async ({ request }) => {
   const csrfCheck = validateCSRF(request);
   if (!csrfCheck.valid) {
-    console.warn('[cancel-order] CSRF validation failed:', csrfCheck.reason);
+    logger.warn('[cancel-order] CSRF validation failed:', csrfCheck.reason);
     return createCSRFErrorResponse();
   }
 
@@ -41,7 +42,7 @@ export const POST: APIRoute = async ({ request }) => {
     const data = orderSnap.data() || {};
 
     if (data.idempotencyKey !== idempotencyKey) {
-      console.warn('[cancel-order] Idempotency key mismatch for order', orderId);
+      logger.warn('[cancel-order] Idempotency key mismatch for order', orderId);
       return new Response(JSON.stringify({ error: 'Idempotency key inválido' }), {
         status: 403,
         headers: { 'Content-Type': 'application/json' },
@@ -59,7 +60,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     if (data.postPaymentActionsCompleted) {
-      console.warn(
+      logger.warn(
         '[cancel-order] Order already finalized. Skipping automatic cancellation.',
         orderId
       );
@@ -94,7 +95,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
     );
   } catch (error: unknown) {
-    console.error('[cancel-order] Error cancelling order:', error);
+    logger.error('[cancel-order] Error cancelling order:', error);
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Error cancelando el pedido',
