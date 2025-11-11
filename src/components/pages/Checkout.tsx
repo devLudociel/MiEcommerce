@@ -1411,7 +1411,7 @@ export default function Checkout() {
                   </div>
 
                   <div className="space-y-4">
-                    {[
+                    {([
                       {
                         method: 'card',
                         icon: '💳',
@@ -1436,12 +1436,12 @@ export default function Checkout() {
                         label: 'Contra Reembolso',
                         description: 'Paga al recibir (+3€)',
                       },
-                    ].map((option) => (
+                    ] as const).map((option) => (
                       <button
                         key={option.method}
                         data-testid={`payment-method-${option.method}`}
                         onClick={() =>
-                          setPaymentInfo({ ...paymentInfo, method: option.method as any })
+                          setPaymentInfo({ ...paymentInfo, method: option.method })
                         }
                         className={`w-full p-4 rounded-xl border-2 transition-all duration-300 text-left ${paymentInfo.method === option.method ? 'border-cyan-500 bg-cyan-50 shadow-lg scale-105' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
                       >

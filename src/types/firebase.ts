@@ -81,7 +81,7 @@ export interface OrderItem {
     position?: { x: number; y: number };
     rotation?: number;
     scale?: number;
-    [key: string]: any; // Allow additional customization fields
+    [key: string]: string | number | boolean | { x: number; y: number } | null | undefined;
   };
   uploadedFiles?: string[]; // URLs de los archivos subidos
 }

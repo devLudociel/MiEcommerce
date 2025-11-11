@@ -32,7 +32,7 @@ interface IconProps extends React.SVGProps<SVGSVGElement> {
 
 // PERFORMANCE: Explicit icon map for tree-shaking
 // Only icons actually used in the project are included here
-const iconMap: Record<string, React.ComponentType<any>> = {
+const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   'arrow-left': ArrowLeft,
   ArrowLeft,
   'chevron-right': ChevronRight,

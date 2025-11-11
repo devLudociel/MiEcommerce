@@ -43,7 +43,7 @@ export interface CartItem {
     position?: { x: number; y: number };
     rotation?: number;
     scale?: number;
-    [key: string]: any;
+    [key: string]: string | number | boolean | File | { x: number; y: number } | null | undefined;
   };
 }
 
