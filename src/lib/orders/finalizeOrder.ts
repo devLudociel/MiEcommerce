@@ -1,5 +1,6 @@
 import type { Firestore } from 'firebase-admin/firestore';
 import { FieldValue } from 'firebase-admin/firestore';
+import { logger } from '../logger';
 
 const CASHBACK_PERCENTAGE = 0.05; // 5% cashback
 
@@ -29,26 +30,28 @@ export async function finalizeOrder({
   const orderSnap = await orderRef.get();
 
   if (!orderSnap.exists) {
-    console.warn(`[finalizeOrder] Order ${orderId} not found. Skipping post-payment actions.`);
+    logger.warn(`[finalizeOrder] Order ${orderId} not found. Skipping post-payment actions.`);
     return;
   }
 
   const existingData = orderSnap.data() || {};
   if (existingData.postPaymentActionsCompleted) {
-    console.log(`[finalizeOrder] Order ${orderId} already finalized. Skipping duplicate run.`);
+    logger.info(`[finalizeOrder] Order ${orderId} already finalized. Skipping duplicate run.`);
     return;
   }
 
   const data = { ...existingData, ...(orderData || {}) };
 
   // Wallet debit (only for authenticated users with wallet usage)
-  console.log('[finalizeOrder] Checking wallet conditions:', {
+  logger.info('[finalizeOrder] Checking wallet conditions:', {
     orderId,
     usedWallet: data.usedWallet,
     walletDiscount: data.walletDiscount,
     userId: data.userId,
     isGuest: data.userId === 'guest',
     walletAmount: Number(data.walletDiscount),
+    // DEBUG: Log all order data keys to see what's available
+    availableKeys: Object.keys(data),
   });
 
   if (
@@ -101,13 +104,29 @@ export async function finalizeOrder({
         createdAt: FieldValue.serverTimestamp(),
       });
 
-      console.log(
-        `[finalizeOrder] Wallet debited for order ${orderId}: €${walletAmount.toFixed(2)}`
-      );
+      logger.info(`[finalizeOrder] Wallet debited for order ${orderId}`, {
+        amount: walletAmount,
+        userId,
+      });
     } catch (walletError) {
-      console.error('[finalizeOrder] Error processing wallet debit:', walletError);
+      logger.error('[finalizeOrder] Error processing wallet debit', walletError);
       throw walletError;
     }
+  } else {
+    logger.debug('[finalizeOrder] Wallet debit skipped', {
+      orderId,
+      reason: !data.usedWallet
+        ? 'usedWallet is false'
+        : !data.walletDiscount
+          ? 'no walletDiscount'
+          : !data.userId
+            ? 'no userId'
+            : data.userId === 'guest'
+              ? 'guest user'
+              : Number(data.walletDiscount) <= 0
+                ? 'walletDiscount is 0'
+                : 'unknown',
+    });
   }
 
   // Coupon usage tracking
@@ -162,13 +181,13 @@ export async function finalizeOrder({
         usedAt: FieldValue.serverTimestamp(),
       });
 
-      console.log(
-        `[finalizeOrder] Coupon ${couponCode} applied to order ${orderId} (-€${discountAmount.toFixed(
-          2
-        )})`
-      );
+      logger.info('[finalizeOrder] Coupon applied', {
+        orderId,
+        couponCode,
+        discountAmount,
+      });
     } catch (couponError) {
-      console.error('[finalizeOrder] Error processing coupon:', couponError);
+      logger.error('[finalizeOrder] Error processing coupon', couponError);
       throw couponError;
     }
   }
@@ -219,16 +238,19 @@ export async function finalizeOrder({
           createdAt: FieldValue.serverTimestamp(),
         });
 
-        console.log(
-          `[finalizeOrder] Cashback added for order ${orderId}: €${cashbackAmount.toFixed(2)} (5% of €${amountPaidWithCard.toFixed(2)} paid)`
-        );
+        logger.info('[finalizeOrder] Cashback added', {
+          orderId,
+          cashbackAmount,
+          amountPaidWithCard,
+        });
       } else if (amountPaidWithCard <= 0) {
-        console.log(
-          `[finalizeOrder] No cashback for order ${orderId}: Paid entirely with wallet/coupons`
-        );
+        logger.debug('[finalizeOrder] No cashback', {
+          orderId,
+          reason: 'Paid entirely with wallet/coupons',
+        });
       }
     } catch (cashbackError) {
-      console.error('[finalizeOrder] Error adding cashback:', cashbackError);
+      logger.error('[finalizeOrder] Error adding cashback', cashbackError);
       // Not critical - do not throw
     }
   }
@@ -236,7 +258,7 @@ export async function finalizeOrder({
   // Confirmation email (non critical)
   if (requestUrl) {
     try {
-      console.log(`[finalizeOrder] Sending confirmation email for order ${orderId}...`);
+      logger.debug('[finalizeOrder] Sending confirmation email', { orderId });
       const emailResponse = await fetch(new URL('/api/send-email', requestUrl).toString(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -247,17 +269,16 @@ export async function finalizeOrder({
       });
 
       if (!emailResponse.ok) {
-        console.error(
-          `[finalizeOrder] Failed to send confirmation email for order ${orderId} (non critical)`
-        );
+        logger.warn('[finalizeOrder] Failed to send confirmation email (non critical)', {
+          orderId,
+        });
       }
     } catch (emailError) {
-      console.error(
-        `[finalizeOrder] Error sending confirmation email for order ${orderId} (non critical):`,
-        emailError
-      );
+      logger.warn('[finalizeOrder] Error sending confirmation email (non critical)', emailError);
     }
   }
+
+  logger.info('[finalizeOrder] Post-payment actions completed', { orderId });
 
   await orderRef.set(
     {
