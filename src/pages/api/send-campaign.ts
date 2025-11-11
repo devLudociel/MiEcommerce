@@ -6,6 +6,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { verifyAdminAuth } from '../../lib/auth/authHelpers';
 import { z } from 'zod';
+import { logger } from '../../lib/logger';
 import {
   newCouponCampaignTemplate,
   newProductCampaignTemplate,
@@ -46,18 +47,18 @@ export const POST: APIRoute = async ({ request }) => {
   // SECURITY: CSRF protection
   const csrfCheck = validateCSRF(request);
   if (!csrfCheck.valid) {
-    console.warn('[send-campaign] CSRF validation failed:', csrfCheck.reason);
+    logger.warn('[send-campaign] CSRF validation failed', { reason: csrfCheck.reason });
     return createCSRFErrorResponse();
   }
 
   // SECURITY: Admin authentication required
   const authResult = await verifyAdminAuth(request);
   if (!authResult.success) {
-    console.warn('[send-campaign] Unauthorized admin access attempt');
+    logger.warn('[send-campaign] Unauthorized admin access attempt');
     return authResult.error!;
   }
 
-  console.log('[send-campaign] Authorized admin user:', authResult.email);
+  logger.info('[send-campaign] Authorized admin user', { email: authResult.email });
 
   try {
     const rawData = await request.json();
@@ -65,7 +66,7 @@ export const POST: APIRoute = async ({ request }) => {
     // SECURITY: Validate input
     const validationResult = sendCampaignSchema.safeParse(rawData);
     if (!validationResult.success) {
-      console.error('[send-campaign] Validation failed:', validationResult.error.format());
+      logger.error('[send-campaign] Validation failed', validationResult.error.format());
       return new Response(
         JSON.stringify({
           error: 'Datos inválidos',
@@ -77,12 +78,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     const campaignData = validationResult.data;
 
-    console.log('[send-campaign] Starting campaign', { type: campaignData.type });
+    logger.info('[send-campaign] Starting campaign', { type: campaignData.type });
 
     // Check Resend API key
     const resendApiKey = import.meta.env.RESEND_API_KEY;
     if (!resendApiKey) {
-      console.error('[send-campaign] RESEND_API_KEY not configured');
+      logger.error('[send-campaign] RESEND_API_KEY not configured');
       return new Response(
         JSON.stringify({
           error: 'Servicio de email no configurado. Contacta al administrador.',
@@ -101,7 +102,7 @@ export const POST: APIRoute = async ({ request }) => {
       .get();
 
     if (subscribersSnapshot.empty) {
-      console.warn('[send-campaign] No active subscribers found');
+      logger.warn('[send-campaign] No active subscribers found');
       return new Response(
         JSON.stringify({
           error: 'No hay suscriptores activos en la base de datos',
@@ -115,7 +116,7 @@ export const POST: APIRoute = async ({ request }) => {
       email: doc.data().email,
     }));
 
-    console.log('[send-campaign] Found subscribers', { count: subscribers.length });
+    logger.info('[send-campaign] Found subscribers', { count: subscribers.length });
 
     // Generate email template based on campaign type
     let emailTemplate: { subject: string; html: string };
@@ -150,7 +151,7 @@ export const POST: APIRoute = async ({ request }) => {
     for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
       const batch = subscribers.slice(i, i + BATCH_SIZE);
 
-      console.log('[send-campaign] Sending batch', {
+      logger.info('[send-campaign] Sending batch', {
         batchNumber: Math.floor(i / BATCH_SIZE) + 1,
         totalBatches: Math.ceil(subscribers.length / BATCH_SIZE),
         batchSize: batch.length,
@@ -166,7 +167,7 @@ export const POST: APIRoute = async ({ request }) => {
             html: emailTemplate.html,
           });
 
-          console.log('[send-campaign] Email sent successfully', {
+          logger.info('[send-campaign] Email sent successfully', {
             email: subscriber.email,
             emailId: response.data?.id,
           });
@@ -181,7 +182,7 @@ export const POST: APIRoute = async ({ request }) => {
                 lastEmailSent: FieldValue.serverTimestamp(),
               });
           } catch (updateError) {
-            console.warn('[send-campaign] Failed to update subscriber stats (non-critical)', {
+            logger.warn('[send-campaign] Failed to update subscriber stats (non-critical)', {
               subscriberId: subscriber.id,
               error: updateError,
             });
@@ -190,7 +191,7 @@ export const POST: APIRoute = async ({ request }) => {
           successCount++;
           return { success: true, email: subscriber.email };
         } catch (error: unknown) {
-          console.error('[send-campaign] Failed to send email', {
+          logger.error('[send-campaign] Failed to send email', {
             email: subscriber.email,
             error: error instanceof Error ? error.message : 'Unknown error',
           });
@@ -210,12 +211,12 @@ export const POST: APIRoute = async ({ request }) => {
 
       // Delay between batches to avoid rate limits
       if (i + BATCH_SIZE < subscribers.length) {
-        console.log('[send-campaign] Waiting before next batch...');
+        logger.debug('[send-campaign] Waiting before next batch...');
         await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
       }
     }
 
-    console.log('[send-campaign] Campaign completed', {
+    logger.info('[send-campaign] Campaign completed', {
       totalSubscribers: subscribers.length,
       successCount,
       errorCount,
@@ -234,9 +235,9 @@ export const POST: APIRoute = async ({ request }) => {
         createdAt: FieldValue.serverTimestamp(),
       });
 
-      console.log('[send-campaign] Campaign record saved to Firestore');
+      logger.info('[send-campaign] Campaign record saved to Firestore');
     } catch (storeError) {
-      console.error('[send-campaign] Failed to store campaign record (non-critical)', storeError);
+      logger.warn('[send-campaign] Failed to store campaign record (non-critical)', storeError);
     }
 
     return new Response(
@@ -252,7 +253,7 @@ export const POST: APIRoute = async ({ request }) => {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error: unknown) {
-    console.error('[send-campaign] Error:', error);
+    logger.error('[send-campaign] Error', error);
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Error enviando campaña',

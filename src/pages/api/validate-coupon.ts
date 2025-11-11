@@ -4,12 +4,13 @@ import { getAdminDb } from '../../lib/firebase-admin';
 import { validateCouponCodeSchema } from '../../lib/validation/schemas';
 import { rateLimit } from '../../lib/rateLimit';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
+import { logger } from '../../lib/logger';
 
 export const POST: APIRoute = async ({ request }) => {
   // SECURITY: CSRF protection
   const csrfCheck = validateCSRF(request);
   if (!csrfCheck.valid) {
-    console.warn('[validate-coupon] CSRF validation failed:', csrfCheck.reason);
+    logger.warn('[validate-coupon] CSRF validation failed', { reason: csrfCheck.reason });
     return createCSRFErrorResponse();
   }
 
@@ -30,17 +31,17 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
   } catch {}
-  console.log('[API validate-coupon] Request received');
+  logger.info('[validate-coupon] Request received');
 
   try {
     const body = await request.json();
-    console.log('[API validate-coupon] Request body:', body);
+    logger.debug('[validate-coupon] Request body', { body });
 
     // Validate request with Zod
     const validationResult = validateCouponCodeSchema.safeParse(body);
 
     if (!validationResult.success) {
-      console.warn('[API validate-coupon] Invalid request', validationResult.error);
+      logger.warn('[validate-coupon] Invalid request', validationResult.error);
       return new Response(
         JSON.stringify({
           error: 'Datos de validación inválidos',
@@ -60,7 +61,7 @@ export const POST: APIRoute = async ({ request }) => {
     try {
       adminDb = getAdminDb();
     } catch (adminInitError) {
-      console.error('[API validate-coupon] Error initializing Firebase Admin:', adminInitError);
+      logger.error('[validate-coupon] Error initializing Firebase Admin', adminInitError);
       return new Response(
         JSON.stringify({
           error: 'Error del servidor al validar cupón',
@@ -77,7 +78,7 @@ export const POST: APIRoute = async ({ request }) => {
       .get();
 
     if (couponQuery.empty) {
-      console.log('[API validate-coupon] Coupon not found or inactive:', code);
+      logger.info('[validate-coupon] Coupon not found or inactive', { code });
       return new Response(
         JSON.stringify({
           valid: false,
@@ -93,7 +94,7 @@ export const POST: APIRoute = async ({ request }) => {
     const couponDoc = couponQuery.docs[0];
     const coupon = { id: couponDoc.id, ...couponDoc.data() } as any;
 
-    console.log('[API validate-coupon] Coupon found:', {
+    logger.info('[validate-coupon] Coupon found', {
       code: coupon.code,
       type: coupon.type,
       value: coupon.value,
@@ -107,7 +108,7 @@ export const POST: APIRoute = async ({ request }) => {
           : new Date(coupon.endDate);
 
       if (expirationDate < new Date()) {
-        console.log('[API validate-coupon] Coupon expired');
+        logger.info('[validate-coupon] Coupon expired');
         return new Response(
           JSON.stringify({
             valid: false,
@@ -129,7 +130,7 @@ export const POST: APIRoute = async ({ request }) => {
           : new Date(coupon.startDate);
 
       if (startDate > new Date()) {
-        console.log('[API validate-coupon] Coupon not yet valid');
+        logger.info('[validate-coupon] Coupon not yet valid');
         return new Response(
           JSON.stringify({
             valid: false,
@@ -145,7 +146,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Validate minimum purchase
     if (coupon.minPurchase && cartTotal < coupon.minPurchase) {
-      console.log('[API validate-coupon] Cart total below minimum purchase', {
+      logger.info('[validate-coupon] Cart total below minimum purchase', {
         cartTotal,
         minPurchase: coupon.minPurchase,
       });
@@ -163,7 +164,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Validate usage limit
     if (coupon.maxUses && coupon.currentUses >= coupon.maxUses) {
-      console.log('[API validate-coupon] Coupon usage limit reached');
+      logger.info('[validate-coupon] Coupon usage limit reached');
       return new Response(
         JSON.stringify({
           valid: false,
@@ -183,7 +184,7 @@ export const POST: APIRoute = async ({ request }) => {
       coupon.userSpecific.length > 0
     ) {
       if (!userId) {
-        console.log('[API validate-coupon] User-specific coupon requires authentication');
+        logger.info('[validate-coupon] User-specific coupon requires authentication');
         return new Response(
           JSON.stringify({
             valid: false,
@@ -202,7 +203,7 @@ export const POST: APIRoute = async ({ request }) => {
       const userEmail = userDoc.data()?.email;
 
       if (!userEmail || !coupon.userSpecific.includes(userEmail)) {
-        console.log('[API validate-coupon] User not eligible for this coupon');
+        logger.info('[validate-coupon] User not eligible for this coupon');
         return new Response(
           JSON.stringify({
             valid: false,
@@ -225,7 +226,7 @@ export const POST: APIRoute = async ({ request }) => {
         .get();
 
       if (userUsageQuery.size >= coupon.maxUsesPerUser) {
-        console.log('[API validate-coupon] User has reached usage limit for this coupon');
+        logger.info('[validate-coupon] User has reached usage limit for this coupon');
         return new Response(
           JSON.stringify({
             valid: false,
@@ -262,7 +263,7 @@ export const POST: APIRoute = async ({ request }) => {
         break;
 
       default:
-        console.error('[API validate-coupon] Unknown coupon type:', coupon.type);
+        logger.error('[validate-coupon] Unknown coupon type', { type: coupon.type });
         return new Response(
           JSON.stringify({
             valid: false,
@@ -275,7 +276,7 @@ export const POST: APIRoute = async ({ request }) => {
         );
     }
 
-    console.log('[API validate-coupon] Coupon validated successfully', {
+    logger.info('[validate-coupon] Coupon validated successfully', {
       code,
       discountAmount,
       freeShipping,
@@ -301,7 +302,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
     );
   } catch (error) {
-    console.error('[API validate-coupon] Unexpected error:', error);
+    logger.error('[validate-coupon] Unexpected error', error);
     return new Response(
       JSON.stringify({
         error: 'Error al validar el cupón',
