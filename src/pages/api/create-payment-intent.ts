@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
+import { executeStripeOperation } from '../../lib/externalServices';
 import { z } from 'zod';
 
 const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
@@ -100,19 +101,23 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // Crear Payment Intent
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(orderTotal * 100), // Usar el monto del pedido, no el enviado
-      currency,
-      automatic_payment_methods: {
-        enabled: true,
-      },
-      metadata: {
-        orderId: orderId,
-        customerEmail: orderData?.customerEmail || '',
-      },
-      description: `Pedido #${orderId}`,
-    });
+    // Crear Payment Intent with circuit breaker protection
+    const paymentIntent = await executeStripeOperation(
+      () =>
+        stripe.paymentIntents.create({
+          amount: Math.round(orderTotal * 100), // Usar el monto del pedido, no el enviado
+          currency,
+          automatic_payment_methods: {
+            enabled: true,
+          },
+          metadata: {
+            orderId: orderId,
+            customerEmail: orderData?.customerEmail || '',
+          },
+          description: `Pedido #${orderId}`,
+        }),
+      `create-payment-intent-${orderId}`
+    );
 
     // Actualizar pedido con el Payment Intent ID
     await orderRef.update({

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage, auth } from '../../lib/firebase';
 import { withRetry } from '../../lib/resilience';
+import { executeStorageOperation } from '../../lib/externalServices';
 import MockupPreview from './MockupPreview';
 
 interface Mockup {
@@ -94,21 +95,25 @@ export default function ImageCustomizer() {
       };
       reader.readAsDataURL(file);
 
-      // Subir a Firebase con retry logic
+      // Subir a Firebase con retry logic + circuit breaker
       const timestamp = Date.now();
       const uniqueName = `${timestamp}-${file.name}`;
       const fileRef = ref(storage, `users/${user.uid}/customizer-designs/${uniqueName}`);
 
-      const downloadUrl = await withRetry(
-        async () => {
-          await uploadBytes(fileRef, file);
-          return await getDownloadURL(fileRef);
-        },
-        {
-          context: 'Upload image to Firebase Storage',
-          maxAttempts: 3,
-          backoffMs: 1500,
-        }
+      const downloadUrl = await executeStorageOperation(
+        () =>
+          withRetry(
+            async () => {
+              await uploadBytes(fileRef, file);
+              return await getDownloadURL(fileRef);
+            },
+            {
+              context: 'Upload image to Firebase Storage',
+              maxAttempts: 3,
+              backoffMs: 1500,
+            }
+          ),
+        `upload-${uniqueName}`
       );
 
       setImageUrl(downloadUrl);

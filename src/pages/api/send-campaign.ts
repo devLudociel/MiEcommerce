@@ -5,6 +5,7 @@ import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { verifyAdminAuth } from '../../lib/auth/authHelpers';
+import { executeResendOperation } from '../../lib/externalServices';
 import { z } from 'zod';
 import { logger } from '../../lib/logger';
 import {
@@ -160,12 +161,16 @@ export const POST: APIRoute = async ({ request }) => {
       // Send emails to batch
       const batchPromises = batch.map(async (subscriber) => {
         try {
-          const response = await resend.emails.send({
-            from: import.meta.env.EMAIL_FROM || 'ImprimeArte <noreply@imprimearte.es>',
-            to: [subscriber.email],
-            subject: emailTemplate.subject,
-            html: emailTemplate.html,
-          });
+          const response = await executeResendOperation(
+            () =>
+              resend.emails.send({
+                from: import.meta.env.EMAIL_FROM || 'ImprimeArte <noreply@imprimearte.es>',
+                to: [subscriber.email],
+                subject: emailTemplate.subject,
+                html: emailTemplate.html,
+              }),
+            `send-campaign-${subscriber.email}`
+          );
 
           logger.info('[send-campaign] Email sent successfully', {
             email: subscriber.email,
