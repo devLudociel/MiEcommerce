@@ -415,9 +415,18 @@ export default function Checkout() {
           paymentIntentId,
         });
 
+        // Get authentication token
+        const token = user ? await user.getIdToken() : null;
+        if (!token) {
+          logger.warn('[Checkout] No authentication token available for finalize-order');
+        }
+
         const finalizeResponse = await fetch('/api/finalize-order', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({
             orderId: completedOrderId,
             paymentIntentId,
