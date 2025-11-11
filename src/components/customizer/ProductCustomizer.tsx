@@ -2,6 +2,7 @@
 import { useEffect, useState, Suspense, lazy } from 'react';
 import { doc, getDoc, collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import type { ProductAttributeValue } from '../../data/productAttributes';
 
 // PERFORMANCE: Lazy load customizer components for code splitting
 // Only the needed customizer will be loaded, reducing initial bundle size
@@ -17,7 +18,7 @@ interface FirebaseProduct {
   subcategoryId: string;
   basePrice: number;
   images: string[];
-  attributes: any[];
+  attributes: ProductAttributeValue[];
   tags: string[];
   featured: boolean;
   slug: string;

@@ -15,7 +15,7 @@ interface FirebaseProduct {
   basePrice: number;
   images: string[];
   slug: string;
-  [key: string]: any;
+  [key: string]: string | number | boolean | string[] | null | undefined;
 }
 
 interface Props {
