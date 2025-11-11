@@ -111,21 +111,19 @@ export default function ShirtCustomizer({ product }: Props) {
   }, [product.subcategoryId]);
 
   const handleImageUpload = async (file: File) => {
-    try {
-      setError(null);
-      setIsLoading(true);
+    setError(null);
+    setIsLoading(true);
 
+    try {
       const user = auth.currentUser;
       if (!user) {
         setError('Debes estar autenticado para subir imágenes');
-        setIsLoading(false);
         return;
       }
 
       const validation = validateImageFile(file, { maxSizeMB: 10 });
       if (!validation.valid) {
         setError(validation.error || 'Error de validación');
-        setIsLoading(false);
         return;
       }
 
@@ -136,10 +134,10 @@ export default function ShirtCustomizer({ product }: Props) {
       const { url, path } = await uploadCustomImage(compressedFile, user.uid, 'camiseta');
 
       setConfig((prev) => ({ ...prev, imageUrl: url, imagePath: path }));
-      setIsLoading(false);
     } catch (err: any) {
       console.error('Error subiendo imagen:', err);
       setError('Error al subir la imagen. Intenta de nuevo.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -221,14 +219,12 @@ export default function ShirtCustomizer({ product }: Props) {
         );
         if (!hasValue) {
           setError(`El campo "${reqAttr.name}" es obligatorio`);
-          setIsAddingToCart(false);
           return;
         }
       }
 
       if (!config.imageUrl) {
         setError('Por favor sube un diseño para la camiseta');
-        setIsAddingToCart(false);
         return;
       }
 
