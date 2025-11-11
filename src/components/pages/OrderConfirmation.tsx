@@ -2,14 +2,15 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
+import type { OrderItem, ShippingInfo, PaymentInfo, BillingInfo } from '../../types/firebase';
 
 interface Order {
   id: string;
   date: string;
-  items: any[];
-  shippingInfo: any;
-  paymentInfo: any;
-  billingInfo?: any;
+  items: OrderItem[];
+  shippingInfo: ShippingInfo;
+  paymentInfo: PaymentInfo;
+  billingInfo?: BillingInfo;
   subtotal: number;
   shipping: number;
   tax?: number;

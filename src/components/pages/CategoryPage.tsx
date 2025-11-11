@@ -174,7 +174,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySl
       for (const [attributeId, selectedValues] of Object.entries(filters.attributes)) {
         if (selectedValues.length > 0) {
           const productAttribute = product.attributes.find(
-            (attr: any) => attr.attributeId === attributeId
+            (attr: { attributeId: string; value: string }) => attr.attributeId === attributeId
           );
           if (!productAttribute || !selectedValues.includes(productAttribute.value)) {
             return false;
@@ -216,7 +216,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySl
   const availableAttributes = useMemo(() => {
     const productAttributes = new Set<string>();
     products.forEach((product: Product) => {
-      product.attributes.forEach((attr: any) => {
+      product.attributes.forEach((attr: { attributeId: string; value: string }) => {
         productAttributes.add(attr.attributeId);
       });
     });
