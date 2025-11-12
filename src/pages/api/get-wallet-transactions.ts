@@ -46,12 +46,11 @@ export const GET: APIRoute = async ({ request }) => {
     try {
       adminDb = getAdminDb();
     } catch (adminInitError) {
-      logger.error(
-        '[API get-wallet-transactions] Error initializing Firebase Admin:',
-        adminInitError
-      );
-      return new Response(JSON.stringify({ error: 'Error del servidor' }), {
-        status: 500,
+      logger.warn('[API get-wallet-transactions] Firebase Admin not configured, returning empty transactions');
+      logger.debug('[API get-wallet-transactions] Error details:', adminInitError);
+      // Graceful degradation: Return empty transactions instead of failing
+      return new Response(JSON.stringify({ transactions: [] }), {
+        status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
     }
