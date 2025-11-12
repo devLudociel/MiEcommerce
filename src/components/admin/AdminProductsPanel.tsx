@@ -76,6 +76,11 @@ interface FirebaseProduct {
   slug: string;
   active: boolean;
 
+  // 🎯 Campos para filtros públicos (compatibilidad con FilterPanel)
+  category?: string; // Simple string: 'camisetas', 'sudaderas', 'resina', etc.
+  colors?: string[]; // Array de IDs de colores: ['white', 'black', 'red']
+  sizes?: string[]; // Array de tallas: ['S', 'M', 'L', 'XL']
+
   // 🎯 Campos de Oferta Especial
   isSpecialOffer?: boolean;
   specialOfferEndDate?: any; // Timestamp
@@ -107,6 +112,9 @@ const emptyProduct: DraftProduct = {
   salePrice: undefined,
   slug: '',
   active: true,
+  category: '',
+  colors: [],
+  sizes: [],
   isSpecialOffer: false,
   specialOfferEndDate: undefined,
   specialOfferDiscount: undefined,
@@ -115,6 +123,35 @@ const emptyProduct: DraftProduct = {
   maxStock: 100,
   customizerType: 'default',
 };
+
+// 🎯 Categorías simples para filtrado público (compatibles con FilterPanel)
+const simpleCategories = [
+  { id: 'camisetas', name: 'Camisetas', needsSizes: true },
+  { id: 'sudaderas', name: 'Sudaderas', needsSizes: true },
+  { id: 'tazas', name: 'Tazas', needsSizes: false },
+  { id: 'gorras', name: 'Gorras', needsSizes: true },
+  { id: 'bolsas', name: 'Bolsas', needsSizes: false },
+  { id: 'marcos', name: 'Marcos', needsSizes: false },
+  { id: 'resina', name: 'Cajas Resina', needsSizes: false },
+  { id: 'regalos', name: 'Regalos', needsSizes: false },
+  { id: 'textil', name: 'Textil', needsSizes: true },
+  { id: 'otros', name: 'Otros', needsSizes: false },
+];
+
+// 🎨 Colores disponibles (compatible con FilterPanel)
+const availableColors = [
+  { id: 'white', name: 'Blanco', hex: '#FFFFFF' },
+  { id: 'black', name: 'Negro', hex: '#000000' },
+  { id: 'red', name: 'Rojo', hex: '#EF4444' },
+  { id: 'blue', name: 'Azul', hex: '#3B82F6' },
+  { id: 'green', name: 'Verde', hex: '#10B981' },
+  { id: 'yellow', name: 'Amarillo', hex: '#F59E0B' },
+  { id: 'pink', name: 'Rosa', hex: '#EC4899' },
+  { id: 'gray', name: 'Gris', hex: '#6B7280' },
+];
+
+// 📏 Tallas disponibles (compatible con FilterPanel)
+const availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
 // Datos de categorías y subcategorías según tu clasificación
 const categories: ProductCategory[] = [
@@ -734,6 +771,9 @@ export default function AdminProductsPanel() {
         salePrice: null,
         slug: 'test-producto-' + Date.now(),
         active: true,
+        category: 'otros',
+        colors: [],
+        sizes: [],
         createdAt,
         updatedAt: createdAt,
       });
@@ -811,6 +851,10 @@ export default function AdminProductsPanel() {
           ...normalized,
           images: [],
           customizerType: draft.customizerType || 'default',
+          // 🎯 Campos para filtros públicos
+          category: draft.category || 'otros',
+          colors: draft.colors || [],
+          sizes: draft.sizes || [],
           // 🎯 Campos de Oferta Especial
           isSpecialOffer: !!normalized.isSpecialOffer,
           specialOfferEndDate:
@@ -889,6 +933,10 @@ export default function AdminProductsPanel() {
           active: !!draft.active,
           images: nextImages,
           customizerType: draft.customizerType || 'default',
+          // 🎯 Campos para filtros públicos
+          category: draft.category || 'otros',
+          colors: draft.colors || [],
+          sizes: draft.sizes || [],
           // 🎯 Campos de Oferta Especial
           isSpecialOffer: !!draft.isSpecialOffer,
           specialOfferEndDate:
@@ -953,6 +1001,10 @@ export default function AdminProductsPanel() {
       slug: p.slug,
       active: p.active,
       customizerType: (p as any).customizerType || 'default',
+      // 🎯 Campos para filtros públicos
+      category: p.category || 'otros',
+      colors: p.colors || [],
+      sizes: p.sizes || [],
       // 🎯 Campos de Oferta Especial
       isSpecialOffer: p.isSpecialOffer || false,
       specialOfferEndDate: p.specialOfferEndDate || undefined,
@@ -1235,6 +1287,140 @@ export default function AdminProductsPanel() {
                 ))}
               </select>
             </div>
+
+            {/* 🎯 CATEGORÍA SIMPLE PARA FILTROS PÚBLICOS */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <div
+                style={{
+                  background: '#fef3c7',
+                  border: '2px solid #f59e0b',
+                  borderRadius: '12px',
+                  padding: '16px',
+                }}
+              >
+                <label style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '8px', display: 'block' }}>
+                  🏷️ Categoría para Filtros Públicos *
+                </label>
+                <p style={{ fontSize: '14px', color: '#92400e', marginBottom: '12px' }}>
+                  Esta categoría simple se usa para filtrar productos en la página pública. Elige la que mejor represente tu producto.
+                </p>
+                <select
+                  className="input"
+                  value={draft.category || ''}
+                  onChange={(e) => setDraft({ ...draft, category: e.target.value })}
+                  required
+                  style={{ fontSize: '16px', fontWeight: 'bold' }}
+                >
+                  <option value="">Seleccionar categoría pública...</option>
+                  {simpleCategories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* 🎨 COLORES */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '8px', display: 'block' }}>
+                🎨 Colores Disponibles
+              </label>
+              <p style={{ fontSize: '14px', color: '#666', marginBottom: '12px' }}>
+                Selecciona los colores en los que está disponible este producto (opcional)
+              </p>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                  gap: '12px',
+                }}
+              >
+                {availableColors.map((color) => (
+                  <label
+                    key={color.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 12px',
+                      border: draft.colors?.includes(color.id) ? '2px solid #06b6d4' : '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      background: draft.colors?.includes(color.id) ? '#ecfeff' : 'white',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={draft.colors?.includes(color.id) || false}
+                      onChange={(e) => {
+                        const currentColors = draft.colors || [];
+                        if (e.target.checked) {
+                          setDraft({ ...draft, colors: [...currentColors, color.id] });
+                        } else {
+                          setDraft({ ...draft, colors: currentColors.filter((c) => c !== color.id) });
+                        }
+                      }}
+                    />
+                    <div
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        backgroundColor: color.hex,
+                        border: '2px solid #e5e7eb',
+                      }}
+                    />
+                    <span style={{ fontSize: '14px', fontWeight: '500' }}>{color.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* 📏 TALLAS (solo si es categoría textil) */}
+            {draft.category && simpleCategories.find((c) => c.id === draft.category)?.needsSizes && (
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '8px', display: 'block' }}>
+                  📏 Tallas Disponibles
+                </label>
+                <p style={{ fontSize: '14px', color: '#666', marginBottom: '12px' }}>
+                  Selecciona las tallas disponibles para este producto textil (opcional)
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                  {availableSizes.map((size) => (
+                    <label
+                      key={size}
+                      style={{
+                        padding: '10px 20px',
+                        border: draft.sizes?.includes(size) ? '2px solid #06b6d4' : '1px solid #d1d5db',
+                        borderRadius: '8px',
+                        background: draft.sizes?.includes(size) ? '#ecfeff' : 'white',
+                        cursor: 'pointer',
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={draft.sizes?.includes(size) || false}
+                        onChange={(e) => {
+                          const currentSizes = draft.sizes || [];
+                          if (e.target.checked) {
+                            setDraft({ ...draft, sizes: [...currentSizes, size] });
+                          } else {
+                            setDraft({ ...draft, sizes: currentSizes.filter((s) => s !== size) });
+                          }
+                        }}
+                        style={{ marginRight: '8px' }}
+                      />
+                      {size}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div>
               <label>Precio base (€) *</label>
@@ -1846,6 +2032,45 @@ export default function AdminProductsPanel() {
                 <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
                   📂 {getCategoryName(p.categoryId)} → {getSubcategoryName(p.subcategoryId)}
                 </div>
+
+                {/* 🏷️ Simple category for public filters */}
+                {p.category && (
+                  <div style={{ fontSize: '13px', color: '#06b6d4', marginBottom: '8px', fontWeight: 'bold' }}>
+                    🏷️ Categoría pública: {simpleCategories.find((c) => c.id === p.category)?.name || p.category}
+                  </div>
+                )}
+
+                {/* 🎨 Colors */}
+                {p.colors && p.colors.length > 0 && (
+                  <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    🎨 Colores:
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      {p.colors.map((colorId) => {
+                        const color = availableColors.find((c) => c.id === colorId);
+                        return color ? (
+                          <div
+                            key={colorId}
+                            title={color.name}
+                            style={{
+                              width: '20px',
+                              height: '20px',
+                              borderRadius: '50%',
+                              backgroundColor: color.hex,
+                              border: '2px solid #e5e7eb',
+                            }}
+                          />
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 📏 Sizes */}
+                {p.sizes && p.sizes.length > 0 && (
+                  <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '8px' }}>
+                    📏 Tallas: {p.sizes.join(', ')}
+                  </div>
+                )}
 
                 {p.attributes && p.attributes.length > 0 && (
                   <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '8px' }}>
