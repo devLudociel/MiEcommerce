@@ -1,10 +1,17 @@
 // src/pages/api/admin/set-admin-claims.ts
-import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import { getAdminApp } from '../../../lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
 import { rateLimitPersistent } from '../../../lib/rateLimitPersistent';
 import { logErrorSafely, createErrorResponse } from '../../../lib/auth-helpers';
+
+// Simple console logger for API routes (avoids import issues)
+const logger = {
+  info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+  warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+  error: (msg: string, error?: any) => console.error(`[ERROR] ${msg}`, error || ''),
+  debug: (msg: string, data?: any) => console.log(`[DEBUG] ${msg}`, data || ''),
+};
 
 /**
  * Endpoint para asignar custom claims de admin a usuarios

@@ -7,7 +7,14 @@ import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { verifyAdminAuth } from '../../lib/auth/authHelpers';
 import { executeResendOperation } from '../../lib/externalServices';
 import { z } from 'zod';
-import { logger } from '../../lib/logger';
+
+// Simple console logger for API routes (avoids import issues)
+const logger = {
+  info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+  warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+  error: (msg: string, error?: any) => console.error(`[ERROR] ${msg}`, error || ''),
+  debug: (msg: string, data?: any) => console.log(`[DEBUG] ${msg}`, data || ''),
+};
 import {
   newCouponCampaignTemplate,
   newProductCampaignTemplate,
