@@ -7,6 +7,8 @@ import SocialProof from '../components/sections/SocialProof.tsx';
 import FooterComponent from '../components/sections/Footer.tsx';
 import ProductGrid from '../components/sections/ProductGrid.tsx';
 import SpecialOffers from '../components/sections/SpecialOffert.tsx';
+import BestSellers from '../components/sections/BestSellers.tsx';
+import NewsletterSignup from '../components/sections/NewsletterSignup.tsx';
 
 // SEO Optimizado
 const title = 'ImprimeArte - Estampado, Bordado e Impresión 3D Personalizada';
@@ -23,6 +25,9 @@ const ogImage = '/og-home.jpg';
 
   <!-- Categories Showcase -->
   <CategoriesShowcase client:load />
+
+  <!-- Best Sellers Section -->
+  <BestSellers client:load />
 
   <!-- Products Grid (Firebase) -->
   <ProductGrid client:load />
@@ -86,6 +91,9 @@ const ogImage = '/og-home.jpg';
       <SpecialOffers client:load />
     </div>
   </section>
+
+  <!-- Newsletter Signup Section -->
+  <NewsletterSignup client:load />
 
   <!-- Social Proof Section -->
   <SocialProof client:load />
