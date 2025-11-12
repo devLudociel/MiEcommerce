@@ -147,6 +147,7 @@ export default function Checkout() {
   }, [authLoading, cart.items.length, isCartSyncing, isProcessing, orderId]);
 
   // Load wallet balance when user is authenticated
+  // TEMPORALMENTE DESHABILITADO - Debugging import error
   useEffect(() => {
     if (!user) {
       setWalletBalance(0);
@@ -154,6 +155,11 @@ export default function Checkout() {
       return;
     }
 
+    // TODO: Re-enable when logger import is fixed
+    logger.warn('[Checkout] Wallet balance loading temporarily disabled');
+    setWalletBalance(0);
+
+    /*
     const loadWalletBalance = async () => {
       try {
         logger.info('[Checkout] Loading wallet balance', { userId: user.uid });
@@ -184,6 +190,7 @@ export default function Checkout() {
     };
 
     loadWalletBalance();
+    */
   }, [user]);
 
   // Load saved addresses and auto-fill with default shipping address
