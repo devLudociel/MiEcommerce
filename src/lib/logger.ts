@@ -36,8 +36,23 @@ interface LoggerConfig {
 }
 
 // Configuración por ambiente
-const isDevelopment = import.meta.env.DEV;
-const isProduction = import.meta.env.PROD;
+// Safe access to import.meta.env with fallback for server contexts
+const getEnvMode = () => {
+  try {
+    return {
+      isDev: import.meta.env?.DEV ?? false,
+      isProd: import.meta.env?.PROD ?? true,
+    };
+  } catch {
+    // Fallback for contexts where import.meta.env is not available
+    return {
+      isDev: process.env.NODE_ENV === 'development',
+      isProd: process.env.NODE_ENV === 'production',
+    };
+  }
+};
+
+const { isDev: isDevelopment, isProd: isProduction } = getEnvMode();
 
 // Nivel de log según ambiente
 const defaultLogLevel = isDevelopment ? LogLevel.DEBUG : LogLevel.ERROR;
