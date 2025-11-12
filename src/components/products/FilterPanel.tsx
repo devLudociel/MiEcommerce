@@ -58,7 +58,7 @@ export default function FilterPanel({
       categoryMap.set(category, (categoryMap.get(category) || 0) + 1);
     });
 
-    // Map to friendly names
+    // Map to friendly names (handles any category from Firebase)
     const categoryNames: Record<string, string> = {
       camisetas: 'Camisetas',
       sudaderas: 'Sudaderas',
@@ -67,7 +67,9 @@ export default function FilterPanel({
       bolsas: 'Bolsas',
       marcos: 'Marcos',
       resina: 'Cajas Resina',
+      'cajas-resina': 'Cajas Resina',
       regalos: 'Regalos',
+      textil: 'Textil',
       otros: 'Otros',
     };
 
@@ -82,7 +84,20 @@ export default function FilterPanel({
 
   const categories = getCategoriesWithCount();
 
-  const colors = [
+  // Calculate colors dynamically from products
+  const getAvailableColors = () => {
+    const colorSet = new Set<string>();
+    allProducts.forEach((product) => {
+      if (product.colors && Array.isArray(product.colors)) {
+        product.colors.forEach((color) => colorSet.add(color));
+      }
+    });
+    return Array.from(colorSet);
+  };
+
+  const availableColorIds = getAvailableColors();
+
+  const allColors = [
     { id: 'white', name: 'Blanco', hex: '#FFFFFF' },
     { id: 'black', name: 'Negro', hex: '#000000' },
     { id: 'red', name: 'Rojo', hex: '#EF4444' },
@@ -93,7 +108,38 @@ export default function FilterPanel({
     { id: 'gray', name: 'Gris', hex: '#6B7280' },
   ];
 
-  const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  // Only show colors that exist in products
+  const colors = allColors.filter((color) => availableColorIds.includes(color.id));
+
+  // Calculate sizes dynamically from products
+  const getAvailableSizes = () => {
+    const sizeSet = new Set<string>();
+    allProducts.forEach((product) => {
+      if (product.sizes && Array.isArray(product.sizes)) {
+        product.sizes.forEach((size) => sizeSet.add(size));
+      }
+    });
+    return Array.from(sizeSet);
+  };
+
+  const availableSizesList = getAvailableSizes();
+
+  // Standard size order
+  const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  const sizes = sizeOrder.filter((size) => availableSizesList.includes(size));
+
+  // Check if we should show size/color filters based on selected categories
+  const shouldShowSizeFilter = () => {
+    if (selectedCategories.length === 0) return sizes.length > 0;
+    const textilCategories = ['camisetas', 'sudaderas', 'gorras', 'bolsas', 'textil'];
+    return selectedCategories.some((cat) => textilCategories.includes(cat)) && sizes.length > 0;
+  };
+
+  const shouldShowColorFilter = () => {
+    if (selectedCategories.length === 0) return colors.length > 0;
+    // Most categories can have colors except maybe some specific ones
+    return colors.length > 0;
+  };
 
   const applyFilters = () => {
     onFilterChange({
@@ -273,11 +319,12 @@ export default function FilterPanel({
           </div>
         </div>
 
-        {/* Colors */}
-        <div className="mb-6 pb-6 border-b border-gray-200">
-          <h4 className="text-sm font-semibold text-gray-700 mb-3">Color</h4>
-          <div className="grid grid-cols-4 gap-2">
-            {colors.map((color) => (
+        {/* Colors - Only show if relevant */}
+        {shouldShowColorFilter() && (
+          <div className="mb-6 pb-6 border-b border-gray-200">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">Color</h4>
+            <div className="grid grid-cols-4 gap-2">
+              {colors.map((color) => (
               <button
                 key={color.id}
                 onClick={() => {
@@ -306,15 +353,17 @@ export default function FilterPanel({
                   </svg>
                 )}
               </button>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Sizes */}
-        <div className="mb-6 pb-6 border-b border-gray-200">
-          <h4 className="text-sm font-semibold text-gray-700 mb-3">Talla</h4>
-          <div className="grid grid-cols-3 gap-2">
-            {sizes.map((size) => (
+        {/* Sizes - Only show for textile categories */}
+        {shouldShowSizeFilter() && (
+          <div className="mb-6 pb-6 border-b border-gray-200">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">Talla</h4>
+            <div className="grid grid-cols-3 gap-2">
+              {sizes.map((size) => (
               <button
                 key={size}
                 onClick={() => {
@@ -329,9 +378,10 @@ export default function FilterPanel({
               >
                 {size}
               </button>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Rating */}
         <div className="mb-6 pb-6 border-b border-gray-200">
