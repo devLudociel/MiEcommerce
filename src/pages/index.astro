@@ -1,16 +1,11 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import HeroCarousel from '../components/sections/HeroCarousel.tsx';
-import HowItWorks from '../components/sections/HowItWorks.tsx';
 import CategoriesShowcase from '../components/sections/CategoriesShowcase.tsx';
-import SocialProof from '../components/sections/SocialProof.tsx';
-import FooterComponent from '../components/sections/Footer.tsx';
-import ProductGrid from '../components/sections/ProductGrid.tsx';
-import SpecialOffers from '../components/sections/SpecialOffert.tsx';
 import BestSellers from '../components/sections/BestSellers.tsx';
-import NewsletterSignup from '../components/sections/NewsletterSignup.tsx';
 import WhyChooseUs from '../components/sections/WhyChooseUs.tsx';
-import RecentActivity from '../components/sections/RecentActivity.tsx';
+import NewsletterSignup from '../components/sections/NewsletterSignup.tsx';
+import FooterComponent from '../components/sections/Footer.tsx';
 
 // SEO Optimizado
 const title = 'ImprimeArte - Estampado, Bordado e Impresión 3D Personalizada';
@@ -19,98 +14,23 @@ const ogImage = '/og-home.jpg';
 ---
 
 <BaseLayout title={title} description={description} ogImage={ogImage}>
-  <!-- Hero Section -->
+  <!-- 1. Hero Section: Captura de atención inmediata -->
   <HeroCarousel client:load />
 
-  <!-- How It Works Section -->
-  <HowItWorks client:load />
-
-  <!-- Why Choose Us Section -->
-  <WhyChooseUs client:load />
-
-  <!-- Categories Showcase -->
+  <!-- 2. Categories: Navegación rápida a lo que buscan -->
   <CategoriesShowcase client:load />
 
-  <!-- Best Sellers Section -->
+  <!-- 3. Best Sellers: Social proof + productos populares -->
   <BestSellers client:load />
 
-  <!-- Products Grid (Firebase) -->
-  <ProductGrid client:load />
+  <!-- 4. Why Choose Us: Generar confianza con stats reales -->
+  <WhyChooseUs client:load />
 
-  <!-- Recent Activity Section -->
-  <RecentActivity client:load />
-
-  <!-- Services Section -->
-  <section id="servicios" class="py-20 bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4">
-      <div class="text-center mb-16">
-        <h2 class="text-4xl font-bold text-gray-800 mb-4">Nuestros Servicios</h2>
-        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-          Amplia gama de servicios de personalización
-        </p>
-      </div>
-
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-          <div class="w-16 h-16 bg-brand-600 rounded-lg flex items-center justify-center mb-4">
-            <span class="text-white text-2xl">👕</span>
-          </div>
-          <h3 class="text-2xl font-bold text-gray-800 mb-2">Estampado Textil</h3>
-          <p class="text-gray-600 mb-4">
-            Camisetas, sudaderas y más. Estampado de alta calidad en cualquier posición y tamaño.
-          </p>
-          <div class="text-brand-600 font-semibold">Desde €2.00</div>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-          <div class="w-16 h-16 bg-brand-600 rounded-lg flex items-center justify-center mb-4">
-            <span class="text-white text-2xl">🪡</span>
-          </div>
-          <h3 class="text-2xl font-bold text-gray-800 mb-2">Bordado</h3>
-          <p class="text-gray-600 mb-4">
-            Bordados elegantes y duraderos para un acabado premium en tus prendas.
-          </p>
-          <div class="text-brand-600 font-semibold">Desde €3.00</div>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-          <div class="w-16 h-16 bg-brand-600 rounded-lg flex items-center justify-center mb-4">
-            <span class="text-white text-2xl">🖨️</span>
-          </div>
-          <h3 class="text-2xl font-bold text-gray-800 mb-2">Impresión 3D</h3>
-          <p class="text-gray-600 mb-4">
-            Resina y filamento. Convierte tus ideas en objetos físicos con la mejor calidad.
-          </p>
-          <div class="text-brand-600 font-semibold">Cotización</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="ofertas-especiales" class="py-20 bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4">
-      <div class="text-center mb-16">
-        <h2 class="text-4xl font-bold text-gray-800 mb-4">Ofertas Especiales</h2>
-        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-          Aprovecha nuestros descuentos exclusivos por tiempo limitado
-        </p>
-      </div>
-
-      <SpecialOffers client:load />
-    </div>
-  </section>
-
-  <!-- Newsletter Signup Section -->
+  <!-- 5. Newsletter: Captura de leads antes de perderlos -->
   <NewsletterSignup client:load />
 
-  <!-- Social Proof Section -->
-  <SocialProof client:load />
-
-  <!-- Footer -->
+  <!-- 6. Footer: Información de contacto y legal -->
   <footer class="bg-gray-800 text-white py-12">
     <FooterComponent client:load />
   </footer>
-
-  <!-- Firebase v8 scripts y lógica duplicada eliminados. La carga de productos
-       ahora la maneja el componente React ProductsSection usando Firestore v9+. -->
 </BaseLayout>

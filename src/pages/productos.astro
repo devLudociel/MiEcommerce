@@ -1,0 +1,85 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductsWithFilters from '../components/products/ProductsWithFilters.tsx';
+import FooterComponent from '../components/sections/Footer.tsx';
+
+const title = 'Todos los Productos - ImprimeArte';
+const description = 'Explora nuestro catálogo completo de productos personalizables: camisetas, sudaderas, tazas, gorras y mucho más. Calidad premium a precios increíbles.';
+---
+
+<BaseLayout title={title} description={description}>
+  <!-- Breadcrumb -->
+  <section class="bg-gray-50 py-4">
+    <div class="max-w-7xl mx-auto px-4">
+      <nav class="text-sm">
+        <ol class="flex items-center gap-2">
+          <li><a href="/" class="text-cyan-600 hover:underline">Inicio</a></li>
+          <li class="text-gray-400">/</li>
+          <li class="text-gray-600">Productos</li>
+        </ol>
+      </nav>
+    </div>
+  </section>
+
+  <!-- Header -->
+  <section class="bg-gradient-to-br from-gray-50 to-white py-12">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="text-center max-w-3xl mx-auto">
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+          Nuestros Productos
+        </h1>
+        <p class="text-lg text-gray-600 mb-6">
+          Descubre nuestra amplia gama de productos personalizables. Calidad garantizada y envíos rápidos a toda Canarias.
+        </p>
+
+        <!-- Quick Stats -->
+        <div class="flex flex-wrap justify-center gap-6 text-sm">
+          <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md">
+            <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            <span class="text-gray-700 font-medium">Envío 3-5 días</span>
+          </div>
+
+          <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md">
+            <svg class="w-5 h-5 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            <span class="text-gray-700 font-medium">Calidad premium</span>
+          </div>
+
+          <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md">
+            <svg class="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            <span class="text-gray-700 font-medium">30 días garantía</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Products with Filters -->
+  <ProductsWithFilters client:load />
+
+  <!-- CTA Section -->
+  <section class="py-16 bg-gradient-to-r from-cyan-500 to-blue-600 text-white">
+    <div class="max-w-4xl mx-auto px-4 text-center">
+      <h2 class="text-3xl md:text-4xl font-bold mb-4">¿No encuentras lo que buscas?</h2>
+      <p class="text-xl text-cyan-50 mb-8">
+        Contáctanos y te ayudaremos a crear el producto perfecto para ti
+      </p>
+      <a href="/contacto" class="inline-flex items-center gap-2 px-8 py-4 bg-white text-cyan-600 font-bold rounded-full hover:bg-gray-100 transform hover:scale-105 transition-all shadow-lg">
+        <span>Contactar ahora</span>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white py-12">
+    <FooterComponent client:load />
+  </footer>
+</BaseLayout>
