@@ -1,6 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import HeroCarousel from '../components/sections/HeroCarousel.tsx';
+import HowItWorks from '../components/sections/HowItWorks.tsx';
+import CategoriesShowcase from '../components/sections/CategoriesShowcase.tsx';
+import SocialProof from '../components/sections/SocialProof.tsx';
 import FooterComponent from '../components/sections/Footer.tsx';
 import ProductGrid from '../components/sections/ProductGrid.tsx';
 import SpecialOffers from '../components/sections/SpecialOffert.tsx';
@@ -13,8 +16,13 @@ const ogImage = '/og-home.jpg';
 
 <BaseLayout title={title} description={description} ogImage={ogImage}>
   <!-- Hero Section -->
-
   <HeroCarousel client:load />
+
+  <!-- How It Works Section -->
+  <HowItWorks client:load />
+
+  <!-- Categories Showcase -->
+  <CategoriesShowcase client:load />
 
   <!-- Products Grid (Firebase) -->
   <ProductGrid client:load />
@@ -78,6 +86,9 @@ const ogImage = '/og-home.jpg';
       <SpecialOffers client:load />
     </div>
   </section>
+
+  <!-- Social Proof Section -->
+  <SocialProof client:load />
 
   <!-- Footer -->
   <footer class="bg-gray-800 text-white py-12">
