@@ -1,5 +1,4 @@
 // src/pages/api/save-order.ts
-import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -7,6 +6,14 @@ import { rateLimit } from '../../lib/rateLimit';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { finalizeOrder } from '../../lib/orders/finalizeOrder';
 import { z } from 'zod';
+
+// Simple console logger for API routes (avoids import issues)
+const logger = {
+  info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+  warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+  error: (msg: string, error?: any) => console.error(`[ERROR] ${msg}`, error || ''),
+  debug: (msg: string, data?: any) => console.log(`[DEBUG] ${msg}`, data || ''),
+};
 
 // SECURITY: Zod schema para validar datos de pedido
 // Schema matches actual Checkout.tsx data structure

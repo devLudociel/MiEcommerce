@@ -1,9 +1,16 @@
 // src/pages/api/send-email.ts
-import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import { Resend } from 'resend';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { orderConfirmationTemplate, orderStatusUpdateTemplate, newsletterWelcomeTemplate } from '../../lib/emailTemplates';
+
+// Simple console logger for API routes (avoids import issues)
+const logger = {
+  info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+  warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+  error: (msg: string, error?: any) => console.error(`[ERROR] ${msg}`, error || ''),
+  debug: (msg: string, data?: any) => console.log(`[DEBUG] ${msg}`, data || ''),
+};
 
 const resend = new Resend(import.meta.env.RESEND_API_KEY);
 

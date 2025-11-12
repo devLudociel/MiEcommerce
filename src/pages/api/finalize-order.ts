@@ -1,5 +1,4 @@
 // src/pages/api/finalize-order.ts
-import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { getAdminDb } from '../../lib/firebase-admin';
@@ -7,6 +6,14 @@ import { finalizeOrder } from '../../lib/orders/finalizeOrder';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { verifyAuthToken } from '../../lib/auth/authHelpers';
 import { z } from 'zod';
+
+// Simple console logger for API routes (avoids import issues)
+const logger = {
+  info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+  warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+  error: (msg: string, error?: any) => console.error(`[ERROR] ${msg}`, error || ''),
+  debug: (msg: string, data?: any) => console.log(`[DEBUG] ${msg}`, data || ''),
+};
 
 const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
   apiVersion: '2024-12-18.acacia',

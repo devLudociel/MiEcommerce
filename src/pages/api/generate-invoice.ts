@@ -1,4 +1,3 @@
-import { logger } from '../../lib/logger';
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -7,6 +6,14 @@ import type { InvoiceData } from '../../lib/invoiceGenerator';
 import type { OrderData } from '../../lib/firebase';
 // PERFORMANCE: PdfPrinter se carga dinámicamente cuando se necesita (línea 133)
 import { verifyAuthToken, logErrorSafely, createErrorResponse } from '../../lib/auth-helpers';
+
+// Simple console logger for API routes (avoids import issues)
+const logger = {
+  info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+  warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+  error: (msg: string, error?: any) => console.error(`[ERROR] ${msg}`, error || ''),
+  debug: (msg: string, data?: any) => console.log(`[DEBUG] ${msg}`, data || ''),
+};
 
 // Fuentes estándar de PDFKit (no requieren archivos externos)
 const fonts = {
