@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import HeroCarousel from '../components/sections/HeroCarousel.tsx';
 import CategoriesShowcase from '../components/sections/CategoriesShowcase.tsx';
 import BestSellers from '../components/sections/BestSellers.tsx';
+import ProductGrid from '../components/sections/ProductGrid.tsx';
 import WhyChooseUs from '../components/sections/WhyChooseUs.tsx';
 import NewsletterSignup from '../components/sections/NewsletterSignup.tsx';
 import FooterComponent from '../components/sections/Footer.tsx';
@@ -23,10 +24,13 @@ const ogImage = '/og-home.jpg';
   <!-- 3. Best Sellers: Social proof + productos populares -->
   <BestSellers client:load />
 
-  <!-- 4. Why Choose Us: Generar confianza con stats reales -->
+  <!-- 4. Product Grid: Productos destacados de Firebase -->
+  <ProductGrid client:load />
+
+  <!-- 5. Why Choose Us: Generar confianza con stats reales -->
   <WhyChooseUs client:load />
 
-  <!-- 5. Newsletter: Captura de leads antes de perderlos -->
+  <!-- 6. Newsletter: Captura de leads antes de perderlos -->
   <NewsletterSignup client:load />
 
   <!-- 6. Footer: Información de contacto y legal -->

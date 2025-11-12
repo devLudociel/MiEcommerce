@@ -1,7 +1,7 @@
 // src/components/sections/BestSellers.tsx
 import { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
-import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { logger } from '../../lib/logger';
 
@@ -25,11 +25,11 @@ export default function BestSellers() {
     const loadBestSellers = async () => {
       try {
         setLoading(true);
+        // Fetch active products without orderBy to avoid needing a composite index
         const q = query(
           collection(db, 'products'),
           where('active', '==', true),
-          orderBy('salesCount', 'desc'),
-          limit(6)
+          limit(20) // Get more products to sort client-side
         );
 
         const snapshot = await getDocs(q);
@@ -47,8 +47,13 @@ export default function BestSellers() {
           };
         });
 
-        setProducts(items);
-        logger.info('[BestSellers] Loaded products', { count: items.length });
+        // Sort by salesCount client-side and take top 6
+        const sortedItems = items
+          .sort((a, b) => b.salesCount - a.salesCount)
+          .slice(0, 6);
+
+        setProducts(sortedItems);
+        logger.info('[BestSellers] Loaded products', { count: sortedItems.length });
       } catch (error) {
         logger.error('[BestSellers] Error loading products', error);
       } finally {
