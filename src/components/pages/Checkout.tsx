@@ -62,6 +62,61 @@ const SHIPPING_COSTS = {
 };
 const FREE_SHIPPING_THRESHOLD = 50;
 
+// Spanish provinces for dropdown
+const SPANISH_PROVINCES = [
+  'Álava',
+  'Albacete',
+  'Alicante',
+  'Almería',
+  'Asturias',
+  'Ávila',
+  'Badajoz',
+  'Barcelona',
+  'Burgos',
+  'Cáceres',
+  'Cádiz',
+  'Cantabria',
+  'Castellón',
+  'Ceuta',
+  'Ciudad Real',
+  'Córdoba',
+  'Cuenca',
+  'Girona',
+  'Granada',
+  'Guadalajara',
+  'Guipúzcoa',
+  'Huelva',
+  'Huesca',
+  'Illes Balears',
+  'Jaén',
+  'La Rioja',
+  'Las Palmas',
+  'León',
+  'Lleida',
+  'Lugo',
+  'Madrid',
+  'Málaga',
+  'Melilla',
+  'Murcia',
+  'Navarra',
+  'Ourense',
+  'Palencia',
+  'Pontevedra',
+  'Salamanca',
+  'Santa Cruz de Tenerife',
+  'Segovia',
+  'Sevilla',
+  'Soria',
+  'Tarragona',
+  'Teruel',
+  'Toledo',
+  'Valencia',
+  'Valladolid',
+  'Vizcaya',
+  'Zamora',
+  'Zaragoza',
+];
+
 export default function Checkout() {
   const cart = useStore(cartStore);
   const isCartSyncing = useStore(cartLoadingStore);
@@ -1022,16 +1077,21 @@ export default function Checkout() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Provincia *
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={shippingInfo.state}
                     onChange={(e) =>
                       setShippingInfo({ ...shippingInfo, state: e.target.value })
                     }
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
-                    placeholder="Madrid"
                     required
-                  />
+                  >
+                    <option value="">Selecciona una provincia</option>
+                    {SPANISH_PROVINCES.map((province) => (
+                      <option key={province} value={province}>
+                        {province}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
@@ -1142,14 +1202,20 @@ export default function Checkout() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Provincia
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={billingInfo.state}
                       onChange={(e) =>
                         setBillingInfo({ ...billingInfo, state: e.target.value })
                       }
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
-                    />
+                    >
+                      <option value="">Selecciona una provincia</option>
+                      {SPANISH_PROVINCES.map((province) => (
+                        <option key={province} value={province}>
+                          {province}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
