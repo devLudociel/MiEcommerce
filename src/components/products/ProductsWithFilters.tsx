@@ -25,8 +25,13 @@ export default function ProductsWithFilters() {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Read URL params to auto-select filters
+  const urlParams = new URLSearchParams(window.location.search);
+  const categoryParam = urlParams.get('category');
+
   const [currentFilters, setCurrentFilters] = useState<FilterOptions>({
-    categories: [],
+    categories: categoryParam ? [categoryParam] : [],
     priceRange: { min: 0, max: 200 },
     colors: [],
     sizes: [],
@@ -178,7 +183,12 @@ export default function ProductsWithFilters() {
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Filters Sidebar */}
           <div className="lg:col-span-1">
-            <FilterPanel onFilterChange={handleFilterChange} totalResults={filteredProducts.length} />
+            <FilterPanel
+              onFilterChange={handleFilterChange}
+              totalResults={filteredProducts.length}
+              allProducts={products}
+              currentFilters={currentFilters}
+            />
           </div>
 
           {/* Products Grid */}

@@ -10,29 +10,77 @@ export interface FilterOptions {
   sortBy: 'price-asc' | 'price-desc' | 'name' | 'rating' | 'newest';
 }
 
+interface Product {
+  id: string;
+  category: string;
+  price: number;
+  salePrice?: number;
+  colors?: string[];
+  sizes?: string[];
+  rating: number;
+  inStock: boolean;
+}
+
 interface FilterPanelProps {
   onFilterChange: (filters: FilterOptions) => void;
   totalResults?: number;
+  allProducts?: Product[];
+  currentFilters?: FilterOptions;
 }
 
-export default function FilterPanel({ onFilterChange, totalResults = 0 }: FilterPanelProps) {
+export default function FilterPanel({
+  onFilterChange,
+  totalResults = 0,
+  allProducts = [],
+  currentFilters,
+}: FilterPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 200 });
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [minRating, setMinRating] = useState(0);
-  const [inStock, setInStock] = useState(false);
-  const [sortBy, setSortBy] = useState<FilterOptions['sortBy']>('newest');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    currentFilters?.categories || []
+  );
+  const [priceRange, setPriceRange] = useState(
+    currentFilters?.priceRange || { min: 0, max: 200 }
+  );
+  const [selectedColors, setSelectedColors] = useState<string[]>(currentFilters?.colors || []);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>(currentFilters?.sizes || []);
+  const [minRating, setMinRating] = useState(currentFilters?.minRating || 0);
+  const [inStock, setInStock] = useState(currentFilters?.inStock || false);
+  const [sortBy, setSortBy] = useState<FilterOptions['sortBy']>(
+    currentFilters?.sortBy || 'newest'
+  );
 
-  const categories = [
-    { id: 'camisetas', name: 'Camisetas', count: 45 },
-    { id: 'sudaderas', name: 'Sudaderas', count: 32 },
-    { id: 'tazas', name: 'Tazas', count: 28 },
-    { id: 'gorras', name: 'Gorras', count: 15 },
-    { id: 'bolsas', name: 'Bolsas', count: 20 },
-    { id: 'otros', name: 'Otros', count: 12 },
-  ];
+  // Calculate categories dynamically from products
+  const getCategoriesWithCount = () => {
+    const categoryMap = new Map<string, number>();
+
+    allProducts.forEach((product) => {
+      const category = product.category || 'otros';
+      categoryMap.set(category, (categoryMap.get(category) || 0) + 1);
+    });
+
+    // Map to friendly names
+    const categoryNames: Record<string, string> = {
+      camisetas: 'Camisetas',
+      sudaderas: 'Sudaderas',
+      tazas: 'Tazas',
+      gorras: 'Gorras',
+      bolsas: 'Bolsas',
+      marcos: 'Marcos',
+      resina: 'Cajas Resina',
+      regalos: 'Regalos',
+      otros: 'Otros',
+    };
+
+    return Array.from(categoryMap.entries())
+      .map(([id, count]) => ({
+        id,
+        name: categoryNames[id] || id.charAt(0).toUpperCase() + id.slice(1),
+        count,
+      }))
+      .sort((a, b) => b.count - a.count);
+  };
+
+  const categories = getCategoriesWithCount();
 
   const colors = [
     { id: 'white', name: 'Blanco', hex: '#FFFFFF' },

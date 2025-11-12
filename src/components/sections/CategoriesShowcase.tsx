@@ -8,7 +8,7 @@ export default function CategoriesShowcase() {
       description: 'Personalizadas a tu estilo',
       priceFrom: '15',
       image: 'bg-gradient-to-br from-blue-400 to-cyan-500',
-      href: '/productos',
+      href: '/productos?category=camisetas',
       badge: '¡Popular!',
       badgeColor: 'bg-red-500',
     },
@@ -19,7 +19,7 @@ export default function CategoriesShowcase() {
       description: 'Comodidad y diseño',
       priceFrom: '25',
       image: 'bg-gradient-to-br from-purple-400 to-pink-500',
-      href: '/productos',
+      href: '/productos?category=sudaderas',
     },
     {
       id: 'marcos',
@@ -28,7 +28,7 @@ export default function CategoriesShowcase() {
       description: 'Decora tus momentos',
       priceFrom: '20',
       image: 'bg-gradient-to-br from-orange-400 to-red-500',
-      href: '/productos',
+      href: '/productos?category=marcos',
     },
     {
       id: 'tazas',
@@ -37,7 +37,7 @@ export default function CategoriesShowcase() {
       description: 'Empieza el día con estilo',
       priceFrom: '8',
       image: 'bg-gradient-to-br from-green-400 to-teal-500',
-      href: '/productos',
+      href: '/productos?category=tazas',
       badge: 'Nuevo',
       badgeColor: 'bg-green-500',
     },
@@ -48,7 +48,7 @@ export default function CategoriesShowcase() {
       description: 'Regalos únicos 3D',
       priceFrom: '35',
       image: 'bg-gradient-to-br from-indigo-400 to-purple-500',
-      href: '/productos',
+      href: '/productos?category=resina',
     },
     {
       id: 'regalos',
@@ -57,7 +57,7 @@ export default function CategoriesShowcase() {
       description: 'Ideas especiales',
       priceFrom: '10',
       image: 'bg-gradient-to-br from-pink-400 to-rose-500',
-      href: '/productos',
+      href: '/productos?category=regalos',
     },
   ];
 
