@@ -25,13 +25,8 @@ export default function ProductsWithFilters() {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Read URL params to auto-select filters
-  const urlParams = new URLSearchParams(window.location.search);
-  const categoryParam = urlParams.get('category');
-
   const [currentFilters, setCurrentFilters] = useState<FilterOptions>({
-    categories: categoryParam ? [categoryParam] : [],
+    categories: [],
     priceRange: { min: 0, max: 200 },
     colors: [],
     sizes: [],
@@ -39,6 +34,21 @@ export default function ProductsWithFilters() {
     inStock: false,
     sortBy: 'newest',
   });
+
+  // Read URL params on client-side only (avoid SSR error)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const categoryParam = urlParams.get('category');
+
+      if (categoryParam) {
+        setCurrentFilters((prev) => ({
+          ...prev,
+          categories: [categoryParam],
+        }));
+      }
+    }
+  }, []);
 
   // Load products from Firestore
   useEffect(() => {
