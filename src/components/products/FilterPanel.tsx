@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export interface FilterOptions {
   categories: string[];
@@ -141,7 +141,8 @@ export default function FilterPanel({
     return colors.length > 0;
   };
 
-  const applyFilters = () => {
+  // Auto-apply filters whenever any filter changes
+  useEffect(() => {
     onFilterChange({
       categories: selectedCategories,
       priceRange,
@@ -151,7 +152,16 @@ export default function FilterPanel({
       inStock,
       sortBy,
     });
-  };
+  }, [
+    selectedCategories,
+    priceRange,
+    selectedColors,
+    selectedSizes,
+    minRating,
+    inStock,
+    sortBy,
+    onFilterChange,
+  ]);
 
   const resetFilters = () => {
     setSelectedCategories([]);
@@ -161,15 +171,7 @@ export default function FilterPanel({
     setMinRating(0);
     setInStock(false);
     setSortBy('newest');
-    onFilterChange({
-      categories: [],
-      priceRange: { min: 0, max: 200 },
-      colors: [],
-      sizes: [],
-      minRating: 0,
-      inStock: false,
-      sortBy: 'newest',
-    });
+    // useEffect will handle applying the filters
   };
 
   const toggleCategory = (category: string) => {
@@ -258,7 +260,6 @@ export default function FilterPanel({
             value={sortBy}
             onChange={(e) => {
               setSortBy(e.target.value as FilterOptions['sortBy']);
-              setTimeout(applyFilters, 0);
             }}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none"
           >
@@ -281,7 +282,6 @@ export default function FilterPanel({
                   checked={selectedCategories.includes(category.id)}
                   onChange={() => {
                     toggleCategory(category.id);
-                    setTimeout(applyFilters, 0);
                   }}
                   className="w-4 h-4 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500"
                 />
@@ -307,8 +307,6 @@ export default function FilterPanel({
                 onChange={(e) => {
                   setPriceRange({ ...priceRange, max: parseInt(e.target.value) });
                 }}
-                onMouseUp={applyFilters}
-                onTouchEnd={applyFilters}
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-cyan-600"
               />
               <div className="flex items-center justify-between mt-2">
@@ -329,7 +327,6 @@ export default function FilterPanel({
                 key={color.id}
                 onClick={() => {
                   toggleColor(color.id);
-                  setTimeout(applyFilters, 0);
                 }}
                 className={`relative w-10 h-10 rounded-full border-2 transition-all ${
                   selectedColors.includes(color.id)
@@ -368,7 +365,6 @@ export default function FilterPanel({
                 key={size}
                 onClick={() => {
                   toggleSize(size);
-                  setTimeout(applyFilters, 0);
                 }}
                 className={`px-3 py-2 text-sm font-medium rounded-lg border transition-all ${
                   selectedSizes.includes(size)
@@ -395,7 +391,6 @@ export default function FilterPanel({
                   checked={minRating === rating}
                   onChange={() => {
                     setMinRating(rating);
-                    setTimeout(applyFilters, 0);
                   }}
                   className="w-4 h-4 text-cyan-600 border-gray-300 focus:ring-cyan-500"
                 />
@@ -425,7 +420,6 @@ export default function FilterPanel({
               checked={inStock}
               onChange={(e) => {
                 setInStock(e.target.checked);
-                setTimeout(applyFilters, 0);
               }}
               className="w-4 h-4 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500"
             />
@@ -435,15 +429,12 @@ export default function FilterPanel({
           </label>
         </div>
 
-        {/* Apply Button (Mobile) */}
+        {/* Close Button (Mobile) */}
         <button
-          onClick={() => {
-            applyFilters();
-            setIsOpen(false);
-          }}
+          onClick={() => setIsOpen(false)}
           className="lg:hidden w-full px-6 py-3 bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-700 transition-colors"
         >
-          Aplicar filtros
+          Cerrar filtros
         </button>
       </div>
     </div>
