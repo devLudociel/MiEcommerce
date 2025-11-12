@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import FilterPanel, { type FilterOptions } from './FilterPanel';
@@ -159,9 +159,9 @@ export default function ProductsWithFilters() {
     setFilteredProducts(filtered);
   }, [currentFilters, products]);
 
-  const handleFilterChange = (filters: FilterOptions) => {
+  const handleFilterChange = useCallback((filters: FilterOptions) => {
     setCurrentFilters(filters);
-  };
+  }, []);
 
   if (loading) {
     return (

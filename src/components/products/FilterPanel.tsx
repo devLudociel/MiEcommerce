@@ -152,6 +152,7 @@ export default function FilterPanel({
       inStock,
       sortBy,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedCategories,
     priceRange,
@@ -160,7 +161,7 @@ export default function FilterPanel({
     minRating,
     inStock,
     sortBy,
-    onFilterChange,
+    // onFilterChange is stable (useCallback), not needed in deps
   ]);
 
   const resetFilters = () => {
