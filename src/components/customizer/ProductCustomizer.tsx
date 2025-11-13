@@ -6,6 +6,7 @@ import type { ProductAttributeValue } from '../../data/productAttributes';
 import type { CustomizationSchema } from '../../types/customization';
 import { logger } from '../../lib/logger';
 import { getSchemaForProduct } from '../../lib/customization/schemas';
+import CustomizerErrorBoundary from './CustomizerErrorBoundary';
 
 // PERFORMANCE: Lazy load customizer components for code splitting
 // Only the needed customizer will be loaded, reducing initial bundle size
@@ -256,9 +257,20 @@ export default function ProductCustomizer({ slug }: Props) {
   // PERFORMANCE: Render customizer with Suspense for lazy loading
   // Only the selected customizer will be loaded and rendered
   const CustomizerComponent = (() => {
+    // Safety check - should never happen due to error handling above
+    if (!product) {
+      return <div className="text-center p-8">Error: Producto no disponible</div>;
+    }
+
     // Si existe schema dinámico, usar DynamicCustomizer
     if (useDynamic && dynamicSchema) {
-      logger.debug('[ProductCustomizer] Renderizando DynamicCustomizer');
+      logger.info('[ProductCustomizer] Renderizando DynamicCustomizer', {
+        productId: product.id,
+        productName: product.name,
+        basePrice: product.basePrice,
+        schemaFieldsCount: dynamicSchema.fields.length,
+        schemaFields: dynamicSchema.fields.map(f => ({ id: f.id, label: f.label, type: f.fieldType }))
+      });
       return <DynamicCustomizer product={product} schema={dynamicSchema} />;
     }
 
@@ -277,17 +289,19 @@ export default function ProductCustomizer({ slug }: Props) {
   })();
 
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
-          <div className="text-center">
-            <div className="loading-spinner mb-4" />
-            <p className="text-gray-600">Cargando herramientas de personalización...</p>
+    <CustomizerErrorBoundary>
+      <Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
+            <div className="text-center">
+              <div className="loading-spinner mb-4" />
+              <p className="text-gray-600">Cargando herramientas de personalización...</p>
+            </div>
           </div>
-        </div>
-      }
-    >
-      {CustomizerComponent}
-    </Suspense>
+        }
+      >
+        {CustomizerComponent}
+      </Suspense>
+    </CustomizerErrorBoundary>
   );
 }
