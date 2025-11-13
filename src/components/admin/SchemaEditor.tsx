@@ -4,9 +4,15 @@ import type {
   CustomizationField,
   ProductCategory,
   FieldType,
+  ColorSelectorConfig,
+  SizeSelectorConfig,
+  DropdownConfig,
 } from '../../types/customization';
-import { Plus, Trash2, GripVertical, Save, X } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Save, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { notify } from '../../lib/notifications';
+import ColorSelectorConfigEditor from './config-editors/ColorSelectorConfigEditor';
+import SizeSelectorConfigEditor from './config-editors/SizeSelectorConfigEditor';
+import DropdownConfigEditor from './config-editors/DropdownConfigEditor';
 
 interface SchemaEditorProps {
   category: ProductCategory;
@@ -31,6 +37,7 @@ const fieldTypeOptions: Array<{ value: FieldType; label: string; icon: string }>
 export default function SchemaEditor({ category, initialSchema, onSave, onCancel }: SchemaEditorProps) {
   const [fields, setFields] = useState<CustomizationField[]>(initialSchema?.fields || []);
   const [showAddField, setShowAddField] = useState(false);
+  const [expandedConfigs, setExpandedConfigs] = useState<Record<string, boolean>>({});
 
   const handleAddField = () => {
     const newField: CustomizationField = {
@@ -47,13 +54,49 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
     setShowAddField(false);
   };
 
+  const initializeFieldConfig = (fieldType: FieldType): any => {
+    switch (fieldType) {
+      case 'color_selector':
+        return {
+          displayStyle: 'color_blocks',
+          availableColors: [],
+        } as ColorSelectorConfig;
+      case 'size_selector':
+        return {
+          displayStyle: 'buttons',
+          availableSizes: [],
+        } as SizeSelectorConfig;
+      case 'dropdown':
+        return {
+          options: [],
+        } as DropdownConfig;
+      default:
+        return {};
+    }
+  };
+
   const handleRemoveField = (fieldId: string) => {
     if (!confirm('¿Eliminar este campo?')) return;
     setFields(fields.filter((f) => f.id !== fieldId));
   };
 
   const handleUpdateField = (fieldId: string, updates: Partial<CustomizationField>) => {
-    setFields(fields.map((f) => (f.id === fieldId ? { ...f, ...updates } : f)));
+    setFields(
+      fields.map((f) => {
+        if (f.id !== fieldId) return f;
+
+        // If fieldType is changing, initialize the appropriate config
+        if (updates.fieldType && updates.fieldType !== f.fieldType) {
+          return {
+            ...f,
+            ...updates,
+            config: initializeFieldConfig(updates.fieldType),
+          };
+        }
+
+        return { ...f, ...updates };
+      })
+    );
   };
 
   const handleSave = () => {
@@ -214,13 +257,78 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                       />
 
-                      {/* Config Notice */}
-                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p className="text-xs text-blue-800">
-                          ℹ️ <strong>Configuración avanzada:</strong> Los colores, tallas y opciones se
-                          configurarán en la siguiente versión. Por ahora se usan los valores por defecto.
-                        </p>
-                      </div>
+                      {/* Advanced Configuration */}
+                      {(field.fieldType === 'color_selector' ||
+                        field.fieldType === 'size_selector' ||
+                        field.fieldType === 'dropdown') && (
+                        <div className="border-t border-gray-200 pt-3">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedConfigs({
+                                ...expandedConfigs,
+                                [field.id]: !expandedConfigs[field.id],
+                              })
+                            }
+                            className="flex items-center gap-2 text-sm font-semibold text-purple-600 hover:text-purple-700 transition-colors"
+                          >
+                            {expandedConfigs[field.id] ? (
+                              <ChevronUp className="w-4 h-4" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" />
+                            )}
+                            ⚙️ Configuración Avanzada
+                          </button>
+
+                          {expandedConfigs[field.id] && (
+                            <div className="mt-3 p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
+                              {field.fieldType === 'color_selector' && (
+                                <ColorSelectorConfigEditor
+                                  colors={
+                                    (field.config as ColorSelectorConfig).availableColors || []
+                                  }
+                                  onChange={(colors) =>
+                                    handleUpdateField(field.id, {
+                                      config: {
+                                        ...(field.config as ColorSelectorConfig),
+                                        availableColors: colors,
+                                      },
+                                    })
+                                  }
+                                />
+                              )}
+
+                              {field.fieldType === 'size_selector' && (
+                                <SizeSelectorConfigEditor
+                                  sizes={(field.config as SizeSelectorConfig).availableSizes || []}
+                                  onChange={(sizes) =>
+                                    handleUpdateField(field.id, {
+                                      config: {
+                                        ...(field.config as SizeSelectorConfig),
+                                        availableSizes: sizes,
+                                      },
+                                    })
+                                  }
+                                />
+                              )}
+
+                              {field.fieldType === 'dropdown' && (
+                                <DropdownConfigEditor
+                                  options={(field.config as DropdownConfig).options || []}
+                                  onChange={(options) =>
+                                    handleUpdateField(field.id, {
+                                      config: {
+                                        ...(field.config as DropdownConfig),
+                                        options: options,
+                                      },
+                                    })
+                                  }
+                                />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Remove Button */}
