@@ -70,6 +70,40 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
         return {
           options: [],
         } as DropdownConfig;
+      case 'image_upload':
+        return {
+          maxSizeMB: 5,
+          allowedFormats: ['jpg', 'jpeg', 'png'],
+          showPreview: true,
+        };
+      case 'card_selector':
+        return {
+          displayStyle: 'grid',
+          options: [],
+        };
+      case 'radio_group':
+        return {
+          options: [],
+        };
+      case 'text_input':
+        return {
+          placeholder: '',
+          maxLength: 100,
+        };
+      case 'number_input':
+        return {
+          min: 0,
+          max: 999,
+          step: 1,
+        };
+      case 'dimensions_input':
+        return {
+          minWidth: 10,
+          maxWidth: 200,
+          minHeight: 10,
+          maxHeight: 200,
+          unit: 'cm',
+        };
       default:
         return {};
     }
