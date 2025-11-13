@@ -15,6 +15,7 @@ import ImageUploadField from './fields/ImageUploadField';
 import ProductPreview from './ProductPreview';
 import TemplateGallery from './TemplateGallery';
 import ShareDesignButton from './ShareDesignButton';
+import SaveDesignButton from './SaveDesignButton';
 import { addToCart } from '../../store/cartStore';
 import { logger } from '../../lib/logger';
 import { notify } from '../../lib/notifications';
@@ -421,9 +422,21 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
               )}
             </button>
 
-            {/* Share Design Button */}
+            {/* Save & Share Buttons */}
             {Object.keys(values).length > 0 && (
-              <div className="mt-4 flex justify-center">
+              <div className="mt-4 flex justify-center gap-3 flex-wrap">
+                <SaveDesignButton
+                  productId={product.id}
+                  productName={product.name}
+                  categoryId={product.categoryId}
+                  designData={{
+                    categoryId: product.categoryId,
+                    categoryName: product.name,
+                    values: Object.values(values),
+                    totalPriceModifier: pricing.customizationPrice,
+                  }}
+                  previewImage={getUserImage() || getBaseImage()}
+                />
                 <ShareDesignButton
                   productId={product.id}
                   productName={product.name}
