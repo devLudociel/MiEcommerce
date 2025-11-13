@@ -26,6 +26,15 @@ export default function ImageUploadField({
   helpText,
   productType = 'custom',
 }: ImageUploadFieldProps) {
+  // Ensure config has required properties with defaults
+  const safeConfig = {
+    maxSizeMB: config.maxSizeMB || 5,
+    allowedFormats: config.allowedFormats || ['jpg', 'jpeg', 'png'],
+    showPreview: config.showPreview !== undefined ? config.showPreview : true,
+    showPositionControls: config.showPositionControls,
+    helpText: config.helpText,
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +61,7 @@ export default function ImageUploadField({
       }
 
       // Validate file
-      const validation = validateImageFile(file, { maxSizeMB: config.maxSizeMB });
+      const validation = validateImageFile(file, { maxSizeMB: safeConfig.maxSizeMB });
       if (!validation.valid) {
         setError(validation.error || 'Archivo inválido');
         return;
@@ -60,9 +69,9 @@ export default function ImageUploadField({
 
       // Check format
       const fileExt = file.name.split('.').pop()?.toLowerCase();
-      if (fileExt && !config.allowedFormats.includes(fileExt)) {
+      if (fileExt && !safeConfig.allowedFormats.includes(fileExt)) {
         setError(
-          `Formato no permitido. Formatos aceptados: ${config.allowedFormats.join(', ')}`
+          `Formato no permitido. Formatos aceptados: ${safeConfig.allowedFormats.join(', ')}`
         );
         return;
       }
@@ -73,7 +82,7 @@ export default function ImageUploadField({
 
       // Compress and upload
       const compressedFile = await compressImage(file, {
-        maxSizeMB: Math.min(config.maxSizeMB, 2),
+        maxSizeMB: Math.min(safeConfig.maxSizeMB, 2),
         maxWidthOrHeight: 1920,
       });
 
@@ -133,8 +142,8 @@ export default function ImageUploadField({
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
-      {(helpText || config.helpText) && (
-        <p className="text-xs text-gray-500 mb-3">{helpText || config.helpText}</p>
+      {(helpText || safeConfig.helpText) && (
+        <p className="text-xs text-gray-500 mb-3">{helpText || safeConfig.helpText}</p>
       )}
 
       {/* Upload area */}
@@ -148,7 +157,7 @@ export default function ImageUploadField({
           <input
             ref={fileInputRef}
             type="file"
-            accept={config.allowedFormats.map((f) => `.${f}`).join(',')}
+            accept={safeConfig.allowedFormats.map((f) => `.${f}`).join(',')}
             onChange={handleFileSelect}
             className="hidden"
             required={required && !preview}
@@ -166,8 +175,8 @@ export default function ImageUploadField({
                 Haz clic o arrastra una imagen aquí
               </p>
               <p className="text-xs text-gray-500">
-                Formatos: {config.allowedFormats.join(', ').toUpperCase()} • Máx:{' '}
-                {config.maxSizeMB}MB
+                Formatos: {safeConfig.allowedFormats.join(', ').toUpperCase()} • Máx:{' '}
+                {safeConfig.maxSizeMB}MB
               </p>
             </>
           )}
@@ -175,7 +184,7 @@ export default function ImageUploadField({
       )}
 
       {/* Preview */}
-      {preview && config.showPreview && (
+      {preview && safeConfig.showPreview && (
         <div className="relative">
           <div className="border-2 border-purple-200 rounded-xl overflow-hidden bg-gray-50">
             <img
