@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductDebugPanel from '../components/debug/ProductDebugPanel';
+
+const { slug } = Astro.url.searchParams;
+---
+
+<BaseLayout title="Debug Producto">
+  <div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-4xl mx-auto px-6">
+      <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 mb-4">🔍 Debug de Producto</h1>
+        <p class="text-gray-600 mb-4">
+          Esta página te ayuda a entender por qué un producto no está usando el schema dinámico.
+        </p>
+
+        <form method="get" class="flex gap-3">
+          <input
+            type="text"
+            name="slug"
+            placeholder="Ingresa el slug del producto (ej: camisetauno)"
+            value={slug || ''}
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          />
+          <button
+            type="submit"
+            class="px-6 py-2 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 transition-colors"
+          >
+            Buscar
+          </button>
+        </form>
+      </div>
+
+      {slug && <ProductDebugPanel client:load slug={slug} />}
+    </div>
+  </div>
+</BaseLayout>
