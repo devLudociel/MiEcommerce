@@ -3,19 +3,10 @@ import { Upload, Plus, Save, Loader, Image as ImageIcon } from 'lucide-react';
 import { logger } from '../../lib/logger';
 import { notify } from '../../lib/notifications';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { initializeApp } from 'firebase/app';
+import { getApp } from 'firebase/app';
 
-// Firebase config from env
-const firebaseConfig = {
-  apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY,
-  authDomain: import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.PUBLIC_FIREBASE_APP_ID,
-};
-
-const app = initializeApp(firebaseConfig);
+// Use existing Firebase app instance
+const app = getApp();
 const storage = getStorage(app);
 
 const CATEGORIES = [
