@@ -83,6 +83,7 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
           maxSizeMB: 5,
           allowedFormats: ['jpg', 'jpeg', 'png'],
           showPreview: true,
+          showPositionControls: true,
         };
       case 'card_selector':
         return {
