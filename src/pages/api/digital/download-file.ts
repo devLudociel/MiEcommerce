@@ -96,10 +96,11 @@ export const POST: APIRoute = async ({ request }) => {
 
     const fileRef = bucket.file(filePath);
 
-    // Generate signed URL valid for 1 hour
+    // Generate signed URL valid for 1 hour with forced download
     const [downloadUrl] = await fileRef.getSignedUrl({
       action: 'read',
       expires: Date.now() + 60 * 60 * 1000, // 1 hour
+      responseDisposition: `attachment; filename="${file.name}"`, // Force download instead of opening
     });
 
     // Update download stats
