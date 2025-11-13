@@ -1,9 +1,9 @@
-import React, { Component, ReactNode } from 'react';
+import React, { Component } from 'react';
 import { logger } from '../../lib/logger';
 
 interface Props {
-  children: ReactNode;
-  fallback?: ReactNode;
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
 }
 
 interface State {
