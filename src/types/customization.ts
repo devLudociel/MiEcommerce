@@ -42,7 +42,7 @@ export interface ColorSelectorConfig {
 
 export interface SizeSelectorConfig {
   displayStyle: 'buttons' | 'dropdown';
-  sizes: string[];  // ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+  availableSizes: string[];  // ['XS', 'S', 'M', 'L', 'XL', 'XXL']
   showSizeGuide?: boolean;
   sizeGuideUrl?: string;
 }

@@ -58,7 +58,7 @@ export default function SizeSelector({
           required={required}
         >
           <option value="">Selecciona una talla</option>
-          {config.sizes.map((size) => (
+          {config.availableSizes.map((size) => (
             <option key={size} value={size}>
               Talla {size}
             </option>
@@ -78,7 +78,7 @@ export default function SizeSelector({
                 </tr>
               </thead>
               <tbody>
-                {config.sizes.map((size) => {
+                {config.availableSizes.map((size) => {
                   // Valores aproximados por talla
                   const measurements: Record<string, { chest: string; waist: string }> = {
                     XS: { chest: '86-91', waist: '71-76' },
@@ -128,7 +128,7 @@ export default function SizeSelector({
       {helpText && <p className="text-xs text-gray-500 mb-3">{helpText}</p>}
 
       <div className="flex flex-wrap gap-3">
-        {config.sizes.map((size) => {
+        {config.availableSizes.map((size) => {
           const isSelected = selectedSize === size;
 
           return (
@@ -174,7 +174,7 @@ export default function SizeSelector({
                   </tr>
                 </thead>
                 <tbody>
-                  {config.sizes.map((size) => {
+                  {config.availableSizes.map((size) => {
                     const measurements: Record<string, { chest: string; waist: string }> = {
                       XS: { chest: '86-91', waist: '71-76' },
                       S: { chest: '91-96', waist: '76-81' },
