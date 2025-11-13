@@ -32,7 +32,7 @@ export default function ImageUploadField({
     maxSizeMB: config.maxSizeMB || 5,
     allowedFormats: config.allowedFormats || ['jpg', 'jpeg', 'png'],
     showPreview: config.showPreview !== undefined ? config.showPreview : true,
-    showPositionControls: config.showPositionControls,
+    showPositionControls: config.showPositionControls !== undefined ? config.showPositionControls : true,
     helpText: config.helpText,
   };
 
