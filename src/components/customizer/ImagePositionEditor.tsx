@@ -1,6 +1,7 @@
-import React from 'react';
-import { Move, ZoomIn, RotateCw, RefreshCw } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Move, ZoomIn, RotateCw, RefreshCw, Undo, Redo } from 'lucide-react';
 import type { ImageTransform } from '../../types/customization';
+import { useTransformHistory } from '../../hooks/useTransformHistory';
 
 interface ImagePositionEditorProps {
   transform: ImageTransform;
@@ -13,14 +14,47 @@ export default function ImagePositionEditor({
   onChange,
   disabled = false
 }: ImagePositionEditorProps) {
+  const {
+    transform: historyTransform,
+    canUndo,
+    canRedo,
+    pushTransform,
+    undo,
+    redo,
+  } = useTransformHistory(transform);
+
+  const handleTransformChange = (newTransform: ImageTransform) => {
+    pushTransform(newTransform);
+    onChange(newTransform);
+  };
+
+  const handleUndo = () => {
+    if (canUndo) {
+      const previousTransform = undo();
+      if (previousTransform) {
+        onChange(previousTransform);
+      }
+    }
+  };
+
+  const handleRedo = () => {
+    if (canRedo) {
+      const nextTransform = redo();
+      if (nextTransform) {
+        onChange(nextTransform);
+      }
+    }
+  };
 
   const handleReset = () => {
-    onChange({
+    const resetTransform = {
       x: 50,
       y: 50,
       scale: 1,
       rotation: 0,
-    });
+    };
+    pushTransform(resetTransform);
+    onChange(resetTransform);
   };
 
   return (
@@ -31,15 +65,36 @@ export default function ImagePositionEditor({
           <Move className="w-4 h-4" />
           Ajustar Posición
         </h4>
-        <button
-          type="button"
-          onClick={handleReset}
-          disabled={disabled}
-          className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <RefreshCw className="w-3 h-3" />
-          Resetear
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Undo/Redo Buttons */}
+          <button
+            type="button"
+            onClick={handleUndo}
+            disabled={disabled || !canUndo}
+            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Deshacer (Ctrl+Z)"
+          >
+            <Undo className="w-3 h-3" />
+          </button>
+          <button
+            type="button"
+            onClick={handleRedo}
+            disabled={disabled || !canRedo}
+            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Rehacer (Ctrl+Y)"
+          >
+            <Redo className="w-3 h-3" />
+          </button>
+          <button
+            type="button"
+            onClick={handleReset}
+            disabled={disabled}
+            className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw className="w-3 h-3" />
+            Resetear
+          </button>
+        </div>
       </div>
 
       {/* Position X */}
@@ -55,7 +110,7 @@ export default function ImagePositionEditor({
           min="0"
           max="100"
           value={transform.x}
-          onChange={(e) => onChange({ ...transform, x: Number(e.target.value) })}
+          onChange={(e) => handleTransformChange({ ...transform, x: Number(e.target.value) })}
           disabled={disabled}
           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
         />
@@ -78,7 +133,7 @@ export default function ImagePositionEditor({
           min="0"
           max="100"
           value={transform.y}
-          onChange={(e) => onChange({ ...transform, y: Number(e.target.value) })}
+          onChange={(e) => handleTransformChange({ ...transform, y: Number(e.target.value) })}
           disabled={disabled}
           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
         />
@@ -103,7 +158,7 @@ export default function ImagePositionEditor({
           max="300"
           step="5"
           value={transform.scale * 100}
-          onChange={(e) => onChange({ ...transform, scale: Number(e.target.value) / 100 })}
+          onChange={(e) => handleTransformChange({ ...transform, scale: Number(e.target.value) / 100 })}
           disabled={disabled}
           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
         />
@@ -127,7 +182,7 @@ export default function ImagePositionEditor({
           min="0"
           max="360"
           value={transform.rotation}
-          onChange={(e) => onChange({ ...transform, rotation: Number(e.target.value) })}
+          onChange={(e) => handleTransformChange({ ...transform, rotation: Number(e.target.value) })}
           disabled={disabled}
           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
         />
@@ -142,7 +197,7 @@ export default function ImagePositionEditor({
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
-            onClick={() => onChange({ ...transform, rotation: 0 })}
+            onClick={() => handleTransformChange({ ...transform, rotation: 0 })}
             disabled={disabled}
             className="px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -150,7 +205,7 @@ export default function ImagePositionEditor({
           </button>
           <button
             type="button"
-            onClick={() => onChange({ ...transform, scale: 1 })}
+            onClick={() => handleTransformChange({ ...transform, scale: 1 })}
             disabled={disabled}
             className="px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -158,7 +213,7 @@ export default function ImagePositionEditor({
           </button>
           <button
             type="button"
-            onClick={() => onChange({ ...transform, x: 50, y: 50 })}
+            onClick={() => handleTransformChange({ ...transform, x: 50, y: 50 })}
             disabled={disabled}
             className="px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed col-span-2"
           >
