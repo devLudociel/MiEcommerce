@@ -14,6 +14,7 @@ import DropdownField from './fields/DropdownField';
 import ImageUploadField from './fields/ImageUploadField';
 import ProductPreview from './ProductPreview';
 import TemplateGallery from './TemplateGallery';
+import ShareDesignButton from './ShareDesignButton';
 import { addToCart } from '../../store/cartStore';
 import { logger } from '../../lib/logger';
 import { notify } from '../../lib/notifications';
@@ -419,6 +420,23 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                 </>
               )}
             </button>
+
+            {/* Share Design Button */}
+            {Object.keys(values).length > 0 && (
+              <div className="mt-4 flex justify-center">
+                <ShareDesignButton
+                  productId={product.id}
+                  productName={product.name}
+                  designData={{
+                    categoryId: product.categoryId,
+                    categoryName: product.name,
+                    values: Object.values(values),
+                    totalPriceModifier: pricing.customizationPrice,
+                  }}
+                  previewImage={getUserImage() || getBaseImage()}
+                />
+              </div>
+            )}
 
             {/* Help text */}
             <p className="text-center text-sm text-gray-500 mt-4">
