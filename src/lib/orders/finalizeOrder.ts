@@ -1,6 +1,13 @@
 import type { Firestore } from 'firebase-admin/firestore';
 import { FieldValue } from 'firebase-admin/firestore';
-import { logger } from '../logger';
+
+// Simple console logger for server-side code (avoids import issues)
+const logger = {
+  info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+  warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+  error: (msg: string, error?: any) => console.error(`[ERROR] ${msg}`, error || ''),
+  debug: (msg: string, data?: any) => console.log(`[DEBUG] ${msg}`, data || ''),
+};
 
 const CASHBACK_PERCENTAGE = 0.05; // 5% cashback
 
