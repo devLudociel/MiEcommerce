@@ -443,35 +443,49 @@ const Header: React.FC<HeaderProps> = () => {
                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                               onClick={() => setIsUserMenuOpen(false)}
                             >
-                              Panel de administración
+                              📊 Panel de administración
                             </a>
                             <a
                               href="/admin/orders"
                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                               onClick={() => setIsUserMenuOpen(false)}
                             >
-                              Gestión de pedidos
-                            </a>
-                            <a
-                              href="/admin/cupones"
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              Gestión de cupones
+                              📦 Gestión de pedidos
                             </a>
                             <a
                               href="/admin/products"
                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                               onClick={() => setIsUserMenuOpen(false)}
                             >
-                              Gestión de productos
+                              🏷️ Gestión de productos
+                            </a>
+                            <a
+                              href="/admin/content-manager"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              🎨 Plantillas y Cliparts
+                            </a>
+                            <a
+                              href="/admin/digital-products"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              📦 Productos Digitales
+                            </a>
+                            <a
+                              href="/admin/cupones"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              🎟️ Gestión de cupones
                             </a>
                             <a
                               href="/admin/newsletter"
                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                               onClick={() => setIsUserMenuOpen(false)}
                             >
-                              Newsletter Campaigns
+                              📧 Newsletter Campaigns
                             </a>
                           </div>
                         )}
@@ -482,19 +496,35 @@ const Header: React.FC<HeaderProps> = () => {
                             borderTop: '1px solid var(--color-gray-100)',
                           }}
                         >
+                          <div
+                            style={{
+                              padding: '0 var(--spacing-3) var(--spacing-2) var(--spacing-3)',
+                            }}
+                          >
+                            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                              Mi biblioteca
+                            </h4>
+                          </div>
+                          <a
+                            href="/cuenta/descargas"
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            📥 Mis descargas
+                          </a>
                           <a
                             href="/account/wishlist"
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                             onClick={() => setIsUserMenuOpen(false)}
                           >
-                            Mis favoritos
+                            ❤️ Mis favoritos
                           </a>
                           <a
                             href="/account/addresses"
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                             onClick={() => setIsUserMenuOpen(false)}
                           >
-                            Mis direcciones
+                            📍 Mis direcciones
                           </a>
                           <a
                             href="/account/wallet"
@@ -508,7 +538,7 @@ const Header: React.FC<HeaderProps> = () => {
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                             onClick={() => setIsUserMenuOpen(false)}
                           >
-                            Configuración de la cuenta
+                            ⚙️ Configuración de la cuenta
                           </a>
                         </div>
 
