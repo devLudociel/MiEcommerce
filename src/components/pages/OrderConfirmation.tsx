@@ -122,6 +122,12 @@ export default function OrderConfirmation() {
   const estimatedDelivery = new Date(orderDate);
   estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
 
+  // Check if order contains digital products
+  const hasDigitalProducts = order.items.some((item) => {
+    // Check if item has category 'digital' or if it's marked as digital
+    return item.category === 'digital' || (item as any).isDigital === true;
+  });
+
   const handleDownloadInvoice = async () => {
     if (!order) {
       return;
@@ -196,6 +202,79 @@ export default function OrderConfirmation() {
             Te hemos enviado un email de confirmación a <strong>{order.shippingInfo.email}</strong>
           </p>
         </div>
+
+        {/* Digital Products Section - Only show if order has digital products */}
+        {hasDigitalProducts && (
+          <div className="bg-gradient-to-r from-cyan-500 to-blue-600 rounded-3xl shadow-2xl p-8 mb-8 text-white animate-in slide-in-from-bottom duration-500">
+            <div className="text-center mb-6">
+              <div className="inline-block p-4 bg-white/20 rounded-full mb-4">
+                <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-3xl font-black mb-2">¡Tus archivos digitales están listos! 🎉</h2>
+              <p className="text-cyan-50 text-lg mb-6">
+                Descarga instantánea • Acceso ilimitado • Permanente
+              </p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur rounded-2xl p-6 mb-6">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl">📥</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg mb-1">Accede a tu biblioteca de descargas</h3>
+                  <p className="text-cyan-50 text-sm">
+                    Todos tus archivos digitales están disponibles en tu cuenta. Puedes descargarlos cuantas
+                    veces quieras, sin límite de tiempo.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center text-sm">
+                <div className="bg-white/10 rounded-lg p-3">
+                  <div className="text-2xl mb-1">♾️</div>
+                  <div className="font-bold">Descargas Ilimitadas</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3">
+                  <div className="text-2xl mb-1">⚡</div>
+                  <div className="font-bold">Acceso Instantáneo</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3">
+                  <div className="text-2xl mb-1">🔒</div>
+                  <div className="font-bold">Seguro y Permanente</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a
+                href="/cuenta/descargas"
+                className="flex items-center justify-center gap-2 px-8 py-4 bg-white text-cyan-600 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+              >
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Ir a Mi Biblioteca
+              </a>
+              <a
+                href="/productos/digitales"
+                className="flex items-center justify-center gap-2 px-8 py-4 bg-white/20 text-white rounded-xl font-bold text-lg hover:bg-white/30 transition-all duration-300 border-2 border-white/50"
+              >
+                Ver Más Productos Digitales
+              </a>
+            </div>
+          </div>
+        )}
 
         {/* Información del pedido */}
         <div className="bg-white rounded-3xl shadow-2xl p-8 mb-8 border border-gray-200">
@@ -359,29 +438,55 @@ export default function OrderConfirmation() {
         {/* Próximos pasos */}
         <div className="bg-gradient-to-r from-cyan-50 to-purple-50 rounded-2xl p-8 mb-8 border-2 border-cyan-200">
           <h3 className="text-2xl font-black text-gray-800 mb-6 text-center">¿Qué sigue ahora?</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="text-4xl mb-3">📧</div>
-              <h4 className="font-bold text-gray-800 mb-2">1. Revisa tu email</h4>
-              <p className="text-sm text-gray-600">
-                Te hemos enviado todos los detalles del pedido
-              </p>
+          {hasDigitalProducts ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="text-4xl mb-3">📧</div>
+                <h4 className="font-bold text-gray-800 mb-2">1. Revisa tu email</h4>
+                <p className="text-sm text-gray-600">
+                  Te hemos enviado todos los detalles del pedido
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl mb-3">📥</div>
+                <h4 className="font-bold text-gray-800 mb-2">2. Descarga tus archivos</h4>
+                <p className="text-sm text-gray-600">
+                  Accede a tu biblioteca y descarga los archivos digitales
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl mb-3">💫</div>
+                <h4 className="font-bold text-gray-800 mb-2">3. ¡Disfruta!</h4>
+                <p className="text-sm text-gray-600">
+                  Tus archivos están listos para usar en tus proyectos
+                </p>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl mb-3">🎨</div>
-              <h4 className="font-bold text-gray-800 mb-2">2. Aprobación de diseño</h4>
-              <p className="text-sm text-gray-600">
-                Si tu producto es personalizado, te enviaremos una prueba
-              </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="text-4xl mb-3">📧</div>
+                <h4 className="font-bold text-gray-800 mb-2">1. Revisa tu email</h4>
+                <p className="text-sm text-gray-600">
+                  Te hemos enviado todos los detalles del pedido
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl mb-3">🎨</div>
+                <h4 className="font-bold text-gray-800 mb-2">2. Aprobación de diseño</h4>
+                <p className="text-sm text-gray-600">
+                  Si tu producto es personalizado, te enviaremos una prueba
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl mb-3">📦</div>
+                <h4 className="font-bold text-gray-800 mb-2">3. Producción y envío</h4>
+                <p className="text-sm text-gray-600">
+                  Comenzamos a producir tu pedido y te lo enviamos
+                </p>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl mb-3">📦</div>
-              <h4 className="font-bold text-gray-800 mb-2">3. Producción y envío</h4>
-              <p className="text-sm text-gray-600">
-                Comenzamos a producir tu pedido y te lo enviamos
-              </p>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Botones de acción */}
