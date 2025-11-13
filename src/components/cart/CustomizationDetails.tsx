@@ -10,103 +10,123 @@ export default function CustomizationDetails({ customization }: CustomizationDet
     return null;
   }
 
-  const details: Array<{ label: string; value: string | number }> = [];
+  const details: Array<{ key: string; label: string; value: string | number }> = [];
+  let uploadedImage: string | null = null;
 
-  // Add color
-  if (customization.selectedColor) {
-    details.push({ label: 'Color', value: customization.selectedColor });
-  }
+  // Process DynamicCustomizer format (has 'values' array)
+  if (customization.values && Array.isArray(customization.values)) {
+    customization.values.forEach((field: any, index: number) => {
+      // Skip if no value
+      if (field.value === undefined || field.value === null || field.value === '') {
+        return;
+      }
 
-  // Add size
-  if (customization.selectedSize) {
-    details.push({ label: 'Talla', value: customization.selectedSize });
-  }
+      // Handle image fields specially
+      if (field.imageUrl) {
+        uploadedImage = field.imageUrl;
 
-  // Add material
-  if (customization.selectedMaterial) {
-    details.push({ label: 'Material', value: customization.selectedMaterial });
-  }
+        // Add transform details if present
+        if (field.imageTransform) {
+          const transform = field.imageTransform;
+          if (transform.scale !== undefined && transform.scale !== 1) {
+            details.push({
+              key: `${field.fieldId}_scale`,
+              label: 'Escala',
+              value: `${Math.round(transform.scale * 100)}%`
+            });
+          }
+          if (transform.rotation !== undefined && transform.rotation !== 0) {
+            details.push({
+              key: `${field.fieldId}_rotation`,
+              label: 'Rotación',
+              value: `${Math.round(transform.rotation)}°`
+            });
+          }
+        }
+        return;
+      }
 
-  // Add text
-  if (customization.text) {
-    details.push({ label: 'Texto', value: customization.text });
-  }
+      // Get display value (use displayValue if available, otherwise value)
+      const displayValue = field.displayValue || field.value;
 
-  // Add text color
-  if (customization.textColor) {
-    details.push({ label: 'Color de texto', value: customization.textColor });
-  }
-
-  // Add transform details if image was uploaded
-  if (customization.uploadedImage) {
-    if (customization.scale !== undefined) {
-      details.push({ label: 'Escala', value: `${Math.round(customization.scale * 100)}%` });
-    }
-    if (customization.rotation !== undefined && customization.rotation !== 0) {
-      details.push({ label: 'Rotación', value: `${Math.round(customization.rotation)}°` });
-    }
-    if (customization.position) {
-      details.push({
-        label: 'Posición',
-        value: `X: ${Math.round(customization.position.x)}%, Y: ${Math.round(customization.position.y)}%`,
-      });
-    }
-  }
-
-  // Add any other custom fields (excluding known ones and internal fields)
-  const knownFields = [
-    'uploadedImage',
-    'text',
-    'textColor',
-    'selectedColor',
-    'selectedSize',
-    'selectedMaterial',
-    'position',
-    'rotation',
-    'scale',
-    // Internal fields that shouldn't be displayed
-    'categoryName',
-    'values',
-    'totalPriceModifier',
-    'imageUrl',
-    'imagePath',
-    'imageTransform',
-  ];
-
-  Object.entries(customization).forEach(([key, value]) => {
-    // Skip known fields, undefined/null/empty values, and complex objects/arrays
-    if (
-      knownFields.includes(key) ||
-      value === undefined ||
-      value === null ||
-      value === '' ||
-      typeof value === 'object' // Skip objects and arrays
-    ) {
-      return;
-    }
-
-    // Only show primitive values (string, number, boolean)
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      // Format the key to be more readable (camelCase to Title Case)
-      const label = key
+      // Format field label (remove field_ prefix if present)
+      const label = field.fieldId
+        .replace(/^field_/, '')
         .replace(/([A-Z])/g, ' $1')
-        .replace(/^./, (str) => str.toUpperCase())
+        .replace(/^./, (str: string) => str.toUpperCase())
         .trim();
-      details.push({ label, value: String(value) });
-    }
-  });
 
-  if (details.length === 0 && !customization.uploadedImage) {
+      // Handle arrays (like multi-select)
+      if (Array.isArray(displayValue)) {
+        details.push({
+          key: field.fieldId || `field_${index}`,
+          label,
+          value: displayValue.join(', ')
+        });
+      } else {
+        details.push({
+          key: field.fieldId || `field_${index}`,
+          label,
+          value: String(displayValue)
+        });
+      }
+    });
+  } else {
+    // Process legacy/simple format (direct properties)
+    // Add color
+    if (customization.selectedColor) {
+      details.push({ key: 'selectedColor', label: 'Color', value: customization.selectedColor });
+    }
+
+    // Add size
+    if (customization.selectedSize) {
+      details.push({ key: 'selectedSize', label: 'Talla', value: customization.selectedSize });
+    }
+
+    // Add material
+    if (customization.selectedMaterial) {
+      details.push({ key: 'selectedMaterial', label: 'Material', value: customization.selectedMaterial });
+    }
+
+    // Add text
+    if (customization.text) {
+      details.push({ key: 'text', label: 'Texto', value: customization.text });
+    }
+
+    // Add uploaded image
+    if (customization.uploadedImage) {
+      uploadedImage = customization.uploadedImage;
+
+      // Add transform details
+      if (customization.scale !== undefined && customization.scale !== 1) {
+        details.push({
+          key: 'scale',
+          label: 'Escala',
+          value: `${Math.round(customization.scale * 100)}%`
+        });
+      }
+      if (customization.rotation !== undefined && customization.rotation !== 0) {
+        details.push({
+          key: 'rotation',
+          label: 'Rotación',
+          value: `${Math.round(customization.rotation)}°`
+        });
+      }
+    }
+  }
+
+  // Show component if there's an uploaded image OR if there are any details
+  if (details.length === 0 && !uploadedImage) {
     return null;
   }
 
   return (
     <div className="mt-2 space-y-1">
       {/* Uploaded Image Thumbnail */}
-      {customization.uploadedImage && (
+      {uploadedImage && (
         <div className="flex items-center gap-2 p-2 bg-purple-50 rounded border border-purple-200">
           <img
-            src={customization.uploadedImage}
+            src={uploadedImage}
             alt="Diseño personalizado"
             className="w-12 h-12 object-contain rounded border border-purple-300"
           />
@@ -117,8 +137,8 @@ export default function CustomizationDetails({ customization }: CustomizationDet
       {/* Customization Details */}
       {details.length > 0 && (
         <div className="text-xs text-gray-600 space-y-0.5">
-          {details.map((detail, index) => (
-            <div key={index} className="flex items-start gap-1">
+          {details.map((detail) => (
+            <div key={detail.key} className="flex items-start gap-1">
               <span className="font-medium text-gray-700">{detail.label}:</span>
               <span className="text-gray-600 break-words">{detail.value}</span>
             </div>
