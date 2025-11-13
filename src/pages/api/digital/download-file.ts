@@ -96,12 +96,8 @@ export const POST: APIRoute = async ({ request }) => {
 
     const fileRef = bucket.file(filePath);
 
-    // Generate signed URL valid for 1 hour with forced download
-    const [downloadUrl] = await fileRef.getSignedUrl({
-      action: 'read',
-      expires: Date.now() + 60 * 60 * 1000, // 1 hour
-      responseDisposition: `attachment; filename="${file.name}"`, // Force download instead of opening
-    });
+    // Download the file from storage
+    const [fileBuffer] = await fileRef.download();
 
     // Update download stats
     await db.collection('digital_access').doc(digitalAccessId).update({
@@ -122,21 +118,22 @@ export const POST: APIRoute = async ({ request }) => {
       userAgent: request.headers.get('user-agent'),
     });
 
-    logger.info('[digital/download-file] Download URL generated', {
+    logger.info('[digital/download-file] File downloaded successfully', {
       userId,
       digitalAccessId,
       fileId,
       fileName: file.name,
     });
 
-    return new Response(
-      JSON.stringify({
-        downloadUrl,
-        fileName: file.name,
-        expiresIn: 3600, // seconds
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    // Return the file as a blob
+    return new Response(fileBuffer, {
+      status: 200,
+      headers: {
+        'Content-Type': file.fileType || 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${file.name}"`,
+        'Content-Length': fileBuffer.length.toString(),
+      },
+    });
   } catch (error: any) {
     if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error') {
       return new Response(

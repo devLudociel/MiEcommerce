@@ -97,16 +97,16 @@ export default function DownloadsLibrary() {
         throw new Error(errorData.error || 'Error al generar descarga');
       }
 
-      const data = await response.json();
-
-      // Create a temporary link element to trigger direct download
+      // Get the file as a blob (same as invoice download)
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = data.downloadUrl;
-      link.download = fileName; // Force download with proper filename
-      link.style.display = 'none';
+      link.href = url;
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      link.remove();
+      URL.revokeObjectURL(url);
 
       notify.success(`Descargando: ${fileName}`);
 
