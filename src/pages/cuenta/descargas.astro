@@ -1,15 +1,15 @@
 ---
-import Layout from '../../layouts/Layout.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
 import DownloadsLibrary from '../../components/account/DownloadsLibrary';
 ---
 
-<Layout title="Mis Descargas">
+<BaseLayout title="Mis Descargas">
   <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <DownloadsLibrary client:load />
     </div>
   </div>
-</Layout>
+</BaseLayout>
 
 <style>
   /* Add any custom styles here */
