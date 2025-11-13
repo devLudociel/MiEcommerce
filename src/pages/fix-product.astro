@@ -1,0 +1,314 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Arreglar Producto">
+  <div class="min-h-screen bg-gradient-to-br from-purple-50 to-cyan-50 py-12">
+    <div class="max-w-3xl mx-auto px-6">
+      {/* Header */}
+      <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-3">🔧 Arreglar Producto</h1>
+        <p class="text-gray-600">
+          Verifica y arregla productos para que usen el customizer dinámico
+        </p>
+      </div>
+
+      {/* Form */}
+      <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+        <label for="slug" class="block text-sm font-bold text-gray-900 mb-2">
+          Slug del Producto:
+        </label>
+        <div class="flex gap-3">
+          <input
+            type="text"
+            id="slug"
+            placeholder="Ej: camisetauno"
+            class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
+          />
+          <button
+            id="checkBtn"
+            class="px-6 py-3 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 transition-colors"
+          >
+            🔍 Verificar
+          </button>
+          <button
+            id="fixBtn"
+            class="px-6 py-3 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition-colors"
+          >
+            ✅ Arreglar
+          </button>
+        </div>
+      </div>
+
+      {/* Results */}
+      <div id="results" class="hidden"></div>
+
+      {/* Loading */}
+      <div id="loading" class="hidden bg-white rounded-2xl shadow-xl p-12 text-center">
+        <div class="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p class="text-gray-600 text-lg">Procesando...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const slugInput = document.getElementById('slug') as HTMLInputElement;
+    const checkBtn = document.getElementById('checkBtn')!;
+    const fixBtn = document.getElementById('fixBtn')!;
+    const results = document.getElementById('results')!;
+    const loading = document.getElementById('loading')!;
+
+    async function checkProduct() {
+      const slug = slugInput.value.trim();
+      if (!slug) {
+        alert('Por favor ingresa un slug');
+        return;
+      }
+
+      results.classList.add('hidden');
+      loading.classList.remove('hidden');
+
+      try {
+        const response = await fetch(`/api/check-product?slug=${encodeURIComponent(slug)}`);
+        const data = await response.json();
+
+        loading.classList.add('hidden');
+        results.classList.remove('hidden');
+
+        if (data.error) {
+          results.innerHTML = `
+            <div class="bg-red-50 border-2 border-red-200 rounded-2xl p-8">
+              <div class="text-4xl mb-3">❌</div>
+              <h3 class="text-xl font-bold text-red-900 mb-2">Error</h3>
+              <p class="text-red-700">${data.error}</p>
+              ${data.details ? `<p class="text-red-600 text-sm mt-2">${data.details}</p>` : ''}
+            </div>
+          `;
+          return;
+        }
+
+        const product = data.product;
+        const schema = data.schema;
+
+        results.innerHTML = `
+          <div class="space-y-6">
+            {/* Product Info */}
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+              <h3 class="text-xl font-bold text-gray-900 mb-4">📦 Información del Producto</h3>
+              <div class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span class="font-semibold text-gray-600">Nombre:</span>
+                  <p class="text-gray-900">${product.name}</p>
+                </div>
+                <div>
+                  <span class="font-semibold text-gray-600">Slug:</span>
+                  <p class="text-gray-900 font-mono">${product.slug}</p>
+                </div>
+                <div>
+                  <span class="font-semibold text-gray-600">Category ID:</span>
+                  <p class="text-gray-900 font-mono">${product.categoryId || '(vacío)'}</p>
+                </div>
+                <div>
+                  <span class="font-semibold text-gray-600">Subcategory ID:</span>
+                  <p class="text-gray-900 font-mono">${product.subcategoryId || '(vacío)'}</p>
+                </div>
+                <div class="col-span-2">
+                  <span class="font-semibold text-gray-600">Customization Schema ID:</span>
+                  <p class="text-gray-900 font-mono">${product.customizationSchemaId || '(no configurado)'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Schema Status */}
+            <div class="bg-${schema.detected && schema.exists ? 'green' : 'orange'}-50 border-2 border-${schema.detected && schema.exists ? 'green' : 'orange'}-200 rounded-2xl p-6">
+              <h3 class="text-xl font-bold text-gray-900 mb-3">
+                ${schema.detected && schema.exists ? '✅ Estado: Correcto' : '⚠️ Estado: Necesita Corrección'}
+              </h3>
+
+              ${schema.detected ? `
+                <p class="text-gray-800 mb-2">
+                  Schema detectado: <code class="bg-white px-2 py-1 rounded font-mono">${schema.schemaId}</code>
+                  <span class="text-sm text-gray-600">(detectado por: ${schema.detectionMethod})</span>
+                </p>
+              ` : `
+                <p class="text-gray-800 mb-2">❌ No se detectó ningún schema</p>
+              `}
+
+              ${schema.detected && schema.exists ? `
+                <p class="text-green-800 mb-2">
+                  ✅ Schema encontrado en Firebase con <strong>${schema.fieldsCount} campos</strong>
+                </p>
+                <div class="mt-4 p-4 bg-green-100 rounded-lg">
+                  <p class="text-green-900 font-semibold">
+                    🎉 Este producto está correctamente configurado y debería usar el customizer dinámico
+                  </p>
+                </div>
+              ` : ''}
+
+              ${schema.detected && !schema.exists ? `
+                <p class="text-orange-800 mb-2">
+                  ⚠️ Schema ID detectado pero no existe en Firebase
+                </p>
+                <div class="mt-4 p-4 bg-orange-100 rounded-lg">
+                  <p class="text-orange-900 font-semibold mb-2">
+                    Solución:
+                  </p>
+                  <p class="text-orange-800 text-sm">
+                    Ve a <a href="/admin/customization" class="underline font-bold">/admin/customization</a>
+                    y crea/configura el schema para esta categoría
+                  </p>
+                </div>
+              ` : ''}
+
+              ${!schema.detected ? `
+                <div class="mt-4 p-4 bg-orange-100 rounded-lg">
+                  <p class="text-orange-900 font-semibold mb-2">
+                    Solución:
+                  </p>
+                  <p class="text-orange-800 text-sm">
+                    El subcategoryId debe contener una de estas palabras: <strong>camisetas, ropa, cuadros, resina, tazas</strong>
+                    <br><br>
+                    O puedes hacer click en "✅ Arreglar" para agregar automáticamente el campo customizationSchemaId
+                  </p>
+                </div>
+              ` : ''}
+            </div>
+
+            {/* Actions */}
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+              <h3 class="text-xl font-bold text-gray-900 mb-4">🛠️ Acciones</h3>
+              <div class="flex flex-wrap gap-3">
+                <a
+                  href="/personalizar/${product.slug}"
+                  target="_blank"
+                  class="px-5 py-3 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 transition-colors"
+                >
+                  Ver Customizer →
+                </a>
+                <a
+                  href="/admin/customization"
+                  class="px-5 py-3 bg-purple-500 text-white rounded-lg font-bold hover:bg-purple-600 transition-colors"
+                >
+                  Configurar Schemas →
+                </a>
+                ${!schema.detected || !schema.exists ? `
+                  <button
+                    onclick="window.location.reload()"
+                    class="px-5 py-3 bg-gray-500 text-white rounded-lg font-bold hover:bg-gray-600 transition-colors"
+                  >
+                    🔄 Volver a Verificar
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+
+      } catch (error: any) {
+        loading.classList.add('hidden');
+        results.classList.remove('hidden');
+        results.innerHTML = `
+          <div class="bg-red-50 border-2 border-red-200 rounded-2xl p-8">
+            <div class="text-4xl mb-3">❌</div>
+            <h3 class="text-xl font-bold text-red-900 mb-2">Error de Conexión</h3>
+            <p class="text-red-700">${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    async function fixProduct() {
+      const slug = slugInput.value.trim();
+      if (!slug) {
+        alert('Por favor ingresa un slug');
+        return;
+      }
+
+      if (!confirm('¿Estás seguro de que quieres agregar el campo customizationSchemaId a este producto?')) {
+        return;
+      }
+
+      results.classList.add('hidden');
+      loading.classList.remove('hidden');
+
+      try {
+        const response = await fetch(`/api/check-product?slug=${encodeURIComponent(slug)}&action=fix`);
+        const data = await response.json();
+
+        loading.classList.add('hidden');
+        results.classList.remove('hidden');
+
+        if (data.error) {
+          results.innerHTML = `
+            <div class="bg-red-50 border-2 border-red-200 rounded-2xl p-8">
+              <div class="text-4xl mb-3">❌</div>
+              <h3 class="text-xl font-bold text-red-900 mb-2">Error</h3>
+              <p class="text-red-700">${data.error}</p>
+              ${data.details ? `<p class="text-red-600 text-sm mt-2">${data.details}</p>` : ''}
+            </div>
+          `;
+          return;
+        }
+
+        if (data.action === 'fixed') {
+          results.innerHTML = `
+            <div class="bg-green-50 border-2 border-green-200 rounded-2xl p-8">
+              <div class="text-5xl mb-3">🎉</div>
+              <h3 class="text-2xl font-bold text-green-900 mb-3">¡Producto Arreglado!</h3>
+              <p class="text-green-800 mb-4">
+                Se agregó el campo <code class="bg-green-100 px-2 py-1 rounded font-mono">customizationSchemaId: "${data.schema.schemaId}"</code> al producto.
+              </p>
+              <div class="p-4 bg-green-100 rounded-lg mb-4">
+                <p class="text-green-900 font-semibold mb-2">
+                  ${data.schema.exists ?
+                    `✅ El producto ahora debería usar el customizer dinámico con ${data.schema.fieldsCount} campos` :
+                    `⚠️ Schema detectado pero no existe en Firebase. Créalo en /admin/customization`
+                  }
+                </p>
+              </div>
+              <div class="flex gap-3">
+                <a
+                  href="/personalizar/${data.product.slug}"
+                  target="_blank"
+                  class="px-5 py-3 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 transition-colors"
+                >
+                  Ver Customizer →
+                </a>
+                <button
+                  onclick="location.reload()"
+                  class="px-5 py-3 bg-gray-500 text-white rounded-lg font-bold hover:bg-gray-600 transition-colors"
+                >
+                  🔄 Verificar Otro
+                </button>
+              </div>
+            </div>
+          `;
+        } else {
+          // Si no se hizo 'fix', mostrar los resultados del check
+          checkProduct();
+        }
+
+      } catch (error: any) {
+        loading.classList.add('hidden');
+        results.classList.remove('hidden');
+        results.innerHTML = `
+          <div class="bg-red-50 border-2 border-red-200 rounded-2xl p-8">
+            <div class="text-4xl mb-3">❌</div>
+            <h3 class="text-xl font-bold text-red-900 mb-2">Error de Conexión</h3>
+            <p class="text-red-700">${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    checkBtn.addEventListener('click', checkProduct);
+    fixBtn.addEventListener('click', fixProduct);
+
+    // Allow pressing Enter to check
+    slugInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        checkProduct();
+      }
+    });
+  </script>
+</BaseLayout>
