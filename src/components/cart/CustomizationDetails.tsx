@@ -64,10 +64,29 @@ export default function CustomizationDetails({ customization }: CustomizationDet
     'position',
     'rotation',
     'scale',
+    // Internal fields that shouldn't be displayed
+    'categoryName',
+    'values',
+    'totalPriceModifier',
+    'imageUrl',
+    'imagePath',
+    'imageTransform',
   ];
 
   Object.entries(customization).forEach(([key, value]) => {
-    if (!knownFields.includes(key) && value !== undefined && value !== null && value !== '') {
+    // Skip known fields, undefined/null/empty values, and complex objects/arrays
+    if (
+      knownFields.includes(key) ||
+      value === undefined ||
+      value === null ||
+      value === '' ||
+      typeof value === 'object' // Skip objects and arrays
+    ) {
+      return;
+    }
+
+    // Only show primitive values (string, number, boolean)
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
       // Format the key to be more readable (camelCase to Title Case)
       const label = key
         .replace(/([A-Z])/g, ' $1')
