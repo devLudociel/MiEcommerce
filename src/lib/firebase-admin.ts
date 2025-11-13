@@ -30,6 +30,8 @@ export function getAdminApp(): App {
   try {
     const projectId =
       (import.meta.env.PUBLIC_FIREBASE_PROJECT_ID as string | undefined) || undefined;
+    const storageBucket =
+      (import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET as string | undefined) || undefined;
 
     // Opción 1: Service Account JSON (recomendada)
     const svc = import.meta.env.FIREBASE_SERVICE_ACCOUNT as string | undefined;
@@ -38,6 +40,7 @@ export function getAdminApp(): App {
       adminApp = initializeApp({
         credential: cert(serviceAccount),
         projectId: serviceAccount.project_id || projectId,
+        storageBucket: storageBucket || `${serviceAccount.project_id}.appspot.com`,
       });
       logger.info('Firebase Admin inicializado con Service Account');
       return adminApp;
@@ -51,6 +54,7 @@ export function getAdminApp(): App {
       adminApp = initializeApp({
         credential: cert({ projectId, clientEmail, privateKey }),
         projectId,
+        storageBucket: storageBucket || `${projectId}.appspot.com`,
       });
       logger.info('Firebase Admin inicializado con credenciales individuales');
       return adminApp;
@@ -61,6 +65,7 @@ export function getAdminApp(): App {
     adminApp = initializeApp({
       credential: applicationDefault(),
       projectId,
+      storageBucket: storageBucket || `${projectId}.appspot.com`,
     });
     return adminApp;
   } catch (error) {
