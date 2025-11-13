@@ -19,11 +19,13 @@ interface DigitalProduct {
     name: string;
     format: 'image' | 'pdf' | 'zip' | 'other';
   }>;
+  createdAt?: any; // Firestore Timestamp
 }
 
 export default function DigitalProductsGrid() {
   const [products, setProducts] = useState<DigitalProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'featured'>('all');
 
   useEffect(() => {
@@ -33,35 +35,54 @@ export default function DigitalProductsGrid() {
   const loadDigitalProducts = async () => {
     try {
       setLoading(true);
+      setError(null);
       logger.debug('[DigitalProductsGrid] Loading digital products');
 
+      // Query without orderBy to avoid needing composite index
       const q = query(
         collection(db, 'products'),
         where('active', '==', true),
-        where('isDigital', '==', true),
-        orderBy('createdAt', 'desc')
+        where('isDigital', '==', true)
       );
 
       const snapshot = await getDocs(q);
-      const items: DigitalProduct[] = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          name: data.name || 'Producto Digital',
-          description: data.description || '',
-          basePrice: Number(data.basePrice) || 0,
-          images: data.images || [],
-          slug: data.slug || doc.id,
-          tags: data.tags || [],
-          featured: data.featured || false,
-          digitalFiles: data.digitalFiles || [],
-        };
-      });
+      logger.info(`[DigitalProductsGrid] Found ${snapshot.docs.length} documents`);
+
+      const items: DigitalProduct[] = snapshot.docs
+        .map((doc) => {
+          const data = doc.data();
+          logger.debug(`[DigitalProductsGrid] Product ${doc.id}:`, {
+            name: data.name,
+            isDigital: data.isDigital,
+            active: data.active,
+            category: data.category,
+          });
+          return {
+            id: doc.id,
+            name: data.name || 'Producto Digital',
+            description: data.description || '',
+            basePrice: Number(data.basePrice) || 0,
+            images: data.images || [],
+            slug: data.slug || doc.id,
+            tags: data.tags || [],
+            featured: data.featured || false,
+            digitalFiles: data.digitalFiles || [],
+            createdAt: data.createdAt, // Keep for sorting
+          };
+        })
+        .sort((a, b) => {
+          // Sort by createdAt descending (newest first)
+          if (a.createdAt && b.createdAt) {
+            return b.createdAt.seconds - a.createdAt.seconds;
+          }
+          return 0;
+        });
 
       setProducts(items);
       logger.info(`[DigitalProductsGrid] Loaded ${items.length} digital products`);
     } catch (error) {
       logger.error('[DigitalProductsGrid] Error loading products', error);
+      setError(error instanceof Error ? error.message : 'Error al cargar productos');
     } finally {
       setLoading(false);
     }
@@ -96,6 +117,25 @@ export default function DigitalProductsGrid() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="text-center py-20">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
+          <h3 className="text-xl font-semibold text-red-900 mb-2">
+            Error al cargar productos
+          </h3>
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={loadDigitalProducts}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (products.length === 0) {
     return (
       <div className="text-center py-20">
@@ -103,8 +143,11 @@ export default function DigitalProductsGrid() {
         <h3 className="text-xl font-semibold text-gray-900 mb-2">
           No hay productos digitales disponibles
         </h3>
-        <p className="text-gray-600">
-          Vuelve pronto para ver nuestros nuevos productos descargables
+        <p className="text-gray-600 mb-4">
+          Los productos deben tener el campo <code className="bg-gray-100 px-2 py-1 rounded">isDigital: true</code> en Firestore.
+        </p>
+        <p className="text-gray-500 text-sm">
+          Crea productos digitales desde el <a href="/admin/digital-products" className="text-cyan-600 hover:underline">panel de administración</a>
         </p>
       </div>
     );
