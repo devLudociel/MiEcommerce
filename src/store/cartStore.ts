@@ -6,18 +6,7 @@ import { notify } from '../lib/notifications';
 import { db } from '../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { withRetry } from '../lib/resilience';
-
-// Simple debounce implementation
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  return function (...args: Parameters<T>) {
-    if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
+import { debounce } from '../lib/utils/debounce';
 
 export interface CartItem {
   id: string;
@@ -30,7 +19,8 @@ export interface CartItem {
   customization?: {
     customizationId?: string;
     uploadedImage?: string | null;
-    uploadedImageFile?: File | null;
+    // Note: File objects removed - use uploadedImage (URL) and uploadedImagePath instead
+    // Files cannot be serialized to localStorage or Firestore
     text?: string;
     textColor?: string;
     textFont?: string;
@@ -44,7 +34,7 @@ export interface CartItem {
     position?: { x: number; y: number };
     rotation?: number;
     scale?: number;
-    [key: string]: string | number | boolean | File | { x: number; y: number } | null | undefined;
+    [key: string]: string | number | boolean | { x: number; y: number } | null | undefined;
   };
 }
 

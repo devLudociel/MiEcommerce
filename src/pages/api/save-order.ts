@@ -5,15 +5,10 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { rateLimit } from '../../lib/rateLimit';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { finalizeOrder } from '../../lib/orders/finalizeOrder';
+import { createScopedLogger } from '../../lib/utils/apiLogger';
 import { z } from 'zod';
 
-// Simple console logger for API routes (avoids import issues)
-const logger = {
-  info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
-  warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
-  error: (msg: string, error?: any) => console.error(`[ERROR] ${msg}`, error || ''),
-  debug: (msg: string, data?: any) => console.log(`[DEBUG] ${msg}`, data || ''),
-};
+const logger = createScopedLogger('save-order');
 
 // SECURITY: Zod schema para validar datos de pedido
 // Schema matches actual Checkout.tsx data structure

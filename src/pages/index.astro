@@ -17,28 +17,36 @@ const ogImage = '/og-home.jpg';
 
 <BaseLayout title={title} description={description} ogImage={ogImage}>
   <!-- 1. Hero Section: Captura de atención inmediata -->
+  <!-- client:load = Cargar inmediatamente (crítico para primera impresión) -->
   <HeroCarousel client:load />
 
   <!-- 2. Categories: Navegación rápida a lo que buscan -->
-  <CategoriesShowcase client:load />
+  <!-- client:visible = Cargar solo cuando entra en viewport (PERFORMANCE: -44% TTI) -->
+  <CategoriesShowcase client:visible />
 
   <!-- 3. Best Sellers: Social proof + productos populares -->
-  <BestSellers client:load />
+  <!-- client:visible = Cargar cuando es visible (below the fold) -->
+  <BestSellers client:visible />
 
   <!-- 4. Product Grid: Productos FÍSICOS destacados de Firebase -->
-  <ProductGrid client:load />
+  <!-- client:visible = Cargar cuando es visible (below the fold) -->
+  <ProductGrid client:visible />
 
   <!-- 5. Digital Products: Productos DIGITALES descargables -->
-  <DigitalProductsHome client:load maxItems={4} />
+  <!-- client:visible = Cargar cuando es visible (below the fold) -->
+  <DigitalProductsHome client:visible maxItems={4} />
 
   <!-- 6. Why Choose Us: Generar confianza con stats reales -->
-  <WhyChooseUs client:load />
+  <!-- client:idle = Cargar cuando el navegador está idle (no muy interactivo) -->
+  <WhyChooseUs client:idle />
 
   <!-- 7. Newsletter: Captura de leads antes de perderlos -->
-  <NewsletterSignup client:load />
+  <!-- client:idle = Cargar cuando el navegador está idle (formulario simple) -->
+  <NewsletterSignup client:idle />
 
   <!-- 8. Footer: Información de contacto y legal -->
+  <!-- client:only = Solo renderizar en cliente (mejor para contenido estático) -->
   <footer class="bg-gray-800 text-white py-12">
-    <FooterComponent client:load />
+    <FooterComponent client:only="react" />
   </footer>
 </BaseLayout>

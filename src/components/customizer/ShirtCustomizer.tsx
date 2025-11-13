@@ -311,6 +311,7 @@ export default function ShirtCustomizer({ product }: Props) {
           <button
             onClick={() => (window.location.href = `/producto/${product.slug || product.id}`)}
             className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+            aria-label="Volver a la página del producto"
           >
             ← Volver
           </button>
@@ -432,14 +433,18 @@ export default function ShirtCustomizer({ product }: Props) {
                     <button
                       onClick={() => adjustImageSize(-5)}
                       className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-lg"
+                      aria-label="Reducir tamaño de imagen"
+                      title="Reducir tamaño"
                     >
-                      <ZoomOut size={20} className="mx-auto" />
+                      <ZoomOut size={20} className="mx-auto" aria-hidden="true" />
                     </button>
                     <button
                       onClick={() => adjustImageSize(5)}
                       className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-lg"
+                      aria-label="Aumentar tamaño de imagen"
+                      title="Aumentar tamaño"
                     >
-                      <ZoomIn size={20} className="mx-auto" />
+                      <ZoomIn size={20} className="mx-auto" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -477,7 +482,11 @@ export default function ShirtCustomizer({ product }: Props) {
                     }`}
                     style={{ backgroundColor: color }}
                     title={name}
-                  />
+                    aria-label={`Seleccionar color ${name}`}
+                    aria-pressed={config.color === key}
+                  >
+                    <span className="sr-only">{name}</span>
+                  </button>
                 ))}
               </div>
             </div>

@@ -2,6 +2,11 @@
 // - ZIP -> city/province via Zippopotam.us (no API key)
 // - Optional street autocomplete via Geoapify if `VITE_GEOAPIFY_API_KEY` is set
 
+import { debounce } from '../lib/utils/debounce';
+
+// Re-export debounce for backward compatibility
+export { debounce };
+
 export type ZipLookup = {
   province: string | null;
   cities: string[];
@@ -78,12 +83,4 @@ export async function autocompleteStreetES(
   } catch {
     return [];
   }
-}
-
-export function debounce<T extends (...args: any[]) => any>(fn: T, wait = 300) {
-  let t: any;
-  return (...args: Parameters<T>) => {
-    clearTimeout(t);
-    t = setTimeout(() => fn(...args), wait);
-  };
 }

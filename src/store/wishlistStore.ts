@@ -2,18 +2,7 @@ import { useEffect, useState } from 'react';
 import { db } from '../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { logger } from '../lib/logger';
-
-// PERFORMANCE: Simple debounce implementation for Firestore writes
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  return function (...args: Parameters<T>) {
-    if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
+import { debounce } from '../lib/utils/debounce';
 
 export interface WishlistItem {
   id: string | number;
