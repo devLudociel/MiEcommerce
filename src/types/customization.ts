@@ -254,3 +254,129 @@ export interface CustomizationPricing {
     price: number;
   }>;
 }
+
+// ============================================================================
+// PLANTILLAS PREDEFINIDAS (Fase 3 - Growth)
+// ============================================================================
+
+export interface DesignTemplate {
+  id: string;
+  name: string;                    // "Cumpleaños Elegante"
+  description: string;
+  category: string;                // ID de categoría (ej: "camisetas")
+  subcategory: string;             // "Cumpleaños", "Deportes", etc.
+  tags: string[];                  // ["cumpleaños", "elegante", "dorado"]
+  thumbnail: string;               // URL del preview
+  isPremium: boolean;
+  popularity: number;              // Contador de usos
+
+  // Datos del diseño
+  template: {
+    fields: Array<{
+      fieldId: string;
+      value: any;
+      displayValue?: string;
+      imageUrl?: string;
+      imageTransform?: ImageTransform;
+    }>;
+    previewImage?: string;
+  };
+
+  // Metadata
+  createdAt: any;                  // Firestore Timestamp
+  updatedAt: any;
+  createdBy?: string;              // userId o 'system'
+}
+
+export interface TemplateCategory {
+  id: string;
+  name: string;
+  icon: string;
+  order: number;
+}
+
+// ============================================================================
+// CLIPARTS Y SISTEMA DE CAPAS (Fase 3 - Growth)
+// ============================================================================
+
+export interface Clipart {
+  id: string;
+  name: string;                    // "Corazón rojo"
+  category: string;                // "Celebraciones"
+  subcategory: string;             // "Amor"
+  tags: string[];                  // ["corazón", "amor", "rojo"]
+  imageUrl: string;                // URL en Firebase Storage
+  thumbnailUrl: string;            // Thumbnail optimizado
+  isPremium: boolean;
+  usageCount: number;
+  format: 'png' | 'svg';
+  hasTransparency: boolean;
+  dimensions: {
+    width: number;
+    height: number;
+  };
+  colors: string[];                // Colores predominantes
+  createdAt: any;
+  createdBy: string;               // 'system' o userId
+}
+
+export interface DesignLayer {
+  id: string;
+  type: 'uploaded_image' | 'clipart' | 'text';
+  source?: string;                 // URL si es imagen/clipart
+  text?: string;                   // Si es capa de texto
+  transform: ImageTransform;
+  zIndex: number;                  // Orden de capas
+  locked: boolean;                 // Evitar edición accidental
+  visible: boolean;
+  opacity: number;                 // 0-100
+}
+
+// ============================================================================
+// DISEÑOS GUARDADOS (Fase 3 - Growth)
+// ============================================================================
+
+export interface SavedDesign {
+  id: string;
+  userId: string;
+  name: string;                    // "Mi diseño de cumpleaños"
+  thumbnail: string;               // Preview del diseño
+  originalProductId: string;
+  originalCategory: string;
+  designData: ProductCustomization; // Configuración completa
+  layers?: DesignLayer[];          // Si usa sistema de capas
+  usageCount: number;              // Veces reutilizado
+  products: string[];              // IDs de productos donde se usó
+  tags?: string[];
+  isFavorite: boolean;
+  createdAt: any;
+  lastUsedAt: any;
+}
+
+// ============================================================================
+// DISEÑOS COMPARTIDOS (Fase 3 - Growth)
+// ============================================================================
+
+export interface SharedDesign {
+  id: string;                      // Short ID (ej: "abc123")
+  userId: string;
+  productId: string;
+  productName: string;
+  designData: ProductCustomization;
+  imageUrl: string;                // Snapshot del diseño
+  shareCount: number;
+  viewCount: number;
+  clickCount: number;
+  conversionCount: number;
+  platform: {
+    whatsapp: number;
+    facebook: number;
+    instagram: number;
+    twitter: number;
+    pinterest: number;
+    email: number;
+    link: number;
+  };
+  createdAt: any;
+  expiresAt: any;                  // Auto-delete después de 90 días
+}

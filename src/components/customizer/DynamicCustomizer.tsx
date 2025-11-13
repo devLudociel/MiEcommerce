@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Loader } from 'lucide-react';
+import { ShoppingCart, Loader, Sparkles } from 'lucide-react';
 import type {
   CustomizationSchema,
   CustomizationField,
   CustomizationValue,
   CustomizationPricing,
   ColorSelectorConfig,
+  DesignTemplate,
 } from '../../types/customization';
 import ColorSelector from './fields/ColorSelector';
 import SizeSelector from './fields/SizeSelector';
 import DropdownField from './fields/DropdownField';
 import ImageUploadField from './fields/ImageUploadField';
 import ProductPreview from './ProductPreview';
+import TemplateGallery from './TemplateGallery';
 import { addToCart } from '../../store/cartStore';
 import { logger } from '../../lib/logger';
 import { notify } from '../../lib/notifications';
@@ -36,6 +38,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   const [values, setValues] = useState<Record<string, CustomizationValue>>({});
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   // Calculate pricing
   const pricing: CustomizationPricing = {
@@ -73,6 +76,36 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
       },
     }));
     setError(null);
+  };
+
+  const handleLoadTemplate = (template: DesignTemplate) => {
+    logger.info('[DynamicCustomizer] Loading template:', template.name);
+
+    // Convert template fields to values format
+    const newValues: Record<string, CustomizationValue> = {};
+
+    template.template.fields.forEach((templateField) => {
+      // Find matching field in schema
+      const schemaField = schema.fields.find((f) => f.id === templateField.fieldId);
+      if (!schemaField) {
+        logger.warn(`[DynamicCustomizer] Field ${templateField.fieldId} not found in schema`);
+        return;
+      }
+
+      newValues[templateField.fieldId] = {
+        fieldId: templateField.fieldId,
+        fieldLabel: schemaField.label,
+        value: templateField.value,
+        displayValue: templateField.displayValue,
+        imageUrl: templateField.imageUrl,
+        imageTransform: templateField.imageTransform,
+        priceModifier: schemaField.priceModifier,
+      };
+    });
+
+    setValues(newValues);
+    setShowTemplates(false);
+    notify.success(`Plantilla "${template.name}" cargada correctamente`);
   };
 
   const validateFields = (): boolean => {
@@ -293,6 +326,19 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
           <p className="text-gray-600">{product.description}</p>
         </div>
 
+        {/* Template Gallery Modal */}
+        {showTemplates && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <div className="max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+              <TemplateGallery
+                categoryId={product.categoryId}
+                onSelectTemplate={handleLoadTemplate}
+                onClose={() => setShowTemplates(false)}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column: Preview */}
@@ -307,6 +353,15 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
           {/* Right Column: Fields */}
           <div className="order-1 lg:order-2">
+            {/* Template Button */}
+            <button
+              onClick={() => setShowTemplates(true)}
+              className="w-full mb-6 bg-gradient-to-r from-pink-500 to-purple-500 text-white py-3 px-6 rounded-xl font-bold text-base hover:shadow-xl transition-all flex items-center justify-center gap-3 group"
+            >
+              <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
+              Usar Plantilla Predefinida
+            </button>
+
             <div className="space-y-6 mb-8">
               {sortedFields.map((field) => renderField(field))}
             </div>
