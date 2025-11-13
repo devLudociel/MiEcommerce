@@ -796,6 +796,20 @@ const Header: React.FC<HeaderProps> = () => {
                 className="flex items-center"
                 style={{ marginLeft: 'auto', gap: 'var(--spacing-6)' }}
               >
+                <a
+                  href="/productos/digitales"
+                  className="text-sm font-medium hover:text-cyan-600 flex items-center"
+                  style={{
+                    color: '#0891b2',
+                    padding: 'var(--spacing-5)',
+                    gap: 'var(--spacing-2)',
+                  }}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                  Productos Digitales
+                </a>
                 <button
                   className="text-sm text-gray-700 hover:text-cyan"
                   style={{ padding: 'var(--spacing-5)' }}
@@ -980,6 +994,54 @@ const Header: React.FC<HeaderProps> = () => {
                   )}
                 </div>
               ))}
+
+              {/* Enlaces especiales */}
+              <div style={{ borderTop: '2px solid var(--color-gray-200)', paddingTop: 'var(--spacing-4)', marginTop: 'var(--spacing-4)' }}>
+                <a
+                  href="/productos/digitales"
+                  className="flex items-center justify-between"
+                  style={{
+                    padding: 'var(--spacing-4)',
+                    borderRadius: '8px',
+                    border: '1px solid #0891b2',
+                    background: '#ecfeff',
+                    textDecoration: 'none',
+                    marginBottom: 'var(--spacing-3)',
+                  }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                    <svg className="w-5 h-5" fill="#0891b2" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                    <span className="font-medium text-sm" style={{ color: '#0891b2' }}>
+                      Productos Digitales
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: '#0e7490' }}>Descarga instantánea →</span>
+                </a>
+
+                <a
+                  href="/ofertas"
+                  className="flex items-center justify-between"
+                  style={{
+                    padding: 'var(--spacing-4)',
+                    borderRadius: '8px',
+                    border: '1px solid #ef4444',
+                    background: '#fef2f2',
+                    textDecoration: 'none',
+                  }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                    <span style={{ fontSize: '1.25rem' }}>🔥</span>
+                    <span className="font-medium text-sm" style={{ color: '#ef4444' }}>
+                      Ofertas Especiales
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: '#dc2626' }}>Ver ofertas →</span>
+                </a>
+              </div>
             </div>
           </div>
         </div>
