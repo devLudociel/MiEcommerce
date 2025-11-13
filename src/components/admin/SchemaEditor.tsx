@@ -1,0 +1,294 @@
+import { useState } from 'react';
+import type {
+  CustomizationSchema,
+  CustomizationField,
+  ProductCategory,
+  FieldType,
+} from '../../types/customization';
+import { Plus, Trash2, GripVertical, Save, X } from 'lucide-react';
+import { notify } from '../../lib/notifications';
+
+interface SchemaEditorProps {
+  category: ProductCategory;
+  initialSchema?: CustomizationSchema;
+  onSave: (schema: CustomizationSchema) => void;
+  onCancel: () => void;
+}
+
+const fieldTypeOptions: Array<{ value: FieldType; label: string; icon: string }> = [
+  { value: 'color_selector', label: 'Selector de Colores', icon: '🎨' },
+  { value: 'size_selector', label: 'Selector de Tallas', icon: '📏' },
+  { value: 'dropdown', label: 'Lista Desplegable', icon: '📋' },
+  { value: 'text_input', label: 'Campo de Texto', icon: '📝' },
+  { value: 'image_upload', label: 'Subir Imagen', icon: '🖼️' },
+  { value: 'card_selector', label: 'Selector Visual (Cards)', icon: '📦' },
+  { value: 'checkbox', label: 'Checkbox', icon: '✅' },
+  { value: 'radio_group', label: 'Radio Buttons', icon: '🔘' },
+  { value: 'number_input', label: 'Campo Numérico', icon: '🔢' },
+  { value: 'dimensions_input', label: 'Dimensiones (Alto x Ancho)', icon: '📐' },
+];
+
+export default function SchemaEditor({ category, initialSchema, onSave, onCancel }: SchemaEditorProps) {
+  const [fields, setFields] = useState<CustomizationField[]>(initialSchema?.fields || []);
+  const [showAddField, setShowAddField] = useState(false);
+
+  const handleAddField = () => {
+    const newField: CustomizationField = {
+      id: `field_${Date.now()}`,
+      fieldType: 'text_input',
+      label: 'Nuevo Campo',
+      required: false,
+      config: {},
+      priceModifier: 0,
+      order: fields.length,
+    };
+
+    setFields([...fields, newField]);
+    setShowAddField(false);
+  };
+
+  const handleRemoveField = (fieldId: string) => {
+    if (!confirm('¿Eliminar este campo?')) return;
+    setFields(fields.filter((f) => f.id !== fieldId));
+  };
+
+  const handleUpdateField = (fieldId: string, updates: Partial<CustomizationField>) => {
+    setFields(fields.map((f) => (f.id === fieldId ? { ...f, ...updates } : f)));
+  };
+
+  const handleSave = () => {
+    // Validation
+    if (fields.length === 0) {
+      notify.error('Debes agregar al menos un campo');
+      return;
+    }
+
+    const hasEmptyLabels = fields.some((f) => !f.label.trim());
+    if (hasEmptyLabels) {
+      notify.error('Todos los campos deben tener un nombre');
+      return;
+    }
+
+    const schema: CustomizationSchema = {
+      fields: fields.map((f, idx) => ({ ...f, order: idx })),
+      displayComponent: 'DynamicCustomizer',
+    };
+
+    onSave(schema);
+  };
+
+  const moveField = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === fields.length - 1) return;
+
+    const newFields = [...fields];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    [newFields[index], newFields[targetIndex]] = [newFields[targetIndex], newFields[index]];
+    setFields(newFields);
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-purple-500 to-cyan-500 p-6">
+        <h2 className="text-2xl font-bold text-white mb-1">
+          ✏️ Editando Schema: {category.name}
+        </h2>
+        <p className="text-purple-100">
+          Configura los campos de personalización que verán tus clientes
+        </p>
+      </div>
+
+      {/* Editor */}
+      <div className="p-6">
+        {/* Fields List */}
+        <div className="space-y-4 mb-6">
+          {fields.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+              <div className="text-6xl mb-3">📋</div>
+              <h3 className="text-lg font-bold text-gray-700 mb-2">No hay campos configurados</h3>
+              <p className="text-gray-500 mb-4">Agrega tu primer campo para empezar</p>
+              <button
+                onClick={handleAddField}
+                className="px-6 py-3 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 transition-colors"
+              >
+                ➕ Agregar Primer Campo
+              </button>
+            </div>
+          ) : (
+            <>
+              {fields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="border-2 border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    {/* Drag Handle */}
+                    <div className="flex flex-col gap-1 pt-2">
+                      <button
+                        onClick={() => moveField(index, 'up')}
+                        disabled={index === 0}
+                        className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                        title="Mover arriba"
+                      >
+                        ▲
+                      </button>
+                      <GripVertical className="w-5 h-5 text-gray-400" />
+                      <button
+                        onClick={() => moveField(index, 'down')}
+                        disabled={index === fields.length - 1}
+                        className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                        title="Mover abajo"
+                      >
+                        ▼
+                      </button>
+                    </div>
+
+                    {/* Field Content */}
+                    <div className="flex-1 space-y-3">
+                      {/* Order & Type */}
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                          #{index + 1}
+                        </span>
+                        <select
+                          value={field.fieldType}
+                          onChange={(e) =>
+                            handleUpdateField(field.id, { fieldType: e.target.value as FieldType })
+                          }
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        >
+                          {fieldTypeOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.icon} {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Label */}
+                      <input
+                        type="text"
+                        value={field.label}
+                        onChange={(e) => handleUpdateField(field.id, { label: e.target.value })}
+                        placeholder="Nombre del campo (ej: Color de la camiseta)"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium"
+                      />
+
+                      {/* Options Row */}
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={field.required}
+                            onChange={(e) => handleUpdateField(field.id, { required: e.target.checked })}
+                            className="w-4 h-4 text-purple-500 rounded focus:ring-2 focus:ring-purple-500"
+                          />
+                          <span className="text-sm font-medium text-gray-700">Obligatorio</span>
+                        </label>
+
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm font-medium text-gray-700">Precio extra:</label>
+                          <input
+                            type="number"
+                            value={field.priceModifier}
+                            onChange={(e) =>
+                              handleUpdateField(field.id, {
+                                priceModifier: parseFloat(e.target.value) || 0,
+                              })
+                            }
+                            min="0"
+                            step="0.01"
+                            className="w-24 px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                          />
+                          <span className="text-sm text-gray-600">€</span>
+                        </div>
+                      </div>
+
+                      {/* Help Text */}
+                      <input
+                        type="text"
+                        value={field.helpText || ''}
+                        onChange={(e) => handleUpdateField(field.id, { helpText: e.target.value })}
+                        placeholder="Texto de ayuda (opcional)"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                      />
+
+                      {/* Config Notice */}
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-xs text-blue-800">
+                          ℹ️ <strong>Configuración avanzada:</strong> Los colores, tallas y opciones se
+                          configurarán en la siguiente versión. Por ahora se usan los valores por defecto.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Remove Button */}
+                    <button
+                      onClick={() => handleRemoveField(field.id)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Eliminar campo"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {/* Add Field Button */}
+              <button
+                onClick={handleAddField}
+                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-purple-500 hover:text-purple-600 hover:bg-purple-50 transition-all font-medium"
+              >
+                ➕ Agregar Campo
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Summary */}
+        {fields.length > 0 && (
+          <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+            <h4 className="font-bold text-purple-900 mb-2">📊 Resumen</h4>
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div>
+                <div className="text-purple-700 font-medium">Total campos:</div>
+                <div className="text-2xl font-bold text-purple-900">{fields.length}</div>
+              </div>
+              <div>
+                <div className="text-purple-700 font-medium">Obligatorios:</div>
+                <div className="text-2xl font-bold text-purple-900">
+                  {fields.filter((f) => f.required).length}
+                </div>
+              </div>
+              <div>
+                <div className="text-purple-700 font-medium">Con precio extra:</div>
+                <div className="text-2xl font-bold text-purple-900">
+                  {fields.filter((f) => f.priceModifier > 0).length}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+          >
+            <X className="w-5 h-5" />
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+          >
+            <Save className="w-5 h-5" />
+            Guardar Schema
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

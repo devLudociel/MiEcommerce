@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminCustomizationPanel from '../../components/admin/AdminCustomizationPanel';
+import RequireAdmin from '../../components/auth/RequireAdmin.tsx';
+---
+
+<BaseLayout title="Admin | Personalización">
+  <!-- PERFORMANCE: Auth check needs immediate load -->
+  <RequireAdmin client:load />
+  <!-- PERFORMANCE: Panel can wait until browser is idle -->
+  <AdminCustomizationPanel client:idle />
+</BaseLayout>

@@ -289,6 +289,56 @@ export default function AdminDashboard() {
         <p className="text-gray-600">Vista general de tu negocio</p>
       </div>
 
+      {/* Accesos Rápidos */}
+      <div className="mb-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <a
+          href="/admin/products"
+          className="p-4 bg-white border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:shadow-lg transition-all text-center group"
+        >
+          <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">📦</div>
+          <div className="text-sm font-semibold text-gray-900">Productos</div>
+        </a>
+        <a
+          href="/admin/orders"
+          className="p-4 bg-white border-2 border-gray-200 rounded-xl hover:border-cyan-500 hover:shadow-lg transition-all text-center group"
+        >
+          <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🛒</div>
+          <div className="text-sm font-semibold text-gray-900">Pedidos</div>
+        </a>
+        <a
+          href="/admin/cupones"
+          className="p-4 bg-white border-2 border-gray-200 rounded-xl hover:border-green-500 hover:shadow-lg transition-all text-center group"
+        >
+          <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🎟️</div>
+          <div className="text-sm font-semibold text-gray-900">Cupones</div>
+        </a>
+        <a
+          href="/admin/newsletter"
+          className="p-4 bg-white border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-lg transition-all text-center group"
+        >
+          <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">✉️</div>
+          <div className="text-sm font-semibold text-gray-900">Newsletter</div>
+        </a>
+        <a
+          href="/admin/customization"
+          className="p-4 bg-gradient-to-br from-purple-500 to-cyan-500 border-2 border-purple-400 rounded-xl hover:shadow-xl transition-all text-center group relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 bg-yellow-400 text-xs font-bold px-2 py-0.5 rounded-bl-lg text-gray-900">
+            NUEVO
+          </div>
+          <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🎨</div>
+          <div className="text-sm font-semibold text-white">Personalización</div>
+        </a>
+        <a
+          href="/test-customizer"
+          target="_blank"
+          className="p-4 bg-white border-2 border-dashed border-gray-300 rounded-xl hover:border-orange-500 hover:shadow-lg transition-all text-center group"
+        >
+          <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🧪</div>
+          <div className="text-sm font-semibold text-gray-900">Test</div>
+        </a>
+      </div>
+
       {/* Filtro de tiempo */}
       <div className="mb-6 flex gap-2">
         <button
