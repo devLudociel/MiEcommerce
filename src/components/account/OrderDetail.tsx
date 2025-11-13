@@ -137,6 +137,50 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
     }).format(date);
   };
 
+  const handleDownloadInvoice = async () => {
+    if (!order?.id) return;
+
+    try {
+      // Get the ID token from the current user
+      const user = auth.currentUser;
+      if (!user) {
+        logger.error('[OrderDetail] No authenticated user found');
+        alert('Debes iniciar sesión para descargar la factura');
+        return;
+      }
+
+      const token = await user.getIdToken();
+
+      // Fetch the invoice with authentication
+      const response = await fetch(`/api/generate-invoice?orderId=${order.id}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
+      }
+
+      // Download the PDF
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Factura-${order.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      logger.info('[OrderDetail] Invoice downloaded successfully', { orderId: order.id });
+    } catch (error) {
+      logger.error('[OrderDetail] Error downloading invoice', error);
+      alert('Error al descargar la factura. Por favor, inténtalo de nuevo.');
+    }
+  };
+
   if (!uid) {
     return (
       <div className="card p-8 bg-yellow-50 border-yellow-200 text-center">
@@ -345,14 +389,12 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
 
       {/* Acciones */}
       <div className="flex gap-4 flex-wrap">
-        <a
-          href={`/api/generate-invoice?orderId=${order.id}`}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={handleDownloadInvoice}
           className="btn bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
         >
           📄 Descargar Factura
-        </a>
+        </button>
         <a
           href="/account/orders"
           className="btn btn-outline border-2 border-gray-300 px-8 py-3 rounded-xl font-bold hover:border-cyan-500 transition-all"
