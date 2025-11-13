@@ -16,6 +16,7 @@ import DropdownField from './fields/DropdownField';
 import ImageUploadField from './fields/ImageUploadField';
 import ProductPreview from './ProductPreview';
 import SplitProductPreview from './SplitProductPreview';
+import TextileProductPreview from './TextileProductPreview';
 import TemplateGallery from './TemplateGallery';
 import ClipartGallery from './ClipartGallery';
 import ShareDesignButton from './ShareDesignButton';
@@ -368,6 +369,184 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     );
   };
 
+  // Detectar si es producto textil (camiseta, sudadera, polo - con frente y espalda)
+  const isTextileProduct = (): boolean => {
+    const categoryLower = product.categoryId?.toLowerCase() || '';
+    const nameLower = product.name?.toLowerCase() || '';
+    const subcategoryLower = (product as any).subcategoryId?.toLowerCase() || '';
+    const tags = (product as any).tags?.map((t: string) => t.toLowerCase()) || [];
+
+    return (
+      categoryLower.includes('camiseta') ||
+      categoryLower.includes('sudadera') ||
+      categoryLower.includes('polo') ||
+      categoryLower.includes('textil') ||
+      categoryLower.includes('ropa') ||
+      subcategoryLower.includes('camiseta') ||
+      subcategoryLower.includes('sudadera') ||
+      subcategoryLower.includes('polo') ||
+      subcategoryLower.includes('textil') ||
+      subcategoryLower.includes('ropa') ||
+      nameLower.includes('camiseta') ||
+      nameLower.includes('sudadera') ||
+      nameLower.includes('polo') ||
+      tags.some((tag: string) =>
+        tag.includes('camiseta') ||
+        tag.includes('sudadera') ||
+        tag.includes('polo') ||
+        tag.includes('textil') ||
+        tag.includes('ropa')
+      )
+    );
+  };
+
+  // Obtener imagen frontal y trasera para textiles
+  const getTextileFrontImage = (): string | null => {
+    // Buscar campo de imagen con "front" o "frontal" o "frente" en el ID o label
+    const frontField = schema.fields.find(f =>
+      f.fieldType === 'image_upload' && (
+        f.id.toLowerCase().includes('front') ||
+        f.id.toLowerCase().includes('frontal') ||
+        f.id.toLowerCase().includes('frente') ||
+        f.label.toLowerCase().includes('front') ||
+        f.label.toLowerCase().includes('frontal') ||
+        f.label.toLowerCase().includes('frente')
+      )
+    );
+
+    if (frontField) {
+      const imageValue = values[frontField.id];
+      return (imageValue?.imageUrl as string) || null;
+    }
+
+    // Fallback: usar el primer campo de imagen
+    const firstImageField = schema.fields.find(f => f.fieldType === 'image_upload');
+    if (firstImageField) {
+      const imageValue = values[firstImageField.id];
+      return (imageValue?.imageUrl as string) || null;
+    }
+
+    return null;
+  };
+
+  const getTextileBackImage = (): string | null => {
+    // Buscar campo de imagen con "back" o "trasera" o "espalda" en el ID o label
+    const backField = schema.fields.find(f =>
+      f.fieldType === 'image_upload' && (
+        f.id.toLowerCase().includes('back') ||
+        f.id.toLowerCase().includes('trasera') ||
+        f.id.toLowerCase().includes('espalda') ||
+        f.label.toLowerCase().includes('back') ||
+        f.label.toLowerCase().includes('trasera') ||
+        f.label.toLowerCase().includes('espalda')
+      )
+    );
+
+    if (backField) {
+      const imageValue = values[backField.id];
+      return (imageValue?.imageUrl as string) || null;
+    }
+
+    return null;
+  };
+
+  const getTextileFrontTransform = () => {
+    const frontField = schema.fields.find(f =>
+      f.fieldType === 'image_upload' && (
+        f.id.toLowerCase().includes('front') ||
+        f.id.toLowerCase().includes('frontal') ||
+        f.id.toLowerCase().includes('frente') ||
+        f.label.toLowerCase().includes('front') ||
+        f.label.toLowerCase().includes('frontal') ||
+        f.label.toLowerCase().includes('frente')
+      )
+    );
+
+    if (frontField) {
+      const imageValue = values[frontField.id];
+      return imageValue?.imageTransform;
+    }
+
+    // Fallback: usar el primer campo de imagen
+    const firstImageField = schema.fields.find(f => f.fieldType === 'image_upload');
+    if (firstImageField) {
+      const imageValue = values[firstImageField.id];
+      return imageValue?.imageTransform;
+    }
+
+    return undefined;
+  };
+
+  const getTextileBackTransform = () => {
+    const backField = schema.fields.find(f =>
+      f.fieldType === 'image_upload' && (
+        f.id.toLowerCase().includes('back') ||
+        f.id.toLowerCase().includes('trasera') ||
+        f.id.toLowerCase().includes('espalda') ||
+        f.label.toLowerCase().includes('back') ||
+        f.label.toLowerCase().includes('trasera') ||
+        f.label.toLowerCase().includes('espalda')
+      )
+    );
+
+    if (backField) {
+      const imageValue = values[backField.id];
+      return imageValue?.imageTransform;
+    }
+
+    return undefined;
+  };
+
+  // Obtener imagen base frontal y trasera del producto
+  const getTextileBaseFrontImage = (): string => {
+    // Buscar en previewImages si hay una imagen frontal
+    if (schema.previewImages?.front) {
+      return schema.previewImages.front;
+    }
+
+    // Buscar color selector y obtener su imagen frontal
+    const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
+    if (colorField) {
+      const colorValue = values[colorField.id];
+      if (colorValue) {
+        const colorConfig = colorField.config as ColorSelectorConfig;
+        const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
+        if (selectedColor?.previewImages?.front) {
+          return selectedColor.previewImages.front;
+        }
+        if (selectedColor?.previewImage) {
+          return selectedColor.previewImage;
+        }
+      }
+    }
+
+    // Fallback: usar imagen default o primera imagen del producto
+    return schema.previewImages?.default || product.images[0] || '';
+  };
+
+  const getTextileBaseBackImage = (): string => {
+    // Buscar en previewImages si hay una imagen trasera
+    if (schema.previewImages?.back) {
+      return schema.previewImages.back;
+    }
+
+    // Buscar color selector y obtener su imagen trasera
+    const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
+    if (colorField) {
+      const colorValue = values[colorField.id];
+      if (colorValue) {
+        const colorConfig = colorField.config as ColorSelectorConfig;
+        const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
+        if (selectedColor?.previewImages?.back) {
+          return selectedColor.previewImages.back;
+        }
+      }
+    }
+
+    // Fallback: usar imagen default frontal (si no hay trasera)
+    return getTextileBaseFrontImage();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-8 px-4">
       <div className="max-w-7xl mx-auto">
@@ -415,7 +594,19 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                 baseImageLabel="Tu caja personalizada"
                 userImageLabel="Foto de referencia"
               />
+            ) : isTextileProduct() ? (
+              /* Usar TextileProductPreview para textiles (frente y espalda) */
+              <TextileProductPreview
+                frontImage={getTextileBaseFrontImage()}
+                backImage={getTextileBaseBackImage()}
+                userFrontImage={getTextileFrontImage()}
+                userBackImage={getTextileBackImage()}
+                frontTransform={getTextileFrontTransform()}
+                backTransform={getTextileBackTransform()}
+                productName={product.name}
+              />
             ) : (
+              /* ProductPreview normal para otros productos */
               <ProductPreview
                 baseImage={getBaseImage()}
                 userImage={getUserImage()}
