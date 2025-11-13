@@ -4,6 +4,7 @@ import HeroCarousel from '../components/sections/HeroCarousel.tsx';
 import CategoriesShowcase from '../components/sections/CategoriesShowcase.tsx';
 import BestSellers from '../components/sections/BestSellers.tsx';
 import ProductGrid from '../components/sections/ProductGrid.tsx';
+import DigitalProductsHome from '../components/sections/DigitalProductsHome.tsx';
 import WhyChooseUs from '../components/sections/WhyChooseUs.tsx';
 import NewsletterSignup from '../components/sections/NewsletterSignup.tsx';
 import FooterComponent from '../components/sections/Footer.tsx';
@@ -24,16 +25,19 @@ const ogImage = '/og-home.jpg';
   <!-- 3. Best Sellers: Social proof + productos populares -->
   <BestSellers client:load />
 
-  <!-- 4. Product Grid: Productos destacados de Firebase -->
+  <!-- 4. Product Grid: Productos FÍSICOS destacados de Firebase -->
   <ProductGrid client:load />
 
-  <!-- 5. Why Choose Us: Generar confianza con stats reales -->
+  <!-- 5. Digital Products: Productos DIGITALES descargables -->
+  <DigitalProductsHome client:load maxItems={4} />
+
+  <!-- 6. Why Choose Us: Generar confianza con stats reales -->
   <WhyChooseUs client:load />
 
-  <!-- 6. Newsletter: Captura de leads antes de perderlos -->
+  <!-- 7. Newsletter: Captura de leads antes de perderlos -->
   <NewsletterSignup client:load />
 
-  <!-- 6. Footer: Información de contacto y legal -->
+  <!-- 8. Footer: Información de contacto y legal -->
   <footer class="bg-gray-800 text-white py-12">
     <FooterComponent client:load />
   </footer>

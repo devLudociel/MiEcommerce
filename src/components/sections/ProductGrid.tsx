@@ -88,23 +88,31 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
     { value: 'photography', label: 'Fotografía' },
   ];
 
-  // Cargar productos de Firestore
+  // Cargar productos de Firestore (SOLO FÍSICOS, excluir digitales)
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
         setError(null);
-        logger.debug('[ProductGrid] Loading products', { maxItems });
+        logger.debug('[ProductGrid] Loading physical products only', { maxItems });
 
-        const q = query(collection(db, 'products'), where('active', '==', true), limit(maxItems));
+        const q = query(collection(db, 'products'), where('active', '==', true), limit(maxItems * 2)); // Load more to compensate for filtering
         const snap = await getDocs(q);
 
+        // Filter out digital products
+        const physicalDocs = snap.docs.filter(d => {
+          const data = d.data();
+          return !data.isDigital; // Exclude digital products
+        }).slice(0, maxItems); // Limit to maxItems after filtering
+
+        logger.info(`[ProductGrid] Filtered ${physicalDocs.length} physical products from ${snap.docs.length} total`);
+
         // PERFORMANCE: Batch get all review stats in a single query instead of N queries
-        const productIds = snap.docs.map((d) => d.id);
+        const productIds = physicalDocs.map((d) => d.id);
         const reviewStatsMap = await batchGetProductReviewStats(productIds);
 
         // Map products with their review stats
-        const list: Product[] = snap.docs.map((d: any) => {
+        const list: Product[] = physicalDocs.map((d: any) => {
           const data = d.data() || {};
           const reviewStats = reviewStatsMap.get(d.id) || {
             averageRating: 0,
@@ -135,7 +143,7 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
         });
         setProducts(list);
         setFilteredProducts(list);
-        logger.info('[ProductGrid] Products loaded successfully', { count: list.length });
+        logger.info('[ProductGrid] Physical products loaded successfully', { count: list.length });
       } catch (e: any) {
         logger.error('[ProductGrid] Error loading products', e);
         setError(e?.message || 'Error cargando productos');
