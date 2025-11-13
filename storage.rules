@@ -1,0 +1,85 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if file is an image
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    // Helper function to check file size (max 5MB)
+    function isValidSize() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+
+    // Product preview images (admin uploads)
+    // Path: product-previews/{userId}/{fileName}
+    match /product-previews/{userId}/{fileName} {
+      // Allow authenticated users to upload images to their own folder
+      allow write: if isAuthenticated()
+                   && request.auth.uid == userId
+                   && isImage()
+                   && isValidSize();
+
+      // Allow public read access (so images can be displayed on frontend)
+      allow read: if true;
+    }
+
+    // User customization images (customer uploads)
+    // Path: personalizaciones/{userId}/{productType}/{fileName}
+    match /personalizaciones/{userId}/{productType}/{fileName} {
+      // Allow authenticated users to upload to their own folder
+      allow write: if isAuthenticated()
+                   && request.auth.uid == userId
+                   && isImage()
+                   && isValidSize();
+
+      // Allow public read access
+      allow read: if true;
+    }
+
+    // Product images (admin uploads)
+    // Path: products/{productId}/{fileName}
+    match /products/{productId}/{fileName} {
+      // Allow authenticated users to upload product images
+      allow write: if isAuthenticated()
+                   && isImage()
+                   && isValidSize();
+
+      // Allow public read access
+      allow read: if true;
+    }
+
+    // User profile images
+    // Path: users/{userId}/profile/{fileName}
+    match /users/{userId}/profile/{fileName} {
+      // Allow users to upload to their own profile folder
+      allow write: if isAuthenticated()
+                   && request.auth.uid == userId
+                   && isImage()
+                   && isValidSize();
+
+      // Allow public read access
+      allow read: if true;
+    }
+
+    // Brand kit files
+    // Path: brand-kit/{userId}/{fileName}
+    match /brand-kit/{userId}/{allPaths=**} {
+      // Allow authenticated users to manage their brand kit
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Deny all other access by default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
