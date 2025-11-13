@@ -32,19 +32,25 @@ export const GET: APIRoute = async ({ request }) => {
 
     const db = getAdminDb();
 
-    // Get all digital access records for this user
+    // Get all digital access records for this user (without orderBy to avoid index requirement)
     const snapshot = await db
       .collection('digital_access')
       .where('userId', '==', userId)
-      .orderBy('purchasedAt', 'desc')
       .get();
 
-    const downloads = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      purchasedAt: doc.data().purchasedAt?.toDate?.()?.toISOString() || null,
-      lastDownloadAt: doc.data().lastDownloadAt?.toDate?.()?.toISOString() || null,
-    }));
+    const downloads = snapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          purchasedAt: data.purchasedAt?.toDate?.()?.toISOString() || null,
+          lastDownloadAt: data.lastDownloadAt?.toDate?.()?.toISOString() || null,
+          // Keep timestamp for sorting
+          _purchasedAtTimestamp: data.purchasedAt?.toMillis?.() || 0,
+        };
+      })
+      .sort((a, b) => b._purchasedAtTimestamp - a._purchasedAtTimestamp); // Sort by date descending
 
     logger.info('[digital/get-my-downloads] Downloads fetched', {
       userId,
