@@ -99,8 +99,14 @@ export default function DownloadsLibrary() {
 
       const data = await response.json();
 
-      // Open download URL in new tab
-      window.open(data.downloadUrl, '_blank');
+      // Create a temporary link element to trigger direct download
+      const link = document.createElement('a');
+      link.href = data.downloadUrl;
+      link.download = fileName; // Force download with proper filename
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
       notify.success(`Descargando: ${fileName}`);
 
