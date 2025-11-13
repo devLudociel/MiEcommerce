@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Upload, Plus, Trash2, Save, Loader, FileArchive, X, Image as ImageIcon, CheckCircle } from 'lucide-react';
 import { logger } from '../../lib/logger';
 import { notify } from '../../lib/notifications';
-import { storage } from '../../lib/firebase';
+import { storage, auth } from '../../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface DigitalFile {
@@ -33,8 +33,15 @@ export default function DigitalProductCreator() {
 
   // Upload file to Firebase Storage
   const uploadFileToStorage = async (file: File, folder: string): Promise<{ url: string; size: number; type: string }> => {
+    // Get current user ID
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new Error('Debes estar autenticado para subir archivos');
+    }
+
     const timestamp = Date.now();
-    const fileName = `${folder}/${timestamp}_${file.name}`;
+    // Use userId in path to match existing Firebase Storage rules: folder/{userId}/{filename}
+    const fileName = `${folder}/${currentUser.uid}/${timestamp}_${file.name}`;
     const storageRef = ref(storage, fileName);
 
     await uploadBytes(storageRef, file);

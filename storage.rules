@@ -41,29 +41,37 @@ service firebase.storage {
     // ==========================================================================
     // DIGITAL PRODUCTS: Admin can upload, authenticated users can read
     // ==========================================================================
-    match /digital-products/{fileName} {
-      // Only admins can create/update
-      allow create, update: if isAuthenticated() && isValidSize() && isAllowedFileType();
+    match /digital-products/{userId}/{fileName} {
+      // Authenticated users can create/update their own folder
+      allow create, update: if isAuthenticated() &&
+                              request.auth.uid == userId &&
+                              isValidSize() &&
+                              isAllowedFileType();
 
       // Authenticated users can read (for downloads after purchase)
       allow read: if isAuthenticated();
 
-      // Only admins can delete
-      allow delete: if isAdmin();
+      // Only file owner or admin can delete
+      allow delete: if isAuthenticated() &&
+                      (request.auth.uid == userId || isAdmin());
     }
 
     // ==========================================================================
     // PRODUCT PREVIEWS: Admin can upload, everyone can read
     // ==========================================================================
-    match /product-previews/{fileName} {
-      // Only admins can create/update
-      allow create, update: if isAuthenticated() && isValidSize() && isImage();
+    match /product-previews/{userId}/{fileName} {
+      // Authenticated users can create/update their own folder
+      allow create, update: if isAuthenticated() &&
+                              request.auth.uid == userId &&
+                              isValidSize() &&
+                              isImage();
 
       // Anyone can read (public product images)
       allow read: if true;
 
-      // Only admins can delete
-      allow delete: if isAdmin();
+      // Only file owner or admin can delete
+      allow delete: if isAuthenticated() &&
+                      (request.auth.uid == userId || isAdmin());
     }
 
     // ==========================================================================
