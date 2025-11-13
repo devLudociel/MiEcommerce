@@ -1,6 +1,10 @@
-import { useState } from 'react';
-import { Plus, Trash2, Palette } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Plus, Trash2, Palette, Upload, Loader } from 'lucide-react';
 import type { ColorOption } from '../../../types/customization';
+import { storage, auth } from '../../../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { notify } from '../../../lib/notifications';
+import { logger } from '../../../lib/logger';
 
 interface ColorSelectorConfigEditorProps {
   colors: ColorOption[];
@@ -14,6 +18,10 @@ export default function ColorSelectorConfigEditor({ colors, onChange }: ColorSel
     name: '',
     hex: '#000000',
   });
+  const [uploadingColorId, setUploadingColorId] = useState<string | null>(null);
+  const [uploadingNewColor, setUploadingNewColor] = useState(false);
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const newColorFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddColor = () => {
     if (!newColor.name.trim() || !newColor.hex) {
@@ -41,6 +49,93 @@ export default function ColorSelectorConfigEditor({ colors, onChange }: ColorSel
           : c
       )
     );
+  };
+
+  const handleUploadImage = async (colorId: string, file: File) => {
+    const user = auth.currentUser;
+    if (!user) {
+      notify.error('Debes iniciar sesión para subir imágenes');
+      return;
+    }
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      notify.error('Solo se permiten imágenes (JPG, PNG, WEBP)');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      notify.error('La imagen debe pesar menos de 5MB');
+      return;
+    }
+
+    setUploadingColorId(colorId);
+
+    try {
+      // Upload to Firebase Storage
+      const timestamp = Date.now();
+      const fileName = `${timestamp}_${file.name}`;
+      const storageRef = ref(storage, `product-previews/${user.uid}/${fileName}`);
+
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      logger.info('[ColorSelectorConfigEditor] Image uploaded:', downloadURL);
+
+      // Update color with new preview image URL
+      handleUpdateColor(colorId, { previewImage: downloadURL });
+
+      notify.success('Imagen subida correctamente');
+    } catch (error) {
+      logger.error('[ColorSelectorConfigEditor] Error uploading image:', error);
+      notify.error('Error al subir la imagen');
+    } finally {
+      setUploadingColorId(null);
+    }
+  };
+
+  const handleUploadNewColorImage = async (file: File) => {
+    const user = auth.currentUser;
+    if (!user) {
+      notify.error('Debes iniciar sesión para subir imágenes');
+      return;
+    }
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      notify.error('Solo se permiten imágenes (JPG, PNG, WEBP)');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      notify.error('La imagen debe pesar menos de 5MB');
+      return;
+    }
+
+    setUploadingNewColor(true);
+
+    try {
+      const timestamp = Date.now();
+      const fileName = `${timestamp}_${file.name}`;
+      const storageRef = ref(storage, `product-previews/${user.uid}/${fileName}`);
+
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      logger.info('[ColorSelectorConfigEditor] New color image uploaded:', downloadURL);
+
+      setNewColor({ ...newColor, previewImage: downloadURL });
+      notify.success('Imagen subida correctamente');
+    } catch (error) {
+      logger.error('[ColorSelectorConfigEditor] Error uploading new color image:', error);
+      notify.error('Error al subir la imagen');
+    } finally {
+      setUploadingNewColor(false);
+    }
   };
 
   return (
@@ -90,13 +185,38 @@ export default function ColorSelectorConfigEditor({ colors, onChange }: ColorSel
                   className="w-full px-2 py-1 text-xs font-mono mt-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="#000000"
                 />
-                <input
-                  type="text"
-                  value={color.previewImage || ''}
-                  onChange={(e) => handleUpdateColor(color.id, { previewImage: e.target.value })}
-                  className="w-full px-2 py-1 text-xs mt-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="URL imagen preview (ej: https://...)"
-                />
+                <div className="flex gap-1 mt-1">
+                  <input
+                    type="text"
+                    value={color.previewImage || ''}
+                    onChange={(e) => handleUpdateColor(color.id, { previewImage: e.target.value })}
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="URL o sube imagen"
+                  />
+                  <input
+                    type="file"
+                    ref={(el) => (fileInputRefs.current[color.id] = el)}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUploadImage(color.id, file);
+                    }}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRefs.current[color.id]?.click()}
+                    disabled={uploadingColorId === color.id}
+                    className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-1"
+                    title="Subir imagen desde PC"
+                  >
+                    {uploadingColorId === color.id ? (
+                      <Loader className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Upload className="w-3 h-3" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Remove Button */}
@@ -163,17 +283,48 @@ export default function ColorSelectorConfigEditor({ colors, onChange }: ColorSel
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                URL Imagen Preview (Opcional)
+                Imagen Preview (Opcional)
               </label>
-              <input
-                type="text"
-                value={newColor.previewImage || ''}
-                onChange={(e) => setNewColor({ ...newColor, previewImage: e.target.value })}
-                placeholder="https://ejemplo.com/imagen-camiseta-roja.jpg"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newColor.previewImage || ''}
+                  onChange={(e) => setNewColor({ ...newColor, previewImage: e.target.value })}
+                  placeholder="https://ejemplo.com/imagen-camiseta-roja.jpg"
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+                <input
+                  type="file"
+                  ref={newColorFileInputRef}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleUploadNewColorImage(file);
+                  }}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => newColorFileInputRef.current?.click()}
+                  disabled={uploadingNewColor}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  title="Subir imagen desde PC"
+                >
+                  {uploadingNewColor ? (
+                    <>
+                      <Loader className="w-4 h-4 animate-spin" />
+                      Subiendo...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Subir
+                    </>
+                  )}
+                </button>
+              </div>
               <p className="mt-1 text-xs text-gray-500">
-                💡 URL de la imagen del producto en este color (ej: camiseta blanca, camiseta negra)
+                💡 Sube una imagen desde tu PC o pega una URL
               </p>
             </div>
 

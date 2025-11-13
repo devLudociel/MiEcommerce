@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type {
   CustomizationSchema,
   CustomizationField,
@@ -8,11 +8,14 @@ import type {
   SizeSelectorConfig,
   DropdownConfig,
 } from '../../types/customization';
-import { Plus, Trash2, GripVertical, Save, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Save, X, ChevronDown, ChevronUp, Upload, Loader } from 'lucide-react';
 import { notify } from '../../lib/notifications';
 import ColorSelectorConfigEditor from './config-editors/ColorSelectorConfigEditor';
 import SizeSelectorConfigEditor from './config-editors/SizeSelectorConfigEditor';
 import DropdownConfigEditor from './config-editors/DropdownConfigEditor';
+import { storage, auth } from '../../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { logger } from '../../lib/logger';
 
 interface SchemaEditorProps {
   category: ProductCategory;
@@ -41,6 +44,8 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
   const [defaultPreviewImage, setDefaultPreviewImage] = useState<string>(
     initialSchema?.previewImages?.default || ''
   );
+  const [uploadingDefaultImage, setUploadingDefaultImage] = useState(false);
+  const defaultImageInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddField = () => {
     const newField: CustomizationField = {
@@ -170,6 +175,48 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
     setFields(newFields);
   };
 
+  const handleUploadDefaultImage = async (file: File) => {
+    const user = auth.currentUser;
+    if (!user) {
+      notify.error('Debes iniciar sesión para subir imágenes');
+      return;
+    }
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      notify.error('Solo se permiten imágenes (JPG, PNG, WEBP)');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      notify.error('La imagen debe pesar menos de 5MB');
+      return;
+    }
+
+    setUploadingDefaultImage(true);
+
+    try {
+      const timestamp = Date.now();
+      const fileName = `${timestamp}_${file.name}`;
+      const storageRef = ref(storage, `product-previews/${user.uid}/${fileName}`);
+
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      logger.info('[SchemaEditor] Default preview image uploaded:', downloadURL);
+
+      setDefaultPreviewImage(downloadURL);
+      notify.success('Imagen subida correctamente');
+    } catch (error) {
+      logger.error('[SchemaEditor] Error uploading default preview image:', error);
+      notify.error('Error al subir la imagen');
+    } finally {
+      setUploadingDefaultImage(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       {/* Header */}
@@ -198,16 +245,46 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Imagen Preview por Defecto (Opcional)
             </label>
-            <input
-              type="text"
-              value={defaultPreviewImage}
-              onChange={(e) => setDefaultPreviewImage(e.target.value)}
-              placeholder="https://ejemplo.com/imagen-producto-default.jpg"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={defaultPreviewImage}
+                onChange={(e) => setDefaultPreviewImage(e.target.value)}
+                placeholder="https://ejemplo.com/imagen-producto-default.jpg"
+                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              <input
+                type="file"
+                ref={defaultImageInputRef}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadDefaultImage(file);
+                }}
+                accept="image/*"
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => defaultImageInputRef.current?.click()}
+                disabled={uploadingDefaultImage}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                title="Subir imagen desde PC"
+              >
+                {uploadingDefaultImage ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Subiendo...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    Subir
+                  </>
+                )}
+              </button>
+            </div>
             <p className="mt-1 text-xs text-gray-500">
-              💡 Esta imagen se mostrará cuando no haya un color seleccionado o no haya selector de
-              colores
+              💡 Sube una imagen desde tu PC o pega una URL. Esta imagen se mostrará cuando no haya un color seleccionado.
             </p>
           </div>
         </div>
