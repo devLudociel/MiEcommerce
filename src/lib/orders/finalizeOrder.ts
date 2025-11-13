@@ -199,6 +199,55 @@ export async function finalizeOrder({
     }
   }
 
+  // Grant access to digital products
+  if (data.userId && data.userId !== 'guest' && data.items) {
+    try {
+      const items = Array.isArray(data.items) ? data.items : [];
+
+      for (const item of items) {
+        // Check if this is a digital product
+        const productRef = db.collection('products').doc(String(item.productId));
+        const productSnap = await productRef.get();
+
+        if (productSnap.exists) {
+          const productData = productSnap.data();
+
+          if (productData?.isDigital && productData?.digitalFiles) {
+            logger.info('[finalizeOrder] Granting access to digital product', {
+              orderId,
+              productId: item.productId,
+              productName: item.productName,
+              userId: data.userId,
+            });
+
+            // Create digital access record
+            await db.collection('digital_access').add({
+              userId: String(data.userId),
+              userEmail: String(data.shippingInfo?.email || data.customerEmail || ''),
+              productId: String(item.productId),
+              productName: String(item.productName),
+              orderId,
+              files: productData.digitalFiles,
+              purchasedAt: FieldValue.serverTimestamp(),
+              totalDownloads: 0,
+              expiresAt: null, // null = never expires
+              maxDownloads: null, // null = unlimited
+            });
+
+            logger.info('[finalizeOrder] Digital access granted', {
+              orderId,
+              productId: item.productId,
+              filesCount: productData.digitalFiles.length,
+            });
+          }
+        }
+      }
+    } catch (digitalError) {
+      logger.error('[finalizeOrder] Error granting digital access', digitalError);
+      // Non-critical - don't throw
+    }
+  }
+
   // Cashback credit
   // Only give cashback on the amount actually paid (after wallet and coupon discounts)
   if (data.userId && data.userId !== 'guest' && Number(data.subtotal) > 0) {

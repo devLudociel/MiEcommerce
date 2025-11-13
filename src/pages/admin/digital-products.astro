@@ -1,0 +1,39 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import DigitalProductCreator from '../../components/admin/DigitalProductCreator';
+---
+
+<Layout title="Administrar Productos Digitales">
+  <div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Productos Digitales</h1>
+        <p class="text-gray-600">
+          Crea y gestiona productos digitales descargables (packs de imágenes, PDFs, etc.)
+        </p>
+      </div>
+
+      <!-- Info Card -->
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+        <h3 class="font-semibold text-blue-900 mb-2">📦 ¿Qué son los productos digitales?</h3>
+        <p class="text-blue-800 mb-4">
+          Los productos digitales son archivos descargables que los clientes reciben automáticamente
+          después de comprar. Perfectos para vender packs de cliparts, plantillas, PDFs, etc.
+        </p>
+        <ul class="space-y-1 text-sm text-blue-800">
+          <li>✓ Los clientes reciben acceso instantáneo después del pago</li>
+          <li>✓ Descargas ilimitadas y acceso permanente</li>
+          <li>✓ Los archivos se almacenan en Firebase Storage</li>
+          <li>✓ Los clientes acceden desde su biblioteca de descargas</li>
+        </ul>
+      </div>
+
+      <!-- Creator -->
+      <DigitalProductCreator client:load />
+    </div>
+  </div>
+</Layout>
+
+<style>
+  /* Add any custom styles here */
+</style>

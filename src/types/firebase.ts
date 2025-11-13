@@ -15,6 +15,9 @@ export interface FirebaseProduct {
   active: boolean; // Para poder desactivar productos sin borrarlos
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  // Digital product fields
+  isDigital?: boolean; // Si es producto digital
+  digitalFiles?: DigitalFile[]; // Archivos descargables
 }
 
 export interface CustomizationOption {
@@ -40,7 +43,8 @@ export type ProductCategory =
   | 'laser'
   | 'eventos'
   | 'regalos'
-  | 'bordado';
+  | 'bordado'
+  | 'digital';
 
 // Para las órdenes/pedidos (futuro)
 export interface FirebaseOrder {
@@ -252,4 +256,58 @@ export interface OrderData {
   couponDiscount?: number;
   // Wallet information
   walletDiscount?: number;
+}
+
+// ============================================================================
+// DIGITAL PRODUCTS: Downloadable files system
+// ============================================================================
+
+/**
+ * Digital file attached to a product
+ */
+export interface DigitalFile {
+  id: string; // Unique file ID
+  name: string; // Display name (e.g., "Pack de 100 imágenes.zip")
+  description?: string;
+  fileUrl: string; // Firebase Storage URL (private)
+  fileSize: number; // Size in bytes
+  fileType: string; // MIME type (e.g., "application/zip", "image/png")
+  format: 'image' | 'pdf' | 'zip' | 'other'; // File category
+  uploadedAt: Timestamp;
+}
+
+/**
+ * User access to digital products
+ * Created when user purchases a digital product
+ */
+export interface DigitalAccess {
+  id?: string;
+  userId: string; // User who purchased
+  userEmail: string;
+  productId: string; // Digital product purchased
+  productName: string;
+  orderId: string; // Order that granted access
+  files: DigitalFile[]; // Files user can download
+  purchasedAt: Timestamp;
+  totalDownloads: number; // Total times downloaded
+  lastDownloadAt?: Timestamp;
+  // Unlimited downloads, permanent access (Etsy style)
+  expiresAt?: null; // null = never expires
+  maxDownloads?: null; // null = unlimited
+}
+
+/**
+ * Download log for analytics
+ */
+export interface DownloadLog {
+  id?: string;
+  userId: string;
+  digitalAccessId: string;
+  productId: string;
+  productName: string;
+  fileId: string;
+  fileName: string;
+  downloadedAt: Timestamp;
+  ipAddress?: string;
+  userAgent?: string;
 }
