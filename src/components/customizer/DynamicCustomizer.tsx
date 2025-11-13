@@ -5,11 +5,13 @@ import type {
   CustomizationField,
   CustomizationValue,
   CustomizationPricing,
+  ColorSelectorConfig,
 } from '../../types/customization';
 import ColorSelector from './fields/ColorSelector';
 import SizeSelector from './fields/SizeSelector';
 import DropdownField from './fields/DropdownField';
 import ImageUploadField from './fields/ImageUploadField';
+import ProductPreview from './ProductPreview';
 import { addToCart } from '../../store/cartStore';
 import { logger } from '../../lib/logger';
 import { notify } from '../../lib/notifications';
@@ -230,80 +232,142 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     return orderA - orderB;
   });
 
+  // Get base image for preview based on selected color
+  const getBaseImage = (): string => {
+    // Find color selector field
+    const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
+    if (!colorField) {
+      // No color selector, use default image from schema
+      return schema.previewImages?.default || product.images[0] || '';
+    }
+
+    const colorValue = values[colorField.id];
+    if (!colorValue) {
+      // No color selected yet, use default
+      return schema.previewImages?.default || product.images[0] || '';
+    }
+
+    // Get the selected color's preview image
+    const colorConfig = colorField.config as ColorSelectorConfig;
+    const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
+
+    if (selectedColor?.previewImage) {
+      return selectedColor.previewImage;
+    }
+
+    // Fallback to default
+    return schema.previewImages?.default || product.images[0] || '';
+  };
+
+  // Get user uploaded image
+  const getUserImage = (): string | null => {
+    const imageField = schema.fields.find(f => f.fieldType === 'image_upload');
+    if (!imageField) return null;
+
+    const imageValue = values[imageField.id];
+    return (imageValue?.imageUrl as string) || null;
+  };
+
+  // Get image transform
+  const getImageTransform = () => {
+    const imageField = schema.fields.find(f => f.fieldType === 'image_upload');
+    if (!imageField) return undefined;
+
+    const imageValue = values[imageField.id];
+    return imageValue?.imageTransform;
+  };
+
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Personaliza tu {product.name}</h2>
-        <p className="text-gray-600">{product.description}</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <h2 className="text-4xl font-bold text-gray-900 mb-2">Personaliza tu {product.name}</h2>
+          <p className="text-gray-600">{product.description}</p>
+        </div>
 
-      {/* Fields */}
-      <div className="space-y-6 mb-8">
-        {sortedFields.map((field) => renderField(field))}
-      </div>
-
-      {/* Pricing Summary */}
-      <div className="bg-gradient-to-r from-purple-50 to-cyan-50 rounded-xl p-6 mb-6">
-        <h3 className="font-bold text-lg mb-4">Resumen de Precio</h3>
-
-        <div className="space-y-2">
-          <div className="flex justify-between text-gray-700">
-            <span>Precio base:</span>
-            <span className="font-medium">€{pricing.basePrice.toFixed(2)}</span>
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column: Preview */}
+          <div className="order-2 lg:order-1">
+            <ProductPreview
+              baseImage={getBaseImage()}
+              userImage={getUserImage()}
+              transform={getImageTransform()}
+              productName={product.name}
+            />
           </div>
 
-          {pricing.breakdown.map((item, idx) => (
-            <div key={idx} className="flex justify-between text-gray-700">
-              <span>{item.fieldLabel}:</span>
-              <span className="font-medium text-purple-600">+€{item.price.toFixed(2)}</span>
+          {/* Right Column: Fields */}
+          <div className="order-1 lg:order-2">
+            <div className="space-y-6 mb-8">
+              {sortedFields.map((field) => renderField(field))}
             </div>
-          ))}
 
-          <div className="border-t-2 border-gray-300 pt-2 mt-2">
-            <div className="flex justify-between items-center">
-              <span className="text-xl font-bold text-gray-900">Total:</span>
-              <span className="text-2xl font-bold text-purple-600">
-                €{pricing.totalPrice.toFixed(2)}
-              </span>
+            {/* Pricing Summary */}
+            <div className="bg-gradient-to-r from-purple-50 to-cyan-50 rounded-xl p-6 mb-6">
+              <h3 className="font-bold text-lg mb-4">Resumen de Precio</h3>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-gray-700">
+                  <span>Precio base:</span>
+                  <span className="font-medium">€{pricing.basePrice.toFixed(2)}</span>
+                </div>
+
+                {pricing.breakdown.map((item, idx) => (
+                  <div key={idx} className="flex justify-between text-gray-700">
+                    <span>{item.fieldLabel}:</span>
+                    <span className="font-medium text-purple-600">+€{item.price.toFixed(2)}</span>
+                  </div>
+                ))}
+
+                <div className="border-t-2 border-gray-300 pt-2 mt-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xl font-bold text-gray-900">Total:</span>
+                    <span className="text-2xl font-bold text-purple-600">
+                      €{pricing.totalPrice.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* Error message */}
+            {error && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                ❌ {error}
+              </div>
+            )}
+
+            {/* Add to Cart button */}
+            <button
+              onClick={handleAddToCart}
+              disabled={isAddingToCart}
+              className="w-full bg-gradient-to-r from-purple-500 to-cyan-500 text-white py-4 rounded-xl font-bold text-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+            >
+              {isAddingToCart ? (
+                <>
+                  <Loader className="w-6 h-6 animate-spin" />
+                  Añadiendo...
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="w-6 h-6" />
+                  Añadir al Carrito
+                </>
+              )}
+            </button>
+
+            {/* Help text */}
+            <p className="text-center text-sm text-gray-500 mt-4">
+              ¿Tienes dudas? Contáctanos en{' '}
+              <a href="mailto:soporte@tutienda.com" className="text-purple-600 hover:underline">
+                soporte@tutienda.com
+              </a>
+            </p>
           </div>
         </div>
       </div>
-
-      {/* Error message */}
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          ❌ {error}
-        </div>
-      )}
-
-      {/* Add to Cart button */}
-      <button
-        onClick={handleAddToCart}
-        disabled={isAddingToCart}
-        className="w-full bg-gradient-to-r from-purple-500 to-cyan-500 text-white py-4 rounded-xl font-bold text-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-      >
-        {isAddingToCart ? (
-          <>
-            <Loader className="w-6 h-6 animate-spin" />
-            Añadiendo...
-          </>
-        ) : (
-          <>
-            <ShoppingCart className="w-6 h-6" />
-            Añadir al Carrito
-          </>
-        )}
-      </button>
-
-      {/* Help text */}
-      <p className="text-center text-sm text-gray-500 mt-4">
-        ¿Tienes dudas? Contáctanos en{' '}
-        <a href="mailto:soporte@tutienda.com" className="text-purple-600 hover:underline">
-          soporte@tutienda.com
-        </a>
-      </p>
     </div>
   );
 }

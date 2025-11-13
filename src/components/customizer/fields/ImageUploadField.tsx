@@ -1,9 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { Upload, Loader, X } from 'lucide-react';
-import type { ImageUploadConfig, CustomizationValue } from '../../../types/customization';
+import type { ImageUploadConfig, CustomizationValue, ImageTransform } from '../../../types/customization';
 import { uploadCustomImage, auth } from '../../../lib/firebase';
 import { compressImage, validateImageFile, fileToBase64 } from '../../../utils/imageCompression';
 import { logger } from '../../../lib/logger';
+import ImagePositionEditor from '../ImagePositionEditor';
 
 interface ImageUploadFieldProps {
   fieldId: string;
@@ -41,6 +42,29 @@ export default function ImageUploadField({
   const [preview, setPreview] = useState<string | null>(
     (value?.imageUrl as string | undefined) || null
   );
+
+  // Image transform state
+  const [transform, setTransform] = useState<ImageTransform>(
+    value?.imageTransform || {
+      x: 50,
+      y: 50,
+      scale: 1,
+      rotation: 0,
+    }
+  );
+
+  const handleTransformChange = (newTransform: ImageTransform) => {
+    setTransform(newTransform);
+    // Update the value with new transform
+    onChange({
+      fieldId,
+      value: value?.value || '',
+      imageUrl: value?.imageUrl,
+      imagePath: value?.imagePath,
+      imageTransform: newTransform,
+      priceModifier: 0,
+    });
+  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -88,11 +112,21 @@ export default function ImageUploadField({
 
       const { url, path } = await uploadCustomImage(compressedFile, user.uid, productType);
 
+      // Reset transform to default when uploading new image
+      const defaultTransform: ImageTransform = {
+        x: 50,
+        y: 50,
+        scale: 1,
+        rotation: 0,
+      };
+      setTransform(defaultTransform);
+
       // Update value
       onChange({
         fieldId,
         value: url,
         imageUrl: url,
+        imageTransform: defaultTransform,
         imagePath: path,
         priceModifier: 0,
       });
@@ -208,6 +242,17 @@ export default function ImageUploadField({
             <span className="font-bold">✓</span>
             <span>Imagen cargada correctamente</span>
           </div>
+        </div>
+      )}
+
+      {/* Position Controls */}
+      {preview && safeConfig.showPositionControls && (
+        <div className="mt-4">
+          <ImagePositionEditor
+            transform={transform}
+            onChange={handleTransformChange}
+            disabled={isLoading}
+          />
         </div>
       )}
 

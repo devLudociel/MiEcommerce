@@ -90,6 +90,13 @@ export default function ColorSelectorConfigEditor({ colors, onChange }: ColorSel
                   className="w-full px-2 py-1 text-xs font-mono mt-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="#000000"
                 />
+                <input
+                  type="text"
+                  value={color.previewImage || ''}
+                  onChange={(e) => handleUpdateColor(color.id, { previewImage: e.target.value })}
+                  className="w-full px-2 py-1 text-xs mt-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="URL imagen preview (ej: https://...)"
+                />
               </div>
 
               {/* Remove Button */}
@@ -152,6 +159,22 @@ export default function ColorSelectorConfigEditor({ colors, onChange }: ColorSel
                   className="w-20 h-10 cursor-pointer rounded-lg border border-gray-300"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                URL Imagen Preview (Opcional)
+              </label>
+              <input
+                type="text"
+                value={newColor.previewImage || ''}
+                onChange={(e) => setNewColor({ ...newColor, previewImage: e.target.value })}
+                placeholder="https://ejemplo.com/imagen-camiseta-roja.jpg"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                💡 URL de la imagen del producto en este color (ej: camiseta blanca, camiseta negra)
+              </p>
             </div>
 
             {/* Preview */}

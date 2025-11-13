@@ -38,6 +38,9 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
   const [fields, setFields] = useState<CustomizationField[]>(initialSchema?.fields || []);
   const [showAddField, setShowAddField] = useState(false);
   const [expandedConfigs, setExpandedConfigs] = useState<Record<string, boolean>>({});
+  const [defaultPreviewImage, setDefaultPreviewImage] = useState<string>(
+    initialSchema?.previewImages?.default || ''
+  );
 
   const handleAddField = () => {
     const newField: CustomizationField = {
@@ -149,6 +152,9 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
     const schema: CustomizationSchema = {
       fields: fields.map((f, idx) => ({ ...f, order: idx })),
       displayComponent: 'DynamicCustomizer',
+      previewImages: {
+        default: defaultPreviewImage || undefined,
+      },
     };
 
     onSave(schema);
@@ -178,6 +184,34 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
 
       {/* Editor */}
       <div className="p-6">
+        {/* Preview Configuration */}
+        <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+          <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
+            <span>🖼️</span>
+            Configuración de Preview Visual
+          </h4>
+          <p className="text-sm text-blue-700 mb-3">
+            Configura la imagen por defecto que se mostrará en el preview. Si tienes un campo de
+            selector de colores, cada color puede tener su propia imagen.
+          </p>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Imagen Preview por Defecto (Opcional)
+            </label>
+            <input
+              type="text"
+              value={defaultPreviewImage}
+              onChange={(e) => setDefaultPreviewImage(e.target.value)}
+              placeholder="https://ejemplo.com/imagen-producto-default.jpg"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              💡 Esta imagen se mostrará cuando no haya un color seleccionado o no haya selector de
+              colores
+            </p>
+          </div>
+        </div>
+
         {/* Fields List */}
         <div className="space-y-4 mb-6">
           {fields.length === 0 ? (

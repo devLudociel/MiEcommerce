@@ -203,9 +203,21 @@ export interface CustomizationValue {
   // Para campos de imagen
   imageUrl?: string;
   imagePath?: string;
+  imageTransform?: ImageTransform;  // Transformación de la imagen (posición, escala, rotación)
 
   // Para campos con precio extra
   priceModifier?: number;
+}
+
+// ============================================================================
+// TRANSFORMACIÓN DE IMAGEN (para editor de posición)
+// ============================================================================
+
+export interface ImageTransform {
+  x: number;        // Posición X en % (0-100)
+  y: number;        // Posición Y en % (0-100)
+  scale: number;    // Escala (0.1 a 3.0)
+  rotation: number; // Rotación en grados (0-360)
 }
 
 // ============================================================================
