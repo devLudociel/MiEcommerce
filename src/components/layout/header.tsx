@@ -11,6 +11,7 @@ import {
   getCartItemCount,
 } from '../../store/cartStore';
 import { categories, type MenuCategory, type MenuSubcategory } from '../../data/categories';
+import CustomizationDetails from '../cart/CustomizationDetails';
 
 // ✅ DESPUÉS (sin error de hidratación)
 function CartBadge() {
@@ -79,21 +80,22 @@ const CartDropdown = memo(function CartDropdown({ onClose }: { onClose: () => vo
         ) : (
           <div className="space-y-3">
             {cart.items.map((item) => (
-              <div key={`${item.id}-${item.variantId ?? 'v'}`} className="flex items-center gap-3">
+              <div key={`${item.id}-${item.variantId ?? 'v'}`} className="flex items-start gap-3">
                 {item.image ? (
                   <img
                     src={item.image}
                     alt={item.name}
-                    className="w-12 h-12 rounded object-cover"
+                    className="w-12 h-12 rounded object-cover flex-shrink-0"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded bg-gray-100" />
+                  <div className="w-12 h-12 rounded bg-gray-100 flex-shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{item.name}</div>
                   {item.variantName && (
                     <div className="text-xs text-gray-500 truncate">{item.variantName}</div>
                   )}
+                  <CustomizationDetails customization={item.customization} />
                   <div className="flex items-center gap-2 mt-1">
                     <button
                       type="button"
@@ -121,7 +123,7 @@ const CartDropdown = memo(function CartDropdown({ onClose }: { onClose: () => vo
                     </button>
                   </div>
                 </div>
-                <div className="text-sm font-semibold text-cyan-700 whitespace-nowrap">
+                <div className="text-sm font-semibold text-cyan-700 whitespace-nowrap flex-shrink-0">
                   €{(item.price * item.quantity).toFixed(2)}
                 </div>
               </div>

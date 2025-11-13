@@ -14,6 +14,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useSecureCardPayment } from '../checkout/SecureCardPayment';
 import { getUserData } from '../../lib/userProfile';
 import type { Address } from '../../lib/userProfile';
+import CustomizationDetails from '../cart/CustomizationDetails';
 
 interface ShippingInfo {
   firstName: string;
@@ -1441,6 +1442,7 @@ export default function Checkout() {
                       <p className="font-bold text-cyan-600 text-sm">
                         {(item.price * item.quantity).toFixed(2)} €
                       </p>
+                      <CustomizationDetails customization={item.customization} />
                     </div>
                   </div>
                 ))}
