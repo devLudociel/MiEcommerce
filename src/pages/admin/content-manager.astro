@@ -1,0 +1,128 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import TemplateCreator from '../../components/admin/TemplateCreator';
+import ClipartUploader from '../../components/admin/ClipartUploader';
+---
+
+<BaseLayout title="Gestor de Contenido - Admin">
+  <div class="min-h-screen bg-gray-50 py-8 px-4">
+    <div class="max-w-7xl mx-auto">
+      {/* Header */}
+      <div class="mb-8">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">Gestor de Contenido</h1>
+        <p class="text-gray-600">
+          Crea y gestiona plantillas predefinidas y cliparts para el personalizador
+        </p>
+      </div>
+
+      {/* Alert Info */}
+      <div class="mb-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+        <div class="flex items-start">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clip-rule="evenodd"></path>
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-blue-800">Información importante</h3>
+            <div class="mt-2 text-sm text-blue-700">
+              <ul class="list-disc list-inside space-y-1">
+                <li>Los cliparts y plantillas se guardarán en Firestore</li>
+                <li>
+                  Las imágenes de cliparts se suben automáticamente a Firebase Storage
+                </li>
+                <li>
+                  Para plantillas, necesitas especificar los campos en formato JSON
+                </li>
+                <li>Puedes marcar contenido como Premium para monetización</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Two Column Layout */}
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left: Template Creator */}
+        <div>
+          <TemplateCreator client:load />
+        </div>
+
+        {/* Right: Clipart Uploader */}
+        <div>
+          <ClipartUploader client:load />
+        </div>
+      </div>
+
+      {/* Quick Guide */}
+      <div class="mt-8 bg-white rounded-xl border-2 border-gray-200 p-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Guía Rápida</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Templates Guide */}
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+              <span class="text-2xl">🎨</span>
+              Crear Plantillas
+            </h3>
+            <ol class="list-decimal list-inside space-y-2 text-sm text-gray-600">
+              <li>Elige nombre y descripción descriptivos</li>
+              <li>Selecciona categoría del producto</li>
+              <li>Añade tags relevantes para búsquedas</li>
+              <li>Sube URL de imagen de preview</li>
+              <li>
+                Define campos en JSON:<br />
+                <code class="text-xs bg-gray-100 px-2 py-1 rounded">
+                  [{"{"}"fieldId": "...", "value": "..."{"}"}]
+                </code>
+              </li>
+              <li>Click en "Crear Plantilla"</li>
+            </ol>
+          </div>
+
+          {/* Cliparts Guide */}
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+              <span class="text-2xl">🖼️</span>
+              Subir Cliparts
+            </h3>
+            <ol class="list-decimal list-inside space-y-2 text-sm text-gray-600">
+              <li>Selecciona imagen PNG o SVG (preferir SVG)</li>
+              <li>Ingresa nombre descriptivo</li>
+              <li>Elige categoría principal</li>
+              <li>Añade tags separados por coma</li>
+              <li>Marca opciones (transparencia, premium)</li>
+              <li>Click en "Crear Clipart"</li>
+            </ol>
+            <p class="mt-3 text-xs text-gray-500">
+              💡 Tip: Usa imágenes de 512x512px con fondo transparente para mejores
+              resultados
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Resources */}
+      <div class="mt-6 bg-purple-50 border border-purple-200 rounded-lg p-4">
+        <h3 class="font-semibold text-purple-900 mb-2">Recursos Recomendados</h3>
+        <ul class="text-sm text-purple-700 space-y-1">
+          <li>
+            🎨 <strong>Flaticon:</strong> Miles de iconos vectoriales (requiere licencia)
+          </li>
+          <li>
+            🖼️ <strong>Freepik:</strong> Ilustraciones y cliparts (requiere licencia)
+          </li>
+          <li>
+            😊 <strong>Openmoji:</strong> Emojis open source gratuitos
+          </li>
+          <li>
+            ⚡ <strong>Heroicons:</strong> Iconos minimalistas gratuitos
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
