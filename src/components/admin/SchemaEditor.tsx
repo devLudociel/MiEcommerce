@@ -157,9 +157,11 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
     const schema: CustomizationSchema = {
       fields: fields.map((f, idx) => ({ ...f, order: idx })),
       displayComponent: 'DynamicCustomizer',
-      previewImages: {
-        default: defaultPreviewImage || undefined,
-      },
+      ...(defaultPreviewImage && {
+        previewImages: {
+          default: defaultPreviewImage,
+        },
+      }),
     };
 
     onSave(schema);
