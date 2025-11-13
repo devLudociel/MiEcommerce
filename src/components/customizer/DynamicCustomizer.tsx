@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Loader, Sparkles } from 'lucide-react';
+import { ShoppingCart, Loader, Sparkles, Image as ImageIcon } from 'lucide-react';
 import type {
   CustomizationSchema,
   CustomizationField,
@@ -7,6 +7,8 @@ import type {
   CustomizationPricing,
   ColorSelectorConfig,
   DesignTemplate,
+  Clipart,
+  DesignLayer,
 } from '../../types/customization';
 import ColorSelector from './fields/ColorSelector';
 import SizeSelector from './fields/SizeSelector';
@@ -14,6 +16,7 @@ import DropdownField from './fields/DropdownField';
 import ImageUploadField from './fields/ImageUploadField';
 import ProductPreview from './ProductPreview';
 import TemplateGallery from './TemplateGallery';
+import ClipartGallery from './ClipartGallery';
 import ShareDesignButton from './ShareDesignButton';
 import SaveDesignButton from './SaveDesignButton';
 import { addToCart } from '../../store/cartStore';
@@ -41,6 +44,8 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showCliparts, setShowCliparts] = useState(false);
+  const [layers, setLayers] = useState<DesignLayer[]>([]);
 
   // Calculate pricing
   const pricing: CustomizationPricing = {
@@ -108,6 +113,31 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     setValues(newValues);
     setShowTemplates(false);
     notify.success(`Plantilla "${template.name}" cargada correctamente`);
+  };
+
+  const handleSelectClipart = (clipart: Clipart) => {
+    logger.info('[DynamicCustomizer] Adding clipart:', clipart.name);
+
+    // Create new layer for the clipart
+    const newLayer: DesignLayer = {
+      id: `layer_${Date.now()}`,
+      type: 'clipart',
+      source: clipart.imageUrl,
+      transform: {
+        x: 50, // Center
+        y: 50, // Center
+        scale: 0.5, // 50% initial size
+        rotation: 0,
+      },
+      zIndex: layers.length,
+      locked: false,
+      visible: true,
+      opacity: 100,
+    };
+
+    setLayers((prev) => [...prev, newLayer]);
+    setShowCliparts(false);
+    notify.success(`Clipart "${clipart.name}" añadido`);
   };
 
   const validateFields = (): boolean => {
@@ -341,6 +371,18 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
           </div>
         )}
 
+        {/* Clipart Gallery Modal */}
+        {showCliparts && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <div className="max-w-6xl w-full">
+              <ClipartGallery
+                onSelectClipart={handleSelectClipart}
+                onClose={() => setShowCliparts(false)}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column: Preview */}
@@ -351,18 +393,40 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
               transform={getImageTransform()}
               productName={product.name}
             />
+
+            {/* Info about cliparts */}
+            {layers.length > 0 && (
+              <div className="mt-4 p-4 bg-pink-50 border-2 border-pink-200 rounded-lg">
+                <p className="text-sm text-pink-800 font-medium mb-2">
+                  🎨 {layers.length} clipart{layers.length > 1 ? 's' : ''} añadido{layers.length > 1 ? 's' : ''}
+                </p>
+                <p className="text-xs text-pink-600">
+                  Los cliparts se agregarán sobre tu diseño. Puedes añadir múltiples elementos.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Right Column: Fields */}
           <div className="order-1 lg:order-2">
-            {/* Template Button */}
-            <button
-              onClick={() => setShowTemplates(true)}
-              className="w-full mb-6 bg-gradient-to-r from-pink-500 to-purple-500 text-white py-3 px-6 rounded-xl font-bold text-base hover:shadow-xl transition-all flex items-center justify-center gap-3 group"
-            >
-              <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
-              Usar Plantilla Predefinida
-            </button>
+            {/* Template & Clipart Buttons */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+              <button
+                onClick={() => setShowTemplates(true)}
+                className="bg-gradient-to-r from-pink-500 to-purple-500 text-white py-3 px-6 rounded-xl font-bold text-base hover:shadow-xl transition-all flex items-center justify-center gap-3 group"
+              >
+                <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
+                Plantillas
+              </button>
+
+              <button
+                onClick={() => setShowCliparts(true)}
+                className="bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 px-6 rounded-xl font-bold text-base hover:shadow-xl transition-all flex items-center justify-center gap-3 group"
+              >
+                <ImageIcon className="w-5 h-5 group-hover:animate-pulse" />
+                Cliparts
+              </button>
+            </div>
 
             <div className="space-y-6 mb-8">
               {sortedFields.map((field) => renderField(field))}
