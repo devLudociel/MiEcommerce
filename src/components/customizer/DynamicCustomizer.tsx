@@ -15,6 +15,7 @@ import SizeSelector from './fields/SizeSelector';
 import DropdownField from './fields/DropdownField';
 import ImageUploadField from './fields/ImageUploadField';
 import ProductPreview from './ProductPreview';
+import SplitProductPreview from './SplitProductPreview';
 import TemplateGallery from './TemplateGallery';
 import ClipartGallery from './ClipartGallery';
 import ShareDesignButton from './ShareDesignButton';
@@ -349,6 +350,24 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     return imageValue?.imageTransform;
   };
 
+  // Detectar si es producto tipo resina (la imagen es solo referencia, no se imprime en la caja)
+  const isResinProduct = (): boolean => {
+    const categoryLower = product.categoryId?.toLowerCase() || '';
+    const nameLower = product.name?.toLowerCase() || '';
+    const subcategoryLower = (product as any).subcategoryId?.toLowerCase() || '';
+    const tags = (product as any).tags?.map((t: string) => t.toLowerCase()) || [];
+
+    return (
+      categoryLower.includes('resina') ||
+      categoryLower.includes('figura') ||
+      subcategoryLower.includes('resina') ||
+      subcategoryLower.includes('figura') ||
+      nameLower.includes('resina') ||
+      nameLower.includes('figura') ||
+      tags.some((tag: string) => tag.includes('resina') || tag.includes('figura'))
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-8 px-4">
       <div className="max-w-7xl mx-auto">
@@ -387,12 +406,23 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column: Preview */}
           <div className="order-2 lg:order-1">
-            <ProductPreview
-              baseImage={getBaseImage()}
-              userImage={getUserImage()}
-              transform={getImageTransform()}
-              productName={product.name}
-            />
+            {/* Usar SplitProductPreview para productos de resina (imagen es solo referencia) */}
+            {isResinProduct() ? (
+              <SplitProductPreview
+                baseImage={getBaseImage()}
+                userImage={getUserImage()}
+                productName={product.name}
+                baseImageLabel="Tu caja personalizada"
+                userImageLabel="Foto de referencia"
+              />
+            ) : (
+              <ProductPreview
+                baseImage={getBaseImage()}
+                userImage={getUserImage()}
+                transform={getImageTransform()}
+                productName={product.name}
+              />
+            )}
 
             {/* Info about cliparts */}
             {layers.length > 0 && (
