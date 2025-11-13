@@ -3,13 +3,16 @@ import { useEffect, useState, Suspense, lazy } from 'react';
 import { doc, getDoc, collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import type { ProductAttributeValue } from '../../data/productAttributes';
+import type { CustomizationSchema } from '../../types/customization';
 import { logger } from '../../lib/logger';
+import { getSchemaForProduct } from '../../lib/customization/schemas';
 
 // PERFORMANCE: Lazy load customizer components for code splitting
 // Only the needed customizer will be loaded, reducing initial bundle size
 const ShirtCustomizer = lazy(() => import('./ShirtCustomizer.tsx'));
 const FrameCustomizer = lazy(() => import('./FrameCustomizer.tsx'));
 const ResinCustomizer = lazy(() => import('./ResinCustomizer.tsx'));
+const DynamicCustomizer = lazy(() => import('./DynamicCustomizer.tsx'));
 
 interface FirebaseProduct {
   id: string;
@@ -25,6 +28,7 @@ interface FirebaseProduct {
   slug: string;
   active: boolean;
   customizerType?: 'shirt' | 'frame' | 'resin' | 'default'; // Campo para especificar tipo
+  customizationSchemaId?: string; // ID del schema personalizado (si existe)
 }
 
 interface Props {
@@ -46,6 +50,56 @@ const CUSTOMIZER_TYPE_MAP: Record<string, 'shirt' | 'frame' | 'resin' | 'default
   esculturas: 'resin',
   // Añade más según tus subcategorías
 };
+
+// Mapeo de categorías/subcategorías a IDs de customization schemas
+const SCHEMA_ID_MAP: Record<string, string> = {
+  // Mapeo de subcategoryId/categoryId a schema IDs
+  camisetas: 'cat_camisetas',
+  ropa: 'cat_camisetas',
+  cuadros: 'cat_cuadros',
+  marcos: 'cat_cuadros',
+  arte: 'cat_cuadros',
+  resina: 'cat_resina',
+  figuras: 'cat_resina',
+  esculturas: 'cat_resina',
+  tazas: 'cat_tazas',
+  taza: 'cat_tazas',
+  // Añade más según tus categorías
+};
+
+// Detectar el schema ID apropiado para el producto
+function detectSchemaId(product: FirebaseProduct): string | null {
+  // 1. Si el producto tiene customizationSchemaId explícito, usar ese
+  if (product.customizationSchemaId) {
+    return product.customizationSchemaId;
+  }
+
+  // 2. Buscar en subcategoryId
+  const subcategoryLower = product.subcategoryId?.toLowerCase() || '';
+  for (const [key, schemaId] of Object.entries(SCHEMA_ID_MAP)) {
+    if (subcategoryLower.includes(key)) {
+      return schemaId;
+    }
+  }
+
+  // 3. Buscar en categoryId
+  const categoryLower = product.categoryId?.toLowerCase() || '';
+  for (const [key, schemaId] of Object.entries(SCHEMA_ID_MAP)) {
+    if (categoryLower.includes(key)) {
+      return schemaId;
+    }
+  }
+
+  // 4. Buscar en tags
+  const tags = product.tags?.map((t) => t.toLowerCase()) || [];
+  for (const tag of tags) {
+    if (SCHEMA_ID_MAP[tag]) {
+      return SCHEMA_ID_MAP[tag];
+    }
+  }
+
+  return null;
+}
 
 // Detectar tipo de personalizador basado en el producto
 function detectCustomizerType(product: FirebaseProduct): 'shirt' | 'frame' | 'resin' | 'default' {
@@ -89,6 +143,8 @@ export default function ProductCustomizer({ slug }: Props) {
   const [customizerType, setCustomizerType] = useState<'shirt' | 'frame' | 'resin' | 'default'>(
     'default'
   );
+  const [dynamicSchema, setDynamicSchema] = useState<CustomizationSchema | null>(null);
+  const [useDynamic, setUseDynamic] = useState(false);
 
   useEffect(() => {
     async function loadProduct() {
@@ -127,11 +183,37 @@ export default function ProductCustomizer({ slug }: Props) {
 
         setProduct(productData);
 
-        // Detectar automáticamente el tipo de personalizador
-        const type = detectCustomizerType(productData);
-        setCustomizerType(type);
-
-        logger.debug('[ProductCustomizer] Tipo de personalizador detectado:', type);
+        // Intentar cargar esquema dinámico desde Firebase
+        const schemaId = detectSchemaId(productData);
+        if (schemaId) {
+          logger.debug('[ProductCustomizer] Buscando schema dinámico:', schemaId);
+          try {
+            const schema = await getSchemaForProduct(productData.id, schemaId);
+            if (schema) {
+              setDynamicSchema(schema);
+              setUseDynamic(true);
+              logger.info('[ProductCustomizer] Schema dinámico cargado', {
+                schemaId,
+                fieldsCount: schema.fields.length,
+              });
+            } else {
+              logger.debug('[ProductCustomizer] No se encontró schema dinámico, usando customizer tradicional');
+              // No existe schema dinámico, usar customizer tradicional
+              const type = detectCustomizerType(productData);
+              setCustomizerType(type);
+            }
+          } catch (schemaError) {
+            logger.warn('[ProductCustomizer] Error cargando schema dinámico, fallback a tradicional', schemaError);
+            // Error cargando schema, usar customizer tradicional como fallback
+            const type = detectCustomizerType(productData);
+            setCustomizerType(type);
+          }
+        } else {
+          logger.debug('[ProductCustomizer] No schema ID detectado, usando customizer tradicional');
+          // No se detectó schema ID, usar customizer tradicional
+          const type = detectCustomizerType(productData);
+          setCustomizerType(type);
+        }
       } catch (e: any) {
         setError(e?.message || 'Error cargando producto');
       } finally {
@@ -174,6 +256,14 @@ export default function ProductCustomizer({ slug }: Props) {
   // PERFORMANCE: Render customizer with Suspense for lazy loading
   // Only the selected customizer will be loaded and rendered
   const CustomizerComponent = (() => {
+    // Si existe schema dinámico, usar DynamicCustomizer
+    if (useDynamic && dynamicSchema) {
+      logger.debug('[ProductCustomizer] Renderizando DynamicCustomizer');
+      return <DynamicCustomizer product={product} schema={dynamicSchema} />;
+    }
+
+    // Fallback a customizers tradicionales
+    logger.debug('[ProductCustomizer] Renderizando customizer tradicional:', customizerType);
     switch (customizerType) {
       case 'shirt':
         return <ShirtCustomizer product={product} />;

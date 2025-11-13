@@ -6,6 +6,11 @@ import { notify } from '../../lib/notifications';
 import type { CustomizationSchema, ProductCategory } from '../../types/customization';
 import { exampleSchemas, schemaOptions } from '../../data/exampleSchemas';
 import SchemaEditor from './SchemaEditor';
+import {
+  loadAllCustomizationSchemas,
+  saveCustomizationSchema,
+  deleteCustomizationSchema,
+} from '../../lib/customization/schemas';
 
 interface CategoryWithSchema extends ProductCategory {
   customizationSchema?: CustomizationSchema;
@@ -24,8 +29,10 @@ export default function AdminCustomizationPanel() {
   const loadCategories = async () => {
     setLoading(true);
     try {
-      // Para este prototipo, usamos categorías hardcodeadas
-      // En producción, estas vendrían de Firestore
+      // Load schemas from Firebase
+      const savedSchemas = await loadAllCustomizationSchemas();
+
+      // Mock categories - in production, these would come from Firestore too
       const mockCategories: CategoryWithSchema[] = [
         {
           id: 'cat_camisetas',
@@ -34,7 +41,7 @@ export default function AdminCustomizationPanel() {
           description: 'Crea tu camiseta única',
           icon: '👕',
           active: true,
-          customizationSchema: exampleSchemas.camisetas,
+          customizationSchema: savedSchemas['cat_camisetas']?.schema || undefined,
         },
         {
           id: 'cat_cuadros',
@@ -43,7 +50,7 @@ export default function AdminCustomizationPanel() {
           description: 'Cuadros con flores personalizadas',
           icon: '🖼️',
           active: true,
-          customizationSchema: exampleSchemas.cuadros,
+          customizationSchema: savedSchemas['cat_cuadros']?.schema || undefined,
         },
         {
           id: 'cat_resina',
@@ -52,7 +59,7 @@ export default function AdminCustomizationPanel() {
           description: 'Figuras en cajas premium',
           icon: '💎',
           active: true,
-          customizationSchema: exampleSchemas.resina,
+          customizationSchema: savedSchemas['cat_resina']?.schema || undefined,
         },
         {
           id: 'cat_tazas',
@@ -61,7 +68,7 @@ export default function AdminCustomizationPanel() {
           description: 'Tazas con diseño personalizado',
           icon: '☕',
           active: true,
-          customizationSchema: exampleSchemas.tazas,
+          customizationSchema: savedSchemas['cat_tazas']?.schema || undefined,
         },
         {
           id: 'cat_nueva',
@@ -70,11 +77,15 @@ export default function AdminCustomizationPanel() {
           description: 'Categoría sin configurar',
           icon: '📦',
           active: false,
+          customizationSchema: savedSchemas['cat_nueva']?.schema || undefined,
         },
       ];
 
       setCategories(mockCategories);
-      logger.info('[AdminCustomizationPanel] Categories loaded', { count: mockCategories.length });
+      logger.info('[AdminCustomizationPanel] Categories loaded from Firebase', {
+        count: mockCategories.length,
+        schemasCount: Object.keys(savedSchemas).length,
+      });
     } catch (error) {
       logger.error('[AdminCustomizationPanel] Error loading categories', error);
       notify.error('Error al cargar las categorías');
@@ -96,7 +107,16 @@ export default function AdminCustomizationPanel() {
         return;
       }
 
-      // Actualizar categoría con el template
+      const category = categories.find((c) => c.id === categoryId);
+      if (!category) {
+        notify.error('Categoría no encontrada');
+        return;
+      }
+
+      // Save to Firebase
+      await saveCustomizationSchema(categoryId, category.name, template);
+
+      // Update local state
       const updatedCategories = categories.map((cat) =>
         cat.id === categoryId ? { ...cat, customizationSchema: template } : cat
       );
@@ -104,13 +124,8 @@ export default function AdminCustomizationPanel() {
       setCategories(updatedCategories);
       setSelectedCategory(updatedCategories.find((c) => c.id === categoryId) || null);
 
-      notify.success('Template aplicado correctamente');
-      logger.info('[AdminCustomizationPanel] Template applied', { categoryId, templateKey });
-
-      // TODO: Guardar en Firestore
-      // await updateDoc(doc(db, 'categories', categoryId), {
-      //   customizationSchema: template
-      // });
+      notify.success('Template aplicado y guardado en Firebase');
+      logger.info('[AdminCustomizationPanel] Template applied and saved', { categoryId, templateKey });
     } catch (error) {
       logger.error('[AdminCustomizationPanel] Error applying template', error);
       notify.error('Error al aplicar el template');
@@ -121,7 +136,10 @@ export default function AdminCustomizationPanel() {
     if (!selectedCategory) return;
 
     try {
-      // Actualizar categoría con el nuevo schema
+      // Save to Firebase
+      await saveCustomizationSchema(selectedCategory.id, selectedCategory.name, schema);
+
+      // Update local state
       const updatedCategories = categories.map((cat) =>
         cat.id === selectedCategory.id ? { ...cat, customizationSchema: schema } : cat
       );
@@ -130,28 +148,27 @@ export default function AdminCustomizationPanel() {
       setSelectedCategory({ ...selectedCategory, customizationSchema: schema });
       setEditingSchema(false);
 
-      notify.success('Schema guardado correctamente');
-      logger.info('[AdminCustomizationPanel] Schema saved', {
+      notify.success('Schema guardado en Firebase exitosamente');
+      logger.info('[AdminCustomizationPanel] Schema saved to Firebase', {
         categoryId: selectedCategory.id,
         fieldsCount: schema.fields.length,
       });
-
-      // TODO: Guardar en Firestore
-      // await updateDoc(doc(db, 'categories', selectedCategory.id), {
-      //   customizationSchema: schema
-      // });
     } catch (error) {
       logger.error('[AdminCustomizationPanel] Error saving schema', error);
-      notify.error('Error al guardar el schema');
+      notify.error('Error al guardar el schema en Firebase');
     }
   };
 
   const handleRemoveSchema = async (categoryId: string) => {
-    if (!confirm('¿Estás seguro de eliminar la configuración de personalización?')) {
+    if (!confirm('¿Estás seguro de eliminar la configuración de personalización de Firebase?')) {
       return;
     }
 
     try {
+      // Delete from Firebase
+      await deleteCustomizationSchema(categoryId);
+
+      // Update local state
       const updatedCategories = categories.map((cat) =>
         cat.id === categoryId ? { ...cat, customizationSchema: undefined } : cat
       );
@@ -161,11 +178,11 @@ export default function AdminCustomizationPanel() {
         setSelectedCategory({ ...selectedCategory, customizationSchema: undefined });
       }
 
-      notify.success('Configuración eliminada');
-      logger.info('[AdminCustomizationPanel] Schema removed', { categoryId });
+      notify.success('Configuración eliminada de Firebase');
+      logger.info('[AdminCustomizationPanel] Schema removed from Firebase', { categoryId });
     } catch (error) {
       logger.error('[AdminCustomizationPanel] Error removing schema', error);
-      notify.error('Error al eliminar la configuración');
+      notify.error('Error al eliminar la configuración de Firebase');
     }
   };
 
