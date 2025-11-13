@@ -61,9 +61,16 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     });
 
   const handleFieldChange = (fieldId: string, value: CustomizationValue) => {
+    // Get field label from schema
+    const field = schema.fields.find((f) => f.id === fieldId);
+    const fieldLabel = field?.label || fieldId;
+
     setValues((prev) => ({
       ...prev,
-      [fieldId]: value,
+      [fieldId]: {
+        ...value,
+        fieldLabel, // Include field label for cart display
+      },
     }));
     setError(null);
   };

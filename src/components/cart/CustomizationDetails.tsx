@@ -49,8 +49,8 @@ export default function CustomizationDetails({ customization }: CustomizationDet
       // Get display value (use displayValue if available, otherwise value)
       const displayValue = field.displayValue || field.value;
 
-      // Format field label (remove field_ prefix if present)
-      const label = field.fieldId
+      // Use fieldLabel if available, otherwise format fieldId as fallback
+      const label = field.fieldLabel || field.fieldId
         .replace(/^field_/, '')
         .replace(/([A-Z])/g, ' $1')
         .replace(/^./, (str: string) => str.toUpperCase())

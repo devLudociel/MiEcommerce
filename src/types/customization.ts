@@ -197,6 +197,7 @@ export interface ProductCategory {
 
 export interface CustomizationValue {
   fieldId: string;
+  fieldLabel?: string;  // Etiqueta legible del campo (ej: "Color", "Talla")
   value: string | string[] | number | boolean;
   displayValue?: string;  // Valor legible para mostrar (ej: "Rojo" en vez de "red")
 
