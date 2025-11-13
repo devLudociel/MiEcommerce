@@ -1,13 +1,9 @@
 import { useState } from 'react';
-import { Upload, Plus, Trash2, Save, Loader, FileArchive, X } from 'lucide-react';
+import { Upload, Plus, Trash2, Save, Loader, FileArchive, X, Image as ImageIcon, CheckCircle } from 'lucide-react';
 import { logger } from '../../lib/logger';
 import { notify } from '../../lib/notifications';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { getApp } from 'firebase/app';
-
-// Use existing Firebase app instance
-const app = getApp();
-const storage = getStorage(app);
+import { storage } from '../../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface DigitalFile {
   id: string;
@@ -29,16 +25,16 @@ export default function DigitalProductCreator() {
   });
 
   const [productImages, setProductImages] = useState<string[]>([]);
-  const [productImageInput, setProductImageInput] = useState('');
+  const [uploadingPreview, setUploadingPreview] = useState(false);
 
   const [digitalFiles, setDigitalFiles] = useState<DigitalFile[]>([]);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [creating, setCreating] = useState(false);
 
   // Upload file to Firebase Storage
-  const uploadFileToStorage = async (file: File): Promise<{ url: string; size: number; type: string }> => {
+  const uploadFileToStorage = async (file: File, folder: string): Promise<{ url: string; size: number; type: string }> => {
     const timestamp = Date.now();
-    const fileName = `digital-products/${timestamp}_${file.name}`;
+    const fileName = `${folder}/${timestamp}_${file.name}`;
     const storageRef = ref(storage, fileName);
 
     await uploadBytes(storageRef, file);
@@ -51,6 +47,36 @@ export default function DigitalProductCreator() {
     };
   };
 
+  // Upload preview image
+  const handlePreviewUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate image
+    if (!file.type.startsWith('image/')) {
+      notify.error('Solo se permiten imágenes');
+      return;
+    }
+
+    try {
+      setUploadingPreview(true);
+
+      // Upload to Firebase Storage
+      const { url } = await uploadFileToStorage(file, 'product-previews');
+
+      setProductImages((prev) => [...prev, url]);
+      notify.success('Imagen de preview subida correctamente');
+    } catch (error) {
+      logger.error('[DigitalProductCreator] Error uploading preview', error);
+      notify.error('Error al subir imagen de preview');
+    } finally {
+      setUploadingPreview(false);
+      // Reset input
+      e.target.value = '';
+    }
+  };
+
+  // Upload digital file
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -59,7 +85,7 @@ export default function DigitalProductCreator() {
       setUploadingFile(true);
 
       // Upload to Firebase Storage
-      const { url, size, type } = await uploadFileToStorage(file);
+      const { url, size, type } = await uploadFileToStorage(file, 'digital-products');
 
       // Detect format
       let format: 'image' | 'pdf' | 'zip' | 'other' = 'other';
@@ -82,7 +108,7 @@ export default function DigitalProductCreator() {
       };
 
       setDigitalFiles((prev) => [...prev, newFile]);
-      notify.success('Archivo subido correctamente');
+      notify.success(`Archivo "${file.name}" subido correctamente`);
     } catch (error) {
       logger.error('[DigitalProductCreator] Error uploading file', error);
       notify.error('Error al subir archivo');
@@ -95,6 +121,7 @@ export default function DigitalProductCreator() {
 
   const removeFile = (fileId: string) => {
     setDigitalFiles((prev) => prev.filter((f) => f.id !== fileId));
+    notify.success('Archivo eliminado');
   };
 
   const updateFileDescription = (fileId: string, description: string) => {
@@ -103,15 +130,9 @@ export default function DigitalProductCreator() {
     );
   };
 
-  const addProductImage = () => {
-    if (productImageInput.trim()) {
-      setProductImages((prev) => [...prev, productImageInput.trim()]);
-      setProductImageInput('');
-    }
-  };
-
   const removeProductImage = (index: number) => {
     setProductImages((prev) => prev.filter((_, i) => i !== index));
+    notify.success('Imagen eliminada');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -262,37 +283,58 @@ export default function DigitalProductCreator() {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Imágenes del producto * (preview para la tienda)
           </label>
-          <div className="flex gap-2 mb-2">
+          <p className="text-xs text-gray-500 mb-3">
+            Sube imágenes que muestren el contenido del pack. Los clientes verán estas imágenes en la tienda.
+          </p>
+
+          <label className="flex items-center justify-center w-full px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors mb-3">
+            <div className="text-center">
+              {uploadingPreview ? (
+                <>
+                  <Loader className="w-8 h-8 mx-auto mb-2 animate-spin text-blue-600" />
+                  <p className="text-sm text-gray-600">Subiendo imagen...</p>
+                </>
+              ) : (
+                <>
+                  <ImageIcon className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm text-gray-600">
+                    Click para subir imagen de preview
+                  </p>
+                  <p className="text-xs text-gray-500">PNG, JPG, JPEG</p>
+                </>
+              )}
+            </div>
             <input
-              type="url"
-              value={productImageInput}
-              onChange={(e) => setProductImageInput(e.target.value)}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="URL de la imagen (puedes usar imgur, imgbb, etc.)"
+              type="file"
+              onChange={handlePreviewUpload}
+              className="hidden"
+              disabled={uploadingPreview}
+              accept="image/png,image/jpeg,image/jpg"
             />
-            <button
-              type="button"
-              onClick={addProductImage}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-          </div>
+          </label>
+
           {productImages.length > 0 && (
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {productImages.map((url, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                  className="relative group rounded-lg overflow-hidden border border-gray-200"
                 >
-                  <span className="text-sm truncate flex-1">{url}</span>
+                  <img
+                    src={url}
+                    alt={`Preview ${index + 1}`}
+                    className="w-full h-32 object-cover"
+                  />
                   <button
                     type="button"
                     onClick={() => removeProductImage(index)}
-                    className="ml-2 text-red-600 hover:text-red-700"
+                    className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <X className="w-4 h-4" />
                   </button>
+                  <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center">
+                    Imagen {index + 1}
+                  </div>
                 </div>
               ))}
             </div>
@@ -330,6 +372,9 @@ export default function DigitalProductCreator() {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Archivos descargables * (lo que recibe el cliente)
           </label>
+          <p className="text-xs text-gray-500 mb-3">
+            Sube los archivos que el cliente podrá descargar después de la compra (ZIP, PNG, JPG, PDF, SVG)
+          </p>
 
           <div className="mb-4">
             <label className="flex items-center justify-center w-full px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
@@ -343,8 +388,9 @@ export default function DigitalProductCreator() {
                   <>
                     <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                     <p className="text-sm text-gray-600">
-                      Click para subir archivo (ZIP, PNG, JPG, PDF, etc.)
+                      Click para subir archivo descargable
                     </p>
+                    <p className="text-xs text-gray-500">ZIP, PNG, JPG, PDF, SVG (máx 100MB)</p>
                   </>
                 )}
               </div>
@@ -361,10 +407,10 @@ export default function DigitalProductCreator() {
           {digitalFiles.length > 0 && (
             <div className="space-y-3">
               {digitalFiles.map((file) => (
-                <div key={file.id} className="p-4 bg-gray-50 rounded-lg">
+                <div key={file.id} className="p-4 bg-green-50 border border-green-200 rounded-lg">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2 flex-1">
-                      <FileArchive className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                      <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 truncate">{file.name}</p>
                         <p className="text-xs text-gray-500">
@@ -397,7 +443,7 @@ export default function DigitalProductCreator() {
         <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
           <button
             type="submit"
-            disabled={creating || uploadingFile}
+            disabled={creating || uploadingFile || uploadingPreview}
             className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {creating ? (
