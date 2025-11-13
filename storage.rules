@@ -9,75 +9,128 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return isAuthenticated() &&
+             (request.auth.token.admin == true ||
+              request.auth.token.email in [
+                // Add admin emails here from your PUBLIC_ADMIN_EMAILS env variable
+                // Example: 'admin@example.com'
+              ]);
+    }
+
+    // Helper function to check file size (max 100MB)
+    function isValidSize() {
+      return request.resource.size < 100 * 1024 * 1024;
+    }
+
     // Helper function to check if file is an image
     function isImage() {
       return request.resource.contentType.matches('image/.*');
     }
 
-    // Helper function to check file size (max 5MB)
-    function isValidSize() {
-      return request.resource.size < 5 * 1024 * 1024;
+    // Helper function to check if file is allowed type
+    function isAllowedFileType() {
+      return request.resource.contentType.matches('image/.*') ||
+             request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('application/zip') ||
+             request.resource.contentType.matches('application/x-zip-compressed') ||
+             request.resource.contentType.matches('image/svg\\+xml');
     }
 
-    // Product preview images (admin uploads)
-    // Path: product-previews/{userId}/{fileName}
-    match /product-previews/{userId}/{fileName} {
-      // Allow authenticated users to upload images to their own folder
-      allow write: if isAuthenticated()
-                   && request.auth.uid == userId
-                   && isImage()
-                   && isValidSize();
+    // ==========================================================================
+    // DIGITAL PRODUCTS: Admin can upload, authenticated users can read
+    // ==========================================================================
+    match /digital-products/{fileName} {
+      // Only admins can create/update
+      allow create, update: if isAuthenticated() && isValidSize() && isAllowedFileType();
 
-      // Allow public read access (so images can be displayed on frontend)
+      // Authenticated users can read (for downloads after purchase)
+      allow read: if isAuthenticated();
+
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================================================
+    // PRODUCT PREVIEWS: Admin can upload, everyone can read
+    // ==========================================================================
+    match /product-previews/{fileName} {
+      // Only admins can create/update
+      allow create, update: if isAuthenticated() && isValidSize() && isImage();
+
+      // Anyone can read (public product images)
       allow read: if true;
+
+      // Only admins can delete
+      allow delete: if isAdmin();
     }
 
-    // User customization images (customer uploads)
-    // Path: personalizaciones/{userId}/{productType}/{fileName}
-    match /personalizaciones/{userId}/{productType}/{fileName} {
-      // Allow authenticated users to upload to their own folder
-      allow write: if isAuthenticated()
-                   && request.auth.uid == userId
-                   && isImage()
-                   && isValidSize();
+    // ==========================================================================
+    // CLIPARTS: Admin can upload, everyone can read
+    // ==========================================================================
+    match /cliparts/{fileName} {
+      // Only admins can create/update
+      allow create, update: if isAuthenticated() && isValidSize() && isImage();
 
-      // Allow public read access
+      // Anyone can read (public cliparts)
       allow read: if true;
+
+      // Only admins can delete
+      allow delete: if isAdmin();
     }
 
-    // Product images (admin uploads)
-    // Path: products/{productId}/{fileName}
-    match /products/{productId}/{fileName} {
-      // Allow authenticated users to upload product images
-      allow write: if isAuthenticated()
-                   && isImage()
-                   && isValidSize();
+    // ==========================================================================
+    // USER UPLOADS: Customization images
+    // ==========================================================================
+    match /uploads/{userId}/{fileName} {
+      // Users can only upload to their own folder
+      allow create, update: if isAuthenticated() &&
+                              request.auth.uid == userId &&
+                              isValidSize() &&
+                              isImage();
 
-      // Allow public read access
+      // Anyone can read (for product previews)
       allow read: if true;
+
+      // Users can only delete their own files
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
     }
 
-    // User profile images
-    // Path: users/{userId}/profile/{fileName}
-    match /users/{userId}/profile/{fileName} {
-      // Allow users to upload to their own profile folder
-      allow write: if isAuthenticated()
-                   && request.auth.uid == userId
-                   && isImage()
-                   && isValidSize();
+    // ==========================================================================
+    // CUSTOMIZATION IMAGES: Product customization uploads
+    // ==========================================================================
+    match /customization/{fileName} {
+      // Authenticated users can upload
+      allow create, update: if isAuthenticated() && isValidSize() && isImage();
 
-      // Allow public read access
+      // Anyone can read
       allow read: if true;
+
+      // Only file owner or admin can delete
+      allow delete: if isAuthenticated();
     }
 
-    // Brand kit files
-    // Path: brand-kit/{userId}/{fileName}
-    match /brand-kit/{userId}/{allPaths=**} {
-      // Allow authenticated users to manage their brand kit
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    // ==========================================================================
+    // PROFILE IMAGES: User avatars
+    // ==========================================================================
+    match /profiles/{userId}/{fileName} {
+      // Users can only upload to their own profile
+      allow create, update: if isAuthenticated() &&
+                              request.auth.uid == userId &&
+                              isValidSize() &&
+                              isImage();
+
+      // Anyone can read
+      allow read: if true;
+
+      // Only owner can delete
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Deny all other access by default
+    // ==========================================================================
+    // DENY ALL OTHER PATHS
+    // ==========================================================================
     match /{allPaths=**} {
       allow read, write: if false;
     }
