@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
+import { db } from '../../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import type { OrderItem, ShippingInfo, PaymentInfo, BillingInfo } from '../../types/firebase';
 
 interface Order {
@@ -26,6 +28,7 @@ export default function OrderConfirmation() {
   const [loading, setLoading] = useState(true);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [guestAccessKey, setGuestAccessKey] = useState<string | null>(null);
+  const [hasDigitalProducts, setHasDigitalProducts] = useState(false);
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
@@ -103,6 +106,49 @@ export default function OrderConfirmation() {
     }
   }, [authLoading, user]);
 
+  // Check if order has digital products by querying Firestore
+  useEffect(() => {
+    const checkDigitalProducts = async () => {
+      if (!order || !order.items) return;
+
+      try {
+        logger.debug('[OrderConfirmation] Checking for digital products', {
+          itemCount: order.items.length,
+        });
+
+        // Check each product in Firestore
+        for (const item of order.items) {
+          const productRef = doc(db, 'products', String(item.productId));
+          const productSnap = await getDoc(productRef);
+
+          if (productSnap.exists()) {
+            const productData = productSnap.data();
+            logger.debug('[OrderConfirmation] Product data', {
+              productId: item.productId,
+              isDigital: productData?.isDigital,
+              category: productData?.category,
+            });
+
+            if (productData?.isDigital === true || productData?.category === 'digital') {
+              logger.info('[OrderConfirmation] Found digital product!', {
+                productId: item.productId,
+                productName: item.productName,
+              });
+              setHasDigitalProducts(true);
+              return; // Found at least one, no need to continue
+            }
+          }
+        }
+
+        logger.info('[OrderConfirmation] No digital products found in order');
+      } catch (error) {
+        logger.error('[OrderConfirmation] Error checking for digital products', error);
+      }
+    };
+
+    checkDigitalProducts();
+  }, [order]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -121,12 +167,6 @@ export default function OrderConfirmation() {
   const orderDate = new Date(order.date);
   const estimatedDelivery = new Date(orderDate);
   estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
-
-  // Check if order contains digital products
-  const hasDigitalProducts = order.items.some((item) => {
-    // Check if item has category 'digital' or if it's marked as digital
-    return item.category === 'digital' || (item as any).isDigital === true;
-  });
 
   const handleDownloadInvoice = async () => {
     if (!order) {
