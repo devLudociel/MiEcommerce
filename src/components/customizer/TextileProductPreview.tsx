@@ -12,6 +12,7 @@
 import React, { useState } from 'react';
 import { ZoomIn, ZoomOut, Maximize2, RotateCcw } from 'lucide-react';
 import type { ImageTransform } from '../../types/customization';
+import { getPositionsForSide, type PresetPosition } from '../../constants/textilePositions';
 
 interface TextileProductPreviewProps {
   frontImage: string;  // URL de la imagen del producto (vista frontal)
@@ -84,6 +85,16 @@ export default function TextileProductPreview({
   const handleResetTransform = () => {
     if (onTransformChange) {
       onTransformChange(activeSide, defaultTransform);
+    }
+  };
+
+  const handleApplyPresetPosition = (preset: PresetPosition) => {
+    if (onTransformChange) {
+      const newTransform: ImageTransform = {
+        ...preset.transform,
+        rotation: activeTransform.rotation, // Preserve current rotation
+      };
+      onTransformChange(activeSide, newTransform);
     }
   };
 
@@ -167,6 +178,30 @@ export default function TextileProductPreview({
             </button>
           </div>
         </div>
+
+        {/* Quick Position Buttons - Solo si hay imagen subida */}
+        {activeUserImage && onTransformChange && (
+          <div className="bg-purple-50 border-t border-b border-purple-200 p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-bold text-purple-700">⚡ Posiciones Rápidas:</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {getPositionsForSide(activeSide).map((preset) => (
+                <button
+                  key={preset.id}
+                  onClick={() => handleApplyPresetPosition(preset)}
+                  className="px-3 py-2 bg-white border border-purple-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-purple-100 hover:border-purple-400 hover:text-purple-900 transition-all active:scale-95"
+                  title={preset.description}
+                >
+                  {preset.labelShort}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-2 italic">
+              Haz clic para posicionar tu diseño automáticamente
+            </p>
+          </div>
+        )}
 
         {/* Preview Container */}
         <div className="relative w-full aspect-square bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">

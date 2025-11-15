@@ -5,6 +5,7 @@ import AccessibleModal from '../common/AccessibleModal';
 import { useAuth } from '../hooks/useAuth';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
+import OrderItemPreview from './OrderItemPreview';
 
 const statusLabels: Record<string, string> = {
   pending: 'Pendiente',
@@ -321,6 +322,9 @@ export default function AdminOrderDetail() {
                                 ))}
                               </div>
                             )}
+
+                            {/* Preview visual del mockup */}
+                            <OrderItemPreview item={item} />
                           </div>
                         )}
 
