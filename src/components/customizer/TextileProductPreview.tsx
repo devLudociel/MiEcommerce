@@ -23,6 +23,8 @@ interface TextileProductPreviewProps {
   productName?: string;
   onTransformChange?: (side: 'front' | 'back', transform: ImageTransform) => void;
   printAreaPercentage?: number;
+  activeSide?: 'front' | 'back';  // Vista activa controlada externamente
+  onActiveSideChange?: (side: 'front' | 'back') => void;  // Callback para cambio de vista
 }
 
 export default function TextileProductPreview({
@@ -35,10 +37,22 @@ export default function TextileProductPreview({
   productName = 'Producto',
   onTransformChange,
   printAreaPercentage = 70,
+  activeSide: externalActiveSide,
+  onActiveSideChange,
 }: TextileProductPreviewProps) {
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
+  const [internalActiveSide, setInternalActiveSide] = useState<'front' | 'back'>('front');
   const [showGuides, setShowGuides] = useState(true);
+
+  // Use external activeSide if provided, otherwise use internal state
+  const activeSide = externalActiveSide ?? internalActiveSide;
+  const setActiveSide = (side: 'front' | 'back') => {
+    if (onActiveSideChange) {
+      onActiveSideChange(side);
+    } else {
+      setInternalActiveSide(side);
+    }
+  };
 
   const defaultTransform: ImageTransform = {
     x: 50,

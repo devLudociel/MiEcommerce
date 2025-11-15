@@ -48,6 +48,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   const [showTemplates, setShowTemplates] = useState(false);
   const [showCliparts, setShowCliparts] = useState(false);
   const [layers, setLayers] = useState<DesignLayer[]>([]);
+  const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
 
   // Calculate pricing
   const pricing: CustomizationPricing = {
@@ -273,7 +274,43 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
           />
         );
 
-      case 'image_upload':
+      case 'image_upload': {
+        // Para productos textiles, filtrar campos de imagen según la vista activa
+        if (isTextileProduct()) {
+          const fieldIdLower = field.id.toLowerCase();
+          const fieldLabelLower = field.label.toLowerCase();
+
+          // Detectar si es campo frontal
+          const isFrontField =
+            fieldIdLower.includes('front') ||
+            fieldIdLower.includes('frontal') ||
+            fieldIdLower.includes('frente') ||
+            fieldLabelLower.includes('front') ||
+            fieldLabelLower.includes('frontal') ||
+            fieldLabelLower.includes('frente');
+
+          // Detectar si es campo trasero
+          const isBackField =
+            fieldIdLower.includes('back') ||
+            fieldIdLower.includes('trasera') ||
+            fieldIdLower.includes('espalda') ||
+            fieldLabelLower.includes('back') ||
+            fieldLabelLower.includes('trasera') ||
+            fieldLabelLower.includes('espalda');
+
+          // Si es campo frontal, solo mostrar en vista frontal
+          if (isFrontField && activeSide !== 'front') {
+            return null;
+          }
+
+          // Si es campo trasero, solo mostrar en vista trasera
+          if (isBackField && activeSide !== 'back') {
+            return null;
+          }
+
+          // Si no es ni frontal ni trasero, mostrar siempre (campo genérico)
+        }
+
         return (
           <ImageUploadField
             key={field.id}
@@ -287,6 +324,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
             productType={product.categoryId}
           />
         );
+      }
 
       default:
         return (
@@ -680,6 +718,8 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                 frontTransform={getTextileFrontTransform()}
                 backTransform={getTextileBackTransform()}
                 productName={product.name}
+                activeSide={activeSide}
+                onActiveSideChange={setActiveSide}
               />
             ) : (
               /* ProductPreview normal para otros productos */
