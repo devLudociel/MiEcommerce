@@ -8,12 +8,43 @@
  */
 
 import React, { useState } from 'react';
+import { FRONT_POSITIONS, BACK_POSITIONS, getContainerTransform, type PresetPosition } from '../../constants/textilePositions';
 
 interface ImageTransform {
   x: number;
   y: number;
   scale: number;
   rotation: number;
+}
+
+/**
+ * Detecta si las coordenadas coinciden con alguna posición preset
+ * @param transform - Transformación actual de la imagen
+ * @param side - Lado activo (front o back)
+ * @returns PresetPosition si se detecta coincidencia, null si no
+ */
+function detectPresetPosition(
+  transform: ImageTransform,
+  side: 'front' | 'back'
+): PresetPosition | null {
+  const positions = side === 'front' ? FRONT_POSITIONS : BACK_POSITIONS;
+  const tolerance = 3; // Margen de error en porcentaje
+  const scaleTolerance = 0.05; // Margen de error en escala
+
+  for (const preset of positions) {
+    const containerTransform = getContainerTransform(preset);
+
+    // Comparar coordenadas con tolerancia
+    const xMatch = Math.abs(transform.x - containerTransform.x) <= tolerance;
+    const yMatch = Math.abs(transform.y - containerTransform.y) <= tolerance;
+    const scaleMatch = Math.abs(transform.scale - containerTransform.scale) <= scaleTolerance;
+
+    if (xMatch && yMatch && scaleMatch) {
+      return preset;
+    }
+  }
+
+  return null;
 }
 
 interface OrderItemPreviewProps {
@@ -91,6 +122,11 @@ export default function OrderItemPreview({ item }: OrderItemPreviewProps) {
   const activeTransform = activeSide === 'front' ? frontTransform : backTransform;
   const activeBaseImage = activeSide === 'front' ? frontBaseImage : backBaseImage;
 
+  // Detectar posiciones preset
+  const detectedFrontPreset = userFrontImage ? detectPresetPosition(frontTransform, 'front') : null;
+  const detectedBackPreset = userBackImage ? detectPresetPosition(backTransform, 'back') : null;
+  const activePreset = activeSide === 'front' ? detectedFrontPreset : detectedBackPreset;
+
   return (
     <div className="mt-4 p-4 bg-white border-2 border-purple-300 rounded-lg">
       <div className="flex items-center justify-between mb-3">
@@ -167,8 +203,24 @@ export default function OrderItemPreview({ item }: OrderItemPreviewProps) {
 
       {/* Leyenda de transformaciones */}
       <div className="mt-3 text-xs text-gray-600 bg-gray-50 p-2 rounded">
-        <p className="font-semibold mb-1">Posición actual:</p>
-        <p>• X: {activeTransform.x}%, Y: {activeTransform.y}%</p>
+        {/* Mostrar preset detectado de manera destacada */}
+        {activePreset ? (
+          <div className="mb-2 p-2 bg-green-100 border border-green-300 rounded">
+            <p className="font-bold text-green-800 text-sm flex items-center gap-1">
+              📍 Posición: {activePreset.label}
+            </p>
+            <p className="text-green-700 text-xs italic mt-0.5">{activePreset.description}</p>
+          </div>
+        ) : (
+          <div className="mb-2 p-2 bg-yellow-100 border border-yellow-300 rounded">
+            <p className="font-bold text-yellow-800 text-sm">
+              ⚠️ Posición personalizada (sin preset)
+            </p>
+          </div>
+        )}
+
+        <p className="font-semibold mb-1">Coordenadas técnicas:</p>
+        <p>• X: {activeTransform.x.toFixed(1)}%, Y: {activeTransform.y.toFixed(1)}%</p>
         <p>• Escala: {(activeTransform.scale * 100).toFixed(0)}%</p>
         {activeTransform.rotation !== 0 && (
           <p>• Rotación: {activeTransform.rotation}°</p>
