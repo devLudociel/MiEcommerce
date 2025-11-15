@@ -2,6 +2,7 @@
 import { doc, getDoc, setDoc, collection, getDocs, deleteDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { CustomizationSchema } from '../../types/customization';
+import { exampleSchemas } from '../../data/exampleSchemas';
 
 // Simple console logger for server-side code (avoids import issues)
 const logger = {
@@ -10,6 +11,33 @@ const logger = {
   error: (msg: string, error?: any) => console.error(`[ERROR] ${msg}`, error || ''),
   debug: (msg: string, data?: any) => console.log(`[DEBUG] ${msg}`, data || ''),
 };
+
+/**
+ * Mapeo de category IDs a schema keys en exampleSchemas
+ * Permite usar schemas de código como fallback cuando Firestore no tiene el schema
+ */
+const CATEGORY_TO_SCHEMA_MAP: Record<string, keyof typeof exampleSchemas> = {
+  'cat_camisetas': 'camisetas',
+  'cat_camisetas_pro': 'camisetasPro',
+  'cat_hoodies': 'hoodies',
+  'cat_bolsas': 'bolsas',
+  'cat_cuadros': 'cuadros',
+  'cat_resina': 'resina',
+  'cat_tazas': 'tazas',
+};
+
+/**
+ * Obtiene el schema de código como fallback
+ * Útil para desarrollo local sin necesidad de Firestore
+ */
+function getCodeSchemaFallback(categoryId: string): CustomizationSchema | null {
+  const schemaKey = CATEGORY_TO_SCHEMA_MAP[categoryId];
+  if (schemaKey && exampleSchemas[schemaKey]) {
+    logger.debug('[getCodeSchemaFallback] Using code schema fallback', { categoryId, schemaKey });
+    return exampleSchemas[schemaKey];
+  }
+  return null;
+}
 
 export interface StoredSchema {
   schema: CustomizationSchema;
@@ -53,6 +81,7 @@ export async function saveCustomizationSchema(
 
 /**
  * Loads a customization schema for a category
+ * Falls back to code schemas if not found in Firestore (useful for local development)
  */
 export async function loadCustomizationSchema(categoryId: string): Promise<StoredSchema | null> {
   try {
@@ -60,7 +89,21 @@ export async function loadCustomizationSchema(categoryId: string): Promise<Store
     const schemaDoc = await getDoc(schemaRef);
 
     if (!schemaDoc.exists()) {
-      logger.warn('[loadCustomizationSchema] Schema not found', { categoryId });
+      logger.warn('[loadCustomizationSchema] Schema not found in Firestore', { categoryId });
+
+      // FALLBACK: Use code schema if available
+      const codeSchema = getCodeSchemaFallback(categoryId);
+      if (codeSchema) {
+        logger.info('[loadCustomizationSchema] Using code schema fallback', { categoryId });
+        return {
+          schema: codeSchema,
+          categoryId,
+          categoryName: categoryId.replace('cat_', '').replace('_', ' '),
+          updatedAt: new Date(),
+          createdAt: new Date(),
+        };
+      }
+
       return null;
     }
 
@@ -74,6 +117,20 @@ export async function loadCustomizationSchema(categoryId: string): Promise<Store
     };
   } catch (error) {
     logger.error('[loadCustomizationSchema] Error loading schema', error);
+
+    // FALLBACK: On error, try code schema
+    const codeSchema = getCodeSchemaFallback(categoryId);
+    if (codeSchema) {
+      logger.info('[loadCustomizationSchema] Using code schema fallback after error', { categoryId });
+      return {
+        schema: codeSchema,
+        categoryId,
+        categoryName: categoryId.replace('cat_', '').replace('_', ' '),
+        updatedAt: new Date(),
+        createdAt: new Date(),
+      };
+    }
+
     throw new Error('Error al cargar el esquema de personalización');
   }
 }
