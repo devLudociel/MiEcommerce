@@ -105,15 +105,25 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const rawData = await request.json();
 
+    // LOG: Ver estructura de datos recibidos
+    logger.info('API save-order: Datos recibidos:', JSON.stringify(rawData, null, 2));
+
     // SECURITY: Validar datos con Zod para prevenir inyección y datos maliciosos
     const validationResult = orderDataSchema.safeParse(rawData);
 
     if (!validationResult.success) {
-      logger.error('API save-order: Validación Zod falló:', validationResult.error.format());
+      // LOG: Mostrar errores de validación detallados
+      const errorDetails = validationResult.error.issues.map(issue => ({
+        path: issue.path.join('.'),
+        message: issue.message,
+        code: issue.code,
+      }));
+      logger.error('API save-order: Validación Zod falló:', JSON.stringify(errorDetails, null, 2));
+
       return new Response(
         JSON.stringify({
           error: 'Datos de pedido inválidos',
-          details: isProd ? undefined : validationResult.error.format(),
+          details: isProd ? undefined : errorDetails,
         }),
         {
           status: 400,
