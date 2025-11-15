@@ -15,6 +15,12 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { exampleSchemas } from '../src/data/exampleSchemas';
 import * as path from 'path';
 import * as fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// Obtener __dirname en módulos ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Inicializar Firebase Admin
 function initializeFirebase() {
