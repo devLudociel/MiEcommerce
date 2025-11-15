@@ -499,51 +499,57 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
   // Obtener imagen base frontal y trasera del producto
   const getTextileBaseFrontImage = (): string => {
-    // Buscar en previewImages si hay una imagen frontal
-    if (schema.previewImages?.front) {
-      return schema.previewImages.front;
-    }
-
-    // Buscar color selector y obtener su imagen frontal
+    // PRIORIDAD 1: Buscar color selector y obtener su imagen frontal específica
     const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
     if (colorField) {
       const colorValue = values[colorField.id];
       if (colorValue) {
         const colorConfig = colorField.config as ColorSelectorConfig;
         const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
+
+        // Si el color tiene imagen frontal específica, usarla
         if (selectedColor?.previewImages?.front) {
           return selectedColor.previewImages.front;
         }
+
+        // Fallback a previewImage antigua (deprecated)
         if (selectedColor?.previewImage) {
           return selectedColor.previewImage;
         }
       }
     }
 
-    // Fallback: usar imagen default o primera imagen del producto
+    // PRIORIDAD 2: Si no hay color seleccionado o el color no tiene imagen, usar imagen del schema
+    if (schema.previewImages?.front) {
+      return schema.previewImages.front;
+    }
+
+    // PRIORIDAD 3: Fallback final a imagen default o primera imagen del producto
     return schema.previewImages?.default || product.images[0] || '';
   };
 
   const getTextileBaseBackImage = (): string => {
-    // Buscar en previewImages si hay una imagen trasera
-    if (schema.previewImages?.back) {
-      return schema.previewImages.back;
-    }
-
-    // Buscar color selector y obtener su imagen trasera
+    // PRIORIDAD 1: Buscar color selector y obtener su imagen trasera específica
     const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
     if (colorField) {
       const colorValue = values[colorField.id];
       if (colorValue) {
         const colorConfig = colorField.config as ColorSelectorConfig;
         const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
+
+        // Si el color tiene imagen trasera específica, usarla
         if (selectedColor?.previewImages?.back) {
           return selectedColor.previewImages.back;
         }
       }
     }
 
-    // Fallback: usar imagen default frontal (si no hay trasera)
+    // PRIORIDAD 2: Si no hay color seleccionado o el color no tiene imagen trasera, usar imagen del schema
+    if (schema.previewImages?.back) {
+      return schema.previewImages.back;
+    }
+
+    // PRIORIDAD 3: Fallback final a imagen frontal (mejor que nada)
     return getTextileBaseFrontImage();
   };
 
