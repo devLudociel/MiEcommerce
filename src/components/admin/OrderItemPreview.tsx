@@ -81,6 +81,7 @@ export default function OrderItemPreview({ item }: OrderItemPreviewProps) {
     v.imageUrl && (
       v.fieldLabel?.toLowerCase().includes('back') ||
       v.fieldLabel?.toLowerCase().includes('trasera') ||
+      v.fieldLabel?.toLowerCase().includes('trasero') ||
       v.fieldLabel?.toLowerCase().includes('espalda')
     )
   );

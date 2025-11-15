@@ -36,6 +36,7 @@ function detectPresetPosition(
   const isBack =
     labelLower.includes('back') ||
     labelLower.includes('trasera') ||
+    labelLower.includes('trasero') ||
     labelLower.includes('espalda');
 
   // Si no podemos determinar el lado, no detectamos preset
