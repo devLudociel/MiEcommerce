@@ -44,8 +44,18 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
   const [defaultPreviewImage, setDefaultPreviewImage] = useState<string>(
     initialSchema?.previewImages?.default || ''
   );
+  const [frontPreviewImage, setFrontPreviewImage] = useState<string>(
+    initialSchema?.previewImages?.front || ''
+  );
+  const [backPreviewImage, setBackPreviewImage] = useState<string>(
+    initialSchema?.previewImages?.back || ''
+  );
   const [uploadingDefaultImage, setUploadingDefaultImage] = useState(false);
+  const [uploadingFrontImage, setUploadingFrontImage] = useState(false);
+  const [uploadingBackImage, setUploadingBackImage] = useState(false);
   const defaultImageInputRef = useRef<HTMLInputElement>(null);
+  const frontImageInputRef = useRef<HTMLInputElement>(null);
+  const backImageInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddField = () => {
     const newField: CustomizationField = {
@@ -158,9 +168,11 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
     const schema: CustomizationSchema = {
       fields: fields.map((f, idx) => ({ ...f, order: idx })),
       displayComponent: 'DynamicCustomizer',
-      ...(defaultPreviewImage && {
+      ...((defaultPreviewImage || frontPreviewImage || backPreviewImage) && {
         previewImages: {
-          default: defaultPreviewImage,
+          ...(defaultPreviewImage && { default: defaultPreviewImage }),
+          ...(frontPreviewImage && { front: frontPreviewImage }),
+          ...(backPreviewImage && { back: backPreviewImage }),
         },
       }),
     };
@@ -220,6 +232,86 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
     }
   };
 
+  const handleUploadFrontImage = async (file: File) => {
+    const user = auth.currentUser;
+    if (!user) {
+      notify.error('Debes iniciar sesión para subir imágenes');
+      return;
+    }
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      notify.error('Solo se permiten imágenes (JPG, PNG, WEBP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      notify.error('La imagen debe pesar menos de 5MB');
+      return;
+    }
+
+    setUploadingFrontImage(true);
+
+    try {
+      const timestamp = Date.now();
+      const fileName = `front_${timestamp}_${file.name}`;
+      const storageRef = ref(storage, `product-previews/${user.uid}/${fileName}`);
+
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      logger.info('[SchemaEditor] Front preview image uploaded:', downloadURL);
+
+      setFrontPreviewImage(downloadURL);
+      notify.success('Imagen frontal subida correctamente');
+    } catch (error) {
+      logger.error('[SchemaEditor] Error uploading front preview image:', error);
+      notify.error('Error al subir la imagen frontal');
+    } finally {
+      setUploadingFrontImage(false);
+    }
+  };
+
+  const handleUploadBackImage = async (file: File) => {
+    const user = auth.currentUser;
+    if (!user) {
+      notify.error('Debes iniciar sesión para subir imágenes');
+      return;
+    }
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      notify.error('Solo se permiten imágenes (JPG, PNG, WEBP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      notify.error('La imagen debe pesar menos de 5MB');
+      return;
+    }
+
+    setUploadingBackImage(true);
+
+    try {
+      const timestamp = Date.now();
+      const fileName = `back_${timestamp}_${file.name}`;
+      const storageRef = ref(storage, `product-previews/${user.uid}/${fileName}`);
+
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      logger.info('[SchemaEditor] Back preview image uploaded:', downloadURL);
+
+      setBackPreviewImage(downloadURL);
+      notify.success('Imagen trasera subida correctamente');
+    } catch (error) {
+      logger.error('[SchemaEditor] Error uploading back preview image:', error);
+      notify.error('Error al subir la imagen trasera');
+    } finally {
+      setUploadingBackImage(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       {/* Header */}
@@ -236,15 +328,17 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
       <div className="p-6">
         {/* Preview Configuration */}
         <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
-          <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
+          <h4 className="font-bold text-blue-900 mb-4 flex items-center gap-2">
             <span>🖼️</span>
             Configuración de Preview Visual
           </h4>
-          <p className="text-sm text-blue-700 mb-3">
-            Configura la imagen por defecto que se mostrará en el preview. Si tienes un campo de
+          <p className="text-sm text-blue-700 mb-4">
+            Configura las imágenes que se mostrarán en el preview. Si tienes un campo de
             selector de colores, cada color puede tener su propia imagen.
           </p>
-          <div>
+
+          {/* Default Image */}
+          <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Imagen Preview por Defecto (Opcional)
             </label>
@@ -287,8 +381,110 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
               </button>
             </div>
             <p className="mt-1 text-xs text-gray-500">
-              💡 Sube una imagen desde tu PC o pega una URL. Esta imagen se mostrará cuando no haya un color seleccionado.
+              💡 Imagen que se muestra cuando no hay un color seleccionado.
             </p>
+          </div>
+
+          {/* Front Image */}
+          <div className="mb-4 p-3 bg-white rounded-lg border border-blue-200">
+            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+              <span>🔵</span>
+              Imagen Frontal (Para textiles - Opcional)
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={frontPreviewImage}
+                onChange={(e) => setFrontPreviewImage(e.target.value)}
+                placeholder="https://ejemplo.com/camiseta-frente.jpg"
+                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              <input
+                type="file"
+                ref={frontImageInputRef}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadFrontImage(file);
+                }}
+                accept="image/*"
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => frontImageInputRef.current?.click()}
+                disabled={uploadingFrontImage}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                title="Subir imagen frontal"
+              >
+                {uploadingFrontImage ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Subiendo...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    Subir
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              👕 Vista frontal para camisetas, sudaderas, etc.
+            </p>
+          </div>
+
+          {/* Back Image */}
+          <div className="p-3 bg-white rounded-lg border border-blue-200">
+            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+              <span>🔴</span>
+              Imagen Trasera (Para textiles - Opcional)
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={backPreviewImage}
+                onChange={(e) => setBackPreviewImage(e.target.value)}
+                placeholder="https://ejemplo.com/camiseta-espalda.jpg"
+                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              <input
+                type="file"
+                ref={backImageInputRef}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadBackImage(file);
+                }}
+                accept="image/*"
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => backImageInputRef.current?.click()}
+                disabled={uploadingBackImage}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                title="Subir imagen trasera"
+              >
+                {uploadingBackImage ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Subiendo...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    Subir
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              👕 Vista trasera para camisetas, sudaderas, etc.
+            </p>
+          </div>
+
+          <div className="mt-3 p-2 bg-blue-100 rounded text-xs text-blue-800">
+            ℹ️ <strong>Para textiles:</strong> Si subes imágenes frontal y trasera, el sistema mostrará automáticamente un toggle para que el cliente pueda ver ambos lados.
           </div>
         </div>
 
