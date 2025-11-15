@@ -505,11 +505,13 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
         // Si el color tiene imagen frontal específica, usarla
         if (selectedColor?.previewImages?.front) {
+          console.log('[TextileFront] Using color-specific front image:', selectedColor.previewImages.front);
           return selectedColor.previewImages.front;
         }
 
         // Fallback a previewImage antigua (deprecated)
         if (selectedColor?.previewImage) {
+          console.log('[TextileFront] Using color previewImage (deprecated):', selectedColor.previewImage);
           return selectedColor.previewImage;
         }
       }
@@ -517,11 +519,14 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
     // PRIORIDAD 2: Si no hay color seleccionado o el color no tiene imagen, usar imagen del schema
     if (schema.previewImages?.front) {
+      console.log('[TextileFront] Using schema front image:', schema.previewImages.front);
       return schema.previewImages.front;
     }
 
     // PRIORIDAD 3: Fallback final a imagen default o primera imagen del producto
-    return schema.previewImages?.default || product.images[0] || '';
+    const fallback = schema.previewImages?.default || product.images[0] || '';
+    console.log('[TextileFront] Using fallback image:', fallback);
+    return fallback;
   };
 
   const getTextileBaseBackImage = (): string => {
@@ -535,6 +540,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
         // Si el color tiene imagen trasera específica, usarla
         if (selectedColor?.previewImages?.back) {
+          console.log('[TextileBack] Using color-specific back image:', selectedColor.previewImages.back);
           return selectedColor.previewImages.back;
         }
       }
@@ -542,10 +548,12 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
     // PRIORIDAD 2: Si no hay color seleccionado o el color no tiene imagen trasera, usar imagen del schema
     if (schema.previewImages?.back) {
+      console.log('[TextileBack] Using schema back image:', schema.previewImages.back);
       return schema.previewImages.back;
     }
 
     // PRIORIDAD 3: Fallback final a imagen frontal (mejor que nada)
+    console.log('[TextileBack] Using front image as fallback');
     return getTextileBaseFrontImage();
   };
 
