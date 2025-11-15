@@ -402,7 +402,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
   // Obtener imagen frontal para textiles (solo campo específico frontal)
   const getTextileFrontImage = (): string | null => {
-    // Buscar campo específico de imagen frontal
+    // PRIORIDAD 1: Buscar campo específico de imagen frontal
     const frontField = schema.fields.find(f =>
       f.fieldType === 'image_upload' && (
         f.id.toLowerCase().includes('front') ||
@@ -417,8 +417,43 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     if (frontField) {
       const imageValue = values[frontField.id];
       if (imageValue?.imageUrl) {
+        console.log('[TextileFrontUserImage] Using specific front field:', frontField.id);
         return imageValue.imageUrl as string;
       }
+    }
+
+    // PRIORIDAD 2: FALLBACK - Si no hay campo front específico, usar el campo back
+    // Esto permite que schemas con un solo campo de imagen funcionen para ambos lados
+    const backField = schema.fields.find(f =>
+      f.fieldType === 'image_upload' && (
+        f.id.toLowerCase().includes('back') ||
+        f.id.toLowerCase().includes('trasera') ||
+        f.id.toLowerCase().includes('espalda') ||
+        f.label.toLowerCase().includes('back') ||
+        f.label.toLowerCase().includes('trasera') ||
+        f.label.toLowerCase().includes('espalda')
+      )
+    );
+
+    if (backField) {
+      const imageValue = values[backField.id];
+      if (imageValue?.imageUrl) {
+        console.log('[TextileFrontUserImage] FALLBACK: Using back field for front:', backField.id);
+        return imageValue.imageUrl as string;
+      }
+    }
+
+    // PRIORIDAD 3: FALLBACK FINAL - Usar el primer campo image_upload que tenga valor
+    const anyImageField = schema.fields.find(f => {
+      if (f.fieldType !== 'image_upload') return false;
+      const imageValue = values[f.id];
+      return imageValue?.imageUrl;
+    });
+
+    if (anyImageField) {
+      const imageValue = values[anyImageField.id];
+      console.log('[TextileFrontUserImage] FALLBACK: Using any image field:', anyImageField.id);
+      return imageValue.imageUrl as string;
     }
 
     return null;
@@ -448,7 +483,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   };
 
   const getTextileFrontTransform = () => {
-    // Buscar transformación del campo frontal específico
+    // PRIORIDAD 1: Buscar transformación del campo frontal específico
     const frontField = schema.fields.find(f =>
       f.fieldType === 'image_upload' && (
         f.id.toLowerCase().includes('front') ||
@@ -465,6 +500,37 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
       if (imageValue?.imageTransform) {
         return imageValue.imageTransform;
       }
+    }
+
+    // PRIORIDAD 2: FALLBACK - usar transformación del campo back
+    const backField = schema.fields.find(f =>
+      f.fieldType === 'image_upload' && (
+        f.id.toLowerCase().includes('back') ||
+        f.id.toLowerCase().includes('trasera') ||
+        f.id.toLowerCase().includes('espalda') ||
+        f.label.toLowerCase().includes('back') ||
+        f.label.toLowerCase().includes('trasera') ||
+        f.label.toLowerCase().includes('espalda')
+      )
+    );
+
+    if (backField) {
+      const imageValue = values[backField.id];
+      if (imageValue?.imageTransform) {
+        return imageValue.imageTransform;
+      }
+    }
+
+    // PRIORIDAD 3: FALLBACK FINAL - cualquier campo con transform
+    const anyImageField = schema.fields.find(f => {
+      if (f.fieldType !== 'image_upload') return false;
+      const imageValue = values[f.id];
+      return imageValue?.imageTransform;
+    });
+
+    if (anyImageField) {
+      const imageValue = values[anyImageField.id];
+      return imageValue.imageTransform;
     }
 
     return undefined;
