@@ -124,22 +124,60 @@ El sistema detectará automáticamente que es un producto textil y buscará el s
 
 Si quieres que cada color tenga su propia vista frontal y trasera:
 
-1. En el campo **"Color Selector"**, expandir **"Configuración Avanzada"**
+### Paso 1: Agregar un Color
 
-2. Para cada color, en **ColorSelectorConfigEditor**:
-   ```
-   Nombre del color: Blanco
-   Código Hex: #FFFFFF
+1. En el campo **"Color Selector"**, click en **"Configuración Avanzada"**
+2. Click en botón **"Agregar Color"**
+3. Completa el formulario:
 
-   Vista previa:
-   - Imagen Preview: (opcional - imagen por defecto)
+   **Nombre del Color**: Blanco
+   **Código de Color (Hex)**: #FFFFFF (o usa el selector de color)
 
-   Preview por lado:
-   - ✓ Imagen Frontal: https://ejemplo.com/camiseta-blanca-frente.png
-   - ✓ Imagen Trasera: https://ejemplo.com/camiseta-blanca-espalda.png
-   ```
+   **👕 Imágenes de Preview (Para textiles - Opcional)**:
+   - **🔵 Vista Frontal**:
+     - Opción 1: Pega URL: `https://storage.com/camiseta-blanca-frente.png`
+     - Opción 2: Click en "Subir" (botón azul) y selecciona tu imagen frontal
 
-3. Repite para cada color (Negro, Rojo, Azul, etc.)
+   - **🔴 Vista Trasera**:
+     - Opción 1: Pega URL: `https://storage.com/camiseta-blanca-espalda.png`
+     - Opción 2: Click en "Subir" (botón rojo) y selecciona tu imagen trasera
+
+4. Click en **"✓ Agregar Color"**
+
+### Paso 2: Editar un Color Existente
+
+Para colores ya creados, verás:
+
+```
+┌─────────────────────────────────────────────────┐
+│  [Cuadro Color]  Blanco             [Eliminar]  │
+│                  #FFFFFF                         │
+│                                                  │
+│  👕 Imágenes de Preview (Para textiles)         │
+│                                                  │
+│  🔵 Vista Frontal                                │
+│  [URL frontal...........................] [Subir]│
+│                                                  │
+│  🔴 Vista Trasera                                │
+│  [URL trasera...........................] [Subir]│
+└─────────────────────────────────────────────────┘
+```
+
+- En **🔵 Vista Frontal**: Pega URL o click "Subir" (azul)
+- En **🔴 Vista Trasera**: Pega URL o click "Subir" (rojo)
+
+### Paso 3: Repetir para Todos los Colores
+
+Repite los pasos anteriores para cada color que quieras ofrecer:
+- Blanco (front + back)
+- Negro (front + back)
+- Rojo (front + back)
+- Azul (front + back)
+- Amarillo (front + back)
+- Verde (front + back)
+- Rosa (front + back)
+- Gris (front + back)
+- ...hasta 8+ colores o los que necesites
 
 ## Resultado Final
 
@@ -221,7 +259,7 @@ Para probar tu configuración:
 6. Alterna entre vistas para verificar que ambas funcionan
 7. Verifica los indicadores de estado
 
-## Ejemplo Completo de Schema
+## Ejemplo Completo de Schema con 8 Colores
 
 ```javascript
 {
@@ -247,7 +285,7 @@ Para probar tu configuración:
           {
             "id": "white",
             "name": "Blanco",
-            "hexColor": "#FFFFFF",
+            "hex": "#FFFFFF",
             "previewImages": {
               "front": "https://storage.com/camiseta-blanca-frente.png",
               "back": "https://storage.com/camiseta-blanca-espalda.png"
@@ -256,10 +294,64 @@ Para probar tu configuración:
           {
             "id": "black",
             "name": "Negro",
-            "hexColor": "#000000",
+            "hex": "#000000",
             "previewImages": {
               "front": "https://storage.com/camiseta-negra-frente.png",
               "back": "https://storage.com/camiseta-negra-espalda.png"
+            }
+          },
+          {
+            "id": "red",
+            "name": "Rojo",
+            "hex": "#FF0000",
+            "previewImages": {
+              "front": "https://storage.com/camiseta-roja-frente.png",
+              "back": "https://storage.com/camiseta-roja-espalda.png"
+            }
+          },
+          {
+            "id": "blue",
+            "name": "Azul",
+            "hex": "#0000FF",
+            "previewImages": {
+              "front": "https://storage.com/camiseta-azul-frente.png",
+              "back": "https://storage.com/camiseta-azul-espalda.png"
+            }
+          },
+          {
+            "id": "green",
+            "name": "Verde",
+            "hex": "#00FF00",
+            "previewImages": {
+              "front": "https://storage.com/camiseta-verde-frente.png",
+              "back": "https://storage.com/camiseta-verde-espalda.png"
+            }
+          },
+          {
+            "id": "yellow",
+            "name": "Amarillo",
+            "hex": "#FFFF00",
+            "previewImages": {
+              "front": "https://storage.com/camiseta-amarilla-frente.png",
+              "back": "https://storage.com/camiseta-amarilla-espalda.png"
+            }
+          },
+          {
+            "id": "pink",
+            "name": "Rosa",
+            "hex": "#FF69B4",
+            "previewImages": {
+              "front": "https://storage.com/camiseta-rosa-frente.png",
+              "back": "https://storage.com/camiseta-rosa-espalda.png"
+            }
+          },
+          {
+            "id": "gray",
+            "name": "Gris",
+            "hex": "#808080",
+            "previewImages": {
+              "front": "https://storage.com/camiseta-gris-frente.png",
+              "back": "https://storage.com/camiseta-gris-espalda.png"
             }
           }
         ]
