@@ -52,7 +52,19 @@ function initializeFirebase() {
 const SCHEMA_CATEGORY_MAP: Record<string, { id: string; name: string }> = {
   camisetas: {
     id: 'cat_camisetas',
-    name: 'Camisetas / Textiles',
+    name: 'Camisetas / Textiles (básico)',
+  },
+  camisetasPro: {
+    id: 'cat_camisetas_pro',
+    name: 'Camisetas Pro (front/back)',
+  },
+  hoodies: {
+    id: 'cat_hoodies',
+    name: 'Hoodies / Sudaderas',
+  },
+  bolsas: {
+    id: 'cat_bolsas',
+    name: 'Bolsas / Tote Bags',
   },
   cuadros: {
     id: 'cat_cuadros',
