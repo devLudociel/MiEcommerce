@@ -31,7 +31,11 @@ export interface ColorOption {
   id: string;
   name: string;
   hex: string;
-  previewImage?: string;  // Imagen preview opcional (ej: camiseta de ese color)
+  previewImage?: string;  // Imagen preview opcional (ej: camiseta de ese color) - DEPRECATED, usar previewImages
+  previewImages?: {
+    front?: string;  // Imagen frontal del producto en este color
+    back?: string;   // Imagen trasera del producto en este color
+  };
 }
 
 export interface ColorSelectorConfig {
@@ -167,6 +171,8 @@ export interface CustomizationSchema {
   displayComponent?: string;     // Componente a usar (default: 'DynamicCustomizer')
   previewImages?: {
     default?: string;
+    front?: string;   // Imagen frontal del producto (para textiles)
+    back?: string;    // Imagen trasera del producto (para textiles)
     byVariant?: Record<string, string>;  // Imágenes por variante
   };
 }

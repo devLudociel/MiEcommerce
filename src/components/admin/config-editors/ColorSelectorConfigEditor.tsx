@@ -19,9 +19,17 @@ export default function ColorSelectorConfigEditor({ colors, onChange }: ColorSel
     hex: '#000000',
   });
   const [uploadingColorId, setUploadingColorId] = useState<string | null>(null);
+  const [uploadingFrontColorId, setUploadingFrontColorId] = useState<string | null>(null);
+  const [uploadingBackColorId, setUploadingBackColorId] = useState<string | null>(null);
   const [uploadingNewColor, setUploadingNewColor] = useState(false);
+  const [uploadingNewColorFront, setUploadingNewColorFront] = useState(false);
+  const [uploadingNewColorBack, setUploadingNewColorBack] = useState(false);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const frontFileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const backFileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const newColorFileInputRef = useRef<HTMLInputElement>(null);
+  const newColorFrontInputRef = useRef<HTMLInputElement>(null);
+  const newColorBackInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddColor = () => {
     if (!newColor.name.trim() || !newColor.hex) {
@@ -96,6 +104,102 @@ export default function ColorSelectorConfigEditor({ colors, onChange }: ColorSel
     }
   };
 
+  const handleUploadFrontImage = async (colorId: string, file: File) => {
+    const user = auth.currentUser;
+    if (!user) {
+      notify.error('Debes iniciar sesión para subir imágenes');
+      return;
+    }
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      notify.error('Solo se permiten imágenes (JPG, PNG, WEBP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      notify.error('La imagen debe pesar menos de 5MB');
+      return;
+    }
+
+    setUploadingFrontColorId(colorId);
+
+    try {
+      const timestamp = Date.now();
+      const fileName = `front_${timestamp}_${file.name}`;
+      const storageRef = ref(storage, `product-previews/${user.uid}/${fileName}`);
+
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      logger.info('[ColorSelectorConfigEditor] Front image uploaded:', downloadURL);
+
+      // Update color with front preview image
+      const color = colors.find((c) => c.id === colorId);
+      handleUpdateColor(colorId, {
+        previewImages: {
+          ...(color?.previewImages || {}),
+          front: downloadURL,
+        },
+      });
+
+      notify.success('Imagen frontal subida correctamente');
+    } catch (error) {
+      logger.error('[ColorSelectorConfigEditor] Error uploading front image:', error);
+      notify.error('Error al subir la imagen frontal');
+    } finally {
+      setUploadingFrontColorId(null);
+    }
+  };
+
+  const handleUploadBackImage = async (colorId: string, file: File) => {
+    const user = auth.currentUser;
+    if (!user) {
+      notify.error('Debes iniciar sesión para subir imágenes');
+      return;
+    }
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      notify.error('Solo se permiten imágenes (JPG, PNG, WEBP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      notify.error('La imagen debe pesar menos de 5MB');
+      return;
+    }
+
+    setUploadingBackColorId(colorId);
+
+    try {
+      const timestamp = Date.now();
+      const fileName = `back_${timestamp}_${file.name}`;
+      const storageRef = ref(storage, `product-previews/${user.uid}/${fileName}`);
+
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      logger.info('[ColorSelectorConfigEditor] Back image uploaded:', downloadURL);
+
+      // Update color with back preview image
+      const color = colors.find((c) => c.id === colorId);
+      handleUpdateColor(colorId, {
+        previewImages: {
+          ...(color?.previewImages || {}),
+          back: downloadURL,
+        },
+      });
+
+      notify.success('Imagen trasera subida correctamente');
+    } catch (error) {
+      logger.error('[ColorSelectorConfigEditor] Error uploading back image:', error);
+      notify.error('Error al subir la imagen trasera');
+    } finally {
+      setUploadingBackColorId(null);
+    }
+  };
+
   const handleUploadNewColorImage = async (file: File) => {
     const user = auth.currentUser;
     if (!user) {
@@ -138,6 +242,98 @@ export default function ColorSelectorConfigEditor({ colors, onChange }: ColorSel
     }
   };
 
+  const handleUploadNewColorFront = async (file: File) => {
+    const user = auth.currentUser;
+    if (!user) {
+      notify.error('Debes iniciar sesión para subir imágenes');
+      return;
+    }
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      notify.error('Solo se permiten imágenes (JPG, PNG, WEBP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      notify.error('La imagen debe pesar menos de 5MB');
+      return;
+    }
+
+    setUploadingNewColorFront(true);
+
+    try {
+      const timestamp = Date.now();
+      const fileName = `front_${timestamp}_${file.name}`;
+      const storageRef = ref(storage, `product-previews/${user.uid}/${fileName}`);
+
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      logger.info('[ColorSelectorConfigEditor] New color front image uploaded:', downloadURL);
+
+      setNewColor({
+        ...newColor,
+        previewImages: {
+          ...(newColor.previewImages || {}),
+          front: downloadURL,
+        },
+      });
+      notify.success('Imagen frontal subida correctamente');
+    } catch (error) {
+      logger.error('[ColorSelectorConfigEditor] Error uploading new color front image:', error);
+      notify.error('Error al subir la imagen frontal');
+    } finally {
+      setUploadingNewColorFront(false);
+    }
+  };
+
+  const handleUploadNewColorBack = async (file: File) => {
+    const user = auth.currentUser;
+    if (!user) {
+      notify.error('Debes iniciar sesión para subir imágenes');
+      return;
+    }
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      notify.error('Solo se permiten imágenes (JPG, PNG, WEBP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      notify.error('La imagen debe pesar menos de 5MB');
+      return;
+    }
+
+    setUploadingNewColorBack(true);
+
+    try {
+      const timestamp = Date.now();
+      const fileName = `back_${timestamp}_${file.name}`;
+      const storageRef = ref(storage, `product-previews/${user.uid}/${fileName}`);
+
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      logger.info('[ColorSelectorConfigEditor] New color back image uploaded:', downloadURL);
+
+      setNewColor({
+        ...newColor,
+        previewImages: {
+          ...(newColor.previewImages || {}),
+          back: downloadURL,
+        },
+      });
+      notify.success('Imagen trasera subida correctamente');
+    } catch (error) {
+      logger.error('[ColorSelectorConfigEditor] Error uploading new color back image:', error);
+      notify.error('Error al subir la imagen trasera');
+    } finally {
+      setUploadingNewColorBack(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -155,16 +351,16 @@ export default function ColorSelectorConfigEditor({ colors, onChange }: ColorSel
       </div>
 
       {/* Colors Grid */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {colors.map((color) => (
           <div
             key={color.id}
-            className="border-2 border-gray-200 rounded-lg p-3 hover:border-purple-300 transition-colors"
+            className="border-2 border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors"
           >
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-start gap-3 mb-3">
               {/* Color Preview */}
               <div
-                className="w-12 h-12 rounded-lg border-2 border-gray-300 flex-shrink-0"
+                className="w-16 h-16 rounded-lg border-2 border-gray-300 flex-shrink-0"
                 style={{ backgroundColor: color.hex }}
                 title={color.hex}
               />
@@ -175,42 +371,81 @@ export default function ColorSelectorConfigEditor({ colors, onChange }: ColorSel
                   type="text"
                   value={color.name}
                   onChange={(e) => handleUpdateColor(color.id, { name: e.target.value })}
-                  className="w-full px-2 py-1 text-sm font-medium border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent mb-2"
                   placeholder="Nombre del color"
                 />
-                <input
-                  type="text"
-                  value={color.hex}
-                  onChange={(e) => handleUpdateColor(color.id, { hex: e.target.value })}
-                  className="w-full px-2 py-1 text-xs font-mono mt-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="#000000"
-                />
-                <div className="flex gap-1 mt-1">
+                <div className="flex gap-2">
                   <input
                     type="text"
-                    value={color.previewImage || ''}
-                    onChange={(e) => handleUpdateColor(color.id, { previewImage: e.target.value })}
-                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="URL o sube imagen"
+                    value={color.hex}
+                    onChange={(e) => handleUpdateColor(color.id, { hex: e.target.value })}
+                    className="flex-1 px-3 py-2 text-xs font-mono border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="#000000"
+                  />
+                  <input
+                    type="color"
+                    value={color.hex}
+                    onChange={(e) => handleUpdateColor(color.id, { hex: e.target.value })}
+                    className="w-20 h-10 cursor-pointer rounded-lg border border-gray-300"
+                  />
+                </div>
+              </div>
+
+              {/* Remove Button */}
+              <button
+                onClick={() => handleRemoveColor(color.id)}
+                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                title="Eliminar color"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Preview Images Section */}
+            <div className="space-y-2 border-t pt-3">
+              <div className="text-xs font-semibold text-gray-700 mb-2">
+                👕 Imágenes de Preview (Para textiles)
+              </div>
+
+              {/* Front Image */}
+              <div className="bg-blue-50 p-2 rounded-lg">
+                <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                  <span>🔵</span>
+                  Vista Frontal
+                </label>
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    value={color.previewImages?.front || ''}
+                    onChange={(e) =>
+                      handleUpdateColor(color.id, {
+                        previewImages: {
+                          ...(color.previewImages || {}),
+                          front: e.target.value,
+                        },
+                      })
+                    }
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="URL frontal"
                   />
                   <input
                     type="file"
-                    ref={(el) => (fileInputRefs.current[color.id] = el)}
+                    ref={(el) => (frontFileInputRefs.current[color.id] = el)}
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) handleUploadImage(color.id, file);
+                      if (file) handleUploadFrontImage(color.id, file);
                     }}
                     accept="image/*"
                     className="hidden"
                   />
                   <button
                     type="button"
-                    onClick={() => fileInputRefs.current[color.id]?.click()}
-                    disabled={uploadingColorId === color.id}
+                    onClick={() => frontFileInputRefs.current[color.id]?.click()}
+                    disabled={uploadingFrontColorId === color.id}
                     className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-1"
-                    title="Subir imagen desde PC"
+                    title="Subir imagen frontal"
                   >
-                    {uploadingColorId === color.id ? (
+                    {uploadingFrontColorId === color.id ? (
                       <Loader className="w-3 h-3 animate-spin" />
                     ) : (
                       <Upload className="w-3 h-3" />
@@ -219,24 +454,52 @@ export default function ColorSelectorConfigEditor({ colors, onChange }: ColorSel
                 </div>
               </div>
 
-              {/* Remove Button */}
-              <button
-                onClick={() => handleRemoveColor(color.id)}
-                className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors"
-                title="Eliminar color"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Color Picker */}
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                value={color.hex}
-                onChange={(e) => handleUpdateColor(color.id, { hex: e.target.value })}
-                className="w-full h-8 cursor-pointer rounded border border-gray-300"
-              />
+              {/* Back Image */}
+              <div className="bg-red-50 p-2 rounded-lg">
+                <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                  <span>🔴</span>
+                  Vista Trasera
+                </label>
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    value={color.previewImages?.back || ''}
+                    onChange={(e) =>
+                      handleUpdateColor(color.id, {
+                        previewImages: {
+                          ...(color.previewImages || {}),
+                          back: e.target.value,
+                        },
+                      })
+                    }
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    placeholder="URL trasera"
+                  />
+                  <input
+                    type="file"
+                    ref={(el) => (backFileInputRefs.current[color.id] = el)}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUploadBackImage(color.id, file);
+                    }}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => backFileInputRefs.current[color.id]?.click()}
+                    disabled={uploadingBackColorId === color.id}
+                    className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center gap-1"
+                    title="Subir imagen trasera"
+                  >
+                    {uploadingBackColorId === color.id ? (
+                      <Loader className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Upload className="w-3 h-3" />
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         ))}
@@ -281,51 +544,119 @@ export default function ColorSelectorConfigEditor({ colors, onChange }: ColorSel
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Imagen Preview (Opcional)
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newColor.previewImage || ''}
-                  onChange={(e) => setNewColor({ ...newColor, previewImage: e.target.value })}
-                  placeholder="https://ejemplo.com/imagen-camiseta-roja.jpg"
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-                <input
-                  type="file"
-                  ref={newColorFileInputRef}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleUploadNewColorImage(file);
-                  }}
-                  accept="image/*"
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => newColorFileInputRef.current?.click()}
-                  disabled={uploadingNewColor}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-2"
-                  title="Subir imagen desde PC"
-                >
-                  {uploadingNewColor ? (
-                    <>
-                      <Loader className="w-4 h-4 animate-spin" />
-                      Subiendo...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4" />
-                      Subir
-                    </>
-                  )}
-                </button>
+            {/* Preview Images for Textiles */}
+            <div className="border-t pt-3">
+              <div className="text-sm font-semibold text-gray-700 mb-2">
+                👕 Imágenes de Preview (Para textiles - Opcional)
               </div>
-              <p className="mt-1 text-xs text-gray-500">
-                💡 Sube una imagen desde tu PC o pega una URL
-              </p>
+
+              {/* Front Image */}
+              <div className="mb-3">
+                <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                  <span>🔵</span>
+                  Vista Frontal
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newColor.previewImages?.front || ''}
+                    onChange={(e) =>
+                      setNewColor({
+                        ...newColor,
+                        previewImages: {
+                          ...(newColor.previewImages || {}),
+                          front: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="https://ejemplo.com/camiseta-roja-frente.jpg"
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <input
+                    type="file"
+                    ref={newColorFrontInputRef}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUploadNewColorFront(file);
+                    }}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => newColorFrontInputRef.current?.click()}
+                    disabled={uploadingNewColorFront}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    title="Subir imagen frontal"
+                  >
+                    {uploadingNewColorFront ? (
+                      <>
+                        <Loader className="w-4 h-4 animate-spin" />
+                        Subiendo...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        Subir
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Back Image */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                  <span>🔴</span>
+                  Vista Trasera
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newColor.previewImages?.back || ''}
+                    onChange={(e) =>
+                      setNewColor({
+                        ...newColor,
+                        previewImages: {
+                          ...(newColor.previewImages || {}),
+                          back: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="https://ejemplo.com/camiseta-roja-espalda.jpg"
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  />
+                  <input
+                    type="file"
+                    ref={newColorBackInputRef}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUploadNewColorBack(file);
+                    }}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => newColorBackInputRef.current?.click()}
+                    disabled={uploadingNewColorBack}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    title="Subir imagen trasera"
+                  >
+                    {uploadingNewColorBack ? (
+                      <>
+                        <Loader className="w-4 h-4 animate-spin" />
+                        Subiendo...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        Subir
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Preview */}
