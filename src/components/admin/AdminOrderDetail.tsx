@@ -268,9 +268,62 @@ export default function AdminOrderDetail() {
                         {item.variantName && (
                           <p className="text-sm text-gray-500">Variante: {item.variantName}</p>
                         )}
+
+                        {/* Detalles de personalización */}
                         {item.customization && (
-                          <p className="text-sm text-purple-600 font-medium">Personalizado</p>
+                          <div className="mt-3 p-3 bg-purple-50 border-l-4 border-purple-500 rounded-lg">
+                            <p className="text-sm text-purple-700 font-bold mb-2 flex items-center gap-2">
+                              <Icon name="sparkles" className="w-4 h-4" />
+                              Personalizado - {item.customization.categoryName || 'Producto'}
+                            </p>
+
+                            {/* Valores de personalización */}
+                            {item.customization.values && (
+                              <div className="space-y-2 mt-2">
+                                {item.customization.values.map((field: any, idx: number) => (
+                                  <div key={idx} className="text-sm">
+                                    <span className="font-semibold text-gray-700">{field.fieldLabel}:</span>
+
+                                    {/* Si tiene imagen, mostrarla */}
+                                    {field.imageUrl ? (
+                                      <div className="mt-2 ml-4">
+                                        <img
+                                          src={field.imageUrl}
+                                          alt={field.fieldLabel}
+                                          className="w-32 h-32 object-contain border-2 border-purple-200 rounded-lg bg-white"
+                                        />
+
+                                        {/* Mostrar transformaciones si existen */}
+                                        {field.imageTransform && (
+                                          <div className="mt-1 text-xs text-gray-600 space-y-0.5">
+                                            <p>• Posición: X={field.imageTransform.x}%, Y={field.imageTransform.y}%</p>
+                                            <p>• Escala: {(field.imageTransform.scale * 100).toFixed(0)}%</p>
+                                            {field.imageTransform.rotation !== 0 && (
+                                              <p>• Rotación: {field.imageTransform.rotation}°</p>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      /* Si es un valor simple (color, talla, etc.) */
+                                      <span className="ml-2 text-gray-600">
+                                        {field.displayValue || field.value}
+                                      </span>
+                                    )}
+
+                                    {/* Mostrar precio adicional si existe */}
+                                    {field.priceModifier && field.priceModifier > 0 && (
+                                      <span className="ml-2 text-xs text-green-600">
+                                        (+{eur(field.priceModifier)})
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         )}
+
                         <div className="flex items-center justify-between mt-3">
                           <span className="text-gray-600">
                             Cantidad: <strong>{item.quantity}</strong>
