@@ -172,9 +172,20 @@ export default function TextileProductPreview({
               alt={activeSide === 'front' ? 'Vista frontal' : 'Vista trasera'}
               className="absolute inset-0 w-full h-full object-contain transition-opacity duration-300"
               draggable={false}
-              onLoad={() => console.log('[TextilePreview] Base image loaded:', activeBaseImage)}
-              onError={(e) => console.error('[TextilePreview] Base image ERROR:', activeBaseImage, e)}
-              style={{ border: '2px solid red' }} // DEBUG: para ver si la imagen está ahí
+              onLoad={(e) => {
+                console.log('[TextilePreview] ✅ Base image LOADED successfully:', activeBaseImage);
+                console.log('[TextilePreview] Image natural dimensions:', e.currentTarget.naturalWidth, 'x', e.currentTarget.naturalHeight);
+              }}
+              onError={(e) => {
+                console.error('[TextilePreview] ❌ Base image ERROR:', activeBaseImage);
+                console.error('[TextilePreview] Error details:', e);
+              }}
+              style={{
+                border: '2px solid red',
+                zIndex: 10,
+                opacity: 1,
+                display: 'block'
+              }} // DEBUG: para ver si la imagen está ahí
             />
 
             {/* Print Area Overlay */}
@@ -185,6 +196,7 @@ export default function TextileProductPreview({
                 top: `${(100 - printAreaPercentage) / 2}%`,
                 width: `${printAreaPercentage}%`,
                 height: `${printAreaPercentage}%`,
+                zIndex: 20,
               }}
             >
               <div className="absolute top-2 left-2 text-xs font-bold text-purple-600 bg-white/80 px-2 py-1 rounded">
@@ -195,9 +207,9 @@ export default function TextileProductPreview({
             {/* Alignment Guides */}
             {showGuides && isCentered && activeUserImage && (
               <>
-                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-green-500/50 pointer-events-none" />
-                <div className="absolute top-1/2 left-0 right-0 h-px bg-green-500/50 pointer-events-none" />
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-green-500/50 pointer-events-none" style={{ zIndex: 40 }} />
+                <div className="absolute top-1/2 left-0 right-0 h-px bg-green-500/50 pointer-events-none" style={{ zIndex: 40 }} />
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ zIndex: 40 }}>
                   <div className="w-8 h-8 border-2 border-green-500 rounded-full bg-green-500/20" />
                 </div>
               </>
@@ -211,6 +223,7 @@ export default function TextileProductPreview({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  zIndex: 30,
                 }}
               >
                 <img
@@ -236,7 +249,7 @@ export default function TextileProductPreview({
 
             {/* Overlay hint cuando no hay imagen */}
             {!activeUserImage && (
-              <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 5, pointerEvents: 'none', backgroundColor: 'transparent' }}>
                 <div className="text-center p-6">
                   <div className="text-5xl mb-3">
                     {activeSide === 'front' ? '🔵' : '🔴'}
