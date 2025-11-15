@@ -12,7 +12,7 @@
 import React, { useState } from 'react';
 import { ZoomIn, ZoomOut, Maximize2, RotateCcw } from 'lucide-react';
 import type { ImageTransform } from '../../types/customization';
-import { getPositionsForSide, type PresetPosition } from '../../constants/textilePositions';
+import { getPositionsForSide, getContainerTransform, type PresetPosition } from '../../constants/textilePositions';
 
 interface TextileProductPreviewProps {
   frontImage: string;  // URL de la imagen del producto (vista frontal)
@@ -90,8 +90,10 @@ export default function TextileProductPreview({
 
   const handleApplyPresetPosition = (preset: PresetPosition) => {
     if (onTransformChange) {
+      // Convertir coordenadas del área de impresión al contenedor
+      const containerTransform = getContainerTransform(preset, printAreaPercentage);
       const newTransform: ImageTransform = {
-        ...preset.transform,
+        ...containerTransform,
         rotation: activeTransform.rotation, // Preserve current rotation
       };
       onTransformChange(activeSide, newTransform);
