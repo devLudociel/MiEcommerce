@@ -41,7 +41,7 @@ export const camisetasSchema: CustomizationSchema = {
       required: true,
       config: {
         displayStyle: 'buttons',
-        sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+        availableSizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
         showSizeGuide: true,
       },
       priceModifier: 0,
@@ -296,7 +296,7 @@ export const camisetasProSchema: CustomizationSchema = {
       required: true,
       config: {
         displayStyle: 'buttons',
-        sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+        availableSizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
         showSizeGuide: true,
       },
       priceModifier: 0,
@@ -402,7 +402,7 @@ export const hoodiesSchema: CustomizationSchema = {
       required: true,
       config: {
         displayStyle: 'buttons',
-        sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+        availableSizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
         showSizeGuide: true,
       },
       priceModifier: 0,
