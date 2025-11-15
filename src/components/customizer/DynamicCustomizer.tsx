@@ -192,7 +192,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
       // Add to cart
       addToCart({
-        productId: product.id,
+        id: product.id,
         name: product.name,
         price: pricing.totalPrice,
         quantity: 1,
