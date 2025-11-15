@@ -1259,10 +1259,6 @@ export default function AdminProductsPanel() {
           </div>
         </div>
 
-        <div style={{ marginBottom: '32px' }}>
-          <VariantImageManager />
-        </div>
-
         {error && (
           <div className="error-box mb-6">
             <strong>Error:</strong> {error}
@@ -1399,14 +1395,15 @@ export default function AdminProductsPanel() {
               </div>
             </div>
 
-            {/* 🎨 COLORES */}
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '8px', display: 'block' }}>
-                🎨 Colores Disponibles
-              </label>
-              <p style={{ fontSize: '14px', color: '#666', marginBottom: '12px' }}>
-                Selecciona los colores en los que está disponible este producto (opcional)
-              </p>
+            {/* 🎨 COLORES - Solo para productos NO personalizables */}
+            {!draft.customizationSchemaId && (
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '8px', display: 'block' }}>
+                  🎨 Colores Disponibles
+                </label>
+                <p style={{ fontSize: '14px', color: '#666', marginBottom: '12px' }}>
+                  Selecciona los colores en los que está disponible este producto (opcional)
+                </p>
               <div
                 style={{
                   display: 'grid',
@@ -1454,10 +1451,11 @@ export default function AdminProductsPanel() {
                   </label>
                 ))}
               </div>
-            </div>
+              </div>
+            )}
 
-            {/* 📏 TALLAS (solo si es categoría textil) */}
-            {draft.category && simpleCategories.find((c) => c.id === draft.category)?.needsSizes && (
+            {/* 📏 TALLAS - Solo para productos NO personalizables */}
+            {!draft.customizationSchemaId && draft.category && simpleCategories.find((c) => c.id === draft.category)?.needsSizes && (
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '8px', display: 'block' }}>
                   📏 Tallas Disponibles
@@ -1496,6 +1494,61 @@ export default function AdminProductsPanel() {
                       {size}
                     </label>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* ℹ️ MENSAJE INFORMATIVO - Cuando es producto personalizable */}
+            {draft.customizationSchemaId && (
+              <div style={{ gridColumn: '1 / -1' }}>
+                <div
+                  style={{
+                    background: '#dbeafe',
+                    border: '2px solid #3b82f6',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '16px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'start', gap: '12px' }}>
+                    <div style={{ fontSize: '24px' }}>ℹ️</div>
+                    <div>
+                      <p style={{ fontWeight: 'bold', color: '#1e40af', marginBottom: '8px' }}>
+                        Producto personalizable configurado
+                      </p>
+                      <p style={{ fontSize: '14px', color: '#1e3a8a', marginBottom: '8px' }}>
+                        Los <strong>colores y tallas disponibles</strong> se definen en el schema de personalización que seleccionaste ({schemaInfo[draft.customizationSchemaId]?.name}).
+                        Los clientes verán esas opciones cuando personalicen el producto.
+                      </p>
+                      <p style={{ fontSize: '14px', color: '#1e3a8a' }}>
+                        📋 Campos incluidos: {schemaInfo[draft.customizationSchemaId]?.fields.join(', ')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* VariantImageManager - Solo para productos personalizables */}
+                <div
+                  style={{
+                    background: '#f0fdf4',
+                    border: '2px solid #10b981',
+                    borderRadius: '12px',
+                    padding: '16px',
+                  }}
+                >
+                  <div style={{ marginBottom: '16px' }}>
+                    <p style={{ fontWeight: 'bold', color: '#065f46', marginBottom: '8px', fontSize: '16px' }}>
+                      🖼️ Gestor de Imágenes Mockup (Productos Personalizables)
+                    </p>
+                    <p style={{ fontSize: '14px', color: '#047857', marginBottom: '8px' }}>
+                      Aquí subes las imágenes BASE/MOCKUP del producto (ej: camiseta blanca vacía, camiseta negra vacía, etc.).
+                      Estas imágenes se usan de fondo donde se superpondrá el diseño del cliente.
+                    </p>
+                    <p style={{ fontSize: '13px', color: '#065f46', fontStyle: 'italic' }}>
+                      💡 Ejemplo: Si vendes camisetas personalizables en 8 colores, sube aquí las 8 fotos de camisetas vacías (una por color).
+                    </p>
+                  </div>
+                  <VariantImageManager />
                 </div>
               </div>
             )}
