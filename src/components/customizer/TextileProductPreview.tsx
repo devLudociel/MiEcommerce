@@ -167,10 +167,14 @@ export default function TextileProductPreview({
           >
             {/* Base Image (Camiseta frente o espalda) */}
             <img
+              key={`base-${activeSide}-${activeBaseImage}`} // Force React to treat front/back as different elements
               src={activeBaseImage}
               alt={activeSide === 'front' ? 'Vista frontal' : 'Vista trasera'}
               className="absolute inset-0 w-full h-full object-contain transition-opacity duration-300"
               draggable={false}
+              onLoad={() => console.log('[TextilePreview] Base image loaded:', activeBaseImage)}
+              onError={(e) => console.error('[TextilePreview] Base image ERROR:', activeBaseImage, e)}
+              style={{ border: '2px solid red' }} // DEBUG: para ver si la imagen está ahí
             />
 
             {/* Print Area Overlay */}
@@ -210,6 +214,7 @@ export default function TextileProductPreview({
                 }}
               >
                 <img
+                  key={`user-${activeSide}-${activeUserImage}`} // Force React to treat front/back as different elements
                   src={activeUserImage}
                   alt={`Diseño personalizado ${activeSide === 'front' ? 'frontal' : 'trasero'}`}
                   draggable={false}
