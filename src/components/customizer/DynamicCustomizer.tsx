@@ -400,9 +400,9 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     );
   };
 
-  // Obtener imagen frontal y trasera para textiles
+  // Obtener imagen frontal para textiles (solo campo específico frontal)
   const getTextileFrontImage = (): string | null => {
-    // PRIORIDAD 1: Buscar campo específico de imagen frontal
+    // Buscar campo específico de imagen frontal
     const frontField = schema.fields.find(f =>
       f.fieldType === 'image_upload' && (
         f.id.toLowerCase().includes('front') ||
@@ -416,25 +416,6 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
     if (frontField) {
       const imageValue = values[frontField.id];
-      if (imageValue?.imageUrl) {
-        return imageValue.imageUrl as string;
-      }
-    }
-
-    // PRIORIDAD 2: Si no hay campo frontal específico, buscar cualquier campo de imagen genérico
-    // Esto permite que una sola imagen se vea en ambos lados
-    const genericImageField = schema.fields.find(f =>
-      f.fieldType === 'image_upload' &&
-      !f.id.toLowerCase().includes('back') &&
-      !f.id.toLowerCase().includes('trasera') &&
-      !f.id.toLowerCase().includes('espalda') &&
-      !f.label.toLowerCase().includes('back') &&
-      !f.label.toLowerCase().includes('trasera') &&
-      !f.label.toLowerCase().includes('espalda')
-    );
-
-    if (genericImageField) {
-      const imageValue = values[genericImageField.id];
       if (imageValue?.imageUrl) {
         return imageValue.imageUrl as string;
       }
@@ -444,7 +425,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   };
 
   const getTextileBackImage = (): string | null => {
-    // PRIORIDAD 1: Buscar campo específico de imagen trasera
+    // Buscar campo específico de imagen trasera
     const backField = schema.fields.find(f =>
       f.fieldType === 'image_upload' && (
         f.id.toLowerCase().includes('back') ||
@@ -463,13 +444,11 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
       }
     }
 
-    // PRIORIDAD 2: Si no hay campo trasero específico, reutilizar la imagen frontal
-    // Esto permite que una sola imagen se vea en ambos lados
-    return getTextileFrontImage();
+    return null;
   };
 
   const getTextileFrontTransform = () => {
-    // PRIORIDAD 1: Buscar transformación del campo frontal específico
+    // Buscar transformación del campo frontal específico
     const frontField = schema.fields.find(f =>
       f.fieldType === 'image_upload' && (
         f.id.toLowerCase().includes('front') ||
@@ -488,27 +467,11 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
       }
     }
 
-    // PRIORIDAD 2: Si no hay campo frontal, usar transformación del campo genérico
-    const genericImageField = schema.fields.find(f =>
-      f.fieldType === 'image_upload' &&
-      !f.id.toLowerCase().includes('back') &&
-      !f.id.toLowerCase().includes('trasera') &&
-      !f.id.toLowerCase().includes('espalda') &&
-      !f.label.toLowerCase().includes('back') &&
-      !f.label.toLowerCase().includes('trasera') &&
-      !f.label.toLowerCase().includes('espalda')
-    );
-
-    if (genericImageField) {
-      const imageValue = values[genericImageField.id];
-      return imageValue?.imageTransform;
-    }
-
     return undefined;
   };
 
   const getTextileBackTransform = () => {
-    // PRIORIDAD 1: Buscar transformación del campo trasero específico
+    // Buscar transformación del campo trasero específico
     const backField = schema.fields.find(f =>
       f.fieldType === 'image_upload' && (
         f.id.toLowerCase().includes('back') ||
@@ -527,9 +490,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
       }
     }
 
-    // PRIORIDAD 2: Si no hay campo trasero específico, usar la misma transformación del frente
-    // Esto permite que los ajustes se apliquen a ambos lados si usan la misma imagen
-    return getTextileFrontTransform();
+    return undefined;
   };
 
   // Obtener imagen base frontal y trasera del producto
