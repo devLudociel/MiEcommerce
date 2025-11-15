@@ -36,12 +36,39 @@ export default function AdminCustomizationPanel() {
       const mockCategories: CategoryWithSchema[] = [
         {
           id: 'cat_camisetas',
-          name: 'Camisetas Personalizadas',
+          name: 'Camisetas Personalizadas (básico)',
           slug: 'camisetas',
-          description: 'Crea tu camiseta única',
+          description: 'Camisetas con diseño genérico',
           icon: '👕',
           active: true,
           customizationSchema: savedSchemas['cat_camisetas']?.schema || undefined,
+        },
+        {
+          id: 'cat_camisetas_pro',
+          name: 'Camisetas Pro (front/back)',
+          slug: 'camisetas-pro',
+          description: 'Camisetas con diseño frontal y trasero independiente',
+          icon: '👕',
+          active: true,
+          customizationSchema: savedSchemas['cat_camisetas_pro']?.schema || undefined,
+        },
+        {
+          id: 'cat_hoodies',
+          name: 'Hoodies / Sudaderas',
+          slug: 'hoodies',
+          description: 'Sudaderas personalizadas con front/back',
+          icon: '🧥',
+          active: true,
+          customizationSchema: savedSchemas['cat_hoodies']?.schema || undefined,
+        },
+        {
+          id: 'cat_bolsas',
+          name: 'Bolsas / Tote Bags',
+          slug: 'bolsas',
+          description: 'Bolsas de tela personalizadas',
+          icon: '🛍️',
+          active: true,
+          customizationSchema: savedSchemas['cat_bolsas']?.schema || undefined,
         },
         {
           id: 'cat_cuadros',
@@ -69,15 +96,6 @@ export default function AdminCustomizationPanel() {
           icon: '☕',
           active: true,
           customizationSchema: savedSchemas['cat_tazas']?.schema || undefined,
-        },
-        {
-          id: 'cat_nueva',
-          name: 'Nueva Categoría',
-          slug: 'nueva',
-          description: 'Categoría sin configurar',
-          icon: '📦',
-          active: false,
-          customizationSchema: savedSchemas['cat_nueva']?.schema || undefined,
         },
       ];
 
