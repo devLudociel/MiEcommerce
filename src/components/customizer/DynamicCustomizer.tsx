@@ -88,6 +88,46 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     setError(null);
   };
 
+  // Handler para actualizar transformaciones de imágenes en textiles
+  const handleTextileTransformChange = (side: 'front' | 'back', transform: any) => {
+    // Buscar el campo de imagen correspondiente al lado activo
+    const targetField = schema.fields.find(f =>
+      f.fieldType === 'image_upload' && (
+        side === 'front'
+          ? (
+            f.id.toLowerCase().includes('front') ||
+            f.id.toLowerCase().includes('frontal') ||
+            f.id.toLowerCase().includes('frente') ||
+            f.label.toLowerCase().includes('front') ||
+            f.label.toLowerCase().includes('frontal') ||
+            f.label.toLowerCase().includes('frente')
+          )
+          : (
+            f.id.toLowerCase().includes('back') ||
+            f.id.toLowerCase().includes('trasera') ||
+            f.id.toLowerCase().includes('espalda') ||
+            f.label.toLowerCase().includes('back') ||
+            f.label.toLowerCase().includes('trasera') ||
+            f.label.toLowerCase().includes('espalda')
+          )
+      )
+    );
+
+    if (!targetField) {
+      console.warn('[TextileTransformChange] No field found for side:', side);
+      return;
+    }
+
+    // Actualizar solo el imageTransform, manteniendo el resto de los datos
+    setValues((prev) => ({
+      ...prev,
+      [targetField.id]: {
+        ...prev[targetField.id],
+        imageTransform: transform,
+      },
+    }));
+  };
+
   const handleLoadTemplate = (template: DesignTemplate) => {
     logger.info('[DynamicCustomizer] Loading template:', template.name);
 
@@ -720,6 +760,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                 productName={product.name}
                 activeSide={activeSide}
                 onActiveSideChange={setActiveSide}
+                onTransformChange={handleTextileTransformChange}
               />
             ) : (
               /* ProductPreview normal para otros productos */
