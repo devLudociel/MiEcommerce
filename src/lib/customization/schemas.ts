@@ -31,9 +31,11 @@ const CATEGORY_TO_SCHEMA_MAP: Record<string, keyof typeof exampleSchemas> = {
  * Útil para desarrollo local sin necesidad de Firestore
  */
 function getCodeSchemaFallback(categoryId: string): CustomizationSchema | null {
-  const schemaKey = CATEGORY_TO_SCHEMA_MAP[categoryId];
+  // Limpiar espacios para evitar errores de tipeo
+  const cleanCategoryId = categoryId.trim();
+  const schemaKey = CATEGORY_TO_SCHEMA_MAP[cleanCategoryId];
   if (schemaKey && exampleSchemas[schemaKey]) {
-    logger.debug('[getCodeSchemaFallback] Using code schema fallback', { categoryId, schemaKey });
+    logger.debug('[getCodeSchemaFallback] Using code schema fallback', { categoryId: cleanCategoryId, schemaKey });
     return exampleSchemas[schemaKey];
   }
   return null;
@@ -85,20 +87,22 @@ export async function saveCustomizationSchema(
  */
 export async function loadCustomizationSchema(categoryId: string): Promise<StoredSchema | null> {
   try {
-    const schemaRef = doc(db, 'customization_schemas', categoryId);
+    // Limpiar espacios para evitar errores de tipeo
+    const cleanCategoryId = categoryId.trim();
+    const schemaRef = doc(db, 'customization_schemas', cleanCategoryId);
     const schemaDoc = await getDoc(schemaRef);
 
     if (!schemaDoc.exists()) {
-      logger.warn('[loadCustomizationSchema] Schema not found in Firestore', { categoryId });
+      logger.warn('[loadCustomizationSchema] Schema not found in Firestore', { categoryId: cleanCategoryId });
 
       // FALLBACK: Use code schema if available
-      const codeSchema = getCodeSchemaFallback(categoryId);
+      const codeSchema = getCodeSchemaFallback(cleanCategoryId);
       if (codeSchema) {
-        logger.info('[loadCustomizationSchema] Using code schema fallback', { categoryId });
+        logger.info('[loadCustomizationSchema] Using code schema fallback', { categoryId: cleanCategoryId });
         return {
           schema: codeSchema,
-          categoryId,
-          categoryName: categoryId.replace('cat_', '').replace('_', ' '),
+          categoryId: cleanCategoryId,
+          categoryName: cleanCategoryId.replace('cat_', '').replace('_', ' '),
           updatedAt: new Date(),
           createdAt: new Date(),
         };
@@ -119,13 +123,14 @@ export async function loadCustomizationSchema(categoryId: string): Promise<Store
     logger.error('[loadCustomizationSchema] Error loading schema', error);
 
     // FALLBACK: On error, try code schema
-    const codeSchema = getCodeSchemaFallback(categoryId);
+    const cleanCategoryId = categoryId.trim();
+    const codeSchema = getCodeSchemaFallback(cleanCategoryId);
     if (codeSchema) {
-      logger.info('[loadCustomizationSchema] Using code schema fallback after error', { categoryId });
+      logger.info('[loadCustomizationSchema] Using code schema fallback after error', { categoryId: cleanCategoryId });
       return {
         schema: codeSchema,
-        categoryId,
-        categoryName: categoryId.replace('cat_', '').replace('_', ' '),
+        categoryId: cleanCategoryId,
+        categoryName: cleanCategoryId.replace('cat_', '').replace('_', ' '),
         updatedAt: new Date(),
         createdAt: new Date(),
       };
