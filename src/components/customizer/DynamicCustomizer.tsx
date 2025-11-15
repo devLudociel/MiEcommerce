@@ -90,8 +90,8 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
   // Handler para actualizar transformaciones de imágenes en textiles
   const handleTextileTransformChange = (side: 'front' | 'back', transform: any) => {
-    // Buscar el campo de imagen correspondiente al lado activo
-    const targetField = schema.fields.find(f =>
+    // PRIORIDAD 1: Buscar campo específico del lado activo
+    let targetField = schema.fields.find(f =>
       f.fieldType === 'image_upload' && (
         side === 'front'
           ? (
@@ -113,10 +113,28 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
       )
     );
 
+    // PRIORIDAD 2: Si no hay campo específico, buscar campo genérico
+    if (!targetField) {
+      targetField = schema.fields.find(f => {
+        if (f.fieldType !== 'image_upload') return false;
+        const idLower = f.id.toLowerCase();
+        const labelLower = f.label.toLowerCase();
+        // Es genérico si NO contiene front ni back
+        const isGeneric =
+          !idLower.includes('front') && !idLower.includes('frontal') && !idLower.includes('frente') &&
+          !idLower.includes('back') && !idLower.includes('trasera') && !idLower.includes('espalda') &&
+          !labelLower.includes('front') && !labelLower.includes('frontal') && !labelLower.includes('frente') &&
+          !labelLower.includes('back') && !labelLower.includes('trasera') && !labelLower.includes('espalda');
+        return isGeneric;
+      });
+    }
+
     if (!targetField) {
       console.warn('[TextileTransformChange] No field found for side:', side);
       return;
     }
+
+    console.log('[TextileTransformChange] Updating transform for field:', targetField.id, 'side:', side);
 
     // Actualizar solo el imageTransform, manteniendo el resto de los datos
     setValues((prev) => ({
@@ -478,8 +496,9 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     );
   };
 
-  // Obtener imagen frontal para textiles (SOLO campo frontal específico, sin fallbacks)
+  // Obtener imagen frontal para textiles
   const getTextileFrontImage = (): string | null => {
+    // PRIORIDAD 1: Buscar campo frontal específico
     const frontField = schema.fields.find(f =>
       f.fieldType === 'image_upload' && (
         f.id.toLowerCase().includes('front') ||
@@ -499,12 +518,35 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
       }
     }
 
-    // NO fallbacks - front y back son independientes
+    // PRIORIDAD 2: Buscar campo genérico (sin front/back en nombre) para compatibilidad
+    // Esto permite que schemas con un solo campo genérico funcionen en ambas vistas
+    const genericField = schema.fields.find(f => {
+      if (f.fieldType !== 'image_upload') return false;
+      const idLower = f.id.toLowerCase();
+      const labelLower = f.label.toLowerCase();
+      // Es genérico si NO contiene front ni back
+      const isGeneric =
+        !idLower.includes('front') && !idLower.includes('frontal') && !idLower.includes('frente') &&
+        !idLower.includes('back') && !idLower.includes('trasera') && !idLower.includes('espalda') &&
+        !labelLower.includes('front') && !labelLower.includes('frontal') && !labelLower.includes('frente') &&
+        !labelLower.includes('back') && !labelLower.includes('trasera') && !labelLower.includes('espalda');
+      return isGeneric;
+    });
+
+    if (genericField) {
+      const imageValue = values[genericField.id];
+      if (imageValue?.imageUrl) {
+        console.log('[TextileFrontUserImage] Using generic field:', genericField.id);
+        return imageValue.imageUrl as string;
+      }
+    }
+
+    // NO usar campo back para front - deben ser independientes
     return null;
   };
 
   const getTextileBackImage = (): string | null => {
-    // Buscar campo específico de imagen trasera
+    // PRIORIDAD 1: Buscar campo trasero específico
     const backField = schema.fields.find(f =>
       f.fieldType === 'image_upload' && (
         f.id.toLowerCase().includes('back') ||
@@ -519,14 +561,39 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     if (backField) {
       const imageValue = values[backField.id];
       if (imageValue?.imageUrl) {
+        console.log('[TextileBackUserImage] Using back field:', backField.id);
         return imageValue.imageUrl as string;
       }
     }
 
+    // PRIORIDAD 2: Buscar campo genérico (sin front/back en nombre)
+    const genericField = schema.fields.find(f => {
+      if (f.fieldType !== 'image_upload') return false;
+      const idLower = f.id.toLowerCase();
+      const labelLower = f.label.toLowerCase();
+      // Es genérico si NO contiene front ni back
+      const isGeneric =
+        !idLower.includes('front') && !idLower.includes('frontal') && !idLower.includes('frente') &&
+        !idLower.includes('back') && !idLower.includes('trasera') && !idLower.includes('espalda') &&
+        !labelLower.includes('front') && !labelLower.includes('frontal') && !labelLower.includes('frente') &&
+        !labelLower.includes('back') && !labelLower.includes('trasera') && !labelLower.includes('espalda');
+      return isGeneric;
+    });
+
+    if (genericField) {
+      const imageValue = values[genericField.id];
+      if (imageValue?.imageUrl) {
+        console.log('[TextileBackUserImage] Using generic field:', genericField.id);
+        return imageValue.imageUrl as string;
+      }
+    }
+
+    // NO usar campo front para back - deben ser independientes
     return null;
   };
 
   const getTextileFrontTransform = () => {
+    // PRIORIDAD 1: Buscar transform de campo frontal específico
     const frontField = schema.fields.find(f =>
       f.fieldType === 'image_upload' && (
         f.id.toLowerCase().includes('front') ||
@@ -545,12 +612,31 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
       }
     }
 
-    // NO fallbacks - front y back son independientes
+    // PRIORIDAD 2: Buscar transform de campo genérico
+    const genericField = schema.fields.find(f => {
+      if (f.fieldType !== 'image_upload') return false;
+      const idLower = f.id.toLowerCase();
+      const labelLower = f.label.toLowerCase();
+      const isGeneric =
+        !idLower.includes('front') && !idLower.includes('frontal') && !idLower.includes('frente') &&
+        !idLower.includes('back') && !idLower.includes('trasera') && !idLower.includes('espalda') &&
+        !labelLower.includes('front') && !labelLower.includes('frontal') && !labelLower.includes('frente') &&
+        !labelLower.includes('back') && !labelLower.includes('trasera') && !labelLower.includes('espalda');
+      return isGeneric;
+    });
+
+    if (genericField) {
+      const imageValue = values[genericField.id];
+      if (imageValue?.imageTransform) {
+        return imageValue.imageTransform;
+      }
+    }
+
     return undefined;
   };
 
   const getTextileBackTransform = () => {
-    // Buscar transformación del campo trasero específico
+    // PRIORIDAD 1: Buscar transform de campo trasero específico
     const backField = schema.fields.find(f =>
       f.fieldType === 'image_upload' && (
         f.id.toLowerCase().includes('back') ||
@@ -564,6 +650,26 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
     if (backField) {
       const imageValue = values[backField.id];
+      if (imageValue?.imageTransform) {
+        return imageValue.imageTransform;
+      }
+    }
+
+    // PRIORIDAD 2: Buscar transform de campo genérico
+    const genericField = schema.fields.find(f => {
+      if (f.fieldType !== 'image_upload') return false;
+      const idLower = f.id.toLowerCase();
+      const labelLower = f.label.toLowerCase();
+      const isGeneric =
+        !idLower.includes('front') && !idLower.includes('frontal') && !idLower.includes('frente') &&
+        !idLower.includes('back') && !idLower.includes('trasera') && !idLower.includes('espalda') &&
+        !labelLower.includes('front') && !labelLower.includes('frontal') && !labelLower.includes('frente') &&
+        !labelLower.includes('back') && !labelLower.includes('trasera') && !labelLower.includes('espalda');
+      return isGeneric;
+    });
+
+    if (genericField) {
+      const imageValue = values[genericField.id];
       if (imageValue?.imageTransform) {
         return imageValue.imageTransform;
       }
