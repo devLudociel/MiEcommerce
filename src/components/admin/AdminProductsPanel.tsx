@@ -920,7 +920,18 @@ export default function AdminProductsPanel() {
           categoryId: normalized.categoryId,
         });
         const docRef = await addDoc(collection(db, 'products'), {
-          ...normalized,
+          name: normalized.name,
+          description: normalized.description,
+          categoryId: normalized.categoryId,
+          subcategoryId: normalized.subcategoryId,
+          basePrice: Number(normalized.basePrice) || 0,
+          attributes: normalized.attributes || [],
+          tags: normalized.tags || [],
+          featured: !!normalized.featured,
+          onSale: !!normalized.onSale,
+          salePrice: normalized.onSale && normalized.salePrice ? Number(normalized.salePrice) : null,
+          slug: normalized.slug,
+          active: !!normalized.active,
           images: [],
           customizerType: draft.customizerType || 'default',
           // 🎯 Campos para filtros públicos
