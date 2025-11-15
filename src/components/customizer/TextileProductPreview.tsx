@@ -56,6 +56,12 @@ export default function TextileProductPreview({
   const activeBaseImage = activeSide === 'front' ? frontImage : backImage;
   const activeUserImage = activeSide === 'front' ? userFrontImage : userBackImage;
 
+  // Debug logs
+  console.log('[TextilePreview] Active side:', activeSide);
+  console.log('[TextilePreview] Front image:', frontImage);
+  console.log('[TextilePreview] Back image:', backImage);
+  console.log('[TextilePreview] Active base image:', activeBaseImage);
+
   // Check if image is centered
   const isCentered = Math.abs(activeTransform.x - 50) < 5 && Math.abs(activeTransform.y - 50) < 5;
 
