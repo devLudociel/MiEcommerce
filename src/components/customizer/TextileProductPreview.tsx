@@ -178,12 +178,8 @@ export default function TextileProductPreview({
                 console.error('[TextilePreview] ❌ FRONT Base image ERROR:', frontImage, e);
               }}
               style={{
-                border: '2px solid blue',
                 zIndex: 10,
-                opacity: 1,
                 display: activeSide === 'front' ? 'block' : 'none',
-                visibility: 'visible',
-                backgroundColor: 'rgba(0,0,255,0.1)' // Blue tint for front
               }}
             />
 
@@ -202,12 +198,8 @@ export default function TextileProductPreview({
                 console.error('[TextilePreview] ❌ BACK Base image ERROR:', backImage, e);
               }}
               style={{
-                border: '2px solid red',
                 zIndex: 10,
-                opacity: 1,
                 display: activeSide === 'back' ? 'block' : 'none',
-                visibility: 'visible',
-                backgroundColor: 'rgba(255,0,0,0.1)' // Red tint for back
               }}
             />
 
