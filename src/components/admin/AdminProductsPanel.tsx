@@ -17,6 +17,7 @@ import { productSchema } from '../../lib/validation/schemas';
 import { useSimpleFormValidation } from '../../hooks/useFormValidation';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
+import { schemaOptions } from '../../data/exampleSchemas';
 
 // Tipos actualizados
 interface ProductCategory {
@@ -89,6 +90,9 @@ interface FirebaseProduct {
   flashSale?: boolean;
   maxStock?: number; // Stock máximo para mostrar barra de progreso
 
+  // 🎨 Personalización (nuevo sistema con schemas dinámicos)
+  customizationSchemaId?: string; // ID del schema de personalización
+
   createdAt?: any;
   updatedAt?: any;
 }
@@ -122,6 +126,7 @@ const emptyProduct: DraftProduct = {
   flashSale: false,
   maxStock: 100,
   customizerType: 'default',
+  customizationSchemaId: undefined,
 };
 
 // 🎯 Categorías simples para filtrado público (compatibles con FilterPanel)
@@ -152,6 +157,73 @@ const availableColors = [
 
 // 📏 Tallas disponibles (compatible con FilterPanel)
 const availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
+// 🎨 Información de schemas de personalización
+const schemaInfo: Record<string, {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  fields: string[];
+  recommendedCategories: string[];
+}> = {
+  'cat_camisetas': {
+    id: 'cat_camisetas',
+    name: 'Camisetas Básico',
+    description: 'Schema simple para camisetas con 1 diseño genérico',
+    icon: '👕',
+    fields: ['Color', 'Talla', 'Diseño'],
+    recommendedCategories: ['camisetas', 'textil'],
+  },
+  'cat_camisetas_pro': {
+    id: 'cat_camisetas_pro',
+    name: 'Camisetas Pro',
+    description: 'Camisetas con diseño frontal y trasero independiente',
+    icon: '👕',
+    fields: ['Color', 'Talla', 'Diseño Frontal', 'Diseño Trasero'],
+    recommendedCategories: ['camisetas', 'textil'],
+  },
+  'cat_hoodies': {
+    id: 'cat_hoodies',
+    name: 'Hoodies / Sudaderas',
+    description: 'Sudaderas personalizadas con estilo, color y diseños front/back',
+    icon: '🧥',
+    fields: ['Estilo', 'Color', 'Talla', 'Diseño Frontal', 'Diseño Trasero'],
+    recommendedCategories: ['sudaderas', 'textil'],
+  },
+  'cat_bolsas': {
+    id: 'cat_bolsas',
+    name: 'Bolsas / Tote Bags',
+    description: 'Bolsas de tela personalizadas con diseños front/back',
+    icon: '🛍️',
+    fields: ['Tamaño', 'Color', 'Diseño Frontal', 'Diseño Trasero'],
+    recommendedCategories: ['bolsas', 'textil'],
+  },
+  'cat_cuadros': {
+    id: 'cat_cuadros',
+    name: 'Cuadros / Marcos',
+    description: 'Cuadros personalizables con flores',
+    icon: '🖼️',
+    fields: ['Tamaño', 'Color de Flores', 'Texto Personalizado'],
+    recommendedCategories: ['marcos', 'regalos'],
+  },
+  'cat_resina': {
+    id: 'cat_resina',
+    name: 'Figuras de Resina',
+    description: 'Cajas de resina personalizadas con imágenes',
+    icon: '🎨',
+    fields: ['Tamaño', 'Color de Caja', 'Imagen Personalizada'],
+    recommendedCategories: ['resina', 'regalos'],
+  },
+  'cat_tazas': {
+    id: 'cat_tazas',
+    name: 'Tazas / Sublimados',
+    description: 'Tazas sublimadas con diseño personalizado',
+    icon: '☕',
+    fields: ['Tipo', 'Diseño'],
+    recommendedCategories: ['tazas', 'regalos'],
+  },
+};
 
 // Datos de categorías y subcategorías según tu clasificación
 const categories: ProductCategory[] = [
@@ -868,6 +940,8 @@ export default function AdminProductsPanel() {
           urgencyLevel: normalized.isSpecialOffer ? normalized.urgencyLevel || 'low' : null,
           flashSale: normalized.isSpecialOffer ? !!normalized.flashSale : false,
           maxStock: normalized.isSpecialOffer ? Number(normalized.maxStock) || 100 : null,
+          // 🎨 Personalización
+          customizationSchemaId: draft.customizationSchemaId || null,
           createdAt,
           updatedAt,
         });
@@ -950,6 +1024,8 @@ export default function AdminProductsPanel() {
           urgencyLevel: draft.isSpecialOffer ? draft.urgencyLevel || 'low' : null,
           flashSale: draft.isSpecialOffer ? !!draft.flashSale : false,
           maxStock: draft.isSpecialOffer ? Number(draft.maxStock) || 100 : null,
+          // 🎨 Personalización
+          customizationSchemaId: draft.customizationSchemaId || null,
           updatedAt: Timestamp.now(),
         });
         logger.info('[AdminProductsPanel] Product updated', { productId: id });
@@ -1012,6 +1088,8 @@ export default function AdminProductsPanel() {
       urgencyLevel: p.urgencyLevel || 'low',
       flashSale: p.flashSale || false,
       maxStock: p.maxStock || 100,
+      // 🎨 Personalización
+      customizationSchemaId: p.customizationSchemaId || undefined,
     });
     setUploadFiles([]);
     setImagesToRemove([]);
@@ -1823,66 +1901,229 @@ export default function AdminProductsPanel() {
               </p>
             </div>
 
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>
-                Tipo de Personalizador
+            {/* Selector de Schema de Personalización (NUEVO) */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '12px', display: 'block' }}>
+                🎨 Schema de Personalización (Nuevo Sistema)
               </label>
+              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
+                Selecciona qué tipo de personalización permitirá este producto. Los schemas definen qué campos verá el cliente (color, talla, diseño, etc.)
+              </p>
+
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                  gap: '12px',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                  gap: '16px',
                 }}
               >
-                {(
-                  [
-                    {
-                      value: 'shirt' as const,
-                      label: '👕 Camisetas/Ropa',
-                      desc: 'Para textiles personalizables',
-                    },
-                    {
-                      value: 'frame' as const,
-                      label: '🖼️ Cuadros',
-                      desc: 'Para cuadros de flores',
-                    },
-                    {
-                      value: 'resin' as const,
-                      label: '🎨 Figuras Resina',
-                      desc: 'Para figuras 3D personalizadas',
-                    },
-                    {
-                      value: 'default' as const,
-                      label: '📦 Estándar',
-                      desc: 'Sin personalización especial',
-                    },
-                  ] as const
-                ).map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setDraft({ ...draft, customizerType: option.value })}
-                    style={{
-                      padding: '16px',
-                      borderRadius: '12px',
-                      border:
-                        draft.customizerType === option.value
-                          ? '3px solid #8b5cf6'
-                          : '2px solid #d1d5db',
-                      background: draft.customizerType === option.value ? '#f5f3ff' : 'white',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px' }}>
-                      {option.label}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#6b7280' }}>{option.desc}</div>
-                  </button>
-                ))}
+                {/* Opción: Sin personalización */}
+                <button
+                  key="none"
+                  type="button"
+                  onClick={() => setDraft({ ...draft, customizationSchemaId: undefined })}
+                  style={{
+                    padding: '16px',
+                    borderRadius: '12px',
+                    border: !draft.customizationSchemaId ? '3px solid #10b981' : '2px solid #d1d5db',
+                    background: !draft.customizationSchemaId ? '#ecfdf5' : 'white',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <div style={{ fontSize: '28px', marginBottom: '8px' }}>📦</div>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px', color: '#1f2937' }}>
+                    Sin Personalización
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '8px' }}>
+                    Producto estándar sin opciones de personalización
+                  </div>
+                </button>
+
+                {/* Opciones de schemas disponibles */}
+                {Object.values(schemaInfo).map((schema) => {
+                  const isSelected = draft.customizationSchemaId === schema.id;
+                  const categoryMatch = draft.category && schema.recommendedCategories.includes(draft.category);
+
+                  return (
+                    <button
+                      key={schema.id}
+                      type="button"
+                      onClick={() => setDraft({ ...draft, customizationSchemaId: schema.id })}
+                      style={{
+                        padding: '16px',
+                        borderRadius: '12px',
+                        border: isSelected ? '3px solid #8b5cf6' : categoryMatch ? '2px solid #10b981' : '2px solid #d1d5db',
+                        background: isSelected ? '#f5f3ff' : categoryMatch ? '#f0fdf4' : 'white',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.2s',
+                        position: 'relative',
+                      }}
+                    >
+                      {/* Badge de recomendación */}
+                      {categoryMatch && !isSelected && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '8px',
+                            right: '8px',
+                            background: '#10b981',
+                            color: 'white',
+                            fontSize: '10px',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          ✓ Recomendado
+                        </div>
+                      )}
+
+                      <div style={{ fontSize: '28px', marginBottom: '8px' }}>{schema.icon}</div>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px', color: '#1f2937' }}>
+                        {schema.name}
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '12px' }}>
+                        {schema.description}
+                      </div>
+
+                      {/* Lista de campos */}
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#4b5563',
+                        background: isSelected ? '#ede9fe' : '#f9fafb',
+                        padding: '8px',
+                        borderRadius: '6px',
+                      }}>
+                        <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>📋 Campos incluidos:</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          {schema.fields.map((field, idx) => (
+                            <span
+                              key={idx}
+                              style={{
+                                background: 'white',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontSize: '11px',
+                                border: '1px solid #e5e7eb',
+                              }}
+                            >
+                              {field}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
+
+              {/* Advertencia si no coincide con la categoría */}
+              {draft.customizationSchemaId && draft.category && (() => {
+                const selectedSchema = schemaInfo[draft.customizationSchemaId];
+                const categoryMatch = selectedSchema?.recommendedCategories.includes(draft.category);
+
+                if (!categoryMatch) {
+                  return (
+                    <div
+                      style={{
+                        marginTop: '16px',
+                        background: '#fef3c7',
+                        border: '2px solid #f59e0b',
+                        borderRadius: '8px',
+                        padding: '12px',
+                        fontSize: '14px',
+                        color: '#92400e',
+                      }}
+                    >
+                      <strong>⚠️ Advertencia:</strong> El schema seleccionado ({selectedSchema?.name}) no está recomendado para la categoría "{simpleCategories.find(c => c.id === draft.category)?.name}".
+                      <br />
+                      Categorías recomendadas: {selectedSchema?.recommendedCategories.map(catId => simpleCategories.find(c => c.id === catId)?.name).join(', ')}
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
+
+            {/* Selector antiguo (customizerType) - DEPRECADO */}
+            <details style={{ marginBottom: '16px' }}>
+              <summary style={{
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                padding: '12px',
+                background: '#f3f4f6',
+                borderRadius: '8px',
+                color: '#6b7280',
+              }}>
+                ⚙️ Configuración Avanzada (Sistema Antiguo - Deprecado)
+              </summary>
+              <div style={{ marginTop: '16px', padding: '16px', background: '#fef2f2', borderRadius: '8px', border: '1px solid #fecaca' }}>
+                <p style={{ fontSize: '13px', color: '#991b1b', marginBottom: '12px' }}>
+                  <strong>⚠️ Sistema antiguo:</strong> Este selector se mantendrá por compatibilidad pero ya no es necesario. Usa el "Schema de Personalización" arriba.
+                </p>
+                <label style={{ fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>
+                  Tipo de Personalizador (Antiguo)
+                </label>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '12px',
+                  }}
+                >
+                  {(
+                    [
+                      {
+                        value: 'shirt' as const,
+                        label: '👕 Camisetas/Ropa',
+                        desc: 'Para textiles personalizables',
+                      },
+                      {
+                        value: 'frame' as const,
+                        label: '🖼️ Cuadros',
+                        desc: 'Para cuadros de flores',
+                      },
+                      {
+                        value: 'resin' as const,
+                        label: '🎨 Figuras Resina',
+                        desc: 'Para figuras 3D personalizadas',
+                      },
+                      {
+                        value: 'default' as const,
+                        label: '📦 Estándar',
+                        desc: 'Sin personalización especial',
+                      },
+                    ] as const
+                  ).map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setDraft({ ...draft, customizerType: option.value })}
+                      style={{
+                        padding: '16px',
+                        borderRadius: '12px',
+                        border:
+                          draft.customizerType === option.value
+                            ? '3px solid #8b5cf6'
+                            : '2px solid #d1d5db',
+                        background: draft.customizerType === option.value ? '#f5f3ff' : 'white',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px' }}>
+                        {option.label}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{option.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </details>
 
             {draft.customizerType && draft.customizerType !== 'default' && (
               <div
