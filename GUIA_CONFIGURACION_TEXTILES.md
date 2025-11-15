@@ -4,6 +4,24 @@
 
 Esta guía te explica cómo configurar el schema para productos textiles (camisetas, sudaderas, polos) para que tengan el preview frontal/trasero.
 
+## ⚠️ IMPORTANTE: Configuración Recomendada
+
+**El sistema está diseñado para usar DOS campos separados de imagen:**
+1. **Campo frontal**: con ID/label que contenga "front", "frontal" o "frente"
+2. **Campo trasero**: con ID/label que contenga "back", "trasera" o "espalda"
+
+**Beneficios de usar dos campos separados:**
+- ✅ Cada lado (frente/espalda) es completamente independiente
+- ✅ El cliente puede subir diseños diferentes con ajustes independientes
+- ✅ Permite diseño pequeño delante y grande detrás (o viceversa)
+- ✅ Los datos se guardan claramente estructurados para evitar errores al crear el producto
+- ✅ Sin confusión sobre qué diseño va en qué lado
+
+**Ejemplo de uso del cliente:**
+- Diseño pequeño en frente (escala 50%, posición superior)
+- Diseño grande en espalda (escala 120%, centrado)
+- Ambos con ajustes completamente independientes
+
 ## Acceso al Panel Admin
 
 1. Ve a `/admin/customization`
@@ -416,6 +434,59 @@ Para probar tu configuración:
 7. Alterna entre frente y espalda para revisar
 8. Click en "Agregar al Carrito"
 9. El pedido se guarda con ambos diseños
+
+## Estructura de Datos para el Admin
+
+Cuando un cliente añade un producto textil al carrito, los datos se guardan estructurados de la siguiente manera:
+
+```javascript
+{
+  customization: {
+    values: [
+      {
+        fieldId: "front_image",
+        fieldLabel: "Diseño Frontal",
+        imageUrl: "https://storage.../diseno-logo.png",
+        imageTransform: {
+          x: 50,      // Posición horizontal (50 = centrado)
+          y: 30,      // Posición vertical (30 = parte superior)
+          scale: 0.5, // Escala (0.5 = 50%, diseño pequeño)
+          rotation: 0 // Rotación en grados
+        }
+      },
+      {
+        fieldId: "back_image",
+        fieldLabel: "Diseño Trasero",
+        imageUrl: "https://storage.../nombre-grande.png",
+        imageTransform: {
+          x: 50,       // Posición horizontal (50 = centrado)
+          y: 50,       // Posición vertical (50 = centrado)
+          scale: 1.2,  // Escala (1.2 = 120%, diseño grande)
+          rotation: 0  // Rotación en grados
+        }
+      },
+      {
+        fieldId: "color",
+        fieldLabel: "Color de la Camiseta",
+        value: "white",
+        displayValue: "Blanco"
+      },
+      {
+        fieldId: "size",
+        fieldLabel: "Talla",
+        value: "L",
+        displayValue: "L"
+      }
+    ]
+  }
+}
+```
+
+**Claves para el Admin:**
+- Cada campo (front_image, back_image) tiene su propia `imageUrl` y `imageTransform`
+- Los ajustes son completamente independientes (diferentes escalas, posiciones, rotaciones)
+- Puedes identificar fácilmente qué diseño va en qué lado por el `fieldId` y `fieldLabel`
+- Si el cliente solo sube un diseño (solo frontal o solo trasero), solo aparecerá un campo en los datos
 
 ---
 
