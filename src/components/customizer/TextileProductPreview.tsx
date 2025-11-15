@@ -47,22 +47,20 @@ export default function TextileProductPreview({
     rotation: 0,
   };
 
-  // Get active transform based on current side
+  // Get active transform and images based on current side
   const activeTransform = activeSide === 'front'
     ? (frontTransform || defaultTransform)
     : (backTransform || defaultTransform);
-
-  // Get active images
-  const activeBaseImage = activeSide === 'front' ? frontImage : backImage;
   const activeUserImage = activeSide === 'front' ? userFrontImage : userBackImage;
 
   // Debug logs
   console.log('[TextilePreview] Active side:', activeSide);
   console.log('[TextilePreview] Front image:', frontImage);
   console.log('[TextilePreview] Back image:', backImage);
-  console.log('[TextilePreview] Active base image:', activeBaseImage);
+  console.log('[TextilePreview] Front user image:', userFrontImage);
+  console.log('[TextilePreview] Back user image:', userBackImage);
 
-  // Check if image is centered
+  // Check if active image is centered
   const isCentered = Math.abs(activeTransform.x - 50) < 5 && Math.abs(activeTransform.y - 50) < 5;
 
   const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.2, 3));
@@ -165,29 +163,51 @@ export default function TextileProductPreview({
               transformOrigin: 'center center',
             }}
           >
-            {/* Base Image (Camiseta frente o espalda) */}
+            {/* Front Base Image - ALWAYS RENDERED */}
             <img
-              key={`base-${activeSide}-${activeBaseImage}`}
-              src={activeBaseImage}
-              alt={activeSide === 'front' ? 'Vista frontal' : 'Vista trasera'}
+              key={`base-front-${frontImage}`}
+              src={frontImage}
+              alt="Vista frontal"
               className="absolute inset-0 w-full h-full object-contain"
               draggable={false}
               onLoad={(e) => {
-                console.log('[TextilePreview] ✅ Base image LOADED successfully:', activeBaseImage);
-                console.log('[TextilePreview] Image natural dimensions:', e.currentTarget.naturalWidth, 'x', e.currentTarget.naturalHeight);
-                console.log('[TextilePreview] Computed style:', window.getComputedStyle(e.currentTarget).opacity, window.getComputedStyle(e.currentTarget).display);
+                console.log('[TextilePreview] ✅ FRONT Base image LOADED:', frontImage);
+                console.log('[TextilePreview] FRONT dimensions:', e.currentTarget.naturalWidth, 'x', e.currentTarget.naturalHeight);
               }}
               onError={(e) => {
-                console.error('[TextilePreview] ❌ Base image ERROR:', activeBaseImage);
-                console.error('[TextilePreview] Error details:', e);
+                console.error('[TextilePreview] ❌ FRONT Base image ERROR:', frontImage, e);
+              }}
+              style={{
+                border: '2px solid blue',
+                zIndex: 10,
+                opacity: 1,
+                display: activeSide === 'front' ? 'block' : 'none',
+                visibility: 'visible',
+                backgroundColor: 'rgba(0,0,255,0.1)' // Blue tint for front
+              }}
+            />
+
+            {/* Back Base Image - ALWAYS RENDERED */}
+            <img
+              key={`base-back-${backImage}`}
+              src={backImage}
+              alt="Vista trasera"
+              className="absolute inset-0 w-full h-full object-contain"
+              draggable={false}
+              onLoad={(e) => {
+                console.log('[TextilePreview] ✅ BACK Base image LOADED:', backImage);
+                console.log('[TextilePreview] BACK dimensions:', e.currentTarget.naturalWidth, 'x', e.currentTarget.naturalHeight);
+              }}
+              onError={(e) => {
+                console.error('[TextilePreview] ❌ BACK Base image ERROR:', backImage, e);
               }}
               style={{
                 border: '2px solid red',
                 zIndex: 10,
-                opacity: '1 !important' as any,
-                display: 'block',
+                opacity: 1,
+                display: activeSide === 'back' ? 'block' : 'none',
                 visibility: 'visible',
-                backgroundColor: 'rgba(255,255,0,0.2)' // Yellow tint for debugging
+                backgroundColor: 'rgba(255,0,0,0.1)' // Red tint for back
               }}
             />
 
@@ -207,39 +227,84 @@ export default function TextileProductPreview({
               </div>
             </div>
 
-            {/* Alignment Guides */}
-            {showGuides && isCentered && activeUserImage && (
+            {/* Alignment Guides - Show when centered */}
+            {showGuides && (
               <>
-                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-green-500/50 pointer-events-none" style={{ zIndex: 40 }} />
-                <div className="absolute top-1/2 left-0 right-0 h-px bg-green-500/50 pointer-events-none" style={{ zIndex: 40 }} />
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ zIndex: 40 }}>
-                  <div className="w-8 h-8 border-2 border-green-500 rounded-full bg-green-500/20" />
-                </div>
+                {/* Front guides */}
+                {activeSide === 'front' && userFrontImage && Math.abs((frontTransform?.x || 50) - 50) < 5 && Math.abs((frontTransform?.y || 50) - 50) < 5 && (
+                  <>
+                    <div className="absolute left-1/2 top-0 bottom-0 w-px bg-green-500/50 pointer-events-none" style={{ zIndex: 40 }} />
+                    <div className="absolute top-1/2 left-0 right-0 h-px bg-green-500/50 pointer-events-none" style={{ zIndex: 40 }} />
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ zIndex: 40 }}>
+                      <div className="w-8 h-8 border-2 border-green-500 rounded-full bg-green-500/20" />
+                    </div>
+                  </>
+                )}
+                {/* Back guides */}
+                {activeSide === 'back' && userBackImage && Math.abs((backTransform?.x || 50) - 50) < 5 && Math.abs((backTransform?.y || 50) - 50) < 5 && (
+                  <>
+                    <div className="absolute left-1/2 top-0 bottom-0 w-px bg-green-500/50 pointer-events-none" style={{ zIndex: 40 }} />
+                    <div className="absolute top-1/2 left-0 right-0 h-px bg-green-500/50 pointer-events-none" style={{ zIndex: 40 }} />
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ zIndex: 40 }}>
+                      <div className="w-8 h-8 border-2 border-green-500 rounded-full bg-green-500/20" />
+                    </div>
+                  </>
+                )}
               </>
             )}
 
-            {/* User Image Overlay */}
-            {activeUserImage && (
+            {/* Front User Image Overlay - ALWAYS RENDERED IF EXISTS */}
+            {userFrontImage && (
               <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
-                  display: 'flex',
+                  display: activeSide === 'front' ? 'flex' : 'none',
                   alignItems: 'center',
                   justifyContent: 'center',
                   zIndex: 30,
                 }}
               >
                 <img
-                  key={`user-${activeSide}-${activeUserImage}`} // Force React to treat front/back as different elements
-                  src={activeUserImage}
-                  alt={`Diseño personalizado ${activeSide === 'front' ? 'frontal' : 'trasero'}`}
+                  key={`user-front-${userFrontImage}`}
+                  src={userFrontImage}
+                  alt="Diseño personalizado frontal"
                   draggable={false}
-                  className="transition-transform duration-100"
                   style={{
                     transform: `
-                      translate(${activeTransform.x - 50}%, ${activeTransform.y - 50}%)
-                      scale(${activeTransform.scale})
-                      rotate(${activeTransform.rotation}deg)
+                      translate(${(frontTransform?.x || 50) - 50}%, ${(frontTransform?.y || 50) - 50}%)
+                      scale(${frontTransform?.scale || 1})
+                      rotate(${frontTransform?.rotation || 0}deg)
+                    `,
+                    maxWidth: '70%',
+                    maxHeight: '70%',
+                    objectFit: 'contain',
+                    transformOrigin: 'center center',
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Back User Image Overlay - ALWAYS RENDERED IF EXISTS */}
+            {userBackImage && (
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  display: activeSide === 'back' ? 'flex' : 'none',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 30,
+                }}
+              >
+                <img
+                  key={`user-back-${userBackImage}`}
+                  src={userBackImage}
+                  alt="Diseño personalizado trasero"
+                  draggable={false}
+                  style={{
+                    transform: `
+                      translate(${(backTransform?.x || 50) - 50}%, ${(backTransform?.y || 50) - 50}%)
+                      scale(${backTransform?.scale || 1})
+                      rotate(${backTransform?.rotation || 0}deg)
                     `,
                     maxWidth: '70%',
                     maxHeight: '70%',
