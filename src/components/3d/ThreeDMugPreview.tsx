@@ -125,7 +125,7 @@ export default function ThreeDMugPreview({
         </Suspense>
 
         {/* Entorno (iluminación ambiental realista) */}
-        <Environment preset="studio" />
+        {/* <Environment preset="studio" /> */}
 
         {/* Controles de órbita (arrastrar para rotar) */}
         <OrbitControls

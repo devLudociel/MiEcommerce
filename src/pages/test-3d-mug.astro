@@ -132,17 +132,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   let currentImageUrl: string | undefined = undefined;
   let currentProductType: 'mug' | 'thermos' | 'bottle' = 'mug';
+  let reactRoot: any = null;
 
   function renderPreview() {
     const container = document.getElementById('preview-container');
     if (!container) return;
 
-    // Limpiar contenedor
-    container.innerHTML = '';
+    // Crear root solo la primera vez
+    if (!reactRoot) {
+      reactRoot = createRoot(container);
+    }
 
-    // Crear root y renderizar componente React
-    const root = createRoot(container);
-    root.render(
+    // Renderizar (o re-renderizar) componente React
+    reactRoot.render(
       createElement(ThreeDMugPreview, {
         imageUrl: currentImageUrl,
         productType: currentProductType,
