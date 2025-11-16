@@ -39,6 +39,8 @@ const PRINT_AREA_PX = {
   height: Math.round(PRINT_AREA_MM.height * MM_TO_PX)  // ~359px
 };
 
+type HandleType = 'none' | 'move' | 'nw' | 'ne' | 'sw' | 'se' | 'rotate';
+
 export default function ProductCustomizer({
   productType = 'mug',
   onSave
@@ -49,10 +51,13 @@ export default function ProductCustomizer({
   const [designSize, setDesignSize] = useState({ width: 200, height: 200 });
   const [designRotation, setDesignRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [activeHandle, setActiveHandle] = useState<HandleType>('none');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const loadedImageRef = useRef<HTMLImageElement | null>(null);
-  const dragStartRef = useRef({ x: 0, y: 0, designX: 0, designY: 0 });
+  const dragStartRef = useRef({ x: 0, y: 0, designX: 0, designY: 0, startSize: { width: 0, height: 0 }, startRotation: 0 });
+  const textureCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [textureUrl, setTextureUrl] = useState<string | undefined>(undefined);
 
   // Renderizar canvas 2D
   const renderCanvas = () => {
@@ -140,9 +145,11 @@ export default function ProductCustomizer({
       ctx.strokeRect(-drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
       ctx.setLineDash([]);
 
-      // Handles
-      const handleSize = 8;
-      ctx.fillStyle = '#10b981';
+      // Handles de esquina (más grandes y visibles)
+      const handleSize = 12;
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 2;
 
       [
         [-drawWidth / 2, -drawHeight / 2],
@@ -151,7 +158,23 @@ export default function ProductCustomizer({
         [-drawWidth / 2, drawHeight / 2]
       ].forEach(([x, y]) => {
         ctx.fillRect(x - handleSize / 2, y - handleSize / 2, handleSize, handleSize);
+        ctx.strokeRect(x - handleSize / 2, y - handleSize / 2, handleSize, handleSize);
       });
+
+      // Handle de rotación (arriba del centro)
+      const rotateHandleY = -drawHeight / 2 - 40;
+      ctx.beginPath();
+      ctx.arc(0, rotateHandleY, handleSize / 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Línea conectando al borde superior
+      ctx.beginPath();
+      ctx.setLineDash([3, 3]);
+      ctx.moveTo(0, -drawHeight / 2);
+      ctx.lineTo(0, rotateHandleY + handleSize / 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
 
       ctx.restore();
     }
@@ -161,6 +184,90 @@ export default function ProductCustomizer({
   useEffect(() => {
     renderCanvas();
   }, [designImage, designPosition, designSize, designRotation]);
+
+  // Generar textura para el modelo 3D
+  useEffect(() => {
+    if (!loadedImageRef.current || !designImage) {
+      setTextureUrl(undefined);
+      return;
+    }
+
+    // Crear canvas temporal para la textura
+    if (!textureCanvasRef.current) {
+      textureCanvasRef.current = document.createElement('canvas');
+    }
+
+    const canvas = textureCanvasRef.current;
+    canvas.width = PRINT_AREA_PX.width;
+    canvas.height = PRINT_AREA_PX.height;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Limpiar
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Dibujar imagen con transformaciones
+    ctx.save();
+    ctx.translate(designPosition.x, designPosition.y);
+    ctx.rotate((designRotation * Math.PI) / 180);
+    ctx.drawImage(
+      loadedImageRef.current,
+      -designSize.width / 2,
+      -designSize.height / 2,
+      designSize.width,
+      designSize.height
+    );
+    ctx.restore();
+
+    // Convertir a URL
+    const dataUrl = canvas.toDataURL('image/png');
+    setTextureUrl(dataUrl);
+  }, [designImage, designPosition, designSize, designRotation]);
+
+  // Detectar qué handle está bajo el cursor
+  const getHandleAtPosition = (canvasX: number, canvasY: number): HandleType => {
+    if (!loadedImageRef.current) return 'none';
+
+    const handleSize = 12;
+    const rotateHandleDistance = 40;
+
+    // Convertir coordenadas del canvas al sistema local de la imagen (considerando rotación)
+    const dx = canvasX - designPosition.x;
+    const dy = canvasY - designPosition.y;
+    const angle = -designRotation * Math.PI / 180;
+    const localX = dx * Math.cos(angle) - dy * Math.sin(angle);
+    const localY = dx * Math.sin(angle) + dy * Math.cos(angle);
+
+    const halfWidth = designSize.width / 2;
+    const halfHeight = designSize.height / 2;
+
+    // Handle de rotación (arriba del centro)
+    if (Math.abs(localX) < handleSize && Math.abs(localY + halfHeight + rotateHandleDistance) < handleSize) {
+      return 'rotate';
+    }
+
+    // Handles de esquina
+    const corners = [
+      { type: 'nw' as HandleType, x: -halfWidth, y: -halfHeight },
+      { type: 'ne' as HandleType, x: halfWidth, y: -halfHeight },
+      { type: 'se' as HandleType, x: halfWidth, y: halfHeight },
+      { type: 'sw' as HandleType, x: -halfWidth, y: halfHeight },
+    ];
+
+    for (const corner of corners) {
+      if (Math.abs(localX - corner.x) < handleSize && Math.abs(localY - corner.y) < handleSize) {
+        return corner.type;
+      }
+    }
+
+    // Dentro del área de la imagen = mover
+    if (Math.abs(localX) < halfWidth && Math.abs(localY) < halfHeight) {
+      return 'move';
+    }
+
+    return 'none';
+  };
 
   // Cargar imagen
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -187,7 +294,7 @@ export default function ProductCustomizer({
     reader.readAsDataURL(file);
   };
 
-  // Mouse events para arrastrar
+  // Mouse events para arrastrar, resize y rotate
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!loadedImageRef.current) return;
 
@@ -195,34 +302,104 @@ export default function ProductCustomizer({
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
 
-    dragStartRef.current = { x, y, designX: designPosition.x, designY: designPosition.y };
-    setIsDragging(true);
+    const handle = getHandleAtPosition(x, y);
+    setActiveHandle(handle);
+
+    if (handle !== 'none') {
+      dragStartRef.current = {
+        x,
+        y,
+        designX: designPosition.x,
+        designY: designPosition.y,
+        startSize: { ...designSize },
+        startRotation: designRotation
+      };
+      setIsDragging(true);
+    }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDragging) return;
-
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+
+    // Actualizar cursor según el handle bajo el mouse
+    if (!isDragging && loadedImageRef.current) {
+      const handle = getHandleAtPosition(x, y);
+      const cursors: Record<HandleType, string> = {
+        'none': 'default',
+        'move': 'grab',
+        'nw': 'nwse-resize',
+        'ne': 'nesw-resize',
+        'sw': 'nesw-resize',
+        'se': 'nwse-resize',
+        'rotate': 'crosshair'
+      };
+      canvas.style.cursor = cursors[handle];
+    }
+
+    if (!isDragging) return;
 
     const dx = x - dragStartRef.current.x;
     const dy = y - dragStartRef.current.y;
 
-    setDesignPosition({
-      x: dragStartRef.current.designX + dx,
-      y: dragStartRef.current.designY + dy
-    });
+    if (activeHandle === 'move') {
+      // Mover
+      setDesignPosition({
+        x: dragStartRef.current.designX + dx,
+        y: dragStartRef.current.designY + dy
+      });
+    } else if (activeHandle === 'rotate') {
+      // Rotar
+      const centerX = designPosition.x;
+      const centerY = designPosition.y;
+      const startAngle = Math.atan2(dragStartRef.current.y - centerY, dragStartRef.current.x - centerX);
+      const currentAngle = Math.atan2(y - centerY, x - centerX);
+      const deltaAngle = (currentAngle - startAngle) * 180 / Math.PI;
+      setDesignRotation(dragStartRef.current.startRotation + deltaAngle);
+    } else if (activeHandle !== 'none') {
+      // Resize desde esquinas
+      const angle = designRotation * Math.PI / 180;
+      const rotatedDx = dx * Math.cos(angle) + dy * Math.sin(angle);
+      const rotatedDy = -dx * Math.sin(angle) + dy * Math.cos(angle);
+
+      let newWidth = dragStartRef.current.startSize.width;
+      let newHeight = dragStartRef.current.startSize.height;
+
+      // Calcular nuevo tamaño según la esquina
+      if (activeHandle.includes('e')) {
+        newWidth = dragStartRef.current.startSize.width + rotatedDx * 2;
+      } else if (activeHandle.includes('w')) {
+        newWidth = dragStartRef.current.startSize.width - rotatedDx * 2;
+      }
+
+      if (activeHandle.includes('s')) {
+        newHeight = dragStartRef.current.startSize.height + rotatedDy * 2;
+      } else if (activeHandle.includes('n')) {
+        newHeight = dragStartRef.current.startSize.height - rotatedDy * 2;
+      }
+
+      // Limitar tamaño mínimo y máximo
+      newWidth = Math.max(50, Math.min(PRINT_AREA_PX.width, newWidth));
+      newHeight = Math.max(50, Math.min(PRINT_AREA_PX.height, newHeight));
+
+      setDesignSize({ width: newWidth, height: newHeight });
+    }
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
+    setActiveHandle('none');
   };
 
   // Funciones de control
@@ -306,7 +483,7 @@ export default function ProductCustomizer({
         {/* Vista 3D */}
         <div style={{ marginTop: '24px' }}>
           <ThreeDMugPreview
-            imageUrl={designImage || undefined}
+            imageUrl={textureUrl}
             productType={productType}
             productColor={productColor}
             autoRotate={true}
@@ -378,7 +555,7 @@ export default function ProductCustomizer({
               height: 'auto',
               border: '2px solid #d1d5db',
               borderRadius: '8px',
-              cursor: isDragging ? 'grabbing' : 'grab',
+              cursor: isDragging ? 'grabbing' : 'default',
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
             }}
             onMouseDown={handleMouseDown}

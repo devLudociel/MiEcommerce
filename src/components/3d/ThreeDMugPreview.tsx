@@ -121,14 +121,14 @@ function ProceduralMugModel({
     }
   });
 
-  // Dimensiones según tipo
+  // Dimensiones según tipo - Mejoradas para realismo
   const dimensions = useMemo(() => {
     switch (productType) {
       case 'thermos':
         return {
           radius: 0.45,
           height: 2.8,
-          radialSegments: 64,
+          radialSegments: 96,
           hasHandle: false,
           capRadius: 0.48,
           baseRadius: 0.47
@@ -137,7 +137,7 @@ function ProceduralMugModel({
         return {
           radius: 0.38,
           height: 2.2,
-          radialSegments: 64,
+          radialSegments: 96,
           hasHandle: false,
           capRadius: 0.35,
           baseRadius: 0.40
@@ -145,12 +145,12 @@ function ProceduralMugModel({
       case 'mug':
       default:
         return {
-          radius: 0.55,
-          height: 1.4,
-          radialSegments: 64,
+          radius: 0.58,
+          height: 1.5,
+          radialSegments: 96,
           hasHandle: true,
-          capRadius: 0.58,
-          baseRadius: 0.56
+          capRadius: 0.62,
+          baseRadius: 0.60
         };
     }
   }, [productType]);
@@ -159,7 +159,7 @@ function ProceduralMugModel({
   const bodyMaterial = useMemo(() => {
     return new THREE.MeshPhysicalMaterial({
       map: texture,
-      color: texture ? 0xffffff : new THREE.Color(productColor),
+      color: new THREE.Color(productColor), // Siempre aplicar el color del producto
       metalness: 0.02,
       roughness: 0.08,
       envMapIntensity: 2.5,
