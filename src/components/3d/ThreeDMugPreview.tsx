@@ -1,6 +1,6 @@
 import { useRef, useMemo, Suspense, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Cylinder, Torus } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface ThreeDMugPreviewProps {
@@ -13,17 +13,22 @@ function MugModel({ imageUrl, productType = 'mug' }: { imageUrl?: string; produc
   const groupRef = useRef<THREE.Group>(null);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
 
+  console.log('[MugModel] Rendering with:', { imageUrl, productType, hasTexture: !!texture });
+
   // Cargar textura cuando cambie imageUrl
   useEffect(() => {
+    console.log('[MugModel] useEffect triggered, imageUrl:', imageUrl);
     if (!imageUrl) {
       setTexture(null);
       return;
     }
 
     const loader = new THREE.TextureLoader();
+    console.log('[MugModel] Loading texture from:', imageUrl);
     loader.load(
       imageUrl,
       (loadedTexture) => {
+        console.log('[MugModel] Texture loaded successfully');
         loadedTexture.wrapS = THREE.RepeatWrapping;
         loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
         loadedTexture.repeat.set(1, 1);
@@ -32,7 +37,7 @@ function MugModel({ imageUrl, productType = 'mug' }: { imageUrl?: string; produc
       },
       undefined,
       (error) => {
-        console.error('Error loading texture:', error);
+        console.error('[MugModel] Error loading texture:', error);
         setTexture(null);
       }
     );
@@ -47,36 +52,40 @@ function MugModel({ imageUrl, productType = 'mug' }: { imageUrl?: string; produc
 
   // Dimensiones según tipo de producto
   const dimensions = useMemo(() => {
-    switch (productType) {
-      case 'thermos':
-        return {
-          radius: 0.45,
-          height: 2.8,
-          radialSegments: 64,
-          hasHandle: false,
-          capRadius: 0.48,
-          baseRadius: 0.47
-        };
-      case 'bottle':
-        return {
-          radius: 0.38,
-          height: 2.2,
-          radialSegments: 64,
-          hasHandle: false,
-          capRadius: 0.35,
-          baseRadius: 0.40
-        };
-      case 'mug':
-      default:
-        return {
-          radius: 0.55,
-          height: 1.4,
-          radialSegments: 64,
-          hasHandle: true,
-          capRadius: 0.58,
-          baseRadius: 0.56
-        };
-    }
+    const dims = (() => {
+      switch (productType) {
+        case 'thermos':
+          return {
+            radius: 0.45,
+            height: 2.8,
+            radialSegments: 64,
+            hasHandle: false,
+            capRadius: 0.48,
+            baseRadius: 0.47
+          };
+        case 'bottle':
+          return {
+            radius: 0.38,
+            height: 2.2,
+            radialSegments: 64,
+            hasHandle: false,
+            capRadius: 0.35,
+            baseRadius: 0.40
+          };
+        case 'mug':
+        default:
+          return {
+            radius: 0.55,
+            height: 1.4,
+            radialSegments: 64,
+            hasHandle: true,
+            capRadius: 0.58,
+            baseRadius: 0.56
+          };
+      }
+    })();
+    console.log('[MugModel] Dimensions calculated:', dims);
+    return dims;
   }, [productType]);
 
   // Material del cuerpo
@@ -102,6 +111,12 @@ function MugModel({ imageUrl, productType = 'mug' }: { imageUrl?: string; produc
 
   return (
     <group ref={groupRef}>
+      {/* TEST: Cubo simple para verificar que Canvas funciona */}
+      <mesh position={[0, 3, 0]}>
+        <boxGeometry args={[0.5, 0.5, 0.5]} />
+        <meshStandardMaterial color="red" />
+      </mesh>
+
       {/* Cuerpo principal */}
       <mesh material={bodyMaterial} castShadow receiveShadow>
         <cylinderGeometry args={[
@@ -172,6 +187,8 @@ export default function ThreeDMugPreview({
   productType = 'mug',
   backgroundColor = '#f5f5f5'
 }: ThreeDMugPreviewProps) {
+  console.log('[ThreeDMugPreview] Rendering with:', { imageUrl, productType, backgroundColor });
+
   return (
     <div style={{ width: '100%', height: '500px', background: backgroundColor, borderRadius: '12px', overflow: 'hidden', position: 'relative' }}>
       <Canvas shadows>
