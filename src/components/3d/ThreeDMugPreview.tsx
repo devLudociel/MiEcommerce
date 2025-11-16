@@ -1,6 +1,8 @@
 import React, { useRef, useMemo, Suspense, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, useGLTF } from '@react-three/drei';
+import { OrbitControls, useGLTF, Environment, ContactShadows, MeshReflectorMaterial } from '@react-three/drei';
+import { EffectComposer, Bloom, SSAO, ToneMapping } from '@react-three/postprocessing';
+import { ToneMappingMode } from 'postprocessing';
 import * as THREE from 'three';
 
 interface ThreeDMugPreviewProps {
@@ -88,24 +90,30 @@ function ProceduralMugModel({
     }
   }, [productType]);
 
-  // Material del cuerpo
+  // Material del cuerpo - Cerámica profesional con acabado brillante
   const bodyMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
+    return new THREE.MeshPhysicalMaterial({
       map: texture,
-      color: texture ? 0xffffff : 0xf8f8f8,
-      metalness: 0.15,
-      roughness: 0.25,
-      envMapIntensity: 0.8,
+      color: texture ? 0xffffff : 0xfafafa,
+      metalness: 0.05,
+      roughness: 0.15,
+      envMapIntensity: 1.5,
+      clearcoat: 0.8,
+      clearcoatRoughness: 0.2,
+      reflectivity: 0.6,
+      ior: 1.5,
     });
   }, [texture]);
 
-  // Material metálico
+  // Material metálico - Acero inoxidable pulido
   const metalMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
-      color: 0xc0c0c0,
-      metalness: 0.85,
-      roughness: 0.15,
-      envMapIntensity: 1.2,
+    return new THREE.MeshPhysicalMaterial({
+      color: 0xdcdcdc,
+      metalness: 0.95,
+      roughness: 0.08,
+      envMapIntensity: 2.0,
+      clearcoat: 0.3,
+      clearcoatRoughness: 0.1,
     });
   }, []);
 
@@ -156,10 +164,15 @@ function ProceduralMugModel({
         <torusGeometry args={[dimensions.radius + 0.02, 0.025, 16, dimensions.radialSegments]} />
       </mesh>
 
-      {/* Interior visible */}
+      {/* Interior visible - Acabado mate oscuro */}
       <mesh position={[0, dimensions.height / 2 - 0.02, 0]} rotation={[Math.PI, 0, 0]}>
         <cylinderGeometry args={[dimensions.capRadius - 0.05, dimensions.capRadius - 0.05, 0.04, dimensions.radialSegments]} />
-        <meshStandardMaterial color={0x404040} metalness={0.3} roughness={0.7} />
+        <meshPhysicalMaterial
+          color={0x2a2a2a}
+          metalness={0.1}
+          roughness={0.9}
+          envMapIntensity={0.3}
+        />
       </mesh>
     </group>
   );
@@ -208,25 +221,53 @@ function GLBModel({
     );
   }, [imageUrl]);
 
-  // Aplicar textura al modelo
+  // Aplicar textura y mejorar materiales del modelo GLB
   useEffect(() => {
     if (!scene) return;
 
-    console.log('[GLBModel] Applying texture to model');
+    console.log('[GLBModel] Applying texture and enhancing materials');
     scene.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
 
-        if (mesh.material && (mesh.material as THREE.MeshStandardMaterial).map !== undefined) {
-          const material = mesh.material as THREE.MeshStandardMaterial;
+        if (mesh.material) {
+          // Convertir a MeshPhysicalMaterial para mejor calidad
+          const oldMaterial = mesh.material as THREE.MeshStandardMaterial;
+          const newMaterial = new THREE.MeshPhysicalMaterial();
 
+          // Copiar propiedades básicas
+          newMaterial.copy(oldMaterial);
+
+          // Aplicar textura si está disponible
           if (texture) {
-            material.map = texture;
-            material.needsUpdate = true;
-          } else {
-            material.map = null;
-            material.needsUpdate = true;
+            newMaterial.map = texture;
           }
+
+          // Mejorar propiedades físicas basadas en el nombre del mesh
+          const meshName = mesh.name.toLowerCase();
+
+          if (meshName.includes('body') || meshName.includes('cylinder') || !meshName.includes('metal')) {
+            // Material cerámico brillante
+            newMaterial.metalness = 0.05;
+            newMaterial.roughness = 0.15;
+            newMaterial.clearcoat = 0.8;
+            newMaterial.clearcoatRoughness = 0.2;
+            newMaterial.envMapIntensity = 1.5;
+            newMaterial.ior = 1.5;
+          } else {
+            // Material metálico pulido
+            newMaterial.metalness = 0.95;
+            newMaterial.roughness = 0.08;
+            newMaterial.clearcoat = 0.3;
+            newMaterial.clearcoatRoughness = 0.1;
+            newMaterial.envMapIntensity = 2.0;
+          }
+
+          // Habilitar sombras
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+
+          mesh.material = newMaterial;
         }
       }
     });
@@ -346,24 +387,42 @@ export default function ThreeDMugPreview({
 
   return (
     <div style={{ width: '100%', height: '500px', background: backgroundColor, borderRadius: '12px', overflow: 'hidden', position: 'relative' }}>
-      <Canvas shadows camera={{ position: [0, 0, 5], fov: 45 }}>
-        {/* Iluminación */}
-        <ambientLight intensity={0.5} />
-        <directionalLight
-          position={[5, 8, 5]}
-          intensity={1.5}
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-          shadow-camera-far={50}
-          shadow-camera-left={-10}
-          shadow-camera-right={10}
-          shadow-camera-top={10}
-          shadow-camera-bottom={-10}
+      <Canvas
+        shadows
+        camera={{ position: [0, 1, 5], fov: 45 }}
+        gl={{
+          antialias: true,
+          alpha: true,
+          powerPreference: 'high-performance',
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.2,
+        }}
+      >
+        {/* Iluminación HDR profesional */}
+        <Environment
+          preset="studio"
+          background={false}
+          blur={0.3}
         />
-        <pointLight position={[-5, 3, -3]} intensity={0.5} color="#ffffff" />
-        <pointLight position={[3, -2, 4]} intensity={0.4} color="#b8e6ff" />
-        <spotLight position={[0, 10, 0]} intensity={0.4} angle={0.3} penumbra={1} castShadow />
+
+        {/* Luces complementarias para resaltar detalles */}
+        <ambientLight intensity={0.3} />
+        <directionalLight
+          position={[5, 5, 5]}
+          intensity={1.2}
+          castShadow
+          shadow-mapSize={[2048, 2048]}
+          shadow-camera-far={20}
+          shadow-bias={-0.0001}
+        />
+        <spotLight
+          position={[-3, 4, 2]}
+          intensity={0.8}
+          angle={0.5}
+          penumbra={1}
+          castShadow
+        />
+        <pointLight position={[0, 3, -3]} intensity={0.4} color="#ffeedd" />
 
         {/* Modelo 3D con fallback automático */}
         <ModelWithFallback
@@ -372,6 +431,34 @@ export default function ThreeDMugPreview({
           productType={productType}
           useGLB={useGLB}
         />
+
+        {/* Sombras de contacto realistas */}
+        <ContactShadows
+          position={[0, -2, 0]}
+          opacity={0.4}
+          scale={10}
+          blur={2}
+          far={4}
+          resolution={256}
+          color="#000000"
+        />
+
+        {/* Plano reflectante profesional */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.99, 0]} receiveShadow>
+          <planeGeometry args={[20, 20]} />
+          <MeshReflectorMaterial
+            blur={[300, 100]}
+            resolution={512}
+            mixBlur={1}
+            mixStrength={0.5}
+            roughness={0.8}
+            depthScale={1.2}
+            minDepthThreshold={0.4}
+            maxDepthThreshold={1.4}
+            color="#f8f8f8"
+            metalness={0.1}
+          />
+        </mesh>
 
         {/* Controles */}
         <OrbitControls
@@ -384,17 +471,22 @@ export default function ThreeDMugPreview({
           autoRotate={false}
         />
 
-        {/* Plano de sombra */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} receiveShadow>
-          <planeGeometry args={[20, 20]} />
-          <shadowMaterial opacity={0.3} />
-        </mesh>
-
-        {/* Plano reflectante */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.99, 0]}>
-          <planeGeometry args={[20, 20]} />
-          <meshStandardMaterial color="#f5f5f5" metalness={0.1} roughness={0.8} />
-        </mesh>
+        {/* Efectos de post-procesamiento */}
+        <EffectComposer multisampling={8}>
+          <SSAO
+            samples={31}
+            radius={0.1}
+            intensity={30}
+            luminanceInfluence={0.6}
+          />
+          <Bloom
+            intensity={0.3}
+            luminanceThreshold={0.9}
+            luminanceSmoothing={0.9}
+            mipmapBlur={true}
+          />
+          <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+        </EffectComposer>
       </Canvas>
 
       {/* Badge cuando hay imagen */}
