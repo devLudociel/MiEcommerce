@@ -1,6 +1,6 @@
 import React, { useRef, useMemo, Suspense, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Environment, ContactShadows, MeshReflectorMaterial } from '@react-three/drei';
+import { OrbitControls, useGLTF, ContactShadows, MeshReflectorMaterial } from '@react-three/drei';
 import { EffectComposer, Bloom, SSAO, ToneMapping } from '@react-three/postprocessing';
 import { ToneMappingMode } from 'postprocessing';
 import * as THREE from 'three';
@@ -9,6 +9,65 @@ interface ThreeDMugPreviewProps {
   imageUrl?: string;
   productType?: 'mug' | 'thermos' | 'bottle';
   backgroundColor?: string;
+}
+
+/**
+ * Iluminación profesional de estudio sin dependencias externas
+ * Simula un ambiente HDR usando múltiples luces estratégicamente posicionadas
+ */
+function StudioLighting() {
+  return (
+    <>
+      {/* Luz ambiental suave para iluminación base */}
+      <ambientLight intensity={0.4} color="#ffffff" />
+
+      {/* Luz principal (Key Light) - frontal superior derecha */}
+      <directionalLight
+        position={[5, 5, 5]}
+        intensity={1.8}
+        color="#ffffff"
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-far={20}
+        shadow-bias={-0.0001}
+      />
+
+      {/* Luz de relleno (Fill Light) - frontal izquierda suave */}
+      <directionalLight
+        position={[-4, 3, 4]}
+        intensity={0.8}
+        color="#f0f0ff"
+      />
+
+      {/* Luz trasera (Rim Light) - resalta bordes */}
+      <directionalLight
+        position={[-2, 2, -4]}
+        intensity={1.0}
+        color="#ffeedd"
+      />
+
+      {/* Luces puntuales para reflejos y brillo */}
+      <pointLight position={[3, 4, 3]} intensity={0.6} color="#ffffff" />
+      <pointLight position={[-3, 2, -2]} intensity={0.4} color="#e8f4ff" />
+      <pointLight position={[0, 6, 0]} intensity={0.5} color="#fff8f0" />
+
+      {/* Spotlight cenital para resaltar la parte superior */}
+      <spotLight
+        position={[0, 8, 0]}
+        intensity={0.6}
+        angle={0.4}
+        penumbra={1}
+        color="#ffffff"
+        castShadow
+      />
+
+      {/* Luces hemisféricas para simular cielo y suelo */}
+      <hemisphereLight
+        args={['#ffffff', '#444444', 0.6]}
+        position={[0, 10, 0]}
+      />
+    </>
+  );
 }
 
 /**
@@ -398,31 +457,8 @@ export default function ThreeDMugPreview({
           toneMappingExposure: 1.2,
         }}
       >
-        {/* Iluminación HDR profesional */}
-        <Environment
-          preset="studio"
-          background={false}
-          blur={0.3}
-        />
-
-        {/* Luces complementarias para resaltar detalles */}
-        <ambientLight intensity={0.3} />
-        <directionalLight
-          position={[5, 5, 5]}
-          intensity={1.2}
-          castShadow
-          shadow-mapSize={[2048, 2048]}
-          shadow-camera-far={20}
-          shadow-bias={-0.0001}
-        />
-        <spotLight
-          position={[-3, 4, 2]}
-          intensity={0.8}
-          angle={0.5}
-          penumbra={1}
-          castShadow
-        />
-        <pointLight position={[0, 3, -3]} intensity={0.4} color="#ffeedd" />
+        {/* Iluminación profesional de estudio */}
+        <StudioLighting />
 
         {/* Modelo 3D con fallback automático */}
         <ModelWithFallback
