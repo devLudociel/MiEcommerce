@@ -1,69 +1,23 @@
 ---
-// Test page for DynamicCustomizer
-import DynamicCustomizer from '../components/customizer/DynamicCustomizer';
-import { camisetasSchema } from '../data/exampleSchemas';
-
-// Mock product data
-const mockProduct = {
-  id: 'test-camiseta-001',
-  name: 'Camiseta Personalizada',
-  description: 'Crea tu camiseta única con nuestro personalizador dinámico',
-  categoryId: 'camisetas',
-  basePrice: 19.99,
-  images: [
-    'https://via.placeholder.com/400x400/ffffff/000000?text=Camiseta+Blanca',
-  ],
-  slug: 'camiseta-personalizada-test',
-};
+import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
 
-<!DOCTYPE html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Test - Dynamic Customizer</title>
-  </head>
-  <body class="bg-gray-50">
-    <div class="min-h-screen py-12">
-      <div class="max-w-6xl mx-auto px-4">
-        {/* Header */}
-        <div class="mb-8 text-center">
-          <h1 class="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
-            🧪 Test - Sistema de Personalización Dinámico
-          </h1>
-          <p class="text-gray-600">Prototipo del nuevo sistema de customización</p>
-          <a href="/" class="text-purple-600 hover:underline text-sm mt-2 inline-block">
-            ← Volver al inicio
-          </a>
-        </div>
+<BaseLayout title="Product Customizer - Tipo mug3d.com">
+  <div id="customizer-root"></div>
+</BaseLayout>
 
-        {/* Info Card */}
-        <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-8">
-          <h2 class="font-bold text-lg mb-2 text-blue-900">📋 Información del Test</h2>
-          <ul class="text-sm text-blue-800 space-y-1">
-            <li>✅ <strong>Schema usado:</strong> Camisetas (camisetasSchema)</li>
-            <li>✅ <strong>Campos incluidos:</strong> Color, Talla, Diseño personalizado</li>
-            <li>✅ <strong>Precio base:</strong> €19.99</li>
-            <li>✅ <strong>Componente:</strong> DynamicCustomizer</li>
-          </ul>
-        </div>
+<script>
+  import { createRoot } from 'react-dom/client';
+  import { createElement } from 'react';
+  import ProductCustomizer from '@/components/3d/ProductCustomizer';
 
-        {/* Customizer */}
-        <div class="bg-white rounded-2xl shadow-xl">
-          <DynamicCustomizer
-            client:load
-            product={mockProduct}
-            schema={camisetasSchema}
-          />
-        </div>
-
-        {/* Footer Info */}
-        <div class="mt-8 text-center text-sm text-gray-500">
-          <p>Este es un prototipo para probar el sistema de personalización dinámico.</p>
-          <p class="mt-1">Los datos NO se guardarán en producción (modo test).</p>
-        </div>
-      </div>
-    </div>
-  </body>
-</html>
+  const container = document.getElementById('customizer-root');
+  if (container) {
+    const root = createRoot(container);
+    root.render(
+      createElement(ProductCustomizer, {
+        productType: 'mug'
+      })
+    );
+  }
+</script>

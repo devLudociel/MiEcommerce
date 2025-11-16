@@ -9,6 +9,8 @@ interface ThreeDMugPreviewProps {
   imageUrl?: string;
   productType?: 'mug' | 'thermos' | 'bottle';
   backgroundColor?: string;
+  productColor?: string;
+  autoRotate?: boolean;
 }
 
 /**
@@ -77,10 +79,12 @@ function StudioLighting() {
  */
 function ProceduralMugModel({
   imageUrl,
-  productType = 'mug'
+  productType = 'mug',
+  productColor = '#ffffff'
 }: {
   imageUrl?: string;
   productType: 'mug' | 'thermos' | 'bottle';
+  productColor?: string;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
@@ -155,7 +159,7 @@ function ProceduralMugModel({
   const bodyMaterial = useMemo(() => {
     return new THREE.MeshPhysicalMaterial({
       map: texture,
-      color: texture ? 0xffffff : 0xfcfcfc,
+      color: texture ? 0xffffff : new THREE.Color(productColor),
       metalness: 0.02,
       roughness: 0.08,
       envMapIntensity: 2.5,
@@ -168,7 +172,7 @@ function ProceduralMugModel({
       specularIntensity: 1.0,
       specularColor: new THREE.Color(0xffffff),
     });
-  }, [texture]);
+  }, [texture, productColor]);
 
   // Material metálico - Cromado espejado ultra brillante
   const metalMaterial = useMemo(() => {
@@ -377,18 +381,20 @@ function ModelWithFallback({
   modelPath,
   imageUrl,
   productType,
-  useGLB
+  useGLB,
+  productColor
 }: {
   modelPath: string;
   imageUrl?: string;
   productType: 'mug' | 'thermos' | 'bottle';
   useGLB: boolean;
+  productColor?: string;
 }) {
   const [error, setError] = useState(false);
 
   if (!useGLB || error) {
     console.log('[ModelWithFallback] Using procedural model');
-    return <ProceduralMugModel imageUrl={imageUrl} productType={productType} />;
+    return <ProceduralMugModel imageUrl={imageUrl} productType={productType} productColor={productColor} />;
   }
 
   return (
@@ -441,9 +447,11 @@ function LoadingFallback() {
 export default function ThreeDMugPreview({
   imageUrl,
   productType = 'mug',
-  backgroundColor = '#f5f5f5'
+  backgroundColor = '#f5f5f5',
+  productColor = '#ffffff',
+  autoRotate = false
 }: ThreeDMugPreviewProps) {
-  console.log('[ThreeDMugPreview] Rendering with:', { imageUrl, productType, backgroundColor });
+  console.log('[ThreeDMugPreview] Rendering with:', { imageUrl, productType, backgroundColor, productColor, autoRotate });
 
   // Determinar qué modelo cargar
   const modelPath = useMemo(() => {
@@ -480,6 +488,7 @@ export default function ThreeDMugPreview({
           imageUrl={imageUrl}
           productType={productType}
           useGLB={useGLB}
+          productColor={productColor}
         />
 
         {/* Sombras de contacto ultra suaves y realistas */}
@@ -519,7 +528,8 @@ export default function ThreeDMugPreview({
           maxDistance={12}
           maxPolarAngle={Math.PI / 1.5}
           minPolarAngle={Math.PI / 6}
-          autoRotate={false}
+          autoRotate={autoRotate}
+          autoRotateSpeed={2.0}
         />
 
         {/* Efectos de post-procesamiento cinematográficos */}
