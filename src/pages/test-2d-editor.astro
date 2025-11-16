@@ -19,22 +19,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         Controles de Prueba
       </h2>
 
-      <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center;">
-        <!-- Selector de tipo de producto -->
-        <div>
-          <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
-            Tipo de Producto
-          </label>
-          <select
-            id="product-type"
-            style="padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; cursor: pointer; background: white;"
-          >
-            <option value="mug">Taza</option>
-            <option value="thermos">Termo</option>
-            <option value="bottle">Botella</option>
-          </select>
-        </div>
-
+      <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: end;">
         <!-- Input de imagen -->
         <div>
           <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
@@ -48,32 +33,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           />
         </div>
 
-        <!-- Selector de imagen de prueba -->
-        <div>
-          <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
-            Imagen de Prueba
-          </label>
-          <select
-            id="test-image"
-            style="padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; cursor: pointer; background: white;"
-          >
-            <option value="">Seleccionar...</option>
-            <option value="logo">Logo de ejemplo</option>
-            <option value="text">Texto de ejemplo</option>
-            <option value="pattern">Patrón de ejemplo</option>
-          </select>
-        </div>
-
         <!-- Botón para generar canvas de prueba -->
         <div>
-          <label style="display: block; font-size: 14px; font-weight: 500; color: transparent; margin-bottom: 8px;">
-            .
-          </label>
           <button
             id="generate-test-design"
             style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s;"
-            onmouseover="this.style.background='#2563eb'"
-            onmouseout="this.style.background='#3b82f6'"
           >
             Generar Diseño de Prueba
           </button>
@@ -81,14 +45,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
         <!-- Botón de resetear -->
         <div>
-          <label style="display: block; font-size: 14px; font-weight: 500; color: transparent; margin-bottom: 8px;">
-            .
-          </label>
           <button
             id="clear-design"
             style="padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s;"
-            onmouseover="this.style.background='#dc2626'"
-            onmouseout="this.style.background='#ef4444'"
           >
             Limpiar
           </button>
@@ -101,266 +60,458 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       </div>
     </div>
 
-    <!-- Editor 2D -->
-    <div
-      id="editor-container"
-      style="height: 700px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;"
-    >
-      <!-- El editor se renderizará aquí -->
-    </div>
+    <!-- Editor Container -->
+    <div style="background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;">
+      <!-- Barra de herramientas -->
+      <div id="toolbar" style="background: #ffffff; border-bottom: 1px solid #e5e7eb; padding: 16px; display: flex; gap: 12px; flex-wrap: wrap; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div style="fontSize: 14px; font-weight: 600; color: #374151; margin-right: 12px; padding-right: 12px; border-right: 1px solid #e5e7eb;">
+          Taza
+        </div>
 
-    <!-- Información adicional -->
-    <div style="margin-top: 24px; padding: 20px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px;">
-      <h3 style="font-size: 16px; font-weight: 600; color: #1e40af; margin-bottom: 8px;">
-        💡 Características del Editor 2D
-      </h3>
-      <ul style="color: #1e3a8a; font-size: 14px; line-height: 1.8; margin-left: 20px;">
-        <li><strong>Arrastrar y soltar:</strong> Mueve el diseño arrastrándolo con el mouse</li>
-        <li><strong>Transformaciones:</strong> Rotar, escalar y reposicionar el diseño</li>
-        <li><strong>Alineación:</strong> Centrar automáticamente y usar guías</li>
-        <li><strong>Grid visual:</strong> Cuadrícula para alineación precisa</li>
-        <li><strong>Área de impresión:</strong> Visualización clara del área disponible</li>
-        <li><strong>Undo/Redo:</strong> Deshacer y rehacer cambios</li>
-        <li><strong>Información en tiempo real:</strong> Posición, tamaño, rotación y escala</li>
-        <li><strong>Controles profesionales:</strong> Interfaz tipo editor gráfico</li>
-      </ul>
+        <button class="tool-btn" data-action="center">📍 Centrar</button>
+        <button class="tool-btn" data-action="rotate-left">↺ -90°</button>
+        <button class="tool-btn" data-action="rotate-right">↻ +90°</button>
+        <button class="tool-btn" data-action="reset-rotation">🔄 Reset</button>
+
+        <div style="width: 1px; background: #e5e7eb; margin: 0 8px;"></div>
+
+        <button class="tool-btn" data-action="scale-down">🔍− Reducir</button>
+        <button class="tool-btn" data-action="scale-up">🔍+ Ampliar</button>
+        <button class="tool-btn" data-action="reset-scale">100%</button>
+
+        <div style="width: 1px; background: #e5e7eb; margin: 0 8px;"></div>
+
+        <button class="tool-btn toggle" data-action="toggle-grid" data-active="true"># Grid</button>
+        <button class="tool-btn toggle" data-action="toggle-guides" data-active="true">+ Guías</button>
+      </div>
+
+      <!-- Canvas área -->
+      <div style="padding: 24px; background: #fafafa; display: flex; align-items: center; justify-content: center; min-height: 500px;">
+        <canvas
+          id="editor-canvas"
+          width="600"
+          height="400"
+          style="box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); border-radius: 8px; cursor: grab; background: #ffffff; max-width: 100%; height: auto;"
+        ></canvas>
+      </div>
+
+      <!-- Panel de información -->
+      <div id="info-panel" style="background: #ffffff; border-top: 1px solid #e5e7eb; padding: 12px 16px; display: flex; gap: 16px; font-size: 13px; color: #6b7280; box-shadow: 0 -1px 3px rgba(0,0,0,0.1); flex-wrap: wrap;">
+        <div style="color: #9ca3af;">
+          📤 Carga una imagen para empezar a diseñar
+        </div>
+      </div>
     </div>
   </div>
 </BaseLayout>
 
+<style>
+  .tool-btn {
+    padding: 8px 14px;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    transition: all 0.2s;
+  }
+
+  .tool-btn:hover {
+    background: #e5e7eb;
+  }
+
+  .tool-btn.toggle[data-active="true"] {
+    background: #3b82f6;
+    color: #ffffff;
+  }
+
+  #generate-test-design:hover {
+    background: #2563eb;
+  }
+
+  #clear-design:hover {
+    background: #dc2626;
+  }
+
+  #editor-canvas.dragging {
+    cursor: grabbing;
+  }
+</style>
+
 <script>
-  import { createRoot } from 'react-dom/client';
-  import { createElement } from 'react';
-  import TwoDProductEditor from '@/components/2d/TwoDProductEditor';
+  // Estado del editor
+  let designImage: HTMLImageElement | null = null;
+  let showGrid = true;
+  let showGuides = true;
+  let isDragging = false;
 
-  console.log('[test-2d-editor] Script loaded');
+  // Configuración del producto
+  const template = {
+    width: 600,
+    height: 400,
+    printAreaX: 150,
+    printAreaY: 100,
+    printAreaWidth: 300,
+    printAreaHeight: 200,
+    label: 'Taza'
+  };
 
-  let currentRoot: any = null;
-  let currentImageUrl: string | undefined = undefined;
-  let currentProductType: 'mug' | 'thermos' | 'bottle' = 'mug';
+  // Estado del diseño
+  let design = {
+    x: template.printAreaX + template.printAreaWidth / 2,
+    y: template.printAreaY + template.printAreaHeight / 2,
+    width: 200,
+    height: 200,
+    rotation: 0,
+    scale: 1
+  };
 
-  function renderEditor(imageUrl?: string, productType: 'mug' | 'thermos' | 'bottle' = 'mug') {
-    console.log('[test-2d-editor] renderEditor called with:', { imageUrl, productType });
+  let dragStart = { x: 0, y: 0, designX: 0, designY: 0 };
 
-    const container = document.getElementById('editor-container');
-    if (!container) {
-      console.error('[test-2d-editor] Container not found');
-      return;
-    }
+  // Obtener canvas
+  const canvas = document.getElementById('editor-canvas') as HTMLCanvasElement;
+  const ctx = canvas?.getContext('2d');
 
-    console.log('[test-2d-editor] Container found');
-
-    // Limpiar root anterior
-    if (currentRoot) {
-      console.log('[test-2d-editor] Unmounting previous root');
-      currentRoot.unmount();
-      currentRoot = null;
-    }
-
-    // Esperar un frame antes de crear el nuevo root
-    requestAnimationFrame(() => {
-      // Crear nuevo root y renderizar
-      currentRoot = createRoot(container);
-      console.log('[test-2d-editor] Rendering TwoDProductEditor component');
-
-      currentRoot.render(
-        createElement(TwoDProductEditor, {
-          imageUrl: imageUrl,
-          productType: productType,
-          onDesignChange: (design: any) => {
-            console.log('[test-2d-editor] Design changed:', design);
-            updateDesignInfo(design);
-          },
-          backgroundColor: '#f9fafb'
-        })
-      );
-
-      console.log('[test-2d-editor] Render complete');
-    });
+  if (!canvas || !ctx) {
+    console.error('[Editor] Canvas not found');
+  } else {
+    console.log('[Editor] Canvas initialized');
   }
 
-  function updateDesignInfo(design: any) {
-    const infoDiv = document.getElementById('design-info');
-    if (!infoDiv) return;
+  // Función para renderizar el canvas
+  function render() {
+    if (!ctx || !canvas) return;
 
-    infoDiv.innerHTML = `
-      <strong>Estado:</strong> Diseño activo
-      <span style="margin-left: 16px;"><strong>Posición:</strong> X: ${Math.round(design.x)}px, Y: ${Math.round(design.y)}px</span>
-      <span style="margin-left: 16px;"><strong>Tamaño:</strong> ${Math.round(design.width * design.scale)} × ${Math.round(design.height * design.scale)}px</span>
-      <span style="margin-left: 16px;"><strong>Rotación:</strong> ${Math.round(design.rotation)}°</span>
-      <span style="margin-left: 16px;"><strong>Escala:</strong> ${Math.round(design.scale * 100)}%</span>
-    `;
-  }
+    console.log('[Editor] Rendering canvas');
 
-  // Generar diseño de prueba con canvas
-  function generateTestDesign() {
-    console.log('[test-2d-editor] Generating test design');
+    // Limpiar
+    ctx.clearRect(0, 0, template.width, template.height);
 
-    const canvas = document.createElement('canvas');
-    canvas.width = 400;
-    canvas.height = 400;
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx) return;
-
-    // Fondo degradado
-    const gradient = ctx.createLinearGradient(0, 0, 400, 400);
-    gradient.addColorStop(0, '#3b82f6');
-    gradient.addColorStop(1, '#8b5cf6');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 400, 400);
-
-    // Texto
+    // Fondo
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 48px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('MI DISEÑO', 200, 180);
+    ctx.fillRect(0, 0, template.width, template.height);
+    ctx.strokeStyle = '#d0d0d0';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, template.width, template.height);
 
-    ctx.font = '24px sans-serif';
-    ctx.fillText('Personalizado', 200, 220);
+    // Grid
+    if (showGrid) {
+      ctx.strokeStyle = '#eeeeee';
+      ctx.lineWidth = 1;
+      const gridSize = 20;
 
-    // Círculo decorativo
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.arc(200, 200, 150, 0, Math.PI * 2);
-    ctx.stroke();
+      for (let x = 0; x <= template.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, template.height);
+        ctx.stroke();
+      }
 
-    currentImageUrl = canvas.toDataURL();
-    renderEditor(currentImageUrl, currentProductType);
+      for (let y = 0; y <= template.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(template.width, y);
+        ctx.stroke();
+      }
+    }
+
+    // Área de impresión
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.05)';
+    ctx.fillRect(template.printAreaX, template.printAreaY, template.printAreaWidth, template.printAreaHeight);
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 4]);
+    ctx.strokeRect(template.printAreaX, template.printAreaY, template.printAreaWidth, template.printAreaHeight);
+    ctx.setLineDash([]);
+
+    // Etiqueta
+    ctx.fillStyle = '#3b82f6';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('Área de impresión', template.printAreaX + 10, template.printAreaY + 25);
+
+    // Guías
+    if (showGuides) {
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+
+      const centerX = template.printAreaX + template.printAreaWidth / 2;
+      const centerY = template.printAreaY + template.printAreaHeight / 2;
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, template.printAreaY);
+      ctx.lineTo(centerX, template.printAreaY + template.printAreaHeight);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(template.printAreaX, centerY);
+      ctx.lineTo(template.printAreaX + template.printAreaWidth, centerY);
+      ctx.stroke();
+
+      ctx.setLineDash([]);
+    }
+
+    // Dibujar imagen si existe
+    if (designImage) {
+      ctx.save();
+
+      ctx.translate(design.x, design.y);
+      ctx.rotate((design.rotation * Math.PI) / 180);
+      ctx.scale(design.scale, design.scale);
+
+      const drawWidth = design.width;
+      const drawHeight = design.height;
+
+      ctx.drawImage(designImage, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+
+      // Borde de selección
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([6, 3]);
+      ctx.strokeRect(-drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+      ctx.setLineDash([]);
+
+      // Handles
+      const handleSize = 10;
+      ctx.fillStyle = '#10b981';
+
+      [
+        [-drawWidth / 2, -drawHeight / 2],
+        [drawWidth / 2, -drawHeight / 2],
+        [drawWidth / 2, drawHeight / 2],
+        [-drawWidth / 2, drawHeight / 2]
+      ].forEach(([x, y]) => {
+        ctx.fillRect(x - handleSize / 2, y - handleSize / 2, handleSize, handleSize);
+      });
+
+      ctx.restore();
+    }
+
+    updateInfoPanel();
   }
 
-  // Event listeners
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log('[test-2d-editor] DOM loaded, setting up event listeners');
+  function updateInfoPanel() {
+    const infoPanel = document.getElementById('info-panel');
+    if (!infoPanel) return;
 
-    // Renderizar editor vacío inicialmente
-    renderEditor();
+    if (designImage) {
+      infoPanel.innerHTML = `
+        <div><strong>Posición:</strong> X: ${Math.round(design.x)}px, Y: ${Math.round(design.y)}px</div>
+        <div><strong>Tamaño:</strong> ${Math.round(design.width * design.scale)} × ${Math.round(design.height * design.scale)}px</div>
+        <div><strong>Rotación:</strong> ${Math.round(design.rotation)}°</div>
+        <div><strong>Escala:</strong> ${Math.round(design.scale * 100)}%</div>
+        <div style="margin-left: auto; color: #10b981; font-weight: 500;">💡 Arrastra para mover el diseño</div>
+      `;
+    } else {
+      infoPanel.innerHTML = '<div style="color: #9ca3af;">📤 Carga una imagen para empezar a diseñar</div>';
+    }
+  }
 
-    // Selector de tipo de producto
-    const productTypeSelect = document.getElementById('product-type') as HTMLSelectElement;
-    productTypeSelect?.addEventListener('change', (e) => {
-      currentProductType = (e.target as HTMLSelectElement).value as 'mug' | 'thermos' | 'bottle';
-      console.log('[test-2d-editor] Product type changed to:', currentProductType);
-      renderEditor(currentImageUrl || undefined, currentProductType);
+  // Mouse events
+  if (canvas) {
+    canvas.addEventListener('mousedown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      dragStart = { x, y, designX: design.x, designY: design.y };
+      isDragging = true;
+      canvas.classList.add('dragging');
     });
 
-    // Input de archivo
-    const imageInput = document.getElementById('image-input') as HTMLInputElement;
-    imageInput?.addEventListener('change', (e) => {
+    canvas.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const dx = x - dragStart.x;
+      const dy = y - dragStart.y;
+
+      design.x = dragStart.designX + dx;
+      design.y = dragStart.designY + dy;
+
+      render();
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isDragging = false;
+      canvas.classList.remove('dragging');
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      isDragging = false;
+      canvas.classList.remove('dragging');
+    });
+  }
+
+  // Herramientas
+  const toolButtons = document.querySelectorAll('.tool-btn');
+  toolButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const action = (e.target as HTMLElement).getAttribute('data-action');
+      console.log('[Editor] Tool action:', action);
+
+      switch (action) {
+        case 'center':
+          design.x = template.printAreaX + template.printAreaWidth / 2;
+          design.y = template.printAreaY + template.printAreaHeight / 2;
+          break;
+        case 'rotate-left':
+          design.rotation -= 90;
+          break;
+        case 'rotate-right':
+          design.rotation += 90;
+          break;
+        case 'reset-rotation':
+          design.rotation = 0;
+          break;
+        case 'scale-down':
+          design.scale = Math.max(design.scale - 0.1, 0.1);
+          break;
+        case 'scale-up':
+          design.scale = Math.min(design.scale + 0.1, 3);
+          break;
+        case 'reset-scale':
+          design.scale = 1;
+          break;
+        case 'toggle-grid':
+          showGrid = !showGrid;
+          (e.target as HTMLElement).setAttribute('data-active', showGrid.toString());
+          break;
+        case 'toggle-guides':
+          showGuides = !showGuides;
+          (e.target as HTMLElement).setAttribute('data-active', showGuides.toString());
+          break;
+      }
+
+      render();
+    });
+  });
+
+  // Cargar imagen
+  const imageInput = document.getElementById('image-input') as HTMLInputElement;
+  if (imageInput) {
+    imageInput.addEventListener('change', (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) {
-        console.warn('[test-2d-editor] No file selected');
+        console.warn('[Editor] No file selected');
         return;
       }
 
-      console.log('[test-2d-editor] Image file selected:', file.name, file.type);
+      console.log('[Editor] Image file selected:', file.name);
 
       const reader = new FileReader();
       reader.onload = (event) => {
-        const result = event.target?.result;
-        if (typeof result === 'string') {
-          currentImageUrl = result;
-          console.log('[test-2d-editor] Image loaded, length:', currentImageUrl.length);
-          renderEditor(currentImageUrl, currentProductType);
+        const img = new Image();
+        img.onload = () => {
+          console.log('[Editor] Image loaded:', img.width, 'x', img.height);
+          designImage = img;
 
-          // Actualizar info
+          const aspectRatio = img.width / img.height;
+          design.width = Math.min(template.printAreaWidth * 0.6, 200);
+          design.height = design.width / aspectRatio;
+          design.scale = 1;
+          design.rotation = 0;
+
+          render();
+
           const infoDiv = document.getElementById('design-info');
           if (infoDiv) {
-            infoDiv.innerHTML = '<strong>Estado:</strong> Imagen cargada correctamente';
+            infoDiv.innerHTML = '<strong>Estado:</strong> Imagen cargada correctamente ✅';
           }
-        }
+        };
+        img.src = event.target?.result as string;
       };
-      reader.onerror = (error) => {
-        console.error('[test-2d-editor] Error reading file:', error);
+      reader.onerror = () => {
+        console.error('[Editor] Error reading file');
         alert('Error al cargar la imagen');
       };
       reader.readAsDataURL(file);
     });
+  }
 
-    // Selector de imagen de prueba
-    const testImageSelect = document.getElementById('test-image') as HTMLSelectElement;
-    testImageSelect?.addEventListener('change', (e) => {
-      const value = (e.target as HTMLSelectElement).value;
-      if (!value) return;
+  // Generar diseño de prueba
+  const generateBtn = document.getElementById('generate-test-design');
+  if (generateBtn) {
+    generateBtn.addEventListener('click', () => {
+      console.log('[Editor] Generating test design');
 
-      console.log('[test-2d-editor] Test image selected:', value);
+      const testCanvas = document.createElement('canvas');
+      testCanvas.width = 400;
+      testCanvas.height = 400;
+      const testCtx = testCanvas.getContext('2d');
 
-      // Generar diferentes diseños de prueba
-      const canvas = document.createElement('canvas');
-      canvas.width = 400;
-      canvas.height = 400;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      if (!testCtx) return;
 
-      if (value === 'logo') {
-        // Logo circular
-        const gradient = ctx.createRadialGradient(200, 200, 50, 200, 200, 200);
-        gradient.addColorStop(0, '#10b981');
-        gradient.addColorStop(1, '#059669');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 400, 400);
+      // Fondo degradado
+      const gradient = testCtx.createLinearGradient(0, 0, 400, 400);
+      gradient.addColorStop(0, '#3b82f6');
+      gradient.addColorStop(1, '#8b5cf6');
+      testCtx.fillStyle = gradient;
+      testCtx.fillRect(0, 0, 400, 400);
 
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 80px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('LOGO', 200, 200);
-      } else if (value === 'text') {
-        // Texto simple
-        ctx.fillStyle = '#1f2937';
-        ctx.fillRect(0, 0, 400, 400);
+      // Texto
+      testCtx.fillStyle = '#ffffff';
+      testCtx.font = 'bold 48px sans-serif';
+      testCtx.textAlign = 'center';
+      testCtx.textBaseline = 'middle';
+      testCtx.fillText('MI DISEÑO', 200, 180);
 
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 60px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('HELLO', 200, 160);
-        ctx.fillText('WORLD', 200, 240);
-      } else if (value === 'pattern') {
-        // Patrón
-        for (let i = 0; i < 10; i++) {
-          for (let j = 0; j < 10; j++) {
-            ctx.fillStyle = (i + j) % 2 === 0 ? '#3b82f6' : '#8b5cf6';
-            ctx.fillRect(i * 40, j * 40, 40, 40);
-          }
+      testCtx.font = '24px sans-serif';
+      testCtx.fillText('Personalizado', 200, 220);
+
+      // Círculo
+      testCtx.strokeStyle = '#ffffff';
+      testCtx.lineWidth = 4;
+      testCtx.beginPath();
+      testCtx.arc(200, 200, 150, 0, Math.PI * 2);
+      testCtx.stroke();
+
+      const img = new Image();
+      img.onload = () => {
+        designImage = img;
+        design.width = 200;
+        design.height = 200;
+        design.scale = 1;
+        design.rotation = 0;
+        render();
+
+        const infoDiv = document.getElementById('design-info');
+        if (infoDiv) {
+          infoDiv.innerHTML = '<strong>Estado:</strong> Diseño de prueba generado ✅';
         }
-      }
-
-      currentImageUrl = canvas.toDataURL();
-      renderEditor(currentImageUrl, currentProductType);
-
-      // Reset selector
-      testImageSelect.value = '';
+      };
+      img.src = testCanvas.toDataURL();
     });
+  }
 
-    // Botón generar diseño de prueba
-    const generateBtn = document.getElementById('generate-test-design');
-    generateBtn?.addEventListener('click', generateTestDesign);
+  // Limpiar
+  const clearBtn = document.getElementById('clear-design');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      console.log('[Editor] Clearing design');
+      designImage = null;
+      design.rotation = 0;
+      design.scale = 1;
+      render();
 
-    // Botón limpiar
-    const clearBtn = document.getElementById('clear-design');
-    clearBtn?.addEventListener('click', () => {
-      console.log('[test-2d-editor] Clearing design');
-      currentImageUrl = undefined;
-      renderEditor(undefined, currentProductType);
+      if (imageInput) {
+        imageInput.value = '';
+      }
 
       const infoDiv = document.getElementById('design-info');
       if (infoDiv) {
         infoDiv.innerHTML = '<strong>Estado:</strong> Sin diseño cargado';
       }
-
-      // Limpiar input de archivo
-      if (imageInput) {
-        imageInput.value = '';
-      }
-
-      // Limpiar selector de prueba
-      if (testImageSelect) {
-        testImageSelect.value = '';
-      }
     });
-  });
+  }
+
+  // Renderizado inicial
+  console.log('[Editor] Initial render');
+  render();
 </script>
 </BaseLayout>
