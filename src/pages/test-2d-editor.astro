@@ -1,0 +1,334 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Editor 2D Profesional - Prueba">
+  <div style="padding: 20px; max-width: 1400px; margin: 0 auto;">
+    <div style="margin-bottom: 30px;">
+      <h1 style="font-size: 32px; font-weight: bold; color: #111827; margin-bottom: 12px;">
+        🎨 Editor 2D Profesional
+      </h1>
+      <p style="color: #6b7280; font-size: 16px;">
+        Editor profesional para personalizar productos en 2D con herramientas avanzadas
+      </p>
+    </div>
+
+    <!-- Controles de prueba -->
+    <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      <h2 style="font-size: 20px; font-weight: 600; color: #111827; margin-bottom: 16px;">
+        Controles de Prueba
+      </h2>
+
+      <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center;">
+        <!-- Selector de tipo de producto -->
+        <div>
+          <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+            Tipo de Producto
+          </label>
+          <select
+            id="product-type"
+            style="padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; cursor: pointer; background: white;"
+          >
+            <option value="mug">Taza</option>
+            <option value="thermos">Termo</option>
+            <option value="bottle">Botella</option>
+          </select>
+        </div>
+
+        <!-- Input de imagen -->
+        <div>
+          <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+            Cargar Diseño
+          </label>
+          <input
+            type="file"
+            id="image-input"
+            accept="image/*"
+            style="padding: 8px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; cursor: pointer; background: white;"
+          />
+        </div>
+
+        <!-- Selector de imagen de prueba -->
+        <div>
+          <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+            Imagen de Prueba
+          </label>
+          <select
+            id="test-image"
+            style="padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; cursor: pointer; background: white;"
+          >
+            <option value="">Seleccionar...</option>
+            <option value="logo">Logo de ejemplo</option>
+            <option value="text">Texto de ejemplo</option>
+            <option value="pattern">Patrón de ejemplo</option>
+          </select>
+        </div>
+
+        <!-- Botón para generar canvas de prueba -->
+        <div>
+          <label style="display: block; font-size: 14px; font-weight: 500; color: transparent; margin-bottom: 8px;">
+            .
+          </label>
+          <button
+            id="generate-test-design"
+            style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s;"
+            onmouseover="this.style.background='#2563eb'"
+            onmouseout="this.style.background='#3b82f6'"
+          >
+            Generar Diseño de Prueba
+          </button>
+        </div>
+
+        <!-- Botón de resetear -->
+        <div>
+          <label style="display: block; font-size: 14px; font-weight: 500; color: transparent; margin-bottom: 8px;">
+            .
+          </label>
+          <button
+            id="clear-design"
+            style="padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s;"
+            onmouseover="this.style.background='#dc2626'"
+            onmouseout="this.style.background='#ef4444'"
+          >
+            Limpiar
+          </button>
+        </div>
+      </div>
+
+      <!-- Info sobre el estado actual -->
+      <div id="design-info" style="margin-top: 16px; padding: 12px; background: #f3f4f6; border-radius: 8px; font-size: 13px; color: #6b7280;">
+        <strong>Estado:</strong> Sin diseño cargado
+      </div>
+    </div>
+
+    <!-- Editor 2D -->
+    <div
+      id="editor-container"
+      style="height: 700px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;"
+    >
+      <!-- El editor se renderizará aquí -->
+    </div>
+
+    <!-- Información adicional -->
+    <div style="margin-top: 24px; padding: 20px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px;">
+      <h3 style="font-size: 16px; font-weight: 600; color: #1e40af; margin-bottom: 8px;">
+        💡 Características del Editor 2D
+      </h3>
+      <ul style="color: #1e3a8a; font-size: 14px; line-height: 1.8; margin-left: 20px;">
+        <li><strong>Arrastrar y soltar:</strong> Mueve el diseño arrastrándolo con el mouse</li>
+        <li><strong>Transformaciones:</strong> Rotar, escalar y reposicionar el diseño</li>
+        <li><strong>Alineación:</strong> Centrar automáticamente y usar guías</li>
+        <li><strong>Grid visual:</strong> Cuadrícula para alineación precisa</li>
+        <li><strong>Área de impresión:</strong> Visualización clara del área disponible</li>
+        <li><strong>Undo/Redo:</strong> Deshacer y rehacer cambios</li>
+        <li><strong>Información en tiempo real:</strong> Posición, tamaño, rotación y escala</li>
+        <li><strong>Controles profesionales:</strong> Interfaz tipo editor gráfico</li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { createRoot } from 'react-dom/client';
+  import { createElement } from 'react';
+  import TwoDProductEditor from '@/components/2d/TwoDProductEditor';
+
+  console.log('[test-2d-editor] Script loaded');
+
+  let currentRoot: any = null;
+  let currentImageUrl = '';
+  let currentProductType: 'mug' | 'thermos' | 'bottle' = 'mug';
+
+  function renderEditor(imageUrl?: string, productType: 'mug' | 'thermos' | 'bottle' = 'mug') {
+    console.log('[test-2d-editor] renderEditor called with:', { imageUrl, productType });
+
+    const container = document.getElementById('editor-container');
+    if (!container) {
+      console.error('[test-2d-editor] Container not found');
+      return;
+    }
+
+    console.log('[test-2d-editor] Container found:', container);
+
+    // Limpiar root anterior
+    if (currentRoot) {
+      currentRoot.unmount();
+    }
+
+    // Crear nuevo root y renderizar
+    currentRoot = createRoot(container);
+    console.log('[test-2d-editor] Rendering TwoDProductEditor component');
+
+    currentRoot.render(
+      createElement(TwoDProductEditor, {
+        imageUrl: imageUrl,
+        productType: productType,
+        onDesignChange: (design: any) => {
+          console.log('[test-2d-editor] Design changed:', design);
+          updateDesignInfo(design);
+        },
+        backgroundColor: '#f9fafb'
+      })
+    );
+
+    console.log('[test-2d-editor] Render complete');
+  }
+
+  function updateDesignInfo(design: any) {
+    const infoDiv = document.getElementById('design-info');
+    if (!infoDiv) return;
+
+    infoDiv.innerHTML = `
+      <strong>Estado:</strong> Diseño activo
+      <span style="margin-left: 16px;"><strong>Posición:</strong> X: ${Math.round(design.x)}px, Y: ${Math.round(design.y)}px</span>
+      <span style="margin-left: 16px;"><strong>Tamaño:</strong> ${Math.round(design.width * design.scale)} × ${Math.round(design.height * design.scale)}px</span>
+      <span style="margin-left: 16px;"><strong>Rotación:</strong> ${Math.round(design.rotation)}°</span>
+      <span style="margin-left: 16px;"><strong>Escala:</strong> ${Math.round(design.scale * 100)}%</span>
+    `;
+  }
+
+  // Generar diseño de prueba con canvas
+  function generateTestDesign() {
+    console.log('[test-2d-editor] Generating test design');
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 400;
+    canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) return;
+
+    // Fondo degradado
+    const gradient = ctx.createLinearGradient(0, 0, 400, 400);
+    gradient.addColorStop(0, '#3b82f6');
+    gradient.addColorStop(1, '#8b5cf6');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 400, 400);
+
+    // Texto
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 48px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('MI DISEÑO', 200, 180);
+
+    ctx.font = '24px sans-serif';
+    ctx.fillText('Personalizado', 200, 220);
+
+    // Círculo decorativo
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(200, 200, 150, 0, Math.PI * 2);
+    ctx.stroke();
+
+    currentImageUrl = canvas.toDataURL();
+    renderEditor(currentImageUrl, currentProductType);
+  }
+
+  // Event listeners
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('[test-2d-editor] DOM loaded, setting up event listeners');
+
+    // Renderizar editor vacío inicialmente
+    renderEditor();
+
+    // Selector de tipo de producto
+    const productTypeSelect = document.getElementById('product-type') as HTMLSelectElement;
+    productTypeSelect?.addEventListener('change', (e) => {
+      currentProductType = (e.target as HTMLSelectElement).value as 'mug' | 'thermos' | 'bottle';
+      console.log('[test-2d-editor] Product type changed to:', currentProductType);
+      renderEditor(currentImageUrl || undefined, currentProductType);
+    });
+
+    // Input de archivo
+    const imageInput = document.getElementById('image-input') as HTMLInputElement;
+    imageInput?.addEventListener('change', (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      console.log('[test-2d-editor] Image file selected:', file.name);
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        currentImageUrl = event.target?.result as string;
+        renderEditor(currentImageUrl, currentProductType);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Selector de imagen de prueba
+    const testImageSelect = document.getElementById('test-image') as HTMLSelectElement;
+    testImageSelect?.addEventListener('change', (e) => {
+      const value = (e.target as HTMLSelectElement).value;
+      if (!value) return;
+
+      console.log('[test-2d-editor] Test image selected:', value);
+
+      // Generar diferentes diseños de prueba
+      const canvas = document.createElement('canvas');
+      canvas.width = 400;
+      canvas.height = 400;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      if (value === 'logo') {
+        // Logo circular
+        const gradient = ctx.createRadialGradient(200, 200, 50, 200, 200, 200);
+        gradient.addColorStop(0, '#10b981');
+        gradient.addColorStop(1, '#059669');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 400, 400);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 80px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('LOGO', 200, 200);
+      } else if (value === 'text') {
+        // Texto simple
+        ctx.fillStyle = '#1f2937';
+        ctx.fillRect(0, 0, 400, 400);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 60px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('HELLO', 200, 160);
+        ctx.fillText('WORLD', 200, 240);
+      } else if (value === 'pattern') {
+        // Patrón
+        for (let i = 0; i < 10; i++) {
+          for (let j = 0; j < 10; j++) {
+            ctx.fillStyle = (i + j) % 2 === 0 ? '#3b82f6' : '#8b5cf6';
+            ctx.fillRect(i * 40, j * 40, 40, 40);
+          }
+        }
+      }
+
+      currentImageUrl = canvas.toDataURL();
+      renderEditor(currentImageUrl, currentProductType);
+
+      // Reset selector
+      testImageSelect.value = '';
+    });
+
+    // Botón generar diseño de prueba
+    const generateBtn = document.getElementById('generate-test-design');
+    generateBtn?.addEventListener('click', generateTestDesign);
+
+    // Botón limpiar
+    const clearBtn = document.getElementById('clear-design');
+    clearBtn?.addEventListener('click', () => {
+      console.log('[test-2d-editor] Clearing design');
+      currentImageUrl = '';
+      renderEditor(undefined, currentProductType);
+
+      const infoDiv = document.getElementById('design-info');
+      if (infoDiv) {
+        infoDiv.innerHTML = '<strong>Estado:</strong> Sin diseño cargado';
+      }
+    });
+  });
+</script>
+</BaseLayout>
