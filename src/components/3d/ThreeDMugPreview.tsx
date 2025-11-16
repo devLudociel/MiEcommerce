@@ -103,11 +103,10 @@ function ProceduralMugModel({
         loadedTexture.wrapS = THREE.RepeatWrapping;
         loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
 
-        // Ajustar orientación y mapeo completo de la textura
-        loadedTexture.center.set(0.5, 0.5);
-        loadedTexture.rotation = -Math.PI / 2; // -90 grados
-        loadedTexture.repeat.set(-1, -1); // Invertir horizontal y verticalmente
-        loadedTexture.offset.set(0, 1); // Ajustar offset para compensar inversión vertical
+        // Configuración básica para verificar que la textura se ve
+        loadedTexture.rotation = 0;
+        loadedTexture.repeat.set(1, 1);
+        loadedTexture.offset.set(0, 0);
 
         loadedTexture.needsUpdate = true;
         setTexture(loadedTexture);
@@ -165,7 +164,8 @@ function ProceduralMugModel({
   const bodyMaterial = useMemo(() => {
     return new THREE.MeshPhysicalMaterial({
       map: texture,
-      color: new THREE.Color(productColor), // Siempre aplicar el color del producto
+      // Si hay textura, usar blanco para no alterar los colores. Si no, usar el color del producto
+      color: texture ? new THREE.Color(0xffffff) : new THREE.Color(productColor),
       metalness: 0.02,
       roughness: 0.08,
       envMapIntensity: 2.5,
@@ -288,11 +288,10 @@ function GLBModel({
         loadedTexture.wrapS = THREE.RepeatWrapping;
         loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
 
-        // Ajustar orientación y mapeo completo de la textura
-        loadedTexture.center.set(0.5, 0.5);
-        loadedTexture.rotation = -Math.PI / 2; // -90 grados
-        loadedTexture.repeat.set(-1, -1); // Invertir horizontal y verticalmente
-        loadedTexture.offset.set(0, 1); // Ajustar offset para compensar inversión vertical
+        // Configuración básica para verificar que la textura se ve
+        loadedTexture.rotation = 0;
+        loadedTexture.repeat.set(1, 1);
+        loadedTexture.offset.set(0, 0);
 
         loadedTexture.needsUpdate = true;
         setTexture(loadedTexture);
