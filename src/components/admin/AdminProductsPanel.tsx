@@ -18,6 +18,7 @@ import { useSimpleFormValidation } from '../../hooks/useFormValidation';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import { schemaOptions } from '../../data/exampleSchemas';
+import { getDocs } from 'firebase/firestore';
 
 // Tipos actualizados
 interface ProductCategory {
@@ -158,8 +159,8 @@ const availableColors = [
 // 📏 Tallas disponibles (compatible con FilterPanel)
 const availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
-// 🎨 Información de schemas de personalización
-const schemaInfo: Record<string, {
+// 🎨 Información de schemas de personalización (inicial)
+const schemaInfoInitial: Record<string, {
   id: string;
   name: string;
   description: string;
@@ -630,6 +631,14 @@ export default function AdminProductsPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [schemaInfo, setSchemaInfo] = useState<Record<string, {
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+    fields: string[];
+    recommendedCategories: string[];
+  }>>(schemaInfoInitial);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
 
@@ -685,6 +694,44 @@ export default function AdminProductsPanel() {
     });
 
     return unsubscribe;
+  }, []);
+
+  // Cargar categorías personalizadas desde Firestore
+  useEffect(() => {
+    const loadCustomSchemas = async () => {
+      try {
+        const customCategoriesSnapshot = await getDocs(collection(db, 'customization_categories'));
+
+        if (customCategoriesSnapshot.empty) {
+          logger.info('[AdminProductsPanel] No custom categories found');
+          return;
+        }
+
+        const newSchemaInfo = { ...schemaInfoInitial };
+
+        customCategoriesSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          newSchemaInfo[doc.id] = {
+            id: doc.id,
+            name: data.name,
+            description: data.description || '',
+            icon: data.icon || '📦',
+            fields: [], // Se llenará cuando se configure el schema
+            recommendedCategories: [data.slug], // Usamos el slug como categoría recomendada
+          };
+        });
+
+        setSchemaInfo(newSchemaInfo);
+        logger.info('[AdminProductsPanel] Custom schemas loaded', {
+          total: Object.keys(newSchemaInfo).length,
+          custom: customCategoriesSnapshot.size,
+        });
+      } catch (error) {
+        logger.error('[AdminProductsPanel] Error loading custom schemas', error);
+      }
+    };
+
+    loadCustomSchemas();
   }, []);
 
   const isEditing = useMemo(() => !!draft.id, [draft.id]);
