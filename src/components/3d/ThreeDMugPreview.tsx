@@ -12,58 +12,60 @@ interface ThreeDMugPreviewProps {
 }
 
 /**
- * Iluminación profesional de estudio sin dependencias externas
- * Simula un ambiente HDR usando múltiples luces estratégicamente posicionadas
+ * Iluminación cinematográfica profesional de estudio
+ * Sistema de iluminación de 3 puntos mejorado con luces de acento
  */
 function StudioLighting() {
   return (
     <>
-      {/* Luz ambiental suave para iluminación base */}
-      <ambientLight intensity={0.4} color="#ffffff" />
+      {/* Luz ambiental base - más intensa para resaltar materiales */}
+      <ambientLight intensity={0.6} color="#ffffff" />
 
-      {/* Luz principal (Key Light) - frontal superior derecha */}
+      {/* Luz principal (Key Light) - más intensa y dramática */}
       <directionalLight
-        position={[5, 5, 5]}
+        position={[6, 8, 6]}
+        intensity={2.5}
+        color="#ffffff"
+        castShadow
+        shadow-mapSize={[4096, 4096]}
+        shadow-camera-far={25}
+        shadow-bias={-0.00005}
+      />
+
+      {/* Luz de relleno (Fill Light) - más suave y fría */}
+      <directionalLight
+        position={[-5, 4, 5]}
+        intensity={1.2}
+        color="#e8f0ff"
+      />
+
+      {/* Luz trasera (Rim Light) - más cálida y potente */}
+      <directionalLight
+        position={[-3, 3, -5]}
         intensity={1.8}
+        color="#fff5e6"
+      />
+
+      {/* Luces de acento para reflejos espectaculares */}
+      <pointLight position={[4, 6, 4]} intensity={1.2} color="#ffffff" />
+      <pointLight position={[-4, 3, -3]} intensity={0.8} color="#d0e8ff" />
+      <pointLight position={[0, 8, 0]} intensity={1.0} color="#fffaf0" />
+      <pointLight position={[2, -1, 3]} intensity={0.6} color="#ffffff" />
+
+      {/* Spotlight cenital potente para brillo superior */}
+      <spotLight
+        position={[0, 12, 0]}
+        intensity={1.2}
+        angle={0.5}
+        penumbra={0.8}
         color="#ffffff"
         castShadow
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-far={20}
-        shadow-bias={-0.0001}
       />
 
-      {/* Luz de relleno (Fill Light) - frontal izquierda suave */}
-      <directionalLight
-        position={[-4, 3, 4]}
-        intensity={0.8}
-        color="#f0f0ff"
-      />
-
-      {/* Luz trasera (Rim Light) - resalta bordes */}
-      <directionalLight
-        position={[-2, 2, -4]}
-        intensity={1.0}
-        color="#ffeedd"
-      />
-
-      {/* Luces puntuales para reflejos y brillo */}
-      <pointLight position={[3, 4, 3]} intensity={0.6} color="#ffffff" />
-      <pointLight position={[-3, 2, -2]} intensity={0.4} color="#e8f4ff" />
-      <pointLight position={[0, 6, 0]} intensity={0.5} color="#fff8f0" />
-
-      {/* Spotlight cenital para resaltar la parte superior */}
-      <spotLight
-        position={[0, 8, 0]}
-        intensity={0.6}
-        angle={0.4}
-        penumbra={1}
-        color="#ffffff"
-        castShadow
-      />
-
-      {/* Luces hemisféricas para simular cielo y suelo */}
+      {/* Luces hemisféricas para ambiente completo */}
       <hemisphereLight
-        args={['#ffffff', '#444444', 0.6]}
+        args={['#ffffff', '#606060', 0.8]}
         position={[0, 10, 0]}
       />
     </>
@@ -149,30 +151,36 @@ function ProceduralMugModel({
     }
   }, [productType]);
 
-  // Material del cuerpo - Cerámica profesional con acabado brillante
+  // Material del cuerpo - Cerámica ultra profesional con acabado esmaltado brillante
   const bodyMaterial = useMemo(() => {
     return new THREE.MeshPhysicalMaterial({
       map: texture,
-      color: texture ? 0xffffff : 0xfafafa,
-      metalness: 0.05,
-      roughness: 0.15,
-      envMapIntensity: 1.5,
-      clearcoat: 0.8,
-      clearcoatRoughness: 0.2,
-      reflectivity: 0.6,
-      ior: 1.5,
+      color: texture ? 0xffffff : 0xfcfcfc,
+      metalness: 0.02,
+      roughness: 0.08,
+      envMapIntensity: 2.5,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05,
+      reflectivity: 0.9,
+      ior: 1.52,
+      sheen: 0.3,
+      sheenColor: new THREE.Color(0xffffff),
+      specularIntensity: 1.0,
+      specularColor: new THREE.Color(0xffffff),
     });
   }, [texture]);
 
-  // Material metálico - Acero inoxidable pulido
+  // Material metálico - Cromado espejado ultra brillante
   const metalMaterial = useMemo(() => {
     return new THREE.MeshPhysicalMaterial({
-      color: 0xdcdcdc,
-      metalness: 0.95,
-      roughness: 0.08,
-      envMapIntensity: 2.0,
-      clearcoat: 0.3,
-      clearcoatRoughness: 0.1,
+      color: 0xe8e8e8,
+      metalness: 0.98,
+      roughness: 0.02,
+      envMapIntensity: 3.0,
+      clearcoat: 0.8,
+      clearcoatRoughness: 0.02,
+      reflectivity: 1.0,
+      ior: 2.5,
     });
   }, []);
 
@@ -306,20 +314,26 @@ function GLBModel({
           const meshName = mesh.name.toLowerCase();
 
           if (meshName.includes('body') || meshName.includes('cylinder') || !meshName.includes('metal')) {
-            // Material cerámico brillante
-            newMaterial.metalness = 0.05;
-            newMaterial.roughness = 0.15;
-            newMaterial.clearcoat = 0.8;
-            newMaterial.clearcoatRoughness = 0.2;
-            newMaterial.envMapIntensity = 1.5;
-            newMaterial.ior = 1.5;
-          } else {
-            // Material metálico pulido
-            newMaterial.metalness = 0.95;
+            // Material cerámico esmaltado ultra brillante
+            newMaterial.metalness = 0.02;
             newMaterial.roughness = 0.08;
-            newMaterial.clearcoat = 0.3;
-            newMaterial.clearcoatRoughness = 0.1;
-            newMaterial.envMapIntensity = 2.0;
+            newMaterial.clearcoat = 1.0;
+            newMaterial.clearcoatRoughness = 0.05;
+            newMaterial.envMapIntensity = 2.5;
+            newMaterial.ior = 1.52;
+            newMaterial.sheen = 0.3;
+            newMaterial.sheenColor = new THREE.Color(0xffffff);
+            newMaterial.specularIntensity = 1.0;
+            newMaterial.specularColor = new THREE.Color(0xffffff);
+          } else {
+            // Material cromado espejado
+            newMaterial.metalness = 0.98;
+            newMaterial.roughness = 0.02;
+            newMaterial.clearcoat = 0.8;
+            newMaterial.clearcoatRoughness = 0.02;
+            newMaterial.envMapIntensity = 3.0;
+            newMaterial.ior = 2.5;
+            newMaterial.reflectivity = 1.0;
           }
 
           // Habilitar sombras
@@ -468,31 +482,32 @@ export default function ThreeDMugPreview({
           useGLB={useGLB}
         />
 
-        {/* Sombras de contacto realistas */}
+        {/* Sombras de contacto ultra suaves y realistas */}
         <ContactShadows
           position={[0, -2, 0]}
-          opacity={0.4}
-          scale={10}
-          blur={2}
-          far={4}
-          resolution={256}
+          opacity={0.5}
+          scale={12}
+          blur={3}
+          far={4.5}
+          resolution={512}
           color="#000000"
         />
 
-        {/* Plano reflectante profesional */}
+        {/* Plano reflectante profesional tipo estudio */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.99, 0]} receiveShadow>
-          <planeGeometry args={[20, 20]} />
+          <planeGeometry args={[25, 25]} />
           <MeshReflectorMaterial
-            blur={[300, 100]}
-            resolution={512}
-            mixBlur={1}
-            mixStrength={0.5}
-            roughness={0.8}
-            depthScale={1.2}
-            minDepthThreshold={0.4}
-            maxDepthThreshold={1.4}
-            color="#f8f8f8"
-            metalness={0.1}
+            blur={[400, 150]}
+            resolution={1024}
+            mixBlur={1.2}
+            mixStrength={0.8}
+            roughness={0.7}
+            depthScale={1.5}
+            minDepthThreshold={0.3}
+            maxDepthThreshold={1.6}
+            color="#fafafa"
+            metalness={0.15}
+            mirror={0.5}
           />
         </mesh>
 
@@ -507,21 +522,26 @@ export default function ThreeDMugPreview({
           autoRotate={false}
         />
 
-        {/* Efectos de post-procesamiento */}
-        <EffectComposer multisampling={8}>
+        {/* Efectos de post-procesamiento cinematográficos */}
+        <EffectComposer multisampling={16}>
           <SSAO
-            samples={31}
-            radius={0.1}
-            intensity={30}
-            luminanceInfluence={0.6}
+            samples={64}
+            radius={0.08}
+            intensity={40}
+            luminanceInfluence={0.5}
+            color="#000000"
           />
           <Bloom
-            intensity={0.3}
-            luminanceThreshold={0.9}
-            luminanceSmoothing={0.9}
+            intensity={0.6}
+            luminanceThreshold={0.85}
+            luminanceSmoothing={0.95}
             mipmapBlur={true}
+            radius={0.8}
           />
-          <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+          <ToneMapping
+            mode={ToneMappingMode.ACES_FILMIC}
+            resolution={256}
+          />
         </EffectComposer>
       </Canvas>
 
