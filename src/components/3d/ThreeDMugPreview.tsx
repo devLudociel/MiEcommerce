@@ -1,7 +1,7 @@
 import React, { useRef, useMemo, Suspense, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, ContactShadows, MeshReflectorMaterial } from '@react-three/drei';
-import { EffectComposer, Bloom, SSAO, ToneMapping } from '@react-three/postprocessing';
+import { EffectComposer, Bloom, ToneMapping } from '@react-three/postprocessing';
 import { ToneMappingMode } from 'postprocessing';
 import * as THREE from 'three';
 
@@ -302,49 +302,60 @@ function GLBModel({
         const mesh = child as THREE.Mesh;
 
         if (mesh.material) {
-          // Convertir a MeshPhysicalMaterial para mejor calidad
-          const oldMaterial = mesh.material as THREE.MeshStandardMaterial;
-          const newMaterial = new THREE.MeshPhysicalMaterial();
+          // Manejar array de materiales o material único
+          const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
 
-          // Copiar propiedades básicas
-          newMaterial.copy(oldMaterial);
+          const newMaterials = materials.map((oldMaterial) => {
+            const newMaterial = new THREE.MeshPhysicalMaterial();
 
-          // Aplicar textura si está disponible
-          if (texture) {
-            newMaterial.map = texture;
-          }
+            // Copiar propiedades básicas si es un MeshStandardMaterial
+            if (oldMaterial instanceof THREE.MeshStandardMaterial) {
+              newMaterial.color.copy(oldMaterial.color);
+              newMaterial.map = oldMaterial.map;
+              newMaterial.metalness = oldMaterial.metalness;
+              newMaterial.roughness = oldMaterial.roughness;
+            }
 
-          // Mejorar propiedades físicas basadas en el nombre del mesh
-          const meshName = mesh.name.toLowerCase();
+            // Aplicar textura si está disponible
+            if (texture) {
+              newMaterial.map = texture;
+            }
 
-          if (meshName.includes('body') || meshName.includes('cylinder') || !meshName.includes('metal')) {
-            // Material cerámico esmaltado ultra brillante
-            newMaterial.metalness = 0.02;
-            newMaterial.roughness = 0.08;
-            newMaterial.clearcoat = 1.0;
-            newMaterial.clearcoatRoughness = 0.05;
-            newMaterial.envMapIntensity = 2.5;
-            newMaterial.ior = 1.52;
-            newMaterial.sheen = 0.3;
-            newMaterial.sheenColor = new THREE.Color(0xffffff);
-            newMaterial.specularIntensity = 1.0;
-            newMaterial.specularColor = new THREE.Color(0xffffff);
-          } else {
-            // Material cromado espejado
-            newMaterial.metalness = 0.98;
-            newMaterial.roughness = 0.02;
-            newMaterial.clearcoat = 0.8;
-            newMaterial.clearcoatRoughness = 0.02;
-            newMaterial.envMapIntensity = 3.0;
-            newMaterial.ior = 2.5;
-            newMaterial.reflectivity = 1.0;
-          }
+            // Mejorar propiedades físicas basadas en el nombre del mesh
+            const meshName = mesh.name.toLowerCase();
+
+            if (meshName.includes('body') || meshName.includes('cylinder') || !meshName.includes('metal')) {
+              // Material cerámico esmaltado ultra brillante
+              newMaterial.metalness = 0.02;
+              newMaterial.roughness = 0.08;
+              newMaterial.clearcoat = 1.0;
+              newMaterial.clearcoatRoughness = 0.05;
+              newMaterial.envMapIntensity = 2.5;
+              newMaterial.ior = 1.52;
+              newMaterial.sheen = 0.3;
+              newMaterial.sheenColor = new THREE.Color(0xffffff);
+              newMaterial.specularIntensity = 1.0;
+              newMaterial.specularColor = new THREE.Color(0xffffff);
+            } else {
+              // Material cromado espejado
+              newMaterial.metalness = 0.98;
+              newMaterial.roughness = 0.02;
+              newMaterial.clearcoat = 0.8;
+              newMaterial.clearcoatRoughness = 0.02;
+              newMaterial.envMapIntensity = 3.0;
+              newMaterial.ior = 2.5;
+              newMaterial.reflectivity = 1.0;
+            }
+
+            return newMaterial;
+          });
+
+          // Asignar material(es) nuevo(s)
+          mesh.material = Array.isArray(mesh.material) ? newMaterials : newMaterials[0];
 
           // Habilitar sombras
           mesh.castShadow = true;
           mesh.receiveShadow = true;
-
-          mesh.material = newMaterial;
         }
       }
     });
@@ -534,13 +545,6 @@ export default function ThreeDMugPreview({
 
         {/* Efectos de post-procesamiento cinematográficos */}
         <EffectComposer multisampling={16}>
-          <SSAO
-            samples={64}
-            radius={0.08}
-            intensity={40}
-            luminanceInfluence={0.5}
-            color="#000000"
-          />
           <Bloom
             intensity={0.6}
             luminanceThreshold={0.85}
