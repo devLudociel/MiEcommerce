@@ -101,7 +101,7 @@ function ProceduralMugModel({
       imageUrl,
       (loadedTexture) => {
         loadedTexture.wrapS = THREE.RepeatWrapping;
-        loadedTexture.wrapT = THREE.RepeatWrapping;
+        loadedTexture.wrapT = THREE.ClampToEdgeWrapping; // No repetir verticalmente
 
         // Invertir y ajustar la textura para que coincida con la orientación del diseño
         loadedTexture.center.set(0.5, 0.5);
@@ -285,7 +285,7 @@ function GLBModel({
       (loadedTexture) => {
         console.log('[GLBModel] Texture loaded successfully');
         loadedTexture.wrapS = THREE.RepeatWrapping;
-        loadedTexture.wrapT = THREE.RepeatWrapping;
+        loadedTexture.wrapT = THREE.ClampToEdgeWrapping; // No repetir verticalmente
 
         // Invertir y ajustar la textura para que coincida con la orientación del diseño
         loadedTexture.center.set(0.5, 0.5);
