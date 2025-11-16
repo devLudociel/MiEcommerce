@@ -125,6 +125,12 @@ service cloud.firestore {
       allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
     }
 
+    // Customization categories (categorías personalizadas de schemas)
+    match /customization_categories/{categoryId} {
+      allow read: if true; // Cualquiera puede leer las categorías disponibles
+      allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
+    }
+
     // Tracking events (admin para gestión de pedidos)
     match /tracking_events/{eventId} {
       allow read: if isAdmin();
