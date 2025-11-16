@@ -136,7 +136,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   console.log('[test-2d-editor] Script loaded');
 
   let currentRoot: any = null;
-  let currentImageUrl = '';
+  let currentImageUrl: string | undefined = undefined;
   let currentProductType: 'mug' | 'thermos' | 'bottle' = 'mug';
 
   function renderEditor(imageUrl?: string, productType: 'mug' | 'thermos' | 'bottle' = 'mug') {
@@ -148,30 +148,35 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return;
     }
 
-    console.log('[test-2d-editor] Container found:', container);
+    console.log('[test-2d-editor] Container found');
 
     // Limpiar root anterior
     if (currentRoot) {
+      console.log('[test-2d-editor] Unmounting previous root');
       currentRoot.unmount();
+      currentRoot = null;
     }
 
-    // Crear nuevo root y renderizar
-    currentRoot = createRoot(container);
-    console.log('[test-2d-editor] Rendering TwoDProductEditor component');
+    // Esperar un frame antes de crear el nuevo root
+    requestAnimationFrame(() => {
+      // Crear nuevo root y renderizar
+      currentRoot = createRoot(container);
+      console.log('[test-2d-editor] Rendering TwoDProductEditor component');
 
-    currentRoot.render(
-      createElement(TwoDProductEditor, {
-        imageUrl: imageUrl,
-        productType: productType,
-        onDesignChange: (design: any) => {
-          console.log('[test-2d-editor] Design changed:', design);
-          updateDesignInfo(design);
-        },
-        backgroundColor: '#f9fafb'
-      })
-    );
+      currentRoot.render(
+        createElement(TwoDProductEditor, {
+          imageUrl: imageUrl,
+          productType: productType,
+          onDesignChange: (design: any) => {
+            console.log('[test-2d-editor] Design changed:', design);
+            updateDesignInfo(design);
+          },
+          backgroundColor: '#f9fafb'
+        })
+      );
 
-    console.log('[test-2d-editor] Render complete');
+      console.log('[test-2d-editor] Render complete');
+    });
   }
 
   function updateDesignInfo(design: any) {
@@ -245,14 +250,31 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const imageInput = document.getElementById('image-input') as HTMLInputElement;
     imageInput?.addEventListener('change', (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
+      if (!file) {
+        console.warn('[test-2d-editor] No file selected');
+        return;
+      }
 
-      console.log('[test-2d-editor] Image file selected:', file.name);
+      console.log('[test-2d-editor] Image file selected:', file.name, file.type);
 
       const reader = new FileReader();
       reader.onload = (event) => {
-        currentImageUrl = event.target?.result as string;
-        renderEditor(currentImageUrl, currentProductType);
+        const result = event.target?.result;
+        if (typeof result === 'string') {
+          currentImageUrl = result;
+          console.log('[test-2d-editor] Image loaded, length:', currentImageUrl.length);
+          renderEditor(currentImageUrl, currentProductType);
+
+          // Actualizar info
+          const infoDiv = document.getElementById('design-info');
+          if (infoDiv) {
+            infoDiv.innerHTML = '<strong>Estado:</strong> Imagen cargada correctamente';
+          }
+        }
+      };
+      reader.onerror = (error) => {
+        console.error('[test-2d-editor] Error reading file:', error);
+        alert('Error al cargar la imagen');
       };
       reader.readAsDataURL(file);
     });
@@ -321,12 +343,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const clearBtn = document.getElementById('clear-design');
     clearBtn?.addEventListener('click', () => {
       console.log('[test-2d-editor] Clearing design');
-      currentImageUrl = '';
+      currentImageUrl = undefined;
       renderEditor(undefined, currentProductType);
 
       const infoDiv = document.getElementById('design-info');
       if (infoDiv) {
         infoDiv.innerHTML = '<strong>Estado:</strong> Sin diseño cargado';
+      }
+
+      // Limpiar input de archivo
+      if (imageInput) {
+        imageInput.value = '';
+      }
+
+      // Limpiar selector de prueba
+      if (testImageSelect) {
+        testImageSelect.value = '';
       }
     });
   });

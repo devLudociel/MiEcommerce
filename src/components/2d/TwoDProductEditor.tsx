@@ -56,8 +56,6 @@ const PRODUCT_TEMPLATES: Record<string, ProductTemplate> = {
   }
 };
 
-type Tool = 'select' | 'move' | 'rotate' | 'scale';
-
 export default function TwoDProductEditor({
   productType = 'mug',
   imageUrl,
@@ -65,8 +63,6 @@ export default function TwoDProductEditor({
   backgroundColor = '#f5f5f5'
 }: TwoDProductEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
   const template = PRODUCT_TEMPLATES[productType];
 
   // Estado del diseño
@@ -80,70 +76,77 @@ export default function TwoDProductEditor({
   });
 
   // Estados de UI
-  const [activeTool, setActiveTool] = useState<Tool>('select');
-  const [isDragging, setIsDragging] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
   const [showGuides, setShowGuides] = useState(true);
-  const [zoom, setZoom] = useState(1);
-  const [history, setHistory] = useState<DesignState[]>([design]);
-  const [historyIndex, setHistoryIndex] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [designImage, setDesignImage] = useState<HTMLImageElement | null>(null);
 
   // Drag state
   const dragStartRef = useRef({ x: 0, y: 0, designX: 0, designY: 0 });
-  const imageRef = useRef<HTMLImageElement | null>(null);
 
-  // Cargar imagen
+  // Cargar imagen cuando cambie imageUrl
   useEffect(() => {
-    if (imageUrl) {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        imageRef.current = img;
-        // Ajustar tamaño inicial del diseño basado en la imagen
-        const aspectRatio = img.width / img.height;
-        const initialWidth = Math.min(template.printAreaWidth * 0.8, 200);
-        const initialHeight = initialWidth / aspectRatio;
+    console.log('[TwoDProductEditor] imageUrl changed:', imageUrl);
 
-        setDesign(prev => ({
-          ...prev,
-          width: initialWidth,
-          height: initialHeight
-        }));
-      };
-      img.src = imageUrl;
+    if (!imageUrl) {
+      setDesignImage(null);
+      return;
     }
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
+      console.log('[TwoDProductEditor] Image loaded successfully:', img.width, 'x', img.height);
+      setDesignImage(img);
+
+      // Ajustar tamaño inicial
+      const aspectRatio = img.width / img.height;
+      const initialWidth = Math.min(template.printAreaWidth * 0.6, 200);
+      const initialHeight = initialWidth / aspectRatio;
+
+      setDesign(prev => ({
+        ...prev,
+        width: initialWidth,
+        height: initialHeight
+      }));
+    };
+
+    img.onerror = (e) => {
+      console.error('[TwoDProductEditor] Error loading image:', e);
+      setDesignImage(null);
+    };
+
+    img.src = imageUrl;
   }, [imageUrl, template.printAreaWidth]);
 
-  // Notificar cambios
-  useEffect(() => {
-    onDesignChange?.(design);
-  }, [design, onDesignChange]);
-
   // Renderizar canvas
-  const render = useCallback(() => {
+  const renderCanvas = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.warn('[TwoDProductEditor] Canvas ref not available');
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      console.warn('[TwoDProductEditor] Canvas context not available');
+      return;
+    }
 
     // Limpiar canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save();
-
-    // Aplicar zoom
-    ctx.scale(zoom, zoom);
 
     // Dibujar fondo del producto
     ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, template.width, template.height);
     ctx.strokeStyle = '#d0d0d0';
     ctx.lineWidth = 2;
-    ctx.fillRect(0, 0, template.width, template.height);
     ctx.strokeRect(0, 0, template.width, template.height);
 
-    // Dibujar grid si está activado
+    // Dibujar grid
     if (showGrid) {
-      ctx.strokeStyle = '#e8e8e8';
+      ctx.strokeStyle = '#eeeeee';
       ctx.lineWidth = 1;
       const gridSize = 20;
 
@@ -164,15 +167,16 @@ export default function TwoDProductEditor({
 
     // Dibujar área de impresión
     ctx.fillStyle = 'rgba(59, 130, 246, 0.05)';
-    ctx.strokeStyle = '#3b82f6';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 5]);
     ctx.fillRect(
       template.printAreaX,
       template.printAreaY,
       template.printAreaWidth,
       template.printAreaHeight
     );
+
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 4]);
     ctx.strokeRect(
       template.printAreaX,
       template.printAreaY,
@@ -183,28 +187,23 @@ export default function TwoDProductEditor({
 
     // Etiqueta del área de impresión
     ctx.fillStyle = '#3b82f6';
-    ctx.font = '12px sans-serif';
-    ctx.fillText(
-      'Área de impresión',
-      template.printAreaX + 10,
-      template.printAreaY + 20
-    );
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('Área de impresión', template.printAreaX + 10, template.printAreaY + 25);
 
-    // Dibujar guías si están activadas
+    // Dibujar guías
     if (showGuides) {
       ctx.strokeStyle = '#f59e0b';
       ctx.lineWidth = 1;
-      ctx.setLineDash([3, 3]);
+      ctx.setLineDash([4, 4]);
 
-      // Guía vertical central
       const centerX = template.printAreaX + template.printAreaWidth / 2;
+      const centerY = template.printAreaY + template.printAreaHeight / 2;
+
       ctx.beginPath();
       ctx.moveTo(centerX, template.printAreaY);
       ctx.lineTo(centerX, template.printAreaY + template.printAreaHeight);
       ctx.stroke();
 
-      // Guía horizontal central
-      const centerY = template.printAreaY + template.printAreaHeight / 2;
       ctx.beginPath();
       ctx.moveTo(template.printAreaX, centerY);
       ctx.lineTo(template.printAreaX + template.printAreaWidth, centerY);
@@ -213,21 +212,20 @@ export default function TwoDProductEditor({
       ctx.setLineDash([]);
     }
 
-    // Dibujar imagen del diseño si existe
-    if (imageRef.current) {
+    // Dibujar imagen si existe
+    if (designImage) {
       ctx.save();
 
-      // Transformar al punto de origen del diseño
       ctx.translate(design.x, design.y);
       ctx.rotate((design.rotation * Math.PI) / 180);
       ctx.scale(design.scale, design.scale);
 
-      // Dibujar imagen centrada
       const drawWidth = design.width;
       const drawHeight = design.height;
 
+      // Dibujar imagen
       ctx.drawImage(
-        imageRef.current,
+        designImage,
         -drawWidth / 2,
         -drawHeight / 2,
         drawWidth,
@@ -236,8 +234,8 @@ export default function TwoDProductEditor({
 
       // Dibujar borde de selección
       ctx.strokeStyle = '#10b981';
-      ctx.lineWidth = 2 / zoom;
-      ctx.setLineDash([5, 5]);
+      ctx.lineWidth = 3;
+      ctx.setLineDash([6, 3]);
       ctx.strokeRect(
         -drawWidth / 2,
         -drawHeight / 2,
@@ -246,11 +244,10 @@ export default function TwoDProductEditor({
       );
       ctx.setLineDash([]);
 
-      // Dibujar handles de esquina
-      const handleSize = 8 / zoom;
+      // Dibujar handles
+      const handleSize = 10;
       ctx.fillStyle = '#10b981';
 
-      // Esquinas
       const corners = [
         [-drawWidth / 2, -drawHeight / 2],
         [drawWidth / 2, -drawHeight / 2],
@@ -262,32 +259,30 @@ export default function TwoDProductEditor({
         ctx.fillRect(x - handleSize / 2, y - handleSize / 2, handleSize, handleSize);
       });
 
-      // Handle de rotación (arriba)
-      ctx.beginPath();
-      ctx.arc(0, -drawHeight / 2 - 20 / zoom, handleSize / 2, 0, Math.PI * 2);
-      ctx.fill();
-
       ctx.restore();
     }
+  }, [template, design, designImage, showGrid, showGuides]);
 
-    ctx.restore();
-  }, [design, template, showGrid, showGuides, zoom]);
-
-  // Renderizar cuando cambie el estado
+  // Ejecutar render cuando cambien las dependencias
   useEffect(() => {
-    render();
-  }, [render]);
+    console.log('[TwoDProductEditor] Rendering canvas');
+    renderCanvas();
+  }, [renderCanvas]);
 
-  // Manejo de mouse
+  // Notificar cambios
+  useEffect(() => {
+    onDesignChange?.(design);
+  }, [design, onDesignChange]);
+
+  // Mouse handlers
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / zoom;
-    const y = (e.clientY - rect.top) / zoom;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
-    // Guardar posición inicial para drag
     dragStartRef.current = {
       x,
       y,
@@ -305,8 +300,8 @@ export default function TwoDProductEditor({
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / zoom;
-    const y = (e.clientY - rect.top) / zoom;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
     const dx = x - dragStartRef.current.x;
     const dy = y - dragStartRef.current.y;
@@ -319,11 +314,6 @@ export default function TwoDProductEditor({
   };
 
   const handleMouseUp = () => {
-    if (isDragging) {
-      // Guardar en historial
-      setHistory(prev => [...prev.slice(0, historyIndex + 1), design]);
-      setHistoryIndex(prev => prev + 1);
-    }
     setIsDragging(false);
   };
 
@@ -336,24 +326,16 @@ export default function TwoDProductEditor({
     }));
   };
 
-  const resetRotation = () => {
-    setDesign(prev => ({ ...prev, rotation: 0 }));
-  };
-
-  const resetScale = () => {
-    setDesign(prev => ({ ...prev, scale: 1 }));
-  };
-
-  const flipHorizontal = () => {
-    setDesign(prev => ({ ...prev, scale: -prev.scale }));
-  };
-
   const rotateLeft = () => {
     setDesign(prev => ({ ...prev, rotation: prev.rotation - 90 }));
   };
 
   const rotateRight = () => {
     setDesign(prev => ({ ...prev, rotation: prev.rotation + 90 }));
+  };
+
+  const resetRotation = () => {
+    setDesign(prev => ({ ...prev, rotation: 0 }));
   };
 
   const scaleUp = () => {
@@ -364,272 +346,75 @@ export default function TwoDProductEditor({
     setDesign(prev => ({ ...prev, scale: Math.max(prev.scale - 0.1, 0.1) }));
   };
 
-  const undo = () => {
-    if (historyIndex > 0) {
-      setHistoryIndex(prev => prev - 1);
-      setDesign(history[historyIndex - 1]);
-    }
-  };
-
-  const redo = () => {
-    if (historyIndex < history.length - 1) {
-      setHistoryIndex(prev => prev + 1);
-      setDesign(history[historyIndex + 1]);
-    }
+  const resetScale = () => {
+    setDesign(prev => ({ ...prev, scale: 1 }));
   };
 
   return (
-    <div
-      ref={containerRef}
-      style={{
-        width: '100%',
-        height: '100%',
-        background: backgroundColor,
-        borderRadius: '12px',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column'
-      }}
-    >
-      {/* Barra de herramientas superior */}
+    <div style={{
+      width: '100%',
+      height: '100%',
+      background: backgroundColor,
+      borderRadius: '12px',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      {/* Barra de herramientas */}
       <div style={{
         background: '#ffffff',
         borderBottom: '1px solid #e5e7eb',
-        padding: '12px 16px',
+        padding: '16px',
         display: 'flex',
         gap: '12px',
-        alignItems: 'center',
         flexWrap: 'wrap',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
       }}>
-        {/* Información del producto */}
         <div style={{
           fontSize: '14px',
           fontWeight: '600',
           color: '#374151',
-          borderRight: '1px solid #e5e7eb',
-          paddingRight: '12px'
+          marginRight: '12px',
+          paddingRight: '12px',
+          borderRight: '1px solid #e5e7eb'
         }}>
           {template.label}
         </div>
 
-        {/* Herramientas de alineación */}
-        <div style={{ display: 'flex', gap: '4px' }}>
-          <button
-            onClick={centerDesign}
-            style={{
-              padding: '8px 12px',
-              background: '#f3f4f6',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: '500',
-              color: '#374151',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#e5e7eb'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#f3f4f6'}
-            title="Centrar diseño"
-          >
-            📍 Centrar
-          </button>
+        <button onClick={centerDesign} style={buttonStyle}>📍 Centrar</button>
+        <button onClick={rotateLeft} style={buttonStyle}>↺ -90°</button>
+        <button onClick={rotateRight} style={buttonStyle}>↻ +90°</button>
+        <button onClick={resetRotation} style={buttonStyle}>🔄 Reset</button>
 
-          <button
-            onClick={rotateLeft}
-            style={{
-              padding: '8px 12px',
-              background: '#f3f4f6',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: '500',
-              color: '#374151'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#e5e7eb'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#f3f4f6'}
-            title="Rotar -90°"
-          >
-            ↺ -90°
-          </button>
+        <div style={{ width: '1px', background: '#e5e7eb', margin: '0 8px' }} />
 
-          <button
-            onClick={rotateRight}
-            style={{
-              padding: '8px 12px',
-              background: '#f3f4f6',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: '500',
-              color: '#374151'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#e5e7eb'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#f3f4f6'}
-            title="Rotar +90°"
-          >
-            ↻ +90°
-          </button>
+        <button onClick={scaleDown} style={buttonStyle}>🔍− Reducir</button>
+        <button onClick={scaleUp} style={buttonStyle}>🔍+ Ampliar</button>
+        <button onClick={resetScale} style={buttonStyle}>100%</button>
 
-          <button
-            onClick={resetRotation}
-            style={{
-              padding: '8px 12px',
-              background: '#f3f4f6',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: '500',
-              color: '#374151'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#e5e7eb'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#f3f4f6'}
-            title="Resetear rotación"
-          >
-            🔄 Reset
-          </button>
-        </div>
+        <div style={{ width: '1px', background: '#e5e7eb', margin: '0 8px' }} />
 
-        {/* Herramientas de escala */}
-        <div style={{ display: 'flex', gap: '4px', borderLeft: '1px solid #e5e7eb', paddingLeft: '12px' }}>
-          <button
-            onClick={scaleDown}
-            style={{
-              padding: '8px 12px',
-              background: '#f3f4f6',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: '500',
-              color: '#374151'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#e5e7eb'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#f3f4f6'}
-            title="Reducir tamaño"
-          >
-            🔍− Reducir
-          </button>
+        <button
+          onClick={() => setShowGrid(!showGrid)}
+          style={{
+            ...buttonStyle,
+            background: showGrid ? '#3b82f6' : '#f3f4f6',
+            color: showGrid ? '#ffffff' : '#374151'
+          }}
+        >
+          # Grid
+        </button>
 
-          <button
-            onClick={scaleUp}
-            style={{
-              padding: '8px 12px',
-              background: '#f3f4f6',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: '500',
-              color: '#374151'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#e5e7eb'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#f3f4f6'}
-            title="Aumentar tamaño"
-          >
-            🔍+ Ampliar
-          </button>
-
-          <button
-            onClick={resetScale}
-            style={{
-              padding: '8px 12px',
-              background: '#f3f4f6',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: '500',
-              color: '#374151'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#e5e7eb'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#f3f4f6'}
-            title="Tamaño original"
-          >
-            100%
-          </button>
-        </div>
-
-        {/* Controles de vista */}
-        <div style={{ display: 'flex', gap: '4px', borderLeft: '1px solid #e5e7eb', paddingLeft: '12px' }}>
-          <button
-            onClick={() => setShowGrid(!showGrid)}
-            style={{
-              padding: '8px 12px',
-              background: showGrid ? '#3b82f6' : '#f3f4f6',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: '500',
-              color: showGrid ? '#ffffff' : '#374151'
-            }}
-            title="Mostrar/ocultar grid"
-          >
-            # Grid
-          </button>
-
-          <button
-            onClick={() => setShowGuides(!showGuides)}
-            style={{
-              padding: '8px 12px',
-              background: showGuides ? '#3b82f6' : '#f3f4f6',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: '500',
-              color: showGuides ? '#ffffff' : '#374151'
-            }}
-            title="Mostrar/ocultar guías"
-          >
-            + Guías
-          </button>
-        </div>
-
-        {/* Undo/Redo */}
-        <div style={{ display: 'flex', gap: '4px', marginLeft: 'auto' }}>
-          <button
-            onClick={undo}
-            disabled={historyIndex === 0}
-            style={{
-              padding: '8px 12px',
-              background: historyIndex === 0 ? '#f3f4f6' : '#3b82f6',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: historyIndex === 0 ? 'not-allowed' : 'pointer',
-              fontSize: '12px',
-              fontWeight: '500',
-              color: historyIndex === 0 ? '#9ca3af' : '#ffffff',
-              opacity: historyIndex === 0 ? 0.5 : 1
-            }}
-            title="Deshacer"
-          >
-            ↶ Deshacer
-          </button>
-
-          <button
-            onClick={redo}
-            disabled={historyIndex >= history.length - 1}
-            style={{
-              padding: '8px 12px',
-              background: historyIndex >= history.length - 1 ? '#f3f4f6' : '#3b82f6',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: historyIndex >= history.length - 1 ? 'not-allowed' : 'pointer',
-              fontSize: '12px',
-              fontWeight: '500',
-              color: historyIndex >= history.length - 1 ? '#9ca3af' : '#ffffff',
-              opacity: historyIndex >= history.length - 1 ? 0.5 : 1
-            }}
-            title="Rehacer"
-          >
-            ↷ Rehacer
-          </button>
-        </div>
+        <button
+          onClick={() => setShowGuides(!showGuides)}
+          style={{
+            ...buttonStyle,
+            background: showGuides ? '#3b82f6' : '#f3f4f6',
+            color: showGuides ? '#ffffff' : '#374151'
+          }}
+        >
+          + Guías
+        </button>
       </div>
 
       {/* Canvas área */}
@@ -639,17 +424,20 @@ export default function TwoDProductEditor({
         alignItems: 'center',
         justifyContent: 'center',
         padding: '24px',
-        overflow: 'auto'
+        overflow: 'auto',
+        background: '#fafafa'
       }}>
         <canvas
           ref={canvasRef}
-          width={template.width * zoom}
-          height={template.height * zoom}
+          width={template.width}
+          height={template.height}
           style={{
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
             borderRadius: '8px',
             cursor: isDragging ? 'grabbing' : 'grab',
-            background: '#ffffff'
+            background: '#ffffff',
+            maxWidth: '100%',
+            height: 'auto'
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -658,33 +446,46 @@ export default function TwoDProductEditor({
         />
       </div>
 
-      {/* Panel de información inferior */}
+      {/* Panel de información */}
       <div style={{
         background: '#ffffff',
         borderTop: '1px solid #e5e7eb',
         padding: '12px 16px',
         display: 'flex',
         gap: '16px',
-        fontSize: '12px',
+        fontSize: '13px',
         color: '#6b7280',
-        boxShadow: '0 -1px 3px rgba(0,0,0,0.1)'
+        boxShadow: '0 -1px 3px rgba(0,0,0,0.1)',
+        flexWrap: 'wrap'
       }}>
-        <div>
-          <strong>Posición:</strong> X: {Math.round(design.x)}px, Y: {Math.round(design.y)}px
-        </div>
-        <div>
-          <strong>Tamaño:</strong> {Math.round(design.width * design.scale)} × {Math.round(design.height * design.scale)}px
-        </div>
-        <div>
-          <strong>Rotación:</strong> {Math.round(design.rotation)}°
-        </div>
-        <div>
-          <strong>Escala:</strong> {Math.round(design.scale * 100)}%
-        </div>
-        <div style={{ marginLeft: 'auto', color: '#10b981', fontWeight: '500' }}>
-          💡 Arrastra el diseño para moverlo
-        </div>
+        {designImage ? (
+          <>
+            <div><strong>Posición:</strong> X: {Math.round(design.x)}px, Y: {Math.round(design.y)}px</div>
+            <div><strong>Tamaño:</strong> {Math.round(design.width * design.scale)} × {Math.round(design.height * design.scale)}px</div>
+            <div><strong>Rotación:</strong> {Math.round(design.rotation)}°</div>
+            <div><strong>Escala:</strong> {Math.round(design.scale * 100)}%</div>
+            <div style={{ marginLeft: 'auto', color: '#10b981', fontWeight: '500' }}>
+              💡 Arrastra para mover el diseño
+            </div>
+          </>
+        ) : (
+          <div style={{ color: '#9ca3af' }}>
+            📤 Carga una imagen para empezar a diseñar
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+const buttonStyle: React.CSSProperties = {
+  padding: '8px 14px',
+  background: '#f3f4f6',
+  border: 'none',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  fontSize: '13px',
+  fontWeight: '500',
+  color: '#374151',
+  transition: 'all 0.2s'
+};
