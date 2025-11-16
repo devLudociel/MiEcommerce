@@ -101,13 +101,13 @@ function ProceduralMugModel({
       imageUrl,
       (loadedTexture) => {
         loadedTexture.wrapS = THREE.RepeatWrapping;
-        loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
+        loadedTexture.wrapT = THREE.RepeatWrapping;
 
-        // Rotar la textura 90 grados para que coincida con la orientación del diseño
+        // Invertir y ajustar la textura para que coincida con la orientación del diseño
         loadedTexture.center.set(0.5, 0.5);
-        loadedTexture.rotation = Math.PI / 2; // 90 grados
+        loadedTexture.rotation = -Math.PI / 2; // -90 grados
+        loadedTexture.repeat.set(-1, 1); // Invertir horizontalmente
 
-        loadedTexture.repeat.set(1, 1);
         loadedTexture.needsUpdate = true;
         setTexture(loadedTexture);
       },
@@ -285,11 +285,12 @@ function GLBModel({
       (loadedTexture) => {
         console.log('[GLBModel] Texture loaded successfully');
         loadedTexture.wrapS = THREE.RepeatWrapping;
-        loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
+        loadedTexture.wrapT = THREE.RepeatWrapping;
 
-        // Rotar la textura 90 grados para que coincida con la orientación del diseño
+        // Invertir y ajustar la textura para que coincida con la orientación del diseño
         loadedTexture.center.set(0.5, 0.5);
-        loadedTexture.rotation = Math.PI / 2; // 90 grados
+        loadedTexture.rotation = -Math.PI / 2; // -90 grados
+        loadedTexture.repeat.set(-1, 1); // Invertir horizontalmente
 
         loadedTexture.needsUpdate = true;
         setTexture(loadedTexture);
