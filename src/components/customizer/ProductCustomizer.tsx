@@ -10,6 +10,7 @@ import CustomizerErrorBoundary from './CustomizerErrorBoundary';
 
 // PERFORMANCE: Lazy load DynamicCustomizer for code splitting
 const DynamicCustomizer = lazy(() => import('./DynamicCustomizer.tsx'));
+const MugCustomizer = lazy(() => import('./mug/MugCustomizer'));
 
 interface FirebaseProduct {
   id: string;
@@ -224,6 +225,10 @@ export default function ProductCustomizer({ slug }: Props) {
     schemaFields: dynamicSchema.fields.map(f => ({ id: f.id, label: f.label, type: f.fieldType }))
   });
 
+  // Detectar si es un producto de tazas para usar MugCustomizer
+  const schemaId = detectSchemaId(product);
+  const isMugProduct = schemaId === 'cat_tazas';
+
   return (
     <CustomizerErrorBoundary>
       <Suspense
@@ -236,7 +241,11 @@ export default function ProductCustomizer({ slug }: Props) {
           </div>
         }
       >
-        <DynamicCustomizer product={product} schema={dynamicSchema} />
+        {isMugProduct ? (
+          <MugCustomizer product={product} />
+        ) : (
+          <DynamicCustomizer product={product} schema={dynamicSchema} />
+        )}
       </Suspense>
     </CustomizerErrorBoundary>
   );
