@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { collection, doc, getDocs, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { logger } from '../../lib/logger';
 import { notify } from '../../lib/notifications';
@@ -16,11 +16,27 @@ interface CategoryWithSchema extends ProductCategory {
   customizationSchema?: CustomizationSchema;
 }
 
+interface NewCategoryForm {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  icon: string;
+}
+
 export default function AdminCustomizationPanel() {
   const [categories, setCategories] = useState<CategoryWithSchema[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<CategoryWithSchema | null>(null);
   const [editingSchema, setEditingSchema] = useState(false);
+  const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
+  const [newCategoryForm, setNewCategoryForm] = useState<NewCategoryForm>({
+    id: '',
+    name: '',
+    slug: '',
+    description: '',
+    icon: '📦',
+  });
 
   useEffect(() => {
     loadCategories();
@@ -32,16 +48,55 @@ export default function AdminCustomizationPanel() {
       // Load schemas from Firebase
       const savedSchemas = await loadAllCustomizationSchemas();
 
-      // Mock categories - in production, these would come from Firestore too
-      const mockCategories: CategoryWithSchema[] = [
+      // Load custom categories from Firestore
+      const customCategoriesSnapshot = await getDocs(collection(db, 'customization_categories'));
+      const customCategories: CategoryWithSchema[] = customCategoriesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        name: doc.data().name,
+        slug: doc.data().slug,
+        description: doc.data().description,
+        icon: doc.data().icon,
+        active: doc.data().active,
+        customizationSchema: savedSchemas[doc.id]?.schema || undefined,
+      }));
+
+      // Default categories (built-in)
+      const defaultCategories: CategoryWithSchema[] = [
         {
           id: 'cat_camisetas',
-          name: 'Camisetas Personalizadas',
+          name: 'Camisetas Personalizadas (básico)',
           slug: 'camisetas',
-          description: 'Crea tu camiseta única',
+          description: 'Camisetas con diseño genérico',
           icon: '👕',
           active: true,
           customizationSchema: savedSchemas['cat_camisetas']?.schema || undefined,
+        },
+        {
+          id: 'cat_camisetas_pro',
+          name: 'Camisetas Pro (front/back)',
+          slug: 'camisetas-pro',
+          description: 'Camisetas con diseño frontal y trasero independiente',
+          icon: '👕',
+          active: true,
+          customizationSchema: savedSchemas['cat_camisetas_pro']?.schema || undefined,
+        },
+        {
+          id: 'cat_hoodies',
+          name: 'Hoodies / Sudaderas',
+          slug: 'hoodies',
+          description: 'Sudaderas personalizadas con front/back',
+          icon: '🧥',
+          active: true,
+          customizationSchema: savedSchemas['cat_hoodies']?.schema || undefined,
+        },
+        {
+          id: 'cat_bolsas',
+          name: 'Bolsas / Tote Bags',
+          slug: 'bolsas',
+          description: 'Bolsas de tela personalizadas',
+          icon: '🛍️',
+          active: true,
+          customizationSchema: savedSchemas['cat_bolsas']?.schema || undefined,
         },
         {
           id: 'cat_cuadros',
@@ -70,20 +125,16 @@ export default function AdminCustomizationPanel() {
           active: true,
           customizationSchema: savedSchemas['cat_tazas']?.schema || undefined,
         },
-        {
-          id: 'cat_nueva',
-          name: 'Nueva Categoría',
-          slug: 'nueva',
-          description: 'Categoría sin configurar',
-          icon: '📦',
-          active: false,
-          customizationSchema: savedSchemas['cat_nueva']?.schema || undefined,
-        },
       ];
 
-      setCategories(mockCategories);
+      // Combinar categorías por defecto con las personalizadas
+      const allCategories = [...defaultCategories, ...customCategories];
+
+      setCategories(allCategories);
       logger.info('[AdminCustomizationPanel] Categories loaded from Firebase', {
-        count: mockCategories.length,
+        defaultCount: defaultCategories.length,
+        customCount: customCategories.length,
+        totalCount: allCategories.length,
         schemasCount: Object.keys(savedSchemas).length,
       });
     } catch (error) {
@@ -186,6 +237,82 @@ export default function AdminCustomizationPanel() {
     }
   };
 
+  const handleCreateCategory = async () => {
+    // Validaciones
+    if (!newCategoryForm.id || !newCategoryForm.name || !newCategoryForm.slug) {
+      notify.error('Por favor completa todos los campos obligatorios');
+      return;
+    }
+
+    // Validar formato de ID (debe comenzar con cat_)
+    if (!newCategoryForm.id.startsWith('cat_')) {
+      notify.error('El ID debe comenzar con "cat_" (ejemplo: cat_termos)');
+      return;
+    }
+
+    // Verificar que no exista ya
+    if (categories.find(cat => cat.id === newCategoryForm.id)) {
+      notify.error('Ya existe una categoría con ese ID');
+      return;
+    }
+
+    try {
+      const newCategory: CategoryWithSchema = {
+        id: newCategoryForm.id,
+        name: newCategoryForm.name,
+        slug: newCategoryForm.slug,
+        description: newCategoryForm.description,
+        icon: newCategoryForm.icon || '📦',
+        active: true,
+      };
+
+      // Guardar categoría en Firestore (colección customization_categories)
+      await setDoc(doc(db, 'customization_categories', newCategory.id), {
+        name: newCategory.name,
+        slug: newCategory.slug,
+        description: newCategory.description,
+        icon: newCategory.icon,
+        active: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // Actualizar estado local
+      setCategories([...categories, newCategory]);
+
+      // Resetear formulario y cerrar modal
+      setNewCategoryForm({
+        id: '',
+        name: '',
+        slug: '',
+        description: '',
+        icon: '📦',
+      });
+      setShowNewCategoryModal(false);
+
+      notify.success('Nueva categoría creada exitosamente');
+      logger.info('[AdminCustomizationPanel] New category created', { categoryId: newCategory.id });
+    } catch (error) {
+      logger.error('[AdminCustomizationPanel] Error creating category', error);
+      notify.error('Error al crear la categoría');
+    }
+  };
+
+  const suggestSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+      .replace(/[^a-z0-9\s-]/g, '') // Quitar caracteres especiales
+      .replace(/\s+/g, '-') // Espacios a guiones
+      .replace(/-+/g, '-'); // Múltiples guiones a uno solo
+  };
+
+  const suggestId = (name: string) => {
+    const slug = suggestSlug(name);
+    return `cat_${slug}`;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -227,7 +354,16 @@ export default function AdminCustomizationPanel() {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden sticky top-24">
               <div className="p-4 bg-gradient-to-r from-purple-500 to-cyan-500">
-                <h2 className="text-lg font-bold text-white">Categorías</h2>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg font-bold text-white">Categorías</h2>
+                  <button
+                    onClick={() => setShowNewCategoryModal(true)}
+                    className="px-3 py-1.5 bg-white text-purple-600 hover:bg-purple-50 rounded-lg font-semibold text-sm transition-colors flex items-center gap-1"
+                  >
+                    <span className="text-lg">➕</span>
+                    Nueva
+                  </button>
+                </div>
                 <p className="text-sm text-purple-100">
                   {categories.length} categorías disponibles
                 </p>
@@ -425,6 +561,168 @@ export default function AdminCustomizationPanel() {
           </div>
         </div>
       </div>
+
+      {/* Modal: Nueva Categoría */}
+      {showNewCategoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-purple-500 to-cyan-500 p-6 rounded-t-2xl">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                ➕ Crear Nueva Categoría de Personalización
+              </h2>
+              <p className="text-purple-100 text-sm mt-1">
+                Define una nueva categoría para productos personalizables (ej: termos, vasos, gorras)
+              </p>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-6">
+              {/* Nombre */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Nombre de la categoría *
+                </label>
+                <input
+                  type="text"
+                  value={newCategoryForm.name}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    setNewCategoryForm({
+                      ...newCategoryForm,
+                      name,
+                      // Auto-sugerir slug e id basado en el nombre
+                      slug: suggestSlug(name),
+                      id: suggestId(name),
+                    });
+                  }}
+                  placeholder="Ej: Termos Personalizados"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Nombre descriptivo que verás en el panel de admin
+                </p>
+              </div>
+
+              {/* ID */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  ID de la categoría *
+                </label>
+                <input
+                  type="text"
+                  value={newCategoryForm.id}
+                  onChange={(e) => setNewCategoryForm({ ...newCategoryForm, id: e.target.value })}
+                  placeholder="cat_termos"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none transition-colors font-mono"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Debe comenzar con "cat_" y ser único (sin espacios ni caracteres especiales)
+                </p>
+              </div>
+
+              {/* Slug */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Slug (URL amigable) *
+                </label>
+                <input
+                  type="text"
+                  value={newCategoryForm.slug}
+                  onChange={(e) => setNewCategoryForm({ ...newCategoryForm, slug: e.target.value })}
+                  placeholder="termos-personalizados"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none transition-colors font-mono"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Se usa en las URLs (solo letras minúsculas, números y guiones)
+                </p>
+              </div>
+
+              {/* Descripción */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Descripción
+                </label>
+                <textarea
+                  value={newCategoryForm.description}
+                  onChange={(e) => setNewCategoryForm({ ...newCategoryForm, description: e.target.value })}
+                  placeholder="Termos térmicos con diseño personalizado"
+                  rows={3}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none transition-colors resize-none"
+                />
+              </div>
+
+              {/* Icono */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Icono (emoji)
+                </label>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="text"
+                    value={newCategoryForm.icon}
+                    onChange={(e) => setNewCategoryForm({ ...newCategoryForm, icon: e.target.value })}
+                    placeholder="🍵"
+                    maxLength={2}
+                    className="w-20 px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none transition-colors text-center text-2xl"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600">
+                      Emoji que aparecerá junto al nombre de la categoría
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Sugerencias: 🍵 ☕ 🥤 🧴 🧢 👒 🎒
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div className="p-4 bg-purple-50 border-2 border-purple-200 rounded-lg">
+                <p className="text-sm font-bold text-purple-900 mb-2">Vista previa:</p>
+                <div className="bg-white p-4 rounded-lg border border-purple-200">
+                  <div className="flex items-center gap-3">
+                    <div className="text-3xl">{newCategoryForm.icon || '📦'}</div>
+                    <div>
+                      <div className="font-bold text-gray-900">
+                        {newCategoryForm.name || 'Nombre de la categoría'}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {newCategoryForm.description || 'Descripción de la categoría'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-gray-50 px-6 py-4 rounded-b-2xl border-t border-gray-200 flex items-center justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowNewCategoryModal(false);
+                  setNewCategoryForm({
+                    id: '',
+                    name: '',
+                    slug: '',
+                    description: '',
+                    icon: '📦',
+                  });
+                }}
+                className="px-6 py-2.5 text-gray-700 hover:bg-gray-200 rounded-lg font-semibold transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreateCategory}
+                className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg font-semibold hover:from-purple-600 hover:to-cyan-600 transition-all shadow-lg"
+              >
+                Crear Categoría
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
