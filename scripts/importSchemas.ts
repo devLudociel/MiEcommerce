@@ -17,10 +17,14 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { config } from 'dotenv';
 
 // Obtener __dirname en módulos ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Cargar variables de entorno desde .env
+config({ path: path.join(__dirname, '../.env') });
 
 // Inicializar Firebase Admin
 function initializeFirebase() {
