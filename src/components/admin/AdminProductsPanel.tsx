@@ -243,7 +243,7 @@ export default function AdminProductsPanelV2() {
     }
 
     try {
-      const data: Partial<Product> = {
+      const data: any = {
         name: formData.name,
         description: formData.description || '',
         categoryId: formData.categoryId || categories[0]?.id || 'otros',
@@ -254,11 +254,19 @@ export default function AdminProductsPanelV2() {
         featured: !!formData.featured,
         slug: formData.slug,
         active: formData.active !== false,
-        customizationSchemaId: formData.customizationSchemaId || undefined,
         onSale: !!formData.onSale,
-        salePrice: formData.onSale ? Number(formData.salePrice) || undefined : undefined,
         updatedAt: Timestamp.now(),
       };
+
+      // Solo agregar customizationSchemaId si tiene valor
+      if (formData.customizationSchemaId) {
+        data.customizationSchemaId = formData.customizationSchemaId;
+      }
+
+      // Solo agregar salePrice si está en oferta y tiene valor
+      if (formData.onSale && formData.salePrice) {
+        data.salePrice = Number(formData.salePrice);
+      }
 
       if (editingProduct) {
         // Actualizar
