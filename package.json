@@ -67,6 +67,7 @@
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.1.0",
+    "firebase-tools": "^14.26.0",
     "happy-dom": "^20.0.8",
     "jsdom": "^27.0.1",
     "postcss": "^8.5.6",

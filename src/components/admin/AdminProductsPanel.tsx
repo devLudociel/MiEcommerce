@@ -310,7 +310,7 @@ export default function AdminProductsPanelV2() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 mt-20">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
