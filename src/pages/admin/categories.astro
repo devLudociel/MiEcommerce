@@ -1,0 +1,13 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminCategoriesPanel from '../../components/admin/AdminCategoriesPanel';
+
+const title = 'Categorías - Admin';
+const description = 'Gestión de categorías de productos';
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="min-h-screen bg-gray-50">
+    <AdminCategoriesPanel client:load />
+  </div>
+</BaseLayout>

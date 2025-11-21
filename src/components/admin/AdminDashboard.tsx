@@ -299,6 +299,13 @@ export default function AdminDashboard() {
           <div className="text-sm font-semibold text-gray-900">Productos</div>
         </a>
         <a
+          href="/admin/categories"
+          className="p-4 bg-white border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:shadow-lg transition-all text-center group"
+        >
+          <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">📁</div>
+          <div className="text-sm font-semibold text-gray-900">Categorías</div>
+        </a>
+        <a
           href="/admin/orders"
           className="p-4 bg-white border-2 border-gray-200 rounded-xl hover:border-cyan-500 hover:shadow-lg transition-all text-center group"
         >
