@@ -15,6 +15,12 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { exampleSchemas } from '../src/data/exampleSchemas';
 import * as path from 'path';
 import * as fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// Obtener __dirname en módulos ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Inicializar Firebase Admin
 function initializeFirebase() {
@@ -52,7 +58,19 @@ function initializeFirebase() {
 const SCHEMA_CATEGORY_MAP: Record<string, { id: string; name: string }> = {
   camisetas: {
     id: 'cat_camisetas',
-    name: 'Camisetas / Textiles',
+    name: 'Camisetas / Textiles (básico)',
+  },
+  camisetasPro: {
+    id: 'cat_camisetas_pro',
+    name: 'Camisetas Pro (front/back)',
+  },
+  hoodies: {
+    id: 'cat_hoodies',
+    name: 'Hoodies / Sudaderas',
+  },
+  bolsas: {
+    id: 'cat_bolsas',
+    name: 'Bolsas / Tote Bags',
   },
   cuadros: {
     id: 'cat_cuadros',
