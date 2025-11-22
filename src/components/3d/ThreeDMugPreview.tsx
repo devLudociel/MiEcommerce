@@ -140,22 +140,22 @@ function ProceduralMugModel({
         };
       case 'bottle':
         return {
-          radius: 0.38,
-          height: 2.2,
+          radius: 0.76,
+          height: 4.4,
           radialSegments: 96,
           hasHandle: false,
-          capRadius: 0.35,
-          baseRadius: 0.40
+          capRadius: 0.70,
+          baseRadius: 0.80
         };
       case 'mug':
       default:
         return {
-          radius: 0.58,
-          height: 1.5,
+          radius: 1.16,  // Aumentado 2x para mejor visibilidad
+          height: 3.0,   // Aumentado 2x
           radialSegments: 96,
           hasHandle: true,
-          capRadius: 0.62,
-          baseRadius: 0.60
+          capRadius: 1.24,  // Aumentado 2x
+          baseRadius: 1.20  // Aumentado 2x
         };
     }
   }, [productType]);
@@ -208,42 +208,42 @@ function ProceduralMugModel({
 
       {/* Asa (solo tazas) */}
       {dimensions.hasHandle && (
-        <group position={[0.75, 0.1, 0]}>
+        <group position={[1.5, 0.2, 0]}>
           <mesh rotation={[0, 0, Math.PI / 2]} castShadow material={metalMaterial}>
-            <torusGeometry args={[0.4, 0.09, 24, 48, Math.PI * 0.8]} />
+            <torusGeometry args={[0.8, 0.18, 24, 48, Math.PI * 0.8]} />
           </mesh>
-          <mesh position={[0, 0.32, 0]} castShadow material={metalMaterial}>
-            <sphereGeometry args={[0.11, 16, 16]} />
+          <mesh position={[0, 0.64, 0]} castShadow material={metalMaterial}>
+            <sphereGeometry args={[0.22, 16, 16]} />
           </mesh>
-          <mesh position={[0, -0.32, 0]} castShadow material={metalMaterial}>
-            <sphereGeometry args={[0.11, 16, 16]} />
+          <mesh position={[0, -0.64, 0]} castShadow material={metalMaterial}>
+            <sphereGeometry args={[0.22, 16, 16]} />
           </mesh>
         </group>
       )}
 
       {/* Base */}
-      <mesh position={[0, -dimensions.height / 2 - 0.03, 0]} receiveShadow material={metalMaterial}>
-        <cylinderGeometry args={[dimensions.baseRadius, dimensions.baseRadius, 0.06, dimensions.radialSegments]} />
+      <mesh position={[0, -dimensions.height / 2 - 0.06, 0]} receiveShadow material={metalMaterial}>
+        <cylinderGeometry args={[dimensions.baseRadius, dimensions.baseRadius, 0.12, dimensions.radialSegments]} />
       </mesh>
 
       {/* Anillo inferior */}
-      <mesh position={[0, -dimensions.height / 2 + 0.05, 0]} material={metalMaterial}>
-        <torusGeometry args={[dimensions.radius + 0.02, 0.03, 16, dimensions.radialSegments]} />
+      <mesh position={[0, -dimensions.height / 2 + 0.1, 0]} material={metalMaterial}>
+        <torusGeometry args={[dimensions.radius + 0.04, 0.06, 16, dimensions.radialSegments]} />
       </mesh>
 
       {/* Borde superior */}
       <mesh position={[0, dimensions.height / 2, 0]} material={metalMaterial}>
-        <cylinderGeometry args={[dimensions.capRadius, dimensions.radius, 0.08, dimensions.radialSegments]} />
+        <cylinderGeometry args={[dimensions.capRadius, dimensions.radius, 0.16, dimensions.radialSegments]} />
       </mesh>
 
       {/* Anillo superior */}
-      <mesh position={[0, dimensions.height / 2 - 0.08, 0]} material={metalMaterial}>
-        <torusGeometry args={[dimensions.radius + 0.02, 0.025, 16, dimensions.radialSegments]} />
+      <mesh position={[0, dimensions.height / 2 - 0.16, 0]} material={metalMaterial}>
+        <torusGeometry args={[dimensions.radius + 0.04, 0.05, 16, dimensions.radialSegments]} />
       </mesh>
 
       {/* Interior visible - Acabado mate oscuro */}
-      <mesh position={[0, dimensions.height / 2 - 0.02, 0]} rotation={[Math.PI, 0, 0]}>
-        <cylinderGeometry args={[dimensions.capRadius - 0.05, dimensions.capRadius - 0.05, 0.04, dimensions.radialSegments]} />
+      <mesh position={[0, dimensions.height / 2 - 0.04, 0]} rotation={[Math.PI, 0, 0]}>
+        <cylinderGeometry args={[dimensions.capRadius - 0.1, dimensions.capRadius - 0.1, 0.08, dimensions.radialSegments]} />
         <meshPhysicalMaterial
           color={0x2a2a2a}
           metalness={0.1}
@@ -380,13 +380,13 @@ function GLBModel({
     }
   });
 
-  // Escalar según tipo
+  // Escalar según tipo - Aumentado para mejor visualización
   const scale = useMemo(() => {
     switch (productType) {
-      case 'thermos': return 1.0;
-      case 'bottle': return 0.8;
+      case 'thermos': return 2.5;
+      case 'bottle': return 2.0;
       case 'mug':
-      default: return 1.2;
+      default: return 4.0; // Aumentado significativamente para mejor visibilidad
     }
   }, [productType]);
 
