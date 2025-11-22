@@ -99,6 +99,27 @@ export default function MugCustomizer({ product }: MugCustomizerProps) {
     logger.info('[MugCustomizer] Element added', { elementId: newElement.id, type: newElement.type });
   };
 
+  const handleUpdateElement = (elementId: string, updates: Partial<MugDesignElement>) => {
+    if (customization.printArea === '360') {
+      setCustomization((prev) => ({
+        ...prev,
+        elements: (prev.elements || []).map((el) =>
+          el.id === elementId ? { ...el, ...updates } : el
+        ),
+      }));
+    } else {
+      setCustomization((prev) => ({
+        ...prev,
+        frontElements: (prev.frontElements || []).map((el) =>
+          el.id === elementId ? { ...el, ...updates } : el
+        ),
+        backElements: (prev.backElements || []).map((el) =>
+          el.id === elementId ? { ...el, ...updates } : el
+        ),
+      }));
+    }
+  };
+
   const handleTemplateSelect = (templateId: string) => {
     const template = MUG_TEMPLATES.find((t) => t.id === templateId);
     if (!template) return;
@@ -259,6 +280,7 @@ export default function MugCustomizer({ product }: MugCustomizerProps) {
               baseImage={product.images[0]}
               onElementSelect={setSelectedElementId}
               selectedElementId={selectedElementId}
+              onUpdateElement={handleUpdateElement}
             />
           </div>
 

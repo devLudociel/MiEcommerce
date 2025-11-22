@@ -5,6 +5,7 @@ import { ZoomIn, ZoomOut, RotateCw, Maximize2, Eye, EyeOff, Box, Layers } from '
 import type { MugDesignElement, MugCanvasState, MugCustomizationData } from './types';
 import { MUG_PRINT_DIMENSIONS } from './mugConfig';
 import { generateTextureFromElements } from './utils/textureGenerator';
+import InteractiveElement from './InteractiveElement';
 
 // Lazy load del componente 3D para mejor performance
 const ThreeDMugPreview = lazy(() => import('../../3d/ThreeDMugPreview'));
@@ -14,6 +15,7 @@ interface MugCanvas3DProps {
   baseImage?: string; // Imagen base de la taza (opcional, se puede generar con CSS)
   onElementSelect?: (elementId: string | null) => void;
   selectedElementId?: string | null;
+  onUpdateElement?: (elementId: string, updates: Partial<MugDesignElement>) => void;
 }
 
 export default function MugCanvas3D({
@@ -21,6 +23,7 @@ export default function MugCanvas3D({
   baseImage,
   onElementSelect,
   selectedElementId,
+  onUpdateElement,
 }: MugCanvas3DProps) {
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('3d'); // Por defecto 3D
   const [textureUrl, setTextureUrl] = useState<string | undefined>(undefined);
@@ -413,7 +416,16 @@ export default function MugCanvas3D({
               )}
 
               {/* Elementos de diseño */}
-              {elements.map((element) => renderElement(element))}
+              {elements.map((element) => (
+                <InteractiveElement
+                  key={element.id}
+                  element={element}
+                  isSelected={element.id === selectedElementId}
+                  onSelect={() => onElementSelect?.(element.id)}
+                  onUpdate={(updates) => onUpdateElement?.(element.id, updates)}
+                  canvasRef={canvasRef}
+                />
+              ))}
 
               {/* Overlay cuando no hay elementos */}
               {elements.length === 0 && (
