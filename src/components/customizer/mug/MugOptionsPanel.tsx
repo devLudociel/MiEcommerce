@@ -176,6 +176,126 @@ export default function MugOptionsPanel({
         </div>
       </div>
 
+      {/* Colores personalizables 3D */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-3">
+          Colores de la taza 3D
+        </label>
+        <div className="space-y-3">
+          {/* Body color */}
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <span className="text-sm font-medium text-gray-700">Cuerpo</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={customization.mugColors?.body || '#ffffff'}
+                onChange={(e) =>
+                  onUpdate({
+                    mugColors: {
+                      body: e.target.value,
+                      handle: customization.mugColors?.handle || '#ffffff',
+                      interior: customization.mugColors?.interior || '#ffffff',
+                    },
+                  })
+                }
+                className="w-12 h-8 rounded border-2 border-gray-300 cursor-pointer"
+              />
+              <span className="text-xs font-mono text-gray-500 w-20">
+                {customization.mugColors?.body || '#ffffff'}
+              </span>
+            </div>
+          </div>
+
+          {/* Handle color */}
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <span className="text-sm font-medium text-gray-700">Asa</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={customization.mugColors?.handle || '#ffffff'}
+                onChange={(e) =>
+                  onUpdate({
+                    mugColors: {
+                      body: customization.mugColors?.body || '#ffffff',
+                      handle: e.target.value,
+                      interior: customization.mugColors?.interior || '#ffffff',
+                    },
+                  })
+                }
+                className="w-12 h-8 rounded border-2 border-gray-300 cursor-pointer"
+              />
+              <span className="text-xs font-mono text-gray-500 w-20">
+                {customization.mugColors?.handle || '#ffffff'}
+              </span>
+            </div>
+          </div>
+
+          {/* Interior color */}
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <span className="text-sm font-medium text-gray-700">Interior</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={customization.mugColors?.interior || '#ffffff'}
+                onChange={(e) =>
+                  onUpdate({
+                    mugColors: {
+                      body: customization.mugColors?.body || '#ffffff',
+                      handle: customization.mugColors?.handle || '#ffffff',
+                      interior: e.target.value,
+                    },
+                  })
+                }
+                className="w-12 h-8 rounded border-2 border-gray-300 cursor-pointer"
+              />
+              <span className="text-xs font-mono text-gray-500 w-20">
+                {customization.mugColors?.interior || '#ffffff'}
+              </span>
+            </div>
+          </div>
+
+          {/* Presets */}
+          <div className="pt-2">
+            <div className="text-xs text-gray-600 mb-2">Presets:</div>
+            <div className="flex gap-2">
+              <button
+                onClick={() =>
+                  onUpdate({
+                    mugColors: { body: '#ffffff', handle: '#ffffff', interior: '#ffffff' },
+                  })
+                }
+                className="px-3 py-1.5 text-xs bg-white border-2 border-gray-300 rounded-lg hover:border-purple-400 transition-colors font-medium"
+                title="Blanco"
+              >
+                🤍 Blanco
+              </button>
+              <button
+                onClick={() =>
+                  onUpdate({
+                    mugColors: { body: '#000000', handle: '#000000', interior: '#ff0000' },
+                  })
+                }
+                className="px-3 py-1.5 text-xs bg-gray-800 text-white border-2 border-gray-800 rounded-lg hover:border-purple-400 transition-colors font-medium"
+                title="Negro con interior rojo"
+              >
+                🖤 Negro
+              </button>
+              <button
+                onClick={() =>
+                  onUpdate({
+                    mugColors: { body: '#FFB6C1', handle: '#FF69B4', interior: '#FFC0CB' },
+                  })
+                }
+                className="px-3 py-1.5 text-xs bg-pink-200 border-2 border-pink-300 rounded-lg hover:border-purple-400 transition-colors font-medium"
+                title="Pastel rosa"
+              >
+                💗 Pastel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Tamaño (opcional) */}
       {customization.size !== undefined && (
         <div>

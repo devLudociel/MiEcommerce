@@ -314,6 +314,7 @@ export default function MugCanvas3D({
                 productType="mug"
                 productColor={customization.color || '#ffffff'}
                 autoRotate={true}
+                mugColors={customization.mugColors}
               />
             </Suspense>
           </div>

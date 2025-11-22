@@ -5,12 +5,19 @@ import { EffectComposer, Bloom, ToneMapping } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing';
 import * as THREE from 'three';
 
+interface Mug3DColors {
+  body: string;
+  handle: string;
+  interior: string;
+}
+
 interface ThreeDMugPreviewProps {
   imageUrl?: string;
   productType?: 'mug' | 'thermos' | 'bottle';
   backgroundColor?: string;
   productColor?: string;
   autoRotate?: boolean;
+  mugColors?: Mug3DColors;
 }
 
 /**
@@ -80,11 +87,13 @@ function StudioLighting() {
 function ProceduralMugModel({
   imageUrl,
   productType = 'mug',
-  productColor = '#ffffff'
+  productColor = '#ffffff',
+  mugColors
 }: {
   imageUrl?: string;
   productType: 'mug' | 'thermos' | 'bottle';
   productColor?: string;
+  mugColors?: Mug3DColors;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
@@ -162,10 +171,19 @@ function ProceduralMugModel({
 
   // Material del cuerpo - Cerámica ultra profesional con acabado esmaltado brillante
   const bodyMaterial = useMemo(() => {
+    // Determinar color: mugColors.body > productColor > blanco (si hay textura)
+    let bodyColor;
+    if (mugColors?.body) {
+      bodyColor = new THREE.Color(mugColors.body);
+    } else if (texture) {
+      bodyColor = new THREE.Color(0xffffff);
+    } else {
+      bodyColor = new THREE.Color(productColor);
+    }
+
     return new THREE.MeshPhysicalMaterial({
       map: texture,
-      // Si hay textura, usar blanco para no alterar los colores. Si no, usar el color del producto
-      color: texture ? new THREE.Color(0xffffff) : new THREE.Color(productColor),
+      color: bodyColor,
       metalness: 0.02,
       roughness: 0.08,
       envMapIntensity: 2.5,
@@ -178,12 +196,14 @@ function ProceduralMugModel({
       specularIntensity: 1.0,
       specularColor: new THREE.Color(0xffffff),
     });
-  }, [texture, productColor]);
+  }, [texture, productColor, mugColors]);
 
-  // Material metálico - Cromado espejado ultra brillante
-  const metalMaterial = useMemo(() => {
+  // Material metálico/asa - Cromado espejado ultra brillante
+  const handleMaterial = useMemo(() => {
+    const handleColor = mugColors?.handle ? new THREE.Color(mugColors.handle) : new THREE.Color(0xe8e8e8);
+
     return new THREE.MeshPhysicalMaterial({
-      color: 0xe8e8e8,
+      color: handleColor,
       metalness: 0.98,
       roughness: 0.02,
       envMapIntensity: 3.0,
@@ -192,7 +212,19 @@ function ProceduralMugModel({
       reflectivity: 1.0,
       ior: 2.5,
     });
-  }, []);
+  }, [mugColors]);
+
+  // Material del interior
+  const interiorMaterial = useMemo(() => {
+    const interiorColor = mugColors?.interior ? new THREE.Color(mugColors.interior) : new THREE.Color(0x2a2a2a);
+
+    return new THREE.MeshPhysicalMaterial({
+      color: interiorColor,
+      metalness: 0.1,
+      roughness: 0.9,
+      envMapIntensity: 0.3,
+    });
+  }, [mugColors]);
 
   return (
     <group ref={groupRef}>
@@ -209,47 +241,41 @@ function ProceduralMugModel({
       {/* Asa (solo tazas) */}
       {dimensions.hasHandle && (
         <group position={[1.5, 0.2, 0]}>
-          <mesh rotation={[0, 0, Math.PI / 2]} castShadow material={metalMaterial}>
+          <mesh rotation={[0, 0, Math.PI / 2]} castShadow material={handleMaterial}>
             <torusGeometry args={[0.8, 0.18, 24, 48, Math.PI * 0.8]} />
           </mesh>
-          <mesh position={[0, 0.64, 0]} castShadow material={metalMaterial}>
+          <mesh position={[0, 0.64, 0]} castShadow material={handleMaterial}>
             <sphereGeometry args={[0.22, 16, 16]} />
           </mesh>
-          <mesh position={[0, -0.64, 0]} castShadow material={metalMaterial}>
+          <mesh position={[0, -0.64, 0]} castShadow material={handleMaterial}>
             <sphereGeometry args={[0.22, 16, 16]} />
           </mesh>
         </group>
       )}
 
       {/* Base */}
-      <mesh position={[0, -dimensions.height / 2 - 0.06, 0]} receiveShadow material={metalMaterial}>
+      <mesh position={[0, -dimensions.height / 2 - 0.06, 0]} receiveShadow material={handleMaterial}>
         <cylinderGeometry args={[dimensions.baseRadius, dimensions.baseRadius, 0.12, dimensions.radialSegments]} />
       </mesh>
 
       {/* Anillo inferior */}
-      <mesh position={[0, -dimensions.height / 2 + 0.1, 0]} material={metalMaterial}>
+      <mesh position={[0, -dimensions.height / 2 + 0.1, 0]} material={handleMaterial}>
         <torusGeometry args={[dimensions.radius + 0.04, 0.06, 16, dimensions.radialSegments]} />
       </mesh>
 
       {/* Borde superior */}
-      <mesh position={[0, dimensions.height / 2, 0]} material={metalMaterial}>
+      <mesh position={[0, dimensions.height / 2, 0]} material={handleMaterial}>
         <cylinderGeometry args={[dimensions.capRadius, dimensions.radius, 0.16, dimensions.radialSegments]} />
       </mesh>
 
       {/* Anillo superior */}
-      <mesh position={[0, dimensions.height / 2 - 0.16, 0]} material={metalMaterial}>
+      <mesh position={[0, dimensions.height / 2 - 0.16, 0]} material={handleMaterial}>
         <torusGeometry args={[dimensions.radius + 0.04, 0.05, 16, dimensions.radialSegments]} />
       </mesh>
 
       {/* Interior visible - Acabado mate oscuro */}
-      <mesh position={[0, dimensions.height / 2 - 0.04, 0]} rotation={[Math.PI, 0, 0]}>
+      <mesh position={[0, dimensions.height / 2 - 0.04, 0]} rotation={[Math.PI, 0, 0]} material={interiorMaterial}>
         <cylinderGeometry args={[dimensions.capRadius - 0.1, dimensions.capRadius - 0.1, 0.08, dimensions.radialSegments]} />
-        <meshPhysicalMaterial
-          color={0x2a2a2a}
-          metalness={0.1}
-          roughness={0.9}
-          envMapIntensity={0.3}
-        />
       </mesh>
     </group>
   );
@@ -261,11 +287,13 @@ function ProceduralMugModel({
 function GLBModel({
   modelPath,
   imageUrl,
-  productType
+  productType,
+  mugColors
 }: {
   modelPath: string;
   imageUrl?: string;
   productType: 'mug' | 'thermos' | 'bottle';
+  mugColors?: Mug3DColors;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF(modelPath);
@@ -304,11 +332,11 @@ function GLBModel({
     );
   }, [imageUrl]);
 
-  // Aplicar textura y mejorar materiales del modelo GLB
+  // Aplicar textura, colores y mejorar materiales del modelo GLB
   useEffect(() => {
     if (!scene) return;
 
-    console.log('[GLBModel] Applying texture and enhancing materials');
+    console.log('[GLBModel] Applying texture, colors and enhancing materials', { mugColors });
     scene.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
@@ -335,6 +363,25 @@ function GLBModel({
 
             // Mejorar propiedades físicas basadas en el nombre del mesh
             const meshName = mesh.name.toLowerCase();
+
+            // Aplicar colores personalizados según el nombre del mesh
+            if (mugColors) {
+              if (meshName.includes('handle') || meshName.includes('asa')) {
+                // Color del asa
+                newMaterial.color.set(mugColors.handle);
+                console.log('[GLBModel] Applied handle color to', mesh.name, mugColors.handle);
+              } else if (meshName.includes('interior') || meshName.includes('inside') || meshName.includes('inner')) {
+                // Color del interior
+                newMaterial.color.set(mugColors.interior);
+                console.log('[GLBModel] Applied interior color to', mesh.name, mugColors.interior);
+              } else if (meshName.includes('body') || meshName.includes('cylinder') || meshName.includes('cup') || meshName.includes('mug')) {
+                // Color del cuerpo - solo si no tiene textura
+                if (!texture) {
+                  newMaterial.color.set(mugColors.body);
+                  console.log('[GLBModel] Applied body color to', mesh.name, mugColors.body);
+                }
+              }
+            }
 
             if (meshName.includes('body') || meshName.includes('cylinder') || !meshName.includes('metal')) {
               // Material cerámico esmaltado ultra brillante
@@ -371,7 +418,7 @@ function GLBModel({
         }
       }
     });
-  }, [scene, texture]);
+  }, [scene, texture, mugColors]);
 
   // Auto-rotación
   useFrame((state, delta) => {
@@ -405,28 +452,31 @@ function ModelWithFallback({
   imageUrl,
   productType,
   useGLB,
-  productColor
+  productColor,
+  mugColors
 }: {
   modelPath: string;
   imageUrl?: string;
   productType: 'mug' | 'thermos' | 'bottle';
   useGLB: boolean;
   productColor?: string;
+  mugColors?: Mug3DColors;
 }) {
   const [error, setError] = useState(false);
 
   if (!useGLB || error) {
     console.log('[ModelWithFallback] Using procedural model');
-    return <ProceduralMugModel imageUrl={imageUrl} productType={productType} productColor={productColor} />;
+    return <ProceduralMugModel imageUrl={imageUrl} productType={productType} productColor={productColor} mugColors={mugColors} />;
   }
 
   return (
-    <ErrorBoundary fallback={<ProceduralMugModel imageUrl={imageUrl} productType={productType} />}>
+    <ErrorBoundary fallback={<ProceduralMugModel imageUrl={imageUrl} productType={productType} mugColors={mugColors} />}>
       <Suspense fallback={<LoadingFallback />}>
         <GLBModel
           modelPath={modelPath}
           imageUrl={imageUrl}
           productType={productType}
+          mugColors={mugColors}
         />
       </Suspense>
     </ErrorBoundary>
@@ -472,9 +522,10 @@ export default function ThreeDMugPreview({
   productType = 'mug',
   backgroundColor = '#f5f5f5',
   productColor = '#ffffff',
-  autoRotate = false
+  autoRotate = false,
+  mugColors
 }: ThreeDMugPreviewProps) {
-  console.log('[ThreeDMugPreview] Rendering with:', { imageUrl, productType, backgroundColor, productColor, autoRotate });
+  console.log('[ThreeDMugPreview] Rendering with:', { imageUrl, productType, backgroundColor, productColor, autoRotate, mugColors });
 
   // Determinar qué modelo cargar
   const modelPath = useMemo(() => {
@@ -512,6 +563,7 @@ export default function ThreeDMugPreview({
           productType={productType}
           useGLB={useGLB}
           productColor={productColor}
+          mugColors={mugColors}
         />
 
         {/* Sombras de contacto ultra suaves y realistas */}

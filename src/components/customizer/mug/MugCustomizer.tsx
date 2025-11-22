@@ -32,6 +32,11 @@ export default function MugCustomizer({ product }: MugCustomizerProps) {
     material: 'standard',
     printArea: '360',
     color: 'black-white',
+    mugColors: {
+      body: '#ffffff',
+      handle: '#ffffff',
+      interior: '#ffffff',
+    },
     elements: [],
     frontElements: [],
     backElements: [],

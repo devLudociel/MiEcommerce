@@ -28,12 +28,21 @@ export interface MugDesignElement {
   backgroundPattern?: string;
 }
 
+export interface Mug3DColors {
+  body: string; // Color del cuerpo de la taza (hex)
+  handle: string; // Color del asa (hex)
+  interior: string; // Color interior de la taza (hex)
+}
+
 export interface MugCustomizationData {
   // Opciones del producto
   material: 'standard' | 'magic';
   printArea: 'double_side' | '360';
   color: string; // ID del color seleccionado
   size?: 'small' | 'medium' | 'large';
+
+  // Colores personalizables 3D
+  mugColors?: Mug3DColors;
 
   // Elementos de diseño
   elements: MugDesignElement[];
