@@ -117,15 +117,14 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
         hasText: !!customText.trim(),
       };
 
+      // Crear item compatible con CartItem interface
       const cartItem = {
         id: `${product.id}-${Date.now()}`,
-        productId: product.id,
-        productName: product.name,
-        productImage: product.images[0] || '/placeholder-product.jpg',
-        basePrice: product.basePrice,
+        name: product.name,
+        price: totalPrice,
         quantity: 1,
+        image: product.images[0] || '/placeholder-product.jpg',
         customization: customizationData,
-        totalPrice: totalPrice,
       };
 
       addToCart(cartItem);
