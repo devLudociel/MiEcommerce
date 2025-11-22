@@ -113,7 +113,8 @@ function ProceduralMugModel({
         loadedTexture.wrapT = THREE.RepeatWrapping;
 
         // Invertir textura verticalmente para corregir orientación
-        loadedTexture.rotation = 0;
+        loadedTexture.rotation = Math.PI * 0.5; // Rotar 90 grados a la izquierda
+        loadedTexture.center.set(0.5, 0.5); // Centro de rotación
         loadedTexture.repeat.set(1, -1); // -1 en Y invierte verticalmente
         loadedTexture.offset.set(0, 1); // Offset para compensar la inversión
 
@@ -317,7 +318,8 @@ function GLBModel({
         loadedTexture.wrapT = THREE.RepeatWrapping;
 
         // Invertir textura verticalmente para corregir orientación
-        loadedTexture.rotation = 0;
+        loadedTexture.rotation = Math.PI * 0.5; // Rotar 90 grados a la izquierda
+        loadedTexture.center.set(0.5, 0.5); // Centro de rotación
         loadedTexture.repeat.set(1, -1); // -1 en Y invierte verticalmente
         loadedTexture.offset.set(0, 1); // Offset para compensar la inversión
 
@@ -356,25 +358,31 @@ function GLBModel({
               newMaterial.roughness = oldMaterial.roughness;
             }
 
-            // Aplicar textura si está disponible
-            if (texture) {
-              newMaterial.map = texture;
-            }
-
             // Mejorar propiedades físicas basadas en el nombre del mesh
             const meshName = mesh.name.toLowerCase();
 
+            // Determinar si es el asa, interior o cuerpo
+            const isHandle = meshName.includes('handle') || meshName.includes('asa');
+            const isInterior = meshName.includes('interior') || meshName.includes('inside') || meshName.includes('inner');
+            const isBody = meshName.includes('body') || meshName.includes('cylinder') || meshName.includes('cup') || meshName.includes('mug');
+
+            // Aplicar textura SOLO al cuerpo de la taza (no al asa ni al interior)
+            if (texture && isBody) {
+              newMaterial.map = texture;
+              console.log('[GLBModel] Applied texture to body mesh:', mesh.name);
+            }
+
             // Aplicar colores personalizados según el nombre del mesh
             if (mugColors) {
-              if (meshName.includes('handle') || meshName.includes('asa')) {
-                // Color del asa
+              if (isHandle) {
+                // Color del asa (sin textura)
                 newMaterial.color.set(mugColors.handle);
                 console.log('[GLBModel] Applied handle color to', mesh.name, mugColors.handle);
-              } else if (meshName.includes('interior') || meshName.includes('inside') || meshName.includes('inner')) {
-                // Color del interior
+              } else if (isInterior) {
+                // Color del interior (sin textura)
                 newMaterial.color.set(mugColors.interior);
                 console.log('[GLBModel] Applied interior color to', mesh.name, mugColors.interior);
-              } else if (meshName.includes('body') || meshName.includes('cylinder') || meshName.includes('cup') || meshName.includes('mug')) {
+              } else if (isBody) {
                 // Color del cuerpo - solo si no tiene textura
                 if (!texture) {
                   newMaterial.color.set(mugColors.body);
