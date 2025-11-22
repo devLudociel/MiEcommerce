@@ -314,18 +314,19 @@ export default function MugCanvas3D({
           </div>
         ) : (
           /* Vista 2D original */
-          <div
-          ref={canvasRef}
-          className="relative w-full bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden cursor-grab active:cursor-grabbing"
-          style={{
-            aspectRatio: isPrint360 ? '21.5 / 8' : '1 / 1',
-            minHeight: '400px',
-          }}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-        >
+          <>
+            <div
+              ref={canvasRef}
+              className="relative w-full bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden cursor-grab active:cursor-grabbing"
+              style={{
+                aspectRatio: isPrint360 ? '21.5 / 8' : '1 / 1',
+                minHeight: '400px',
+              }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
           <div
             className="absolute inset-0 transition-transform duration-100"
             style={{
@@ -438,10 +439,10 @@ export default function MugCanvas3D({
               </div>
             )}
           </div>
-        </div>
+            </div>
 
-          {/* Controls Footer (solo en modo 2D) */}
-          <div className="p-4 bg-gray-50 border-t border-gray-200">
+            {/* Controls Footer */}
+            <div className="p-4 bg-gray-50 border-t border-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <button
@@ -473,7 +474,8 @@ export default function MugCanvas3D({
                 <span>= Mantén tu diseño dentro del área de seguridad</span>
               </div>
             </div>
-          </div>
+            </div>
+          </>
         )}
       </div>
     </div>
