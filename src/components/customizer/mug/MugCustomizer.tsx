@@ -178,7 +178,7 @@ export default function MugCustomizer({ product }: MugCustomizerProps) {
 
       // Redirigir al carrito
       setTimeout(() => {
-        window.location.href = '/carrito';
+        window.location.href = '/cart';
       }, 500);
     } catch (error) {
       logger.error('[MugCustomizer] Error adding to cart', error);

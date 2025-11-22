@@ -195,7 +195,7 @@ interface MugDesignElement {
    - Agrega al carrito
 
 4. **Carrito**
-   - Redirige a `/carrito`
+   - Redirige a `/cart`
    - Muestra resumen de personalización
 
 ## 🔄 Diferencias con DynamicCustomizer
