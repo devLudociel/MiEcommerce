@@ -263,10 +263,42 @@ export default function MugCanvas3D({
             <div
               className="mug-surface absolute inset-0"
               style={{
-                background: 'linear-gradient(to bottom, #f9fafb 0%, #e5e7eb 100%)',
+                background: baseImage
+                  ? `url(${baseImage}) center/cover no-repeat, linear-gradient(to bottom, #f9fafb 0%, #e5e7eb 100%)`
+                  : 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 25%, #ffffff 50%, #f5f5f5 75%, #ffffff 100%)',
+                backgroundBlendMode: baseImage ? 'normal' : 'normal',
               }}
               onClick={() => onElementSelect?.(null)}
             >
+              {/* Representación visual de taza cuando no hay imagen */}
+              {!baseImage && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+                  <svg
+                    viewBox="0 0 200 200"
+                    className="w-64 h-64"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    {/* Cuerpo de la taza */}
+                    <path
+                      d="M50 60 L50 140 Q50 160 70 160 L130 160 Q150 160 150 140 L150 60 Z"
+                      fill="#e0e0e0"
+                      stroke="#999"
+                      strokeWidth="2"
+                    />
+                    {/* Asa */}
+                    <path
+                      d="M150 80 Q170 80 170 100 Q170 120 150 120"
+                      fill="none"
+                      stroke="#999"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                    {/* Brillo */}
+                    <ellipse cx="80" cy="90" rx="15" ry="30" fill="white" opacity="0.3" />
+                  </svg>
+                </div>
+              )}
               {/* Área de seguridad (Safe Area) */}
               {canvasState.showSafeArea && (
                 <div
