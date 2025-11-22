@@ -1,9 +1,13 @@
 // src/components/customizer/mug/MugCanvas3D.tsx
 
-import React, { useState, useRef, useEffect } from 'react';
-import { ZoomIn, ZoomOut, RotateCw, Maximize2, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useRef, useEffect, lazy, Suspense } from 'react';
+import { ZoomIn, ZoomOut, RotateCw, Maximize2, Eye, EyeOff, Box, Layers } from 'lucide-react';
 import type { MugDesignElement, MugCanvasState, MugCustomizationData } from './types';
 import { MUG_PRINT_DIMENSIONS } from './mugConfig';
+import { generateTextureFromElements } from './utils/textureGenerator';
+
+// Lazy load del componente 3D para mejor performance
+const ThreeDMugPreview = lazy(() => import('../../3d/ThreeDMugPreview'));
 
 interface MugCanvas3DProps {
   customization: MugCustomizationData;
@@ -18,6 +22,8 @@ export default function MugCanvas3D({
   onElementSelect,
   selectedElementId,
 }: MugCanvas3DProps) {
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('3d'); // Por defecto 3D
+  const [textureUrl, setTextureUrl] = useState<string | undefined>(undefined);
   const [canvasState, setCanvasState] = useState<MugCanvasState>({
     zoom: 1,
     rotation: 0,
@@ -39,6 +45,20 @@ export default function MugCanvas3D({
   const elements = isPrint360
     ? customization.elements || []
     : customization.frontElements || [];
+
+  // Generar textura cuando cambien los elementos (para vista 3D)
+  useEffect(() => {
+    if (viewMode === '3d' && elements.length > 0) {
+      generateTextureFromElements(customization)
+        .then((url) => setTextureUrl(url))
+        .catch((error) => {
+          console.error('Error generating texture:', error);
+          setTextureUrl(undefined);
+        });
+    } else if (elements.length === 0) {
+      setTextureUrl(undefined);
+    }
+  }, [customization, viewMode, elements.length]);
 
   // Handlers de zoom
   const handleZoomIn = () => {
@@ -190,57 +210,111 @@ export default function MugCanvas3D({
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span>👁️</span>
-                Vista Previa 3D
+                {viewMode === '3d' ? <Box className="w-5 h-5" /> : <Layers className="w-5 h-5" />}
+                Vista Previa {viewMode === '3d' ? '3D' : '2D'}
               </h3>
               <p className="text-sm text-purple-100">
                 {isPrint360 ? 'Impresión 360°' : 'Vista frontal'}
               </p>
             </div>
 
-            {/* Zoom Controls */}
+            {/* View Mode Toggle + Zoom Controls */}
             <div className="flex items-center gap-2">
-              <button
-                onClick={handleZoomOut}
-                disabled={canvasState.zoom <= 0.5}
-                className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                title="Alejar"
-              >
-                <ZoomOut className="w-4 h-4 text-white" />
-              </button>
-              <span className="text-white font-mono text-sm min-w-[3rem] text-center">
-                {Math.round(canvasState.zoom * 100)}%
-              </span>
-              <button
-                onClick={handleZoomIn}
-                disabled={canvasState.zoom >= 3}
-                className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                title="Acercar"
-              >
-                <ZoomIn className="w-4 h-4 text-white" />
-              </button>
-              {canvasState.zoom !== 1 && (
+              {/* Toggle 2D/3D */}
+              <div className="flex items-center bg-white/20 rounded-lg overflow-hidden mr-2">
                 <button
-                  onClick={handleResetZoom}
-                  className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
-                  title="Resetear zoom"
+                  onClick={() => setViewMode('2d')}
+                  className={`px-3 py-2 text-xs font-bold transition-colors ${
+                    viewMode === '2d'
+                      ? 'bg-white text-purple-600'
+                      : 'text-white hover:bg-white/10'
+                  }`}
+                  title="Vista 2D"
                 >
-                  <Maximize2 className="w-4 h-4 text-white" />
+                  <Layers className="w-4 h-4" />
                 </button>
+                <button
+                  onClick={() => setViewMode('3d')}
+                  className={`px-3 py-2 text-xs font-bold transition-colors ${
+                    viewMode === '3d'
+                      ? 'bg-white text-purple-600'
+                      : 'text-white hover:bg-white/10'
+                  }`}
+                  title="Vista 3D"
+                >
+                  <Box className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Zoom Controls (solo en modo 2D) */}
+              {viewMode === '2d' && (
+                <>
+                  <button
+                    onClick={handleZoomOut}
+                    disabled={canvasState.zoom <= 0.5}
+                    className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Alejar"
+                  >
+                    <ZoomOut className="w-4 h-4 text-white" />
+                  </button>
+                  <span className="text-white font-mono text-sm min-w-[3rem] text-center">
+                    {Math.round(canvasState.zoom * 100)}%
+                  </span>
+                  <button
+                    onClick={handleZoomIn}
+                    disabled={canvasState.zoom >= 3}
+                    className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Acercar"
+                  >
+                    <ZoomIn className="w-4 h-4 text-white" />
+                  </button>
+                  {canvasState.zoom !== 1 && (
+                    <button
+                      onClick={handleResetZoom}
+                      className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+                      title="Resetear zoom"
+                    >
+                      <Maximize2 className="w-4 h-4 text-white" />
+                    </button>
+                  )}
+                  <button
+                    onClick={handleRotateStep}
+                    className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors ml-2"
+                    title="Rotar 45°"
+                  >
+                    <RotateCw className="w-4 h-4 text-white" />
+                  </button>
+                </>
               )}
-              <button
-                onClick={handleRotateStep}
-                className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors ml-2"
-                title="Rotar 45°"
-              >
-                <RotateCw className="w-4 h-4 text-white" />
-              </button>
             </div>
           </div>
         </div>
 
-        {/* Canvas Container */}
-        <div
+        {/* Canvas Container - Conditional rendering */}
+        {viewMode === '3d' ? (
+          /* Vista 3D */
+          <div className="relative w-full bg-gradient-to-br from-gray-900 to-gray-800" style={{ minHeight: '500px' }}>
+            <Suspense
+              fallback={
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                    <p className="text-white">Cargando vista 3D...</p>
+                  </div>
+                </div>
+              }
+            >
+              <ThreeDMugPreview
+                imageUrl={textureUrl}
+                productType="mug"
+                productColor={customization.color || '#ffffff'}
+                autoRotate={true}
+              />
+            </Suspense>
+          </div>
+        ) : (
+          /* Vista 2D original */
+          <div
           ref={canvasRef}
           className="relative w-full bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden cursor-grab active:cursor-grabbing"
           style={{
@@ -366,40 +440,41 @@ export default function MugCanvas3D({
           </div>
         </div>
 
-        {/* Controls Footer */}
-        <div className="p-4 bg-gray-50 border-t border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={toggleSafeArea}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                  canvasState.showSafeArea
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {canvasState.showSafeArea ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                Área de seguridad
-              </button>
-              <button
-                onClick={toggleMargins}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                  canvasState.showMargins
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {canvasState.showMargins ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                Márgenes
-              </button>
-            </div>
+          {/* Controls Footer (solo en modo 2D) */}
+          <div className="p-4 bg-gray-50 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={toggleSafeArea}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                    canvasState.showSafeArea
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {canvasState.showSafeArea ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  Área de seguridad
+                </button>
+                <button
+                  onClick={toggleMargins}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                    canvasState.showMargins
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {canvasState.showMargins ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  Márgenes
+                </button>
+              </div>
 
-            <div className="text-xs text-gray-500 flex items-center gap-1">
-              <div className="w-3 h-3 border border-dashed border-blue-400" />
-              <span>= Mantén tu diseño dentro del área de seguridad</span>
+              <div className="text-xs text-gray-500 flex items-center gap-1">
+                <div className="w-3 h-3 border border-dashed border-blue-400" />
+                <span>= Mantén tu diseño dentro del área de seguridad</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
