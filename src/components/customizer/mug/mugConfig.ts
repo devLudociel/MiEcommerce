@@ -160,22 +160,22 @@ export const MUG_SIZES = [
 // ============================================================================
 
 export const MUG_PRINT_DIMENSIONS = {
-  // Para impresión 360°
+  // Para impresión 360° - Área total de asa a asa
   '360': {
-    width: 21.5, // cm
-    height: 8, // cm
+    width: 21.0, // cm (210mm) - De asa a asa
+    height: 9.5, // cm (95mm) - Altura total
     safeMargin: 0.5, // cm desde los bordes
   },
   // Para impresión doble cara
   double_side: {
     front: {
-      width: 8, // cm
-      height: 8, // cm
+      width: 9.5, // cm
+      height: 9.5, // cm
       safeMargin: 0.5,
     },
     back: {
-      width: 8, // cm
-      height: 8, // cm
+      width: 9.5, // cm
+      height: 9.5, // cm
       safeMargin: 0.5,
     },
   },

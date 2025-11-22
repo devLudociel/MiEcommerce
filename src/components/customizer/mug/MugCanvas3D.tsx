@@ -32,6 +32,8 @@ export default function MugCanvas3D({
     showGrid: false,
   });
 
+  const [showDimensionsInfo, setShowDimensionsInfo] = useState(true);
+
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -441,6 +443,71 @@ export default function MugCanvas3D({
           </div>
             </div>
 
+            {/* Dimensions Info Panel */}
+            {showDimensionsInfo && (
+              <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-cyan-50 border-t border-purple-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-purple-700 uppercase tracking-wider">
+                          Área de impresión
+                        </div>
+                        <div className="text-sm text-gray-700">
+                          <span className="font-bold text-purple-600">{dimensions.width * 10}mm</span>
+                          {' × '}
+                          <span className="font-bold text-purple-600">{dimensions.height * 10}mm</span>
+                          <span className="text-gray-500 ml-2">
+                            ({dimensions.width}cm × {dimensions.height}cm)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="h-8 w-px bg-gray-300" />
+
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                          Área segura
+                        </div>
+                        <div className="text-sm text-gray-700">
+                          <span className="font-bold text-blue-600">
+                            {(dimensions.width - dimensions.safeMargin * 2) * 10}mm
+                          </span>
+                          {' × '}
+                          <span className="font-bold text-blue-600">
+                            {(dimensions.height - dimensions.safeMargin * 2) * 10}mm
+                          </span>
+                          <span className="text-gray-500 ml-2 text-xs">
+                            (margen {dimensions.safeMargin}cm)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setShowDimensionsInfo(false)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Ocultar información"
+                  >
+                    <EyeOff className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Controls Footer */}
             <div className="p-4 bg-gray-50 border-t border-gray-200">
             <div className="flex items-center justify-between">
@@ -467,6 +534,17 @@ export default function MugCanvas3D({
                   {canvasState.showMargins ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                   Márgenes
                 </button>
+                {!showDimensionsInfo && (
+                  <button
+                    onClick={() => setShowDimensionsInfo(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors bg-purple-100 text-purple-700 hover:bg-purple-200"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Dimensiones
+                  </button>
+                )}
               </div>
 
               <div className="text-xs text-gray-500 flex items-center gap-1">
