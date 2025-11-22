@@ -102,13 +102,19 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
 
     try {
       const customizationData = {
+        // Campos compatibles con CartItem
+        uploadedImage: uploadedImage, // Imagen completa base64
+        text: customText.trim(),
+        selectedColor: selectedColor.name,
+        position: uploadedImage ? { x: imageTransform.x, y: imageTransform.y } : undefined,
+        scale: uploadedImage ? imageTransform.scale : undefined,
+
+        // Campos específicos de taza
         mugColor: selectedColor.name,
         mugColorHex: selectedColor.hex,
+        mugColorPrice: selectedColor.price,
         hasImage: !!uploadedImage,
         hasText: !!customText.trim(),
-        text: customText.trim(),
-        imagePreview: uploadedImage ? uploadedImage.substring(0, 100) + '...' : null,
-        imageTransform: uploadedImage ? imageTransform : null,
       };
 
       const cartItem = {
@@ -124,7 +130,13 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
 
       addToCart(cartItem);
 
-      logger.info('[SimpleMugCustomizer] Added to cart', { productId: product.id });
+      logger.info('[SimpleMugCustomizer] Added to cart', {
+        productId: product.id,
+        customization: {
+          ...customizationData,
+          uploadedImage: uploadedImage ? '[base64 image data]' : null, // Log sin imagen completa
+        }
+      });
       notify.success('¡Taza añadida al carrito! Recibirás una vista previa para aprobar.');
 
       // Redirigir al carrito después de un momento
