@@ -10,7 +10,7 @@ import CustomizerErrorBoundary from './CustomizerErrorBoundary';
 
 // PERFORMANCE: Lazy load DynamicCustomizer for code splitting
 const DynamicCustomizer = lazy(() => import('./DynamicCustomizer.tsx'));
-const MugCustomizer = lazy(() => import('./mug/MugCustomizer'));
+const SimpleMugCustomizer = lazy(() => import('./mug/SimpleMugCustomizer'));
 
 interface FirebaseProduct {
   id: string;
@@ -242,7 +242,7 @@ export default function ProductCustomizer({ slug }: Props) {
         }
       >
         {isMugProduct ? (
-          <MugCustomizer product={product} />
+          <SimpleMugCustomizer product={product} />
         ) : (
           <DynamicCustomizer product={product} schema={dynamicSchema} />
         )}
