@@ -427,13 +427,13 @@ function GLBModel({
     }
   });
 
-  // Escalar según tipo - Aumentado para mejor visualización
+  // Escalar según tipo - Aumentado masivamente para mejor visualización
   const scale = useMemo(() => {
     switch (productType) {
-      case 'thermos': return 2.5;
-      case 'bottle': return 2.0;
+      case 'thermos': return 5.0;
+      case 'bottle': return 4.0;
       case 'mug':
-      default: return 4.0; // Aumentado significativamente para mejor visibilidad
+      default: return 8.0; // Aumentado al doble (4.0 → 8.0) para mayor visibilidad
     }
   }, [productType]);
 
@@ -544,7 +544,7 @@ export default function ThreeDMugPreview({
     <div style={{ width: '100%', height: '500px', background: backgroundColor, borderRadius: '12px', overflow: 'hidden', position: 'relative' }}>
       <Canvas
         shadows
-        camera={{ position: [0, 1, 5], fov: 45 }}
+        camera={{ position: [0, 1, 3.5], fov: 45 }}
         gl={{
           antialias: true,
           alpha: true,
