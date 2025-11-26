@@ -185,16 +185,26 @@ export default function ImageUploadField({
         <div
           onDragOver={handleDragOver}
           onDrop={handleDrop}
-          className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition-colors cursor-pointer bg-gray-50"
+          className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition-colors cursor-pointer bg-gray-50 focus-within:ring-4 focus-within:ring-purple-300 focus-within:border-purple-500"
           onClick={() => fileInputRef.current?.click()}
+          tabIndex={0}
+          role="button"
+          aria-label={`${label} - Subir imagen o arrastrar aquí`}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
         >
           <input
             ref={fileInputRef}
             type="file"
             accept={safeConfig.allowedFormats.map((f) => `.${f}`).join(',')}
             onChange={handleFileSelect}
-            className="hidden"
+            className="sr-only"
             required={required && !preview}
+            aria-label={`Seleccionar archivo: ${label}`}
           />
 
           {isLoading ? (
@@ -208,9 +218,12 @@ export default function ImageUploadField({
               <p className="text-sm font-medium text-gray-700 mb-1">
                 Haz clic o arrastra una imagen aquí
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 mb-1">
                 Formatos: {safeConfig.allowedFormats.join(', ').toUpperCase()} • Máx:{' '}
                 {safeConfig.maxSizeMB}MB
+              </p>
+              <p className="text-xs text-gray-400">
+                Pulsa Enter o Espacio para abrir
               </p>
             </>
           )}

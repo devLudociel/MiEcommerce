@@ -238,20 +238,35 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
               </h3>
 
               {!uploadedImage ? (
-                <label className="block cursor-pointer">
+                <label
+                  className="block cursor-pointer group"
+                  tabIndex={0}
+                  role="button"
+                  aria-label="Subir imagen para personalización"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.currentTarget.querySelector('input')?.click();
+                    }
+                  }}
+                >
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
-                    className="hidden"
+                    className="sr-only"
+                    aria-label="Seleccionar archivo de imagen"
                   />
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 hover:bg-purple-50 transition-all">
-                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 hover:bg-purple-50 transition-all group-focus:ring-4 group-focus:ring-purple-300 group-focus:border-purple-500">
+                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3 group-hover:text-purple-500 transition-colors" />
                     <p className="text-gray-600 font-medium mb-1">
                       Haz clic para subir una imagen
                     </p>
                     <p className="text-sm text-gray-500">
                       PNG, JPG, GIF (máx. 10MB)
+                    </p>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Pulsa Enter o Espacio para abrir
                     </p>
                   </div>
                 </label>
@@ -288,8 +303,17 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
                         <button
                           key={preset.id}
                           onClick={() => handleApplyPosition(preset)}
-                          className="px-3 py-2 bg-white border border-purple-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-purple-100 hover:border-purple-400 hover:text-purple-900 transition-all active:scale-95"
+                          className="
+                            px-3 py-3 md:py-2
+                            min-h-[44px] md:min-h-0
+                            bg-white border border-purple-300 rounded-lg
+                            text-sm md:text-xs font-semibold text-gray-700
+                            hover:bg-purple-100 hover:border-purple-400 hover:text-purple-900
+                            transition-all active:scale-95
+                            touch-manipulation
+                          "
                           title={preset.description}
+                          aria-label={`Aplicar posición: ${preset.description}`}
                         >
                           {preset.labelShort}
                         </button>

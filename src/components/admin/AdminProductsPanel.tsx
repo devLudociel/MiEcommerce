@@ -9,6 +9,9 @@ import {
   onSnapshot,
   Timestamp,
   getDocs,
+  query,
+  where,
+  limit,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { notify } from '../../lib/notifications';
@@ -72,6 +75,8 @@ export default function AdminProductsPanelV2() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<Partial<Product>>({});
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [slugError, setSlugError] = useState<string | null>(null);
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
 
   // ============================================================================
   // CARGAR DATOS
@@ -166,12 +171,14 @@ export default function AdminProductsPanelV2() {
       customizationSchemaId: '',
       onSale: false,
     });
+    setSlugError(null);
     setShowModal(true);
   };
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
     setFormData({ ...product });
+    setSlugError(null);
     setShowModal(true);
   };
 
@@ -236,9 +243,64 @@ export default function AdminProductsPanelV2() {
     }));
   };
 
+  // Validar slug único
+  const validateSlug = async (slug: string): Promise<boolean> => {
+    if (!slug || slug.trim() === '') {
+      setSlugError('El slug es obligatorio');
+      return false;
+    }
+
+    // Validar formato del slug (solo letras minúsculas, números y guiones)
+    const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    if (!slugRegex.test(slug)) {
+      setSlugError('El slug solo puede contener letras minúsculas, números y guiones');
+      return false;
+    }
+
+    setIsCheckingSlug(true);
+    try {
+      // Verificar si el slug ya existe en otro producto
+      const q = query(
+        collection(db, 'products'),
+        where('slug', '==', slug),
+        limit(1)
+      );
+      const snapshot = await getDocs(q);
+
+      // Si encontramos un producto con ese slug
+      if (!snapshot.empty) {
+        const existingProduct = snapshot.docs[0];
+        // Si estamos editando y el slug pertenece al producto actual, es válido
+        if (editingProduct && existingProduct.id === editingProduct.id) {
+          setSlugError(null);
+          return true;
+        }
+        // Si no, el slug ya está en uso
+        setSlugError('Este slug ya está en uso por otro producto');
+        return false;
+      }
+
+      setSlugError(null);
+      return true;
+    } catch (error) {
+      logger.error('[AdminProducts] Error validating slug', error);
+      setSlugError('Error al validar slug');
+      return false;
+    } finally {
+      setIsCheckingSlug(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!formData.name || !formData.slug || !formData.basePrice) {
       notify.error('Completa los campos obligatorios');
+      return;
+    }
+
+    // Validar slug único antes de guardar
+    const isSlugValid = await validateSlug(formData.slug);
+    if (!isSlugValid) {
+      notify.error('Corrige el slug antes de continuar');
       return;
     }
 
@@ -504,13 +566,50 @@ export default function AdminProductsPanelV2() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Slug (URL) <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      value={formData.slug || ''}
-                      onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      placeholder="taza-personalizada-350ml"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={formData.slug || ''}
+                        onChange={(e) => {
+                          const newSlug = e.target.value;
+                          setFormData({ ...formData, slug: newSlug });
+                          // Limpiar error cuando el usuario empiece a escribir
+                          if (slugError) {
+                            setSlugError(null);
+                          }
+                        }}
+                        onBlur={() => {
+                          // Validar cuando el usuario sale del campo
+                          if (formData.slug) {
+                            validateSlug(formData.slug);
+                          }
+                        }}
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                          slugError ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="taza-personalizada-350ml"
+                      />
+                      {isCheckingSlug && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      )}
+                    </div>
+                    {slugError && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                        <span>⚠️</span>
+                        {slugError}
+                      </p>
+                    )}
+                    {!slugError && formData.slug && !isCheckingSlug && (
+                      <p className="mt-1 text-sm text-green-600 flex items-center gap-1">
+                        <span>✓</span>
+                        Slug disponible
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-500">
+                      Solo letras minúsculas, números y guiones. Ejemplo: mi-producto-123
+                    </p>
                   </div>
 
                   {/* Categoría */}

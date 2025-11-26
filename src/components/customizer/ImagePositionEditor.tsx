@@ -112,7 +112,16 @@ export default function ImagePositionEditor({
           value={transform.x}
           onChange={(e) => handleTransformChange({ ...transform, x: Number(e.target.value) })}
           disabled={disabled}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-8 md:h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+          style={{
+            padding: '12px 0',
+            margin: '-12px 0',
+          }}
+          aria-label="Ajustar posición horizontal del diseño"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={transform.x}
+          aria-valuetext={`${Math.round(transform.x)} porciento horizontal`}
         />
         <div className="flex justify-between text-xs text-gray-500">
           <span>← Izquierda</span>
@@ -135,7 +144,16 @@ export default function ImagePositionEditor({
           value={transform.y}
           onChange={(e) => handleTransformChange({ ...transform, y: Number(e.target.value) })}
           disabled={disabled}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-8 md:h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+          style={{
+            padding: '12px 0',
+            margin: '-12px 0',
+          }}
+          aria-label="Ajustar posición vertical del diseño"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={transform.y}
+          aria-valuetext={`${Math.round(transform.y)} porciento vertical`}
         />
         <div className="flex justify-between text-xs text-gray-500">
           <span>↑ Arriba</span>
@@ -160,7 +178,16 @@ export default function ImagePositionEditor({
           value={transform.scale * 100}
           onChange={(e) => handleTransformChange({ ...transform, scale: Number(e.target.value) / 100 })}
           disabled={disabled}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-8 md:h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+          style={{
+            padding: '12px 0',
+            margin: '-12px 0',
+          }}
+          aria-label="Ajustar tamaño del diseño"
+          aria-valuemin={10}
+          aria-valuemax={300}
+          aria-valuenow={transform.scale * 100}
+          aria-valuetext={`${Math.round(transform.scale * 100)} porciento de tamaño`}
         />
         <div className="flex justify-between text-xs text-gray-500">
           <span>10%</span>
@@ -184,7 +211,16 @@ export default function ImagePositionEditor({
           value={transform.rotation}
           onChange={(e) => handleTransformChange({ ...transform, rotation: Number(e.target.value) })}
           disabled={disabled}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-8 md:h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+          style={{
+            padding: '12px 0',
+            margin: '-12px 0',
+          }}
+          aria-label="Ajustar rotación del diseño"
+          aria-valuemin={0}
+          aria-valuemax={360}
+          aria-valuenow={transform.rotation}
+          aria-valuetext={`${Math.round(transform.rotation)} grados`}
         />
         <div className="flex justify-between text-xs text-gray-500">
           <span>0°</span>
