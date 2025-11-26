@@ -109,6 +109,9 @@ export default function ProductPreview({
               alt="Producto base"
               className="absolute inset-0 w-full h-full object-contain"
               draggable={false}
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
             />
 
             {/* Print Area Overlay */}

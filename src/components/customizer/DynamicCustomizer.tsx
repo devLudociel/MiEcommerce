@@ -50,6 +50,28 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   const [layers, setLayers] = useState<DesignLayer[]>([]);
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
 
+  // Preload color preview images for faster switching
+  useEffect(() => {
+    const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
+    if (colorField) {
+      const colorConfig = colorField.config as ColorSelectorConfig;
+      colorConfig.availableColors?.forEach(color => {
+        // Preload images in order of priority
+        const imagesToPreload: string[] = [];
+
+        if (color.previewImages?.default) imagesToPreload.push(color.previewImages.default);
+        if (color.previewImages?.front) imagesToPreload.push(color.previewImages.front);
+        if (color.previewImages?.back) imagesToPreload.push(color.previewImages.back);
+        if (color.previewImage) imagesToPreload.push(color.previewImage);
+
+        imagesToPreload.forEach(url => {
+          const img = new Image();
+          img.src = url;
+        });
+      });
+    }
+  }, [schema]);
+
   // Calculate pricing
   const pricing: CustomizationPricing = {
     basePrice: product.basePrice,
