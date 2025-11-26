@@ -155,6 +155,22 @@ service firebase.storage {
     }
 
     // ==========================================================================
+    // PRODUCTS: Admin product images
+    // ==========================================================================
+    match /products/{fileName} {
+      // Authenticated users (especially admins) can upload product images
+      allow create, update: if isAuthenticated() &&
+                              isValidSize() &&
+                              isImage();
+
+      // Anyone can read (public product images)
+      allow read: if true;
+
+      // Only authenticated users can delete
+      allow delete: if isAuthenticated();
+    }
+
+    // ==========================================================================
     // DENY ALL OTHER PATHS
     // ==========================================================================
     match /{allPaths=**} {

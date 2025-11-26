@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { getAdminDb } from '../../lib/firebase-admin';
+import { getAdminDb, getAdminAuth } from '../../lib/firebase-admin';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -16,6 +16,33 @@ export const POST: APIRoute = async ({ request }) => {
   if (!csrfCheck.valid) {
     logger.warn('[cancel-order] CSRF validation failed:', csrfCheck.reason);
     return createCSRFErrorResponse();
+  }
+
+  // SECURITY: Require authentication
+  const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    logger.warn('[cancel-order] Missing authorization header');
+    return new Response(JSON.stringify({ error: 'No autorizado - Token requerido' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const idToken = authHeader.replace('Bearer ', '').trim();
+  let uid: string;
+  let isAdmin = false;
+
+  try {
+    const decodedToken = await getAdminAuth().verifyIdToken(idToken);
+    uid = decodedToken.uid;
+    isAdmin = !!decodedToken.admin;
+  } catch (error) {
+    logger.error('[cancel-order] Invalid token:', error);
+    return new Response(JSON.stringify({ error: 'No autorizado - Token inválido' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   try {
@@ -47,6 +74,22 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const data = orderSnap.data() || {};
+
+    // SECURITY: Verify ownership
+    if (data.userId !== uid && !isAdmin) {
+      logger.warn('[cancel-order] Unauthorized cancellation attempt', {
+        orderId,
+        attemptedBy: uid,
+        orderOwner: data.userId,
+      });
+      return new Response(
+        JSON.stringify({ error: 'No tienes permiso para cancelar este pedido' }),
+        {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
     if (data.idempotencyKey !== idempotencyKey) {
       logger.warn('[cancel-order] Idempotency key mismatch for order', orderId);

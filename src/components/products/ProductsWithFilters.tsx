@@ -12,7 +12,8 @@ interface Product {
   salePrice?: number;
   image: string;
   slug?: string;
-  category: string;
+  categoryId: string; // Cambio: category → categoryId
+  categoryName?: string; // Para mostrar el nombre
   rating: number;
   reviews: number;
   inStock: boolean;
@@ -21,9 +22,17 @@ interface Product {
   onSale: boolean;
 }
 
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+}
+
 export default function ProductsWithFilters() {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentFilters, setCurrentFilters] = useState<FilterOptions>({
     categories: [],
@@ -35,24 +44,50 @@ export default function ProductsWithFilters() {
     sortBy: 'newest',
   });
 
+  // Load categories from Firestore
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, 'categories'));
+        const cats = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Category[];
+        setCategories(cats);
+        logger.debug('[ProductsWithFilters] Categories loaded', { count: cats.length });
+      } catch (error) {
+        logger.error('[ProductsWithFilters] Error loading categories', error);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
   // Read URL params on client-side only (avoid SSR error)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && categories.length > 0) {
       const urlParams = new URLSearchParams(window.location.search);
-      const categoryParam = urlParams.get('category');
+      const categorySlug = urlParams.get('category');
 
-      if (categoryParam) {
-        setCurrentFilters((prev) => ({
-          ...prev,
-          categories: [categoryParam],
-        }));
+      if (categorySlug) {
+        // Find category by slug and use its ID for filtering
+        const category = categories.find((c) => c.slug === categorySlug);
+        if (category) {
+          setCurrentFilters((prev) => ({
+            ...prev,
+            categories: [category.id],
+          }));
+          logger.debug('[ProductsWithFilters] Category filter applied', { slug: categorySlug, id: category.id });
+        }
       }
     }
-  }, []);
+  }, [categories]);
 
   // Load products from Firestore
   useEffect(() => {
     const loadProducts = async () => {
+      if (categories.length === 0) return; // Wait for categories to load first
+
       try {
         setLoading(true);
         logger.debug('[ProductsWithFilters] Loading products');
@@ -66,6 +101,9 @@ export default function ProductsWithFilters() {
         const snapshot = await getDocs(q);
         const items: Product[] = snapshot.docs.map((doc) => {
           const data = doc.data();
+          const categoryId = data.categoryId || 'otros';
+          const category = categories.find((c) => c.id === categoryId);
+
           return {
             id: doc.id,
             name: data.name || 'Producto',
@@ -73,7 +111,8 @@ export default function ProductsWithFilters() {
             salePrice: data.salePrice ? Number(data.salePrice) : undefined,
             image: (data.images && data.images[0]) || FALLBACK_IMG_400x300,
             slug: data.slug || doc.id,
-            category: data.category || 'otros',
+            categoryId: categoryId,
+            categoryName: category?.name || 'Otros',
             rating: data.rating || 0,
             reviews: data.reviewCount || 0,
             inStock: !!data.active,
@@ -94,15 +133,15 @@ export default function ProductsWithFilters() {
     };
 
     loadProducts();
-  }, []);
+  }, [categories]);
 
   // Apply filters
   useEffect(() => {
     let filtered = [...products];
 
-    // Category filter
+    // Category filter (using categoryId instead of category)
     if (currentFilters.categories.length > 0) {
-      filtered = filtered.filter((p) => currentFilters.categories.includes(p.category));
+      filtered = filtered.filter((p) => currentFilters.categories.includes(p.categoryId));
     }
 
     // Price filter
@@ -291,7 +330,7 @@ export default function ProductsWithFilters() {
                       </h3>
 
                       {/* Category */}
-                      <p className="text-sm text-gray-500 mb-3 capitalize">{product.category}</p>
+                      <p className="text-sm text-gray-500 mb-3 capitalize">{product.categoryName}</p>
 
                       {/* Price */}
                       <div className="flex items-center gap-2">

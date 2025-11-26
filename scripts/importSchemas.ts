@@ -15,25 +15,51 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { exampleSchemas } from '../src/data/exampleSchemas';
 import * as path from 'path';
 import * as fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { config } from 'dotenv';
+
+// Obtener __dirname en módulos ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Cargar variables de entorno desde .env
+config({ path: path.join(__dirname, '../.env') });
 
 // Inicializar Firebase Admin
 function initializeFirebase() {
   if (getApps().length === 0) {
-    // Buscar credenciales en variables de entorno o archivo local
-    const serviceAccountPath = process.env.GOOGLE_APPLICATION_CREDENTIALS ||
-      path.join(__dirname, '../service-account-key.json');
+    let serviceAccount: any;
 
-    if (!fs.existsSync(serviceAccountPath)) {
-      console.error('❌ Error: No se encontró el archivo de credenciales de Firebase Admin');
-      console.error('   Opciones:');
-      console.error('   1. Crear service-account-key.json en la raíz del proyecto');
-      console.error('   2. Establecer GOOGLE_APPLICATION_CREDENTIALS en .env');
-      console.error('');
-      console.error('   Descargar desde: Firebase Console > Project Settings > Service Accounts');
-      process.exit(1);
+    // Opción 1: Leer desde variable de entorno FIREBASE_SERVICE_ACCOUNT (JSON string)
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      try {
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        console.log('✅ Credenciales cargadas desde FIREBASE_SERVICE_ACCOUNT');
+      } catch (error) {
+        console.error('❌ Error parseando FIREBASE_SERVICE_ACCOUNT:', error);
+        process.exit(1);
+      }
     }
+    // Opción 2: Leer desde archivo (GOOGLE_APPLICATION_CREDENTIALS o service-account-key.json)
+    else {
+      const serviceAccountPath = process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+        path.join(__dirname, '../service-account-key.json');
 
-    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+      if (!fs.existsSync(serviceAccountPath)) {
+        console.error('❌ Error: No se encontraron credenciales de Firebase Admin');
+        console.error('   Opciones:');
+        console.error('   1. Agregar FIREBASE_SERVICE_ACCOUNT en .env (ya la tienes!)');
+        console.error('   2. Crear service-account-key.json en la raíz del proyecto');
+        console.error('   3. Establecer GOOGLE_APPLICATION_CREDENTIALS en .env');
+        console.error('');
+        console.error('   Descargar desde: Firebase Console > Project Settings > Service Accounts');
+        process.exit(1);
+      }
+
+      serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+      console.log('✅ Credenciales cargadas desde archivo');
+    }
 
     initializeApp({
       credential: cert(serviceAccount),
@@ -52,7 +78,19 @@ function initializeFirebase() {
 const SCHEMA_CATEGORY_MAP: Record<string, { id: string; name: string }> = {
   camisetas: {
     id: 'cat_camisetas',
-    name: 'Camisetas / Textiles',
+    name: 'Camisetas / Textiles (básico)',
+  },
+  camisetasPro: {
+    id: 'cat_camisetas_pro',
+    name: 'Camisetas Pro (front/back)',
+  },
+  hoodies: {
+    id: 'cat_hoodies',
+    name: 'Hoodies / Sudaderas',
+  },
+  bolsas: {
+    id: 'cat_bolsas',
+    name: 'Bolsas / Tote Bags',
   },
   cuadros: {
     id: 'cat_cuadros',

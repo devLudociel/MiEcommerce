@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useStore } from '@nanostores/react';
-import { cartStore, cartLoadingStore, clearCart } from '../../store/cartStore';
+import { cartStore, cartLoadingStore, clearCart, updateCartItemQuantity, removeFromCart } from '../../store/cartStore';
 import type { CartItem } from '../../store/cartStore';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { shippingInfoSchema } from '../../lib/validation/schemas';
@@ -15,6 +15,7 @@ import { useSecureCardPayment } from '../checkout/SecureCardPayment';
 import { getUserData } from '../../lib/userProfile';
 import type { Address } from '../../lib/userProfile';
 import CustomizationDetails from '../cart/CustomizationDetails';
+import { Trash2, Plus, Minus } from 'lucide-react';
 
 interface ShippingInfo {
   firstName: string;
@@ -1431,21 +1432,72 @@ export default function Checkout() {
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Resumen del Pedido</h2>
 
               {/* Cart Items */}
-              <div className="space-y-4 mb-6 max-h-64 overflow-y-auto">
+              <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
                 {cart.items.map((item) => (
-                  <div key={item.id} className="flex gap-3">
-                    <img
-                      src={item.image || FALLBACK_IMG_400x300}
-                      alt={item.name}
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900 text-sm truncate">{item.name}</h3>
-                      <p className="text-sm text-gray-500">Cantidad: {item.quantity}</p>
-                      <p className="font-bold text-cyan-600 text-sm">
-                        {(item.price * item.quantity).toFixed(2)} €
-                      </p>
-                      <CustomizationDetails customization={item.customization} />
+                  <div key={`${item.id}-${item.variantId || 'no-variant'}`} className="relative bg-gray-50 rounded-lg p-3 border border-gray-200 hover:border-cyan-300 transition-all">
+                    {/* Delete Button */}
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`¿Eliminar ${item.name} del carrito?`)) {
+                          removeFromCart(item.id, item.variantId);
+                        }
+                      }}
+                      className="absolute top-2 right-2 p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors group"
+                      title="Eliminar del carrito"
+                    >
+                      <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    </button>
+
+                    <div className="flex gap-3">
+                      <img
+                        src={item.image || FALLBACK_IMG_400x300}
+                        alt={item.name}
+                        className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                      />
+                      <div className="flex-1 min-w-0 pr-8">
+                        <h3 className="font-semibold text-gray-900 text-sm mb-1 truncate">{item.name}</h3>
+                        {item.variantName && (
+                          <p className="text-xs text-gray-500 mb-1">Variante: {item.variantName}</p>
+                        )}
+
+                        {/* Quantity Controls */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <button
+                            onClick={() => updateCartItemQuantity(item.id, item.variantId, item.quantity - 1)}
+                            disabled={item.quantity <= 1}
+                            className="p-1 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            title="Disminuir cantidad"
+                          >
+                            <Minus className="w-3 h-3 text-gray-600" />
+                          </button>
+                          <span className="text-sm font-semibold text-gray-700 min-w-[2rem] text-center">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateCartItemQuantity(item.id, item.variantId, item.quantity + 1)}
+                            className="p-1 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-all"
+                            title="Aumentar cantidad"
+                          >
+                            <Plus className="w-3 h-3 text-gray-600" />
+                          </button>
+                          <span className="text-xs text-gray-500 ml-1">unidades</span>
+                        </div>
+
+                        {/* Price */}
+                        <div className="flex items-baseline gap-2">
+                          {item.quantity > 1 && (
+                            <span className="text-xs text-gray-500">
+                              {item.price.toFixed(2)} € × {item.quantity} =
+                            </span>
+                          )}
+                          <p className="font-bold text-cyan-600 text-base">
+                            {(item.price * item.quantity).toFixed(2)} €
+                          </p>
+                        </div>
+
+                        {/* Customization Details */}
+                        <CustomizationDetails customization={item.customization} />
+                      </div>
                     </div>
                   </div>
                 ))}

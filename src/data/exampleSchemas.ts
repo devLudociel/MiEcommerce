@@ -41,7 +41,7 @@ export const camisetasSchema: CustomizationSchema = {
       required: true,
       config: {
         displayStyle: 'buttons',
-        sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+        availableSizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
         showSizeGuide: true,
       },
       priceModifier: 0,
@@ -263,11 +263,288 @@ export const tazasSchema: CustomizationSchema = {
 };
 
 // ============================================================================
+// SCHEMA: CAMISETAS PRO (con front/back específico)
+// ============================================================================
+
+export const camisetasProSchema: CustomizationSchema = {
+  fields: [
+    {
+      id: 'tshirt_color',
+      fieldType: 'color_selector',
+      label: 'Color de la camiseta',
+      required: true,
+      config: {
+        displayStyle: 'color_blocks',
+        availableColors: [
+          { id: 'white', name: 'Blanco', hex: '#FFFFFF' },
+          { id: 'black', name: 'Negro', hex: '#000000' },
+          { id: 'red', name: 'Rojo', hex: '#EF4444' },
+          { id: 'blue', name: 'Azul', hex: '#3B82F6' },
+          { id: 'green', name: 'Verde', hex: '#10B981' },
+          { id: 'yellow', name: 'Amarillo', hex: '#F59E0B' },
+          { id: 'pink', name: 'Rosa', hex: '#EC4899' },
+          { id: 'gray', name: 'Gris', hex: '#6B7280' },
+        ],
+      },
+      priceModifier: 0,
+      order: 1,
+    },
+    {
+      id: 'tshirt_size',
+      fieldType: 'size_selector',
+      label: 'Talla',
+      required: true,
+      config: {
+        displayStyle: 'buttons',
+        availableSizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+        showSizeGuide: true,
+      },
+      priceModifier: 0,
+      helpText: 'Consulta la guía de tallas para encontrar tu talla perfecta',
+      order: 2,
+    },
+    {
+      id: 'design_front',
+      fieldType: 'image_upload',
+      label: 'Diseño Frontal',
+      required: false,
+      config: {
+        maxSizeMB: 10,
+        allowedFormats: ['jpg', 'png', 'svg'],
+        showPreview: true,
+        showPositionControls: true,
+        helpText: 'Formatos aceptados: JPG, PNG, SVG • Máximo 10MB',
+      },
+      priceModifier: 5,
+      helpText: 'Sube tu diseño para la parte frontal (+€5.00)',
+      order: 3,
+    },
+    {
+      id: 'design_back',
+      fieldType: 'image_upload',
+      label: 'Diseño Trasero',
+      required: false,
+      config: {
+        maxSizeMB: 10,
+        allowedFormats: ['jpg', 'png', 'svg'],
+        showPreview: true,
+        showPositionControls: true,
+        helpText: 'Formatos aceptados: JPG, PNG, SVG • Máximo 10MB',
+      },
+      priceModifier: 5,
+      helpText: 'Sube tu diseño para la parte trasera (+€5.00)',
+      order: 4,
+    },
+  ],
+  displayComponent: 'DynamicCustomizer',
+};
+
+// ============================================================================
+// SCHEMA: HOODIES / SUDADERAS
+// ============================================================================
+
+export const hoodiesSchema: CustomizationSchema = {
+  fields: [
+    {
+      id: 'hoodie_style',
+      fieldType: 'dropdown',
+      label: 'Estilo de sudadera',
+      required: true,
+      config: {
+        placeholder: 'Selecciona el estilo',
+        options: [
+          {
+            value: 'pullover',
+            label: 'Pullover (sin cierre)',
+            priceModifier: 0,
+            description: 'Clásico pullover con capucha y bolsillo frontal',
+          },
+          {
+            value: 'zip',
+            label: 'Con cierre',
+            priceModifier: 5,
+            description: 'Sudadera con cierre completo',
+          },
+          {
+            value: 'oversized',
+            label: 'Oversized',
+            priceModifier: 3,
+            description: 'Corte amplio y moderno',
+          },
+        ],
+      },
+      priceModifier: 0,
+      order: 1,
+    },
+    {
+      id: 'hoodie_color',
+      fieldType: 'color_selector',
+      label: 'Color',
+      required: true,
+      config: {
+        displayStyle: 'color_blocks',
+        availableColors: [
+          { id: 'black', name: 'Negro', hex: '#000000' },
+          { id: 'gray', name: 'Gris', hex: '#6B7280' },
+          { id: 'navy', name: 'Azul Marino', hex: '#1E3A8A' },
+          { id: 'burgundy', name: 'Burgundy', hex: '#881337' },
+          { id: 'white', name: 'Blanco', hex: '#FFFFFF' },
+          { id: 'forest', name: 'Verde Bosque', hex: '#065F46' },
+        ],
+      },
+      priceModifier: 0,
+      order: 2,
+    },
+    {
+      id: 'hoodie_size',
+      fieldType: 'size_selector',
+      label: 'Talla',
+      required: true,
+      config: {
+        displayStyle: 'buttons',
+        availableSizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+        showSizeGuide: true,
+      },
+      priceModifier: 0,
+      helpText: 'Las sudaderas tienen un corte estándar, consulta la guía de tallas',
+      order: 3,
+    },
+    {
+      id: 'design_front_hoodie',
+      fieldType: 'image_upload',
+      label: 'Diseño Frontal',
+      required: false,
+      config: {
+        maxSizeMB: 10,
+        allowedFormats: ['jpg', 'png', 'svg'],
+        showPreview: true,
+        showPositionControls: true,
+        helpText: 'Formatos aceptados: JPG, PNG, SVG • Máximo 10MB',
+      },
+      priceModifier: 7,
+      helpText: 'Diseño personalizado para el frente (+€7.00)',
+      order: 4,
+    },
+    {
+      id: 'design_back_hoodie',
+      fieldType: 'image_upload',
+      label: 'Diseño Trasero',
+      required: false,
+      config: {
+        maxSizeMB: 10,
+        allowedFormats: ['jpg', 'png', 'svg'],
+        showPreview: true,
+        showPositionControls: true,
+        helpText: 'Formatos aceptados: JPG, PNG, SVG • Máximo 10MB',
+      },
+      priceModifier: 7,
+      helpText: 'Diseño personalizado para la espalda (+€7.00)',
+      order: 5,
+    },
+  ],
+  displayComponent: 'DynamicCustomizer',
+};
+
+// ============================================================================
+// SCHEMA: BOLSAS / TOTE BAGS
+// ============================================================================
+
+export const bolsasSchema: CustomizationSchema = {
+  fields: [
+    {
+      id: 'bag_size',
+      fieldType: 'dropdown',
+      label: 'Tamaño de bolsa',
+      required: true,
+      config: {
+        placeholder: 'Selecciona el tamaño',
+        options: [
+          {
+            value: 'small',
+            label: 'Pequeña (30×35cm)',
+            priceModifier: 0,
+            description: 'Perfecta para el día a día',
+          },
+          {
+            value: 'medium',
+            label: 'Mediana (38×42cm)',
+            priceModifier: 2,
+            description: 'Tamaño estándar, muy versátil',
+          },
+          {
+            value: 'large',
+            label: 'Grande (45×50cm)',
+            priceModifier: 4,
+            description: 'Para compras o la playa',
+          },
+        ],
+      },
+      priceModifier: 0,
+      order: 1,
+    },
+    {
+      id: 'bag_color',
+      fieldType: 'color_selector',
+      label: 'Color del canvas',
+      required: true,
+      config: {
+        displayStyle: 'color_blocks',
+        availableColors: [
+          { id: 'natural', name: 'Natural', hex: '#F5F5DC' },
+          { id: 'black', name: 'Negro', hex: '#000000' },
+          { id: 'navy', name: 'Azul Marino', hex: '#1E3A8A' },
+          { id: 'red', name: 'Rojo', hex: '#DC2626' },
+          { id: 'green', name: 'Verde', hex: '#059669' },
+        ],
+      },
+      priceModifier: 0,
+      order: 2,
+    },
+    {
+      id: 'bag_design_front',
+      fieldType: 'image_upload',
+      label: 'Diseño Frontal',
+      required: false,
+      config: {
+        maxSizeMB: 10,
+        allowedFormats: ['jpg', 'png', 'svg'],
+        showPreview: true,
+        showPositionControls: true,
+        helpText: 'Formatos aceptados: JPG, PNG, SVG • Máximo 10MB',
+      },
+      priceModifier: 5,
+      helpText: 'Diseño personalizado para el frente de la bolsa (+€5.00)',
+      order: 3,
+    },
+    {
+      id: 'bag_design_back',
+      fieldType: 'image_upload',
+      label: 'Diseño Trasero',
+      required: false,
+      config: {
+        maxSizeMB: 10,
+        allowedFormats: ['jpg', 'png', 'svg'],
+        showPreview: true,
+        showPositionControls: true,
+        helpText: 'Formatos aceptados: JPG, PNG, SVG • Máximo 10MB',
+      },
+      priceModifier: 5,
+      helpText: 'Diseño personalizado para la parte trasera (+€5.00)',
+      order: 4,
+    },
+  ],
+  displayComponent: 'DynamicCustomizer',
+};
+
+// ============================================================================
 // EXPORT ALL SCHEMAS
 // ============================================================================
 
 export const exampleSchemas = {
   camisetas: camisetasSchema,
+  camisetasPro: camisetasProSchema,
+  hoodies: hoodiesSchema,
+  bolsas: bolsasSchema,
   cuadros: cuadrosSchema,
   resina: resinaSchema,
   tazas: tazasSchema,
@@ -275,7 +552,10 @@ export const exampleSchemas = {
 
 // Schema names for dropdown selection
 export const schemaOptions = [
-  { value: 'camisetas', label: 'Camisetas / Textiles' },
+  { value: 'camisetas', label: 'Camisetas / Textiles (básico)' },
+  { value: 'camisetasPro', label: 'Camisetas Pro (front/back)' },
+  { value: 'hoodies', label: 'Hoodies / Sudaderas' },
+  { value: 'bolsas', label: 'Bolsas / Tote Bags' },
   { value: 'cuadros', label: 'Cuadros / Marcos' },
   { value: 'resina', label: 'Figuras de Resina' },
   { value: 'tazas', label: 'Tazas / Sublimados' },

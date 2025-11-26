@@ -2,8 +2,31 @@ import type { APIRoute } from 'astro';
 import { collection, query, where, limit, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { loadCustomizationSchema } from '../../lib/customization/schemas';
+import { rateLimitPersistent } from '../../lib/rateLimitPersistent';
 
 export const GET: APIRoute = async ({ request, url }) => {
+  // SECURITY: Rate limiting for unauthenticated endpoint
+  const rateLimitResult = await rateLimitPersistent(request, 'check-product', {
+    intervalMs: 60_000, // 1 minute
+    max: 10, // 10 requests per minute per IP
+  });
+
+  if (!rateLimitResult.ok) {
+    return new Response(
+      JSON.stringify({
+        error: 'Demasiadas solicitudes. Por favor, inténtalo de nuevo más tarde.',
+        retryAfter: Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)
+      }),
+      {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000))
+        },
+      }
+    );
+  }
+
   try {
     const slug = url.searchParams.get('slug');
     const action = url.searchParams.get('action'); // 'check' or 'fix'
