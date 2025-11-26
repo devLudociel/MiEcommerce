@@ -12,7 +12,7 @@ import { useTransformHistory } from '../../hooks/useTransformHistory';
 interface InteractiveImageEditorProps {
   image: string;
   transform: ImageTransform;
-  onChange: (transform: ImageTransform);
+  onChange: (transform: ImageTransform) => void;
   productImage?: string;
   disabled?: boolean;
 }
