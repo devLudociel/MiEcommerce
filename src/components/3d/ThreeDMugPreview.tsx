@@ -129,6 +129,16 @@ function ProceduralMugModel({
     );
   }, [imageUrl]);
 
+  // CLEANUP: Liberar textura cuando el componente se desmonta
+  useEffect(() => {
+    return () => {
+      if (texture) {
+        texture.dispose();
+        console.log('[ProceduralMugModel] Texture disposed');
+      }
+    };
+  }, [texture]);
+
   // Auto-rotación
   useFrame((state, delta) => {
     if (groupRef.current) {
@@ -334,6 +344,16 @@ function GLBModel({
     );
   }, [imageUrl]);
 
+  // CLEANUP: Liberar textura cuando el componente se desmonta
+  useEffect(() => {
+    return () => {
+      if (texture) {
+        texture.dispose();
+        console.log('[GLBModel] Texture disposed');
+      }
+    };
+  }, [texture]);
+
   // Aplicar textura, colores y mejorar materiales del modelo GLB
   useEffect(() => {
     if (!scene) return;
@@ -427,6 +447,40 @@ function GLBModel({
       }
     });
   }, [scene, texture, mugColors]);
+
+  // CLEANUP: Liberar todos los recursos Three.js cuando el componente se desmonta
+  useEffect(() => {
+    return () => {
+      if (scene) {
+        scene.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+
+            // Dispose geometry
+            if (mesh.geometry) {
+              mesh.geometry.dispose();
+            }
+
+            // Dispose material(s)
+            if (mesh.material) {
+              const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+              materials.forEach((mat) => {
+                if (mat instanceof THREE.Material) {
+                  mat.dispose();
+                  // Dispose textures
+                  if (mat.map) mat.map.dispose();
+                  if ('normalMap' in mat && mat.normalMap) (mat.normalMap as THREE.Texture).dispose();
+                  if ('roughnessMap' in mat && mat.roughnessMap) (mat.roughnessMap as THREE.Texture).dispose();
+                  if ('metalnessMap' in mat && mat.metalnessMap) (mat.metalnessMap as THREE.Texture).dispose();
+                }
+              });
+            }
+          }
+        });
+        console.log('[GLBModel] All Three.js resources disposed');
+      }
+    };
+  }, [scene]);
 
   // Auto-rotación
   useFrame((state, delta) => {
