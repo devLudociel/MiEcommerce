@@ -1,3 +1,27 @@
+/**
+ * @deprecated Este componente ha sido reemplazado por InteractiveImageEditor
+ *
+ * OBSOLETO: Este componente usa sliders para posicionar imágenes, lo cual es:
+ * - 4x más lento que el editor visual (20s vs 5s)
+ * - Menos intuitivo (no hay feedback visual directo)
+ * - Peor UX en móvil (sliders son difíciles de usar en touch)
+ *
+ * USAR EN SU LUGAR: InteractiveImageEditor
+ * - Drag & drop visual directo
+ * - Resize con handles en esquinas
+ * - Rotación con handle interactivo
+ * - Pinch-to-zoom nativo en móvil
+ * - Undo/Redo completo
+ *
+ * Ubicación: src/components/customizer/InteractiveImageEditor.tsx
+ *
+ * Este archivo se mantiene temporalmente para compatibilidad hacia atrás,
+ * pero será eliminado en v2.0.
+ *
+ * Fecha de deprecación: 2025-01-26
+ * Eliminación planeada: v2.0 (Q2 2025)
+ */
+
 import React, { useEffect } from 'react';
 import { Move, ZoomIn, RotateCw, RefreshCw, Undo, Redo } from 'lucide-react';
 import type { ImageTransform } from '../../types/customization';
@@ -8,6 +32,8 @@ interface ImagePositionEditorProps {
   onChange: (transform: ImageTransform) => void;
   disabled?: boolean;
 }
+
+/** @deprecated Use InteractiveImageEditor instead */
 
 export default function ImagePositionEditor({
   transform,
