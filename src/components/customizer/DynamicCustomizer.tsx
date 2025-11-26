@@ -426,10 +426,23 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
 
     console.log('[getBaseImage] Selected color:', selectedColor);
-    console.log('[getBaseImage] Preview image:', selectedColor?.previewImage);
 
-    if (selectedColor?.previewImage) {
-      return selectedColor.previewImage;
+    // NUEVO: Soportar ambos formatos (previewImages objeto y previewImage string)
+    let previewImage: string | undefined;
+
+    // Formato nuevo: previewImages.default (objeto)
+    if (selectedColor?.previewImages?.default) {
+      previewImage = selectedColor.previewImages.default;
+      console.log('[getBaseImage] Using previewImages.default:', previewImage);
+    }
+    // Formato antiguo: previewImage (string directo) - backward compatibility
+    else if (selectedColor?.previewImage) {
+      previewImage = selectedColor.previewImage;
+      console.log('[getBaseImage] Using previewImage (legacy):', previewImage);
+    }
+
+    if (previewImage) {
+      return previewImage;
     }
 
     // Fallback to default
