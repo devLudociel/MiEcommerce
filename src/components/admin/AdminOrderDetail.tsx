@@ -7,6 +7,7 @@ import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import OrderItemPreview from './OrderItemPreview';
 import { FRONT_POSITIONS, BACK_POSITIONS, getContainerTransform, type PresetPosition } from '../../constants/textilePositions';
+import JSZip from 'jszip';
 
 const statusLabels: Record<string, string> = {
   pending: 'Pendiente',
@@ -285,6 +286,95 @@ export default function AdminOrderDetail() {
     } catch (error) {
       logger.error('[AdminOrderDetail] Error downloading image', error);
       notify.error('No se pudo descargar la imagen. Intenta nuevamente.');
+    }
+  };
+
+  /**
+   * Descarga todas las imágenes personalizadas del pedido en un archivo ZIP
+   * Útil para pedidos con múltiples productos personalizados
+   */
+  const handleBulkImageDownload = async () => {
+    if (!order) return;
+
+    try {
+      // Buscar todas las imágenes en todos los items del pedido
+      const imageData: Array<{ url: string; name: string }> = [];
+      let itemIndex = 0;
+
+      for (const item of order.items || []) {
+        itemIndex++;
+        if (item.customization?.values) {
+          let fieldIndex = 0;
+          for (const field of item.customization.values) {
+            if (field.imageUrl) {
+              fieldIndex++;
+              const sanitizedItemName = item.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+              const sanitizedFieldLabel = field.fieldLabel.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+              const fileName = `${itemIndex}_${sanitizedItemName}_${fieldIndex}_${sanitizedFieldLabel}.jpg`;
+              imageData.push({ url: field.imageUrl, name: fileName });
+            }
+          }
+        }
+      }
+
+      if (imageData.length === 0) {
+        notify.warning('Este pedido no tiene imágenes personalizadas para descargar');
+        return;
+      }
+
+      notify.info(`Preparando ${imageData.length} imagen(es) para descargar...`);
+      logger.info('[AdminOrderDetail] Starting bulk download', { count: imageData.length });
+
+      // Crear ZIP
+      const zip = new JSZip();
+      const timestamp = new Date().toISOString().split('T')[0];
+      const orderIdShort = order.id?.slice(0, 8) || 'pedido';
+
+      // Descargar todas las imágenes y agregarlas al ZIP
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const { url, name } of imageData) {
+        try {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error('Download failed');
+          const blob = await response.blob();
+          zip.file(name, blob);
+          successCount++;
+        } catch (error) {
+          logger.warn('[AdminOrderDetail] Failed to download image', { url, error });
+          failCount++;
+        }
+      }
+
+      if (successCount === 0) {
+        notify.error('No se pudo descargar ninguna imagen. Verifica la conexión.');
+        return;
+      }
+
+      // Generar archivo ZIP
+      notify.info('Generando archivo ZIP...');
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+      // Descargar ZIP
+      const zipUrl = URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+      link.href = zipUrl;
+      link.download = `${orderIdShort}_imagenes_pedido_${timestamp}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(zipUrl);
+
+      const message = failCount > 0
+        ? `${successCount} imágenes descargadas (${failCount} fallaron)`
+        : `${successCount} imágenes descargadas correctamente`;
+
+      notify.success(message);
+      logger.info('[AdminOrderDetail] Bulk download completed', { successCount, failCount });
+    } catch (error) {
+      logger.error('[AdminOrderDetail] Error in bulk download', error);
+      notify.error('Error al crear el archivo ZIP. Intenta nuevamente.');
     }
   };
 
@@ -570,6 +660,27 @@ export default function AdminOrderDetail() {
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-xl font-black text-gray-800 mb-4">Acciones</h2>
                 <div className="space-y-3">
+                  {/* Descarga masiva de imágenes - destacado */}
+                  {(() => {
+                    const imageCount = (order.items || []).reduce((count, item) => {
+                      if (item.customization?.values) {
+                        return count + item.customization.values.filter(f => f.imageUrl).length;
+                      }
+                      return count;
+                    }, 0);
+
+                    return imageCount > 0 ? (
+                      <button
+                        onClick={handleBulkImageDownload}
+                        className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg"
+                        title={`Descargar ${imageCount} imagen(es) en un archivo ZIP`}
+                      >
+                        <Icon name="download" className="w-5 h-5" />
+                        Descargar Todas las Imágenes ({imageCount})
+                      </button>
+                    ) : null;
+                  })()}
+
                   <button
                     onClick={() => window.print()}
                     className="w-full px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-all flex items-center justify-center gap-2"
