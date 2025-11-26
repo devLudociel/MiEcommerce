@@ -408,12 +408,16 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
     if (!colorField) {
       // No color selector, use default image from schema
+      console.log('[getBaseImage] No color field found, using default');
       return schema.previewImages?.default || product.images[0] || '';
     }
 
     const colorValue = values[colorField.id];
+    console.log('[getBaseImage] Color value:', colorValue);
+
     if (!colorValue) {
       // No color selected yet, use default
+      console.log('[getBaseImage] No color selected, using default');
       return schema.previewImages?.default || product.images[0] || '';
     }
 
@@ -421,11 +425,15 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     const colorConfig = colorField.config as ColorSelectorConfig;
     const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
 
+    console.log('[getBaseImage] Selected color:', selectedColor);
+    console.log('[getBaseImage] Preview image:', selectedColor?.previewImage);
+
     if (selectedColor?.previewImage) {
       return selectedColor.previewImage;
     }
 
     // Fallback to default
+    console.log('[getBaseImage] No preview image in color, using fallback');
     return schema.previewImages?.default || product.images[0] || '';
   };
 
