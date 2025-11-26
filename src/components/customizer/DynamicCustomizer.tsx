@@ -426,19 +426,29 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
 
     console.log('[getBaseImage] Selected color:', selectedColor);
+    console.log('[getBaseImage] previewImages object:', selectedColor?.previewImages);
+    console.log('[getBaseImage] previewImages keys:', selectedColor?.previewImages ? Object.keys(selectedColor.previewImages) : 'N/A');
 
-    // NUEVO: Soportar ambos formatos (previewImages objeto y previewImage string)
+    // NUEVO: Soportar múltiples formatos de imagen
     let previewImage: string | undefined;
 
-    // Formato nuevo: previewImages.default (objeto)
+    // Formato 1: previewImages.default (preferido para productos simples)
     if (selectedColor?.previewImages?.default) {
       previewImage = selectedColor.previewImages.default;
-      console.log('[getBaseImage] Using previewImages.default:', previewImage);
+      console.log('[getBaseImage] ✅ Using previewImages.default:', previewImage);
     }
-    // Formato antiguo: previewImage (string directo) - backward compatibility
+    // Formato 2: previewImages.front (para productos con frente/espalda o cuadros)
+    else if (selectedColor?.previewImages?.front) {
+      previewImage = selectedColor.previewImages.front;
+      console.log('[getBaseImage] ✅ Using previewImages.front:', previewImage);
+    }
+    // Formato 3: previewImage (string directo, legacy)
     else if (selectedColor?.previewImage) {
       previewImage = selectedColor.previewImage;
-      console.log('[getBaseImage] Using previewImage (legacy):', previewImage);
+      console.log('[getBaseImage] ✅ Using previewImage (legacy):', previewImage);
+    }
+    else {
+      console.log('[getBaseImage] ❌ No valid preview image found in color config');
     }
 
     if (previewImage) {
