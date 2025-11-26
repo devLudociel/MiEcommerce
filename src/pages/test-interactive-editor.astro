@@ -4,6 +4,7 @@
  * Visita: http://localhost:4321/test-interactive-editor
  */
 import BaseLayout from '../layouts/BaseLayout.astro';
+import TestInteractiveEditorApp from '../components/test/TestInteractiveEditorApp';
 ---
 
 <BaseLayout title="Test - Editor Interactivo">
@@ -81,7 +82,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </div>
 
       {/* App Container */}
-      <div id="app-root"></div>
+      <TestInteractiveEditorApp client:load />
 
       {/* Comparación */}
       <div class="mt-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl border-2 border-green-200 p-6">
@@ -109,15 +110,3 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
   </div>
 </BaseLayout>
-
-<script>
-  import React from 'react';
-  import { createRoot } from 'react-dom/client';
-  import TestInteractiveEditorApp from '../components/test/TestInteractiveEditorApp';
-
-  const container = document.getElementById('app-root');
-  if (container) {
-    const root = createRoot(container);
-    root.render(React.createElement(TestInteractiveEditorApp));
-  }
-</script>
