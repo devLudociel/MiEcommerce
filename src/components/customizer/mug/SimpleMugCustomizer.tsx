@@ -179,23 +179,29 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
                   className="w-full h-full object-contain"
                 />
 
-                {/* Preview de posición de imagen (si hay imagen cargada) */}
+                {/* Preview de posición de imagen (si hay imagen cargada) - MEJORADO: Muestra imagen real */}
                 {uploadedImage && (
                   <div
-                    className="absolute bg-purple-500/20 border-2 border-purple-500 rounded-lg transition-all duration-300"
+                    className="absolute pointer-events-none transition-all duration-300"
                     style={{
                       left: `${imageTransform.x}%`,
                       top: `${imageTransform.y}%`,
-                      width: `${30 * imageTransform.scale}%`,
-                      height: `${30 * imageTransform.scale}%`,
-                      transform: 'translate(-50%, -50%)',
+                      transform: `translate(-50%, -50%) scale(${imageTransform.scale}) rotate(${imageTransform.rotation}deg)`,
                     }}
                   >
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-xs font-bold text-purple-700 bg-white/80 px-2 py-1 rounded">
-                        Diseño
-                      </div>
-                    </div>
+                    <img
+                      src={uploadedImage}
+                      alt="Preview diseño"
+                      className="max-w-none"
+                      style={{
+                        width: '200px',
+                        height: 'auto',
+                        opacity: 0.85,
+                        border: '2px solid #a855f7',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
+                      }}
+                    />
                   </div>
                 )}
 
