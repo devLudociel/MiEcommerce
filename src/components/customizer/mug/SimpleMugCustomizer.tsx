@@ -1,11 +1,12 @@
 // src/components/customizer/mug/SimpleMugCustomizer.tsx
 
 import React, { useState } from 'react';
-import { ShoppingCart, Upload, CheckCircle, AlertCircle, Info, Maximize2 } from 'lucide-react';
+import { ShoppingCart, Upload, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { addToCart } from '../../../store/cartStore';
 import { logger } from '../../../lib/logger';
 import { notify } from '../../../lib/notifications';
-import { MUG_POSITIONS, type MugPresetPosition } from '../../../constants/mugPositions';
+import InteractiveImageEditor from '../InteractiveImageEditor';
+import type { ImageTransform } from '../../../types/customization';
 
 interface FirebaseProduct {
   id: string;
@@ -39,7 +40,12 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [customText, setCustomText] = useState('');
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [imageTransform, setImageTransform] = useState({ x: 50, y: 50, scale: 0.6 });
+  const [imageTransform, setImageTransform] = useState<ImageTransform>({
+    x: 50,
+    y: 50,
+    scale: 0.6,
+    rotation: 0,
+  });
 
   // Calcular precio total
   const totalPrice = product.basePrice + selectedColor.price;
@@ -79,16 +85,7 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
 
   const handleRemoveImage = () => {
     setUploadedImage(null);
-    setImageTransform({ x: 50, y: 50, scale: 0.6 }); // Reset transform
-  };
-
-  const handleApplyPosition = (preset: MugPresetPosition) => {
-    setImageTransform({
-      x: preset.x,
-      y: preset.y,
-      scale: preset.scale,
-    });
-    logger.info('[SimpleMugCustomizer] Applied position preset:', preset.id);
+    setImageTransform({ x: 50, y: 50, scale: 0.6, rotation: 0 }); // Reset transform
   };
 
   const handleAddToCart = async () => {
@@ -108,6 +105,7 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
         selectedColor: selectedColor.name,
         position: uploadedImage ? { x: imageTransform.x, y: imageTransform.y } : undefined,
         scale: uploadedImage ? imageTransform.scale : undefined,
+        rotation: uploadedImage ? imageTransform.rotation : undefined,
 
         // Campos específicos de taza
         mugColor: selectedColor.name,
@@ -290,38 +288,15 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
                     Imagen cargada correctamente
                   </div>
 
-                  {/* Botones de posicionamiento rápido */}
-                  <div className="mt-4 bg-purple-50 border-2 border-purple-200 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Maximize2 className="w-4 h-4 text-purple-600" />
-                      <span className="text-sm font-bold text-purple-700">
-                        ⚡ Posiciones Rápidas
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {MUG_POSITIONS.slice(0, 6).map((preset) => (
-                        <button
-                          key={preset.id}
-                          onClick={() => handleApplyPosition(preset)}
-                          className="
-                            px-3 py-3 md:py-2
-                            min-h-[44px] md:min-h-0
-                            bg-white border border-purple-300 rounded-lg
-                            text-sm md:text-xs font-semibold text-gray-700
-                            hover:bg-purple-100 hover:border-purple-400 hover:text-purple-900
-                            transition-all active:scale-95
-                            touch-manipulation
-                          "
-                          title={preset.description}
-                          aria-label={`Aplicar posición: ${preset.description}`}
-                        >
-                          {preset.labelShort}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="mt-2 text-xs text-purple-600">
-                      Posición actual: X:{imageTransform.x}% Y:{imageTransform.y}% Escala:{Math.round(imageTransform.scale * 100)}%
-                    </div>
+                  {/* Editor Visual Interactivo */}
+                  <div className="mt-4">
+                    <InteractiveImageEditor
+                      image={uploadedImage}
+                      transform={imageTransform}
+                      onChange={setImageTransform}
+                      productImage={product.images[0]}
+                      disabled={false}
+                    />
                   </div>
                 </div>
               )}
