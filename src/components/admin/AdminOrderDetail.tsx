@@ -241,6 +241,53 @@ export default function AdminOrderDetail() {
     }
   };
 
+  /**
+   * Descarga una imagen personalizada del cliente
+   * Soporta URLs (Firebase Storage) y base64
+   */
+  const handleImageDownload = async (imageUrl: string, fieldLabel: string, itemName: string) => {
+    try {
+      let blob: Blob;
+
+      // Detectar si es base64 o URL
+      if (imageUrl.startsWith('data:')) {
+        // Es base64 - convertir directamente a blob
+        const response = await fetch(imageUrl);
+        blob = await response.blob();
+      } else {
+        // Es URL (Firebase Storage) - descargar con CORS
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+          throw new Error('No se pudo descargar la imagen');
+        }
+        blob = await response.blob();
+      }
+
+      // Crear nombre de archivo descriptivo
+      const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const sanitizedItemName = itemName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+      const sanitizedFieldLabel = fieldLabel.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+      const orderIdShort = order?.id?.slice(0, 8) || 'pedido';
+      const fileName = `${orderIdShort}_${sanitizedItemName}_${sanitizedFieldLabel}_${timestamp}.jpg`;
+
+      // Descargar
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+
+      notify.success(`Imagen descargada: ${fileName}`);
+      logger.info('[AdminOrderDetail] Image downloaded successfully', { fileName });
+    } catch (error) {
+      logger.error('[AdminOrderDetail] Error downloading image', error);
+      notify.error('No se pudo descargar la imagen. Intenta nuevamente.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -331,17 +378,29 @@ export default function AdminOrderDetail() {
                                     {/* Si tiene imagen, mostrarla */}
                                     {field.imageUrl ? (
                                       <div className="mt-2 ml-4">
-                                        <img
-                                          src={field.imageUrl}
-                                          alt={field.fieldLabel}
-                                          className="w-32 h-32 object-contain border-2 border-purple-200 rounded-lg bg-white"
-                                        />
+                                        <div className="flex items-start gap-3">
+                                          <img
+                                            src={field.imageUrl}
+                                            alt={field.fieldLabel}
+                                            className="w-32 h-32 object-contain border-2 border-purple-200 rounded-lg bg-white flex-shrink-0"
+                                          />
+
+                                          {/* Botón de descarga */}
+                                          <button
+                                            onClick={() => handleImageDownload(field.imageUrl, field.fieldLabel, item.name)}
+                                            className="px-3 py-2 bg-cyan-500 text-white rounded-lg font-bold hover:bg-cyan-600 transition-all flex items-center gap-2 text-sm flex-shrink-0"
+                                            title="Descargar imagen del cliente para editar y producir"
+                                          >
+                                            <Icon name="download" className="w-4 h-4" />
+                                            Descargar
+                                          </button>
+                                        </div>
 
                                         {/* Mostrar transformaciones si existen */}
                                         {field.imageTransform && (() => {
                                           const detectedPreset = detectPresetPosition(field.imageTransform, field.fieldLabel);
                                           return (
-                                            <div className="mt-1 text-xs space-y-1">
+                                            <div className="mt-2 text-xs space-y-1">
                                               {/* Mostrar preset detectado */}
                                               {detectedPreset ? (
                                                 <div className="p-2 bg-green-100 border border-green-300 rounded">
