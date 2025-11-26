@@ -4,7 +4,7 @@ import type { ImageUploadConfig, CustomizationValue, ImageTransform } from '../.
 import { uploadCustomImage, auth } from '../../../lib/firebase';
 import { compressImage, validateImageFile, fileToBase64 } from '../../../utils/imageCompression';
 import { logger } from '../../../lib/logger';
-import ImagePositionEditor from '../ImagePositionEditor';
+import InteractiveImageEditor from '../InteractiveImageEditor';
 
 interface ImageUploadFieldProps {
   fieldId: string;
@@ -258,10 +258,11 @@ export default function ImageUploadField({
         </div>
       )}
 
-      {/* Position Controls */}
+      {/* Editor Visual Interactivo */}
       {preview && safeConfig.showPositionControls && (
         <div className="mt-4">
-          <ImagePositionEditor
+          <InteractiveImageEditor
+            image={preview}
             transform={transform}
             onChange={handleTransformChange}
             disabled={isLoading}
