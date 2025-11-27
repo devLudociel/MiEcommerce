@@ -181,6 +181,68 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
     }
   };
 
+  /**
+   * Maneja el reordenamiento de productos
+   * @param editMode - Si es true, abre el customizer para editar; si es false, agrega directamente al carrito
+   */
+  const handleReorder = (editMode: boolean) => {
+    if (!order || order.items.length === 0) return;
+
+    // Para simplificar, tomamos el primer item del pedido
+    // En un futuro se podría mejorar para manejar múltiples items
+    const firstItem = order.items[0];
+
+    if (!firstItem.productId) {
+      logger.warn('[OrderDetail] Product ID not found in order item');
+      alert('No se pudo identificar el producto. Por favor, contacta con soporte.');
+      return;
+    }
+
+    // Si el producto tiene personalización
+    if (firstItem.customization) {
+      if (editMode) {
+        // Editar y Reordenar: Guardar configuración en localStorage y redirigir al customizer
+        const reorderData = {
+          values: firstItem.customization.values || [],
+          layers: firstItem.customization.layers || [],
+          timestamp: Date.now(),
+        };
+
+        localStorage.setItem(`reorder_${firstItem.productId}`, JSON.stringify(reorderData));
+        logger.info('[OrderDetail] Reorder data saved for editing', {
+          productId: firstItem.productId,
+          orderId: order.id,
+        });
+
+        // Redirigir al customizer con flag de edición
+        window.location.href = `/producto/${firstItem.productId}?reorder=edit`;
+      } else {
+        // Reordenar: Guardar configuración y agregar directamente al carrito
+        const reorderData = {
+          values: firstItem.customization.values || [],
+          layers: firstItem.customization.layers || [],
+          timestamp: Date.now(),
+          autoAddToCart: true, // Flag para agregar automáticamente
+        };
+
+        localStorage.setItem(`reorder_${firstItem.productId}`, JSON.stringify(reorderData));
+        logger.info('[OrderDetail] Reorder data saved for auto-add', {
+          productId: firstItem.productId,
+          orderId: order.id,
+        });
+
+        // Redirigir al customizer con flag de auto-add
+        window.location.href = `/producto/${firstItem.productId}?reorder=auto`;
+      }
+    } else {
+      // Producto sin personalización: redirigir directamente a la página del producto
+      logger.info('[OrderDetail] Reordering product without customization', {
+        productId: firstItem.productId,
+      });
+      window.location.href = `/producto/${firstItem.productId}`;
+    }
+  };
+
   if (!uid) {
     return (
       <div className="card p-8 bg-yellow-50 border-yellow-200 text-center">
@@ -401,13 +463,30 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
         >
           Volver a mis pedidos
         </a>
-        {order.status === 'delivered' && (
-          <a
-            href={`/producto/${order.items[0]?.productId}`}
-            className="btn bg-gradient-to-r from-cyan-500 to-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
-          >
-            Volver a comprar
-          </a>
+
+        {/* Botones de reordenamiento mejorados */}
+        {(order.status === 'delivered' || order.status === 'processing' || order.status === 'shipped') && order.items.length > 0 && (
+          <>
+            {/* Reordenar: Comprar de nuevo con la misma configuración */}
+            <button
+              onClick={() => handleReorder(false)}
+              className="btn bg-gradient-to-r from-cyan-500 to-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all flex items-center gap-2"
+            >
+              <span>🔄</span>
+              Reordenar
+            </button>
+
+            {/* Editar y Reordenar: Modificar personalización antes de comprar */}
+            {order.items[0]?.customization && (
+              <button
+                onClick={() => handleReorder(true)}
+                className="btn btn-outline border-2 border-cyan-500 text-cyan-700 px-8 py-3 rounded-xl font-bold hover:bg-cyan-50 transition-all flex items-center gap-2"
+              >
+                <span>✏️</span>
+                Editar y Reordenar
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>

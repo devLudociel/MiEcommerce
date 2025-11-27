@@ -61,8 +61,75 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     hasDraft,
   } = useAutoSaveDraft(draftKey, { values, layers }, true, 30000); // Auto-save every 30 seconds
 
-  // Check for existing draft on mount
+  // Check for reorder query parameter first
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const reorderMode = urlParams.get('reorder');
+
+    if (reorderMode) {
+      const reorderKey = `reorder_${product.id}`;
+      const reorderDataString = localStorage.getItem(reorderKey);
+
+      if (reorderDataString) {
+        try {
+          const reorderData = JSON.parse(reorderDataString);
+
+          // Load values and layers from previous order
+          if (reorderData.values) {
+            setValues(reorderData.values);
+            logger.info('[DynamicCustomizer] Reorder values loaded', {
+              productId: product.id,
+              mode: reorderMode,
+            });
+          }
+
+          if (reorderData.layers) {
+            setLayers(reorderData.layers);
+          }
+
+          // If auto mode, add to cart immediately
+          if (reorderMode === 'auto' && reorderData.autoAddToCart) {
+            logger.info('[DynamicCustomizer] Auto-adding to cart from reorder');
+
+            // Give React time to update state before adding to cart
+            setTimeout(() => {
+              const addButton = document.querySelector('[data-add-to-cart]') as HTMLButtonElement;
+              if (addButton) {
+                addButton.click();
+              }
+            }, 500);
+          }
+
+          // Clear reorder data after loading
+          localStorage.removeItem(reorderKey);
+
+          // Show success notification
+          if (reorderMode === 'edit') {
+            notify.success('Configuración anterior cargada. Puedes editarla antes de agregar al carrito.');
+          } else {
+            notify.success('Reordenando producto con la configuración anterior...');
+          }
+        } catch (error) {
+          logger.error('[DynamicCustomizer] Error loading reorder data', error);
+          notify.error('Error al cargar la configuración anterior');
+        }
+      }
+
+      // Clean up URL
+      urlParams.delete('reorder');
+      const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [product.id]);
+
+  // Check for existing draft on mount (only if not reordering)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const reorderMode = urlParams.get('reorder');
+
+    // Skip draft loading if we're in reorder mode
+    if (reorderMode) return;
+
     const draft = loadDraft();
     const lastSavedTime = getLastSavedTime();
 
@@ -1052,6 +1119,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
             <button
               onClick={handleAddToCart}
               disabled={isAddingToCart}
+              data-add-to-cart="true"
               className="w-full bg-gradient-to-r from-purple-500 to-cyan-500 text-white py-4 rounded-xl font-bold text-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
             >
               {isAddingToCart ? (
