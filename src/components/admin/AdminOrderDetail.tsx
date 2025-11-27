@@ -81,6 +81,10 @@ export default function AdminOrderDetail() {
     message: '',
   });
 
+  // Production notes state - track editing per item
+  const [editingNotes, setEditingNotes] = useState<Record<number, boolean>>({});
+  const [notesContent, setNotesContent] = useState<Record<number, string>>({});
+
   const showModal = (
     type: 'info' | 'warning' | 'error' | 'success',
     title: string,
@@ -287,6 +291,68 @@ export default function AdminOrderDetail() {
       logger.error('[AdminOrderDetail] Error downloading image', error);
       notify.error('No se pudo descargar la imagen. Intenta nuevamente.');
     }
+  };
+
+  /**
+   * Guarda las notas de producción de un item específico
+   */
+  const handleSaveProductionNotes = async (itemIndex: number) => {
+    if (!orderId || !user) return;
+
+    try {
+      const notes = notesContent[itemIndex] || '';
+      const token = await user.getIdToken();
+
+      const response = await fetch('/api/admin/update-item-notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          orderId,
+          itemIndex,
+          notes,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update notes');
+      }
+
+      // Actualizar el estado local
+      if (order) {
+        const updatedItems = [...order.items];
+        updatedItems[itemIndex] = {
+          ...updatedItems[itemIndex],
+          productionNotes: notes,
+        };
+        setOrder({ ...order, items: updatedItems });
+      }
+
+      // Salir del modo edición
+      setEditingNotes({ ...editingNotes, [itemIndex]: false });
+      notify.success('Notas de producción guardadas');
+      logger.info('[AdminOrderDetail] Production notes saved', { itemIndex });
+    } catch (error) {
+      logger.error('[AdminOrderDetail] Error saving production notes', error);
+      notify.error('No se pudieron guardar las notas. Intenta nuevamente.');
+    }
+  };
+
+  /**
+   * Inicia la edición de notas para un item
+   */
+  const handleStartEditNotes = (itemIndex: number, currentNotes?: string) => {
+    setEditingNotes({ ...editingNotes, [itemIndex]: true });
+    setNotesContent({ ...notesContent, [itemIndex]: currentNotes || '' });
+  };
+
+  /**
+   * Cancela la edición de notas para un item
+   */
+  const handleCancelEditNotes = (itemIndex: number) => {
+    setEditingNotes({ ...editingNotes, [itemIndex]: false });
   };
 
   /**
@@ -552,6 +618,65 @@ export default function AdminOrderDetail() {
                           <span className="font-bold text-cyan-600 text-lg">
                             {eur(Number(item.price ?? 0) * Number(item.quantity ?? 0))}
                           </span>
+                        </div>
+
+                        {/* Notas de producción internas */}
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Icon name="pen" className="w-4 h-4 text-orange-600" />
+                            <span className="font-bold text-sm text-gray-700">Notas de Producción (Interno)</span>
+                          </div>
+
+                          {editingNotes[index] ? (
+                            /* Modo edición */
+                            <div className="space-y-2">
+                              <textarea
+                                value={notesContent[index] || ''}
+                                onChange={(e) => setNotesContent({ ...notesContent, [index]: e.target.value })}
+                                placeholder="Ej: Usar tela premium, Cliente pidió entrega urgente, Revisar colores antes de imprimir..."
+                                className="w-full px-3 py-2 border-2 border-orange-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none resize-none text-sm"
+                                rows={3}
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleSaveProductionNotes(index)}
+                                  className="px-3 py-1.5 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition-all text-sm flex items-center gap-1"
+                                >
+                                  <Icon name="save" className="w-4 h-4" />
+                                  Guardar
+                                </button>
+                                <button
+                                  onClick={() => handleCancelEditNotes(index)}
+                                  className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition-all text-sm"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            /* Modo lectura */
+                            <div>
+                              {item.productionNotes ? (
+                                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 relative group">
+                                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{item.productionNotes}</p>
+                                  <button
+                                    onClick={() => handleStartEditNotes(index, item.productionNotes)}
+                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 bg-orange-500 text-white rounded text-xs font-bold hover:bg-orange-600"
+                                  >
+                                    Editar
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => handleStartEditNotes(index)}
+                                  className="w-full px-3 py-2 border-2 border-dashed border-orange-300 rounded-lg text-orange-600 hover:bg-orange-50 hover:border-orange-400 transition-all text-sm font-medium flex items-center justify-center gap-2"
+                                >
+                                  <Icon name="plus" className="w-4 h-4" />
+                                  Agregar notas para el equipo de producción
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
