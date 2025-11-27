@@ -3,6 +3,7 @@ import Header from '../components/layout/header.tsx';
 import { Toaster } from '../lib/notifications';
 import { toasterConfig } from '../lib/notifications';
 import ErrorBoundaryWrapper from '../components/wrappers/ErrorBoundaryWrapper.tsx';
+import Analytics from '../components/analytics/Analytics.tsx';
 import '../styles/global.css';
 
 interface Props {
@@ -101,5 +102,7 @@ const {
     </main>
     <!-- Toast Notifications Container -->
     <Toaster {...toasterConfig} client:load />
+    <!-- Analytics Tracking -->
+    <Analytics client:load />
   </body>
 </html>
