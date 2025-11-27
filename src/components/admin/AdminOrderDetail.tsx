@@ -356,6 +356,50 @@ export default function AdminOrderDetail() {
   };
 
   /**
+   * Actualiza el estado de producción de un item específico
+   */
+  const handleUpdateProductionStatus = async (itemIndex: number, newStatus: string) => {
+    if (!orderId || !user) return;
+
+    try {
+      const token = await user.getIdToken();
+
+      const response = await fetch('/api/admin/update-item-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          orderId,
+          itemIndex,
+          status: newStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      // Actualizar el estado local
+      if (order) {
+        const updatedItems = [...order.items];
+        updatedItems[itemIndex] = {
+          ...updatedItems[itemIndex],
+          productionStatus: newStatus as any,
+        };
+        setOrder({ ...order, items: updatedItems });
+      }
+
+      notify.success('Estado de producción actualizado');
+      logger.info('[AdminOrderDetail] Production status updated', { itemIndex, newStatus });
+    } catch (error) {
+      logger.error('[AdminOrderDetail] Error updating production status', error);
+      notify.error('No se pudo actualizar el estado. Intenta nuevamente.');
+    }
+  };
+
+  /**
    * Descarga todas las imágenes personalizadas del pedido en un archivo ZIP
    * Útil para pedidos con múltiples productos personalizados
    */
@@ -500,6 +544,85 @@ export default function AdminOrderDetail() {
                 <h2 className="text-2xl font-black text-gray-800 mb-4 inline-flex items-center gap-2">
                   <Icon name="package" className="w-6 h-6" /> Productos
                 </h2>
+
+                {/* Resumen del progreso de producción */}
+                {(() => {
+                  const statusCounts = (order.items || []).reduce(
+                    (acc, item) => {
+                      const status = item.productionStatus || 'pending';
+                      acc[status] = (acc[status] || 0) + 1;
+                      return acc;
+                    },
+                    {} as Record<string, number>
+                  );
+
+                  const total = order.items?.length || 0;
+                  const shipped = statusCounts['shipped'] || 0;
+                  const ready = statusCounts['ready'] || 0;
+                  const inProduction = statusCounts['in_production'] || 0;
+                  const pending = statusCounts['pending'] || 0;
+
+                  return (
+                    <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-bold text-gray-700">Progreso de Producción</span>
+                        <span className="text-xs text-gray-500">{total} producto(s) total</span>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-3">
+                        <div className="text-center p-2 bg-white rounded-lg border border-gray-200">
+                          <div className="text-2xl font-black text-gray-700">{pending}</div>
+                          <div className="text-xs text-gray-500 mt-1">⏳ Pendientes</div>
+                        </div>
+                        <div className="text-center p-2 bg-white rounded-lg border border-yellow-200">
+                          <div className="text-2xl font-black text-yellow-700">{inProduction}</div>
+                          <div className="text-xs text-yellow-600 mt-1">🔧 En Producción</div>
+                        </div>
+                        <div className="text-center p-2 bg-white rounded-lg border border-green-200">
+                          <div className="text-2xl font-black text-green-700">{ready}</div>
+                          <div className="text-xs text-green-600 mt-1">✅ Listos</div>
+                        </div>
+                        <div className="text-center p-2 bg-white rounded-lg border border-blue-200">
+                          <div className="text-2xl font-black text-blue-700">{shipped}</div>
+                          <div className="text-xs text-blue-600 mt-1">📦 Enviados</div>
+                        </div>
+                      </div>
+
+                      {/* Barra de progreso */}
+                      <div className="mt-3 h-3 bg-gray-200 rounded-full overflow-hidden flex">
+                        {pending > 0 && (
+                          <div
+                            className="bg-gray-400 transition-all"
+                            style={{ width: `${(pending / total) * 100}%` }}
+                            title={`${pending} pendientes`}
+                          />
+                        )}
+                        {inProduction > 0 && (
+                          <div
+                            className="bg-yellow-400 transition-all"
+                            style={{ width: `${(inProduction / total) * 100}%` }}
+                            title={`${inProduction} en producción`}
+                          />
+                        )}
+                        {ready > 0 && (
+                          <div
+                            className="bg-green-400 transition-all"
+                            style={{ width: `${(ready / total) * 100}%` }}
+                            title={`${ready} listos`}
+                          />
+                        )}
+                        {shipped > 0 && (
+                          <div
+                            className="bg-blue-400 transition-all"
+                            style={{ width: `${(shipped / total) * 100}%` }}
+                            title={`${shipped} enviados`}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <div className="space-y-4">
                   {(order.items || []).map((item: any, index: number) => (
                     <div key={index} className="flex gap-4 p-4 bg-gray-50 rounded-xl">
@@ -511,7 +634,33 @@ export default function AdminOrderDetail() {
                         height={96}
                       />
                       <div className="flex-1">
-                        <h3 className="font-bold text-gray-800 text-lg">{item.name}</h3>
+                        <div className="flex items-center justify-between gap-4 mb-2">
+                          <h3 className="font-bold text-gray-800 text-lg">{item.name}</h3>
+
+                          {/* Estado de producción por producto */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500 font-medium">Estado:</span>
+                            <select
+                              value={item.productionStatus || 'pending'}
+                              onChange={(e) => handleUpdateProductionStatus(index, e.target.value)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 outline-none transition-all ${
+                                item.productionStatus === 'shipped'
+                                  ? 'bg-blue-100 border-blue-300 text-blue-800'
+                                  : item.productionStatus === 'ready'
+                                  ? 'bg-green-100 border-green-300 text-green-800'
+                                  : item.productionStatus === 'in_production'
+                                  ? 'bg-yellow-100 border-yellow-300 text-yellow-800'
+                                  : 'bg-gray-100 border-gray-300 text-gray-700'
+                              }`}
+                            >
+                              <option value="pending">⏳ Pendiente</option>
+                              <option value="in_production">🔧 En Producción</option>
+                              <option value="ready">✅ Listo</option>
+                              <option value="shipped">📦 Enviado</option>
+                            </select>
+                          </div>
+                        </div>
+
                         {item.variantName && (
                           <p className="text-sm text-gray-500">Variante: {item.variantName}</p>
                         )}

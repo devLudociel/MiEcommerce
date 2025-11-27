@@ -89,6 +89,7 @@ export interface OrderItem {
   };
   uploadedFiles?: string[]; // URLs de los archivos subidos
   productionNotes?: string; // Notas internas del equipo de producción
+  productionStatus?: 'pending' | 'in_production' | 'ready' | 'shipped'; // Estado individual del producto
 }
 
 // CHECKOUT & ORDER: Shipping information
