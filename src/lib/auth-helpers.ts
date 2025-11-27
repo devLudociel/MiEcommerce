@@ -11,9 +11,10 @@ const logger = {
 
 export interface AuthResult {
   success: boolean;
+  isAuthenticated: boolean;
   uid?: string;
   isAdmin?: boolean;
-  error?: Response;
+  error?: string;
 }
 
 /**
@@ -25,10 +26,8 @@ export async function verifyAuthToken(request: Request): Promise<AuthResult> {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return {
       success: false,
-      error: new Response(JSON.stringify({ error: 'Unauthorized - No token provided' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      }),
+      isAuthenticated: false,
+      error: 'Unauthorized - No token provided',
     };
   }
 
@@ -38,6 +37,7 @@ export async function verifyAuthToken(request: Request): Promise<AuthResult> {
     const decodedToken = await getAdminAuth().verifyIdToken(idToken);
     return {
       success: true,
+      isAuthenticated: true,
       uid: decodedToken.uid,
       isAdmin: !!decodedToken.admin,
     };
@@ -45,10 +45,8 @@ export async function verifyAuthToken(request: Request): Promise<AuthResult> {
     logger.error('[auth-helpers] Invalid token:', verificationError);
     return {
       success: false,
-      error: new Response(JSON.stringify({ error: 'Unauthorized - Invalid token' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      }),
+      isAuthenticated: false,
+      error: 'Unauthorized - Invalid token',
     };
   }
 }
@@ -67,10 +65,10 @@ export async function verifyAdminAuth(request: Request): Promise<AuthResult> {
     logger.warn('[auth-helpers] Non-admin user attempted admin access:', authResult.uid);
     return {
       success: false,
-      error: new Response(JSON.stringify({ error: 'Forbidden - Admin access required' }), {
-        status: 403,
-        headers: { 'Content-Type': 'application/json' },
-      }),
+      isAuthenticated: true,
+      isAdmin: false,
+      uid: authResult.uid,
+      error: 'Forbidden - Admin access required',
     };
   }
 
