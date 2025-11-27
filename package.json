@@ -45,6 +45,7 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hot-toast": "^2.6.0",
+    "recharts": "^3.5.0",
     "resend": "^4.0.1",
     "stripe": "^17.5.0",
     "three": "^0.181.1",
