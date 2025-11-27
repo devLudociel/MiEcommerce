@@ -85,17 +85,34 @@ async function fetchProducts(filters: ProductFilters = {}): Promise<Product[]> {
 }
 
 /**
- * Fetch single product by ID
+ * Fetch single product by ID or slug
  */
-async function fetchProduct(productId: string): Promise<Product> {
+async function fetchProduct(identifier: string, bySlug: boolean = false): Promise<Product> {
   try {
-    logger.debug('[useProduct] Fetching product', { productId });
+    logger.debug('[useProduct] Fetching product', { identifier, bySlug });
 
-    const docRef = doc(db, 'products', productId);
-    const snapshot = await getDoc(docRef);
+    let snapshot;
 
-    if (!snapshot.exists()) {
-      throw new Error(`Product not found: ${productId}`);
+    if (bySlug) {
+      // Search by slug
+      const q = query(collection(db, 'products'), where('slug', '==', identifier), limit(1));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        // Try as ID fallback
+        const docRef = doc(db, 'products', identifier);
+        snapshot = await getDoc(docRef);
+      } else {
+        snapshot = querySnapshot.docs[0];
+      }
+    } else {
+      // Search by ID
+      const docRef = doc(db, 'products', identifier);
+      snapshot = await getDoc(docRef);
+    }
+
+    if (!snapshot || !snapshot.exists()) {
+      throw new Error(`Product not found: ${identifier}`);
     }
 
     const product = {
@@ -104,7 +121,7 @@ async function fetchProduct(productId: string): Promise<Product> {
       createdAt: snapshot.data().createdAt?.toDate(),
     } as Product;
 
-    logger.debug('[useProduct] Fetched product', { productId, name: product.name });
+    logger.debug('[useProduct] Fetched product', { identifier, name: product.name });
 
     return product;
   } catch (error) {
@@ -141,15 +158,17 @@ export function useProducts(filters: ProductFilters = {}) {
  * - Automatic caching
  * - Deduplication (multiple components share same data)
  * - Background refetching
+ * - Supports fetching by ID or slug
  *
  * @example
  * const { data: product, isLoading, error } = useProduct('product-id');
+ * const { data: product, isLoading, error } = useProduct('my-product-slug', true);
  */
-export function useProduct(productId: string) {
+export function useProduct(identifier: string, bySlug: boolean = false) {
   return useQuery({
-    queryKey: queryKeys.products.detail(productId),
-    queryFn: () => fetchProduct(productId),
-    enabled: !!productId, // Only fetch if productId exists
+    queryKey: bySlug ? queryKeys.products.detail(`slug:${identifier}`) : queryKeys.products.detail(identifier),
+    queryFn: () => fetchProduct(identifier, bySlug),
+    enabled: !!identifier, // Only fetch if identifier exists
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
