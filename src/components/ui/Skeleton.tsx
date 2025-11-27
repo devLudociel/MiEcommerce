@@ -1,21 +1,16 @@
-/**
- * Skeleton Component
- * Loading placeholders that match the shape of content for better perceived performance
- *
- * Based on best practices from:
- * - Material Design loading patterns
- * - WCAG 2.1 AA accessibility guidelines
- * - Modern UX research showing skeletons reduce perceived wait time by 30%
- */
-
+// src/components/ui/Skeleton.tsx
 import React from 'react';
 
+/**
+ * Base Skeleton component for loading states
+ * Provides a shimmer animation for better UX during lazy loading
+ */
 interface SkeletonProps {
   className?: string;
-  variant?: 'text' | 'circular' | 'rectangular' | 'rounded';
+  variant?: 'rectangular' | 'circular' | 'text';
   width?: string | number;
   height?: string | number;
-  animation?: 'pulse' | 'wave' | 'none';
+  animation?: 'pulse' | 'shimmer' | 'none';
 }
 
 export function Skeleton({
@@ -23,252 +18,325 @@ export function Skeleton({
   variant = 'rectangular',
   width,
   height,
-  animation = 'pulse',
+  animation = 'shimmer',
 }: SkeletonProps) {
+  const baseClasses = 'bg-gray-200';
+
   const variantClasses = {
-    text: 'h-4 rounded',
+    rectangular: 'rounded',
     circular: 'rounded-full',
-    rectangular: 'rounded-none',
-    rounded: 'rounded-lg',
+    text: 'rounded h-4',
   };
 
   const animationClasses = {
     pulse: 'animate-pulse',
-    wave: 'animate-shimmer',
+    shimmer: 'animate-shimmer bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%]',
     none: '',
   };
 
-  const style = {
-    width: typeof width === 'number' ? `${width}px` : width,
-    height: typeof height === 'number' ? `${height}px` : height,
+  const style: React.CSSProperties = {
+    width: width || '100%',
+    height: height || (variant === 'text' ? '1rem' : '100%'),
   };
 
   return (
     <div
-      className={`
-        bg-gray-200
-        ${variantClasses[variant]}
-        ${animationClasses[animation]}
-        ${className}
-      `}
+      className={`${baseClasses} ${variantClasses[variant]} ${animationClasses[animation]} ${className}`}
       style={style}
-      role="status"
-      aria-label="Cargando contenido"
-      aria-live="polite"
-    >
-      <span className="sr-only">Cargando...</span>
-    </div>
+    />
   );
 }
 
 /**
- * Skeleton para tarjeta de producto
+ * Dashboard Chart Skeleton
+ * Used while Recharts is loading
  */
-export function ProductCardSkeleton() {
+export function DashboardChartSkeleton() {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-      {/* Imagen del producto */}
-      <Skeleton variant="rectangular" height={256} className="w-full" />
+    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+      {/* Title */}
+      <Skeleton width="40%" height={24} className="mb-4" />
 
-      <div className="p-4 space-y-3">
-        {/* Título */}
-        <Skeleton variant="text" height={24} className="w-3/4" />
+      {/* Chart area */}
+      <div className="relative h-64 bg-gray-50 rounded-lg overflow-hidden">
+        <Skeleton height="100%" animation="shimmer" />
 
-        {/* Precio */}
-        <Skeleton variant="text" height={28} className="w-1/3" />
-
-        {/* Descripción corta */}
-        <div className="space-y-2">
-          <Skeleton variant="text" height={16} className="w-full" />
-          <Skeleton variant="text" height={16} className="w-5/6" />
+        {/* Simulated chart bars */}
+        <div className="absolute inset-0 flex items-end justify-around p-4 gap-2">
+          {[60, 80, 45, 90, 70, 55, 85].map((height, i) => (
+            <div
+              key={i}
+              className="flex-1 bg-gray-300 rounded-t animate-pulse"
+              style={{ height: `${height}%`, animationDelay: `${i * 100}ms` }}
+            />
+          ))}
         </div>
+      </div>
 
-        {/* Botón */}
-        <Skeleton variant="rounded" height={40} className="w-full" />
+      {/* Legend */}
+      <div className="flex gap-4 mt-4 justify-center">
+        <Skeleton width={100} height={16} />
+        <Skeleton width={100} height={16} />
       </div>
     </div>
   );
 }
 
 /**
- * Skeleton para lista de productos (grid)
+ * Product Grid Skeleton
+ * Used while product listings are loading
  */
 export function ProductGridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {Array.from({ length: count }).map((_, i) => (
-        <ProductCardSkeleton key={i} />
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[...Array(count)].map((_, i) => (
+        <div key={i} className="bg-white rounded-xl shadow-lg overflow-hidden">
+          {/* Image */}
+          <div className="aspect-square bg-gray-200 relative overflow-hidden">
+            <Skeleton height="100%" animation="shimmer" />
+          </div>
+
+          {/* Content */}
+          <div className="p-4 space-y-3">
+            {/* Title */}
+            <Skeleton width="75%" height={20} />
+
+            {/* Description */}
+            <Skeleton width="100%" height={16} />
+            <Skeleton width="60%" height={16} />
+
+            {/* Price */}
+            <Skeleton width="40%" height={24} className="mt-4" />
+
+            {/* Button */}
+            <Skeleton height={40} className="rounded-lg mt-4" />
+          </div>
+        </div>
       ))}
     </div>
   );
 }
 
 /**
- * Skeleton para panel de personalización
+ * Product Card Skeleton (single card)
  */
-export function CustomizerPanelSkeleton() {
+export function ProductCardSkeleton() {
   return (
-    <div className="bg-white rounded-xl border-2 border-gray-200 p-6 space-y-6">
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+      <div className="aspect-square bg-gray-200 relative overflow-hidden">
+        <Skeleton height="100%" animation="shimmer" />
+      </div>
+      <div className="p-4 space-y-3">
+        <Skeleton width="75%" height={20} />
+        <Skeleton width="100%" height={16} />
+        <Skeleton width="60%" height={16} />
+        <Skeleton width="40%" height={24} className="mt-4" />
+        <Skeleton height={40} className="rounded-lg mt-4" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Table Skeleton
+ * Used for data tables (orders, products, etc.)
+ */
+export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
+  return (
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <Skeleton variant="text" height={24} width={180} />
+      <div className="bg-gray-50 border-b border-gray-200 p-4">
+        <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+          {[...Array(columns)].map((_, i) => (
+            <Skeleton key={i} width="80%" height={20} />
+          ))}
+        </div>
+      </div>
+
+      {/* Rows */}
+      <div className="divide-y divide-gray-200">
+        {[...Array(rows)].map((_, rowIndex) => (
+          <div key={rowIndex} className="p-4">
+            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+              {[...Array(columns)].map((_, colIndex) => (
+                <Skeleton key={colIndex} width="70%" height={16} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * KPI Card Skeleton
+ * Used for dashboard metric cards
+ */
+export function KPICardSkeleton() {
+  return (
+    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+      <div className="flex items-center justify-between mb-4">
+        <Skeleton width={100} height={16} />
         <Skeleton variant="circular" width={40} height={40} />
       </div>
-
-      {/* Campo de formulario 1 */}
-      <div className="space-y-2">
-        <Skeleton variant="text" height={20} width={120} />
-        <Skeleton variant="rounded" height={48} className="w-full" />
-      </div>
-
-      {/* Campo de formulario 2 */}
-      <div className="space-y-2">
-        <Skeleton variant="text" height={20} width={140} />
-        <Skeleton variant="rounded" height={48} className="w-full" />
-      </div>
-
-      {/* Preview area */}
-      <div className="space-y-2">
-        <Skeleton variant="text" height={20} width={100} />
-        <Skeleton variant="rounded" height={200} className="w-full" />
-      </div>
-
-      {/* Controles */}
-      <div className="grid grid-cols-2 gap-3">
-        <Skeleton variant="rounded" height={44} />
-        <Skeleton variant="rounded" height={44} />
-      </div>
+      <Skeleton width="60%" height={32} className="mb-2" />
+      <Skeleton width="40%" height={16} />
     </div>
   );
 }
 
 /**
- * Skeleton para imagen con texto
+ * Dashboard Stats Grid Skeleton
+ * Complete skeleton for dashboard overview
  */
-export function ImageWithTextSkeleton() {
+export function DashboardStatsGridSkeleton() {
   return (
-    <div className="space-y-3">
-      <Skeleton variant="rounded" height={200} className="w-full" />
-      <Skeleton variant="text" height={20} className="w-3/4" />
-      <Skeleton variant="text" height={16} className="w-full" />
-      <Skeleton variant="text" height={16} className="w-5/6" />
+    <div className="space-y-6">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <KPICardSkeleton key={i} />
+        ))}
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <DashboardChartSkeleton />
+        <DashboardChartSkeleton />
+      </div>
+
+      {/* Table */}
+      <TableSkeleton rows={5} columns={4} />
     </div>
   );
 }
 
 /**
- * Skeleton para tabla de admin
+ * Order Detail Skeleton
+ * Used while loading order details
  */
-export function TableRowSkeleton({ columns = 5 }: { columns?: number }) {
+export function OrderDetailSkeleton() {
   return (
-    <tr className="border-b border-gray-200">
-      {Array.from({ length: columns }).map((_, i) => (
-        <td key={i} className="px-4 py-3">
-          <Skeleton variant="text" height={16} />
-        </td>
-      ))}
-    </tr>
-  );
-}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <Skeleton width="50%" height={32} className="mb-4" />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Skeleton width="40%" height={16} className="mb-2" />
+            <Skeleton width="80%" height={20} />
+          </div>
+          <div>
+            <Skeleton width="40%" height={16} className="mb-2" />
+            <Skeleton width="80%" height={20} />
+          </div>
+        </div>
+      </div>
 
-export function TableSkeleton({ rows = 5, columns = 5 }: { rows?: number; columns?: number }) {
-  return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <table className="w-full">
-        <thead className="bg-gray-50 border-b border-gray-200">
-          <tr>
-            {Array.from({ length: columns }).map((_, i) => (
-              <th key={i} className="px-4 py-3 text-left">
-                <Skeleton variant="text" height={16} width={100} />
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {Array.from({ length: rows }).map((_, i) => (
-            <TableRowSkeleton key={i} columns={columns} />
+      {/* Items */}
+      <div className="bg-white rounded-xl shadow-lg p-6 space-y-4">
+        <Skeleton width="30%" height={24} className="mb-4" />
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="flex gap-4 items-center pb-4 border-b border-gray-200">
+            <Skeleton variant="rectangular" width={100} height={100} />
+            <div className="flex-1 space-y-2">
+              <Skeleton width="60%" height={20} />
+              <Skeleton width="40%" height={16} />
+              <Skeleton width="30%" height={24} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Summary */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <Skeleton width="30%" height={24} className="mb-4" />
+        <div className="space-y-2">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="flex justify-between">
+              <Skeleton width="40%" height={16} />
+              <Skeleton width="20%" height={16} />
+            </div>
           ))}
-        </tbody>
-      </table>
+        </div>
+      </div>
     </div>
   );
 }
 
 /**
- * Skeleton para formulario
+ * Form Skeleton
+ * Used while loading forms
  */
 export function FormSkeleton({ fields = 4 }: { fields?: number }) {
   return (
-    <div className="space-y-6">
-      {Array.from({ length: fields }).map((_, i) => (
+    <div className="bg-white rounded-xl shadow-lg p-6 space-y-6">
+      <Skeleton width="40%" height={28} className="mb-6" />
+
+      {[...Array(fields)].map((_, i) => (
         <div key={i} className="space-y-2">
-          <Skeleton variant="text" height={20} width={120} />
-          <Skeleton variant="rounded" height={48} className="w-full" />
+          <Skeleton width="30%" height={16} />
+          <Skeleton height={40} className="rounded-lg" />
         </div>
       ))}
-      <Skeleton variant="rounded" height={48} width={200} />
+
+      <div className="flex gap-4 mt-8">
+        <Skeleton width={120} height={44} className="rounded-lg" />
+        <Skeleton width={120} height={44} className="rounded-lg" />
+      </div>
     </div>
   );
 }
 
 /**
- * Skeleton para página de detalles de producto
+ * Image Gallery Skeleton
+ * Used for image galleries and customizer
  */
-export function ProductDetailSkeleton() {
+export function ImageGallerySkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* Galería de imágenes */}
-      <div className="space-y-4">
-        <Skeleton variant="rounded" height={400} className="w-full" />
-        <div className="grid grid-cols-4 gap-2">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} variant="rounded" height={80} />
-          ))}
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      {[...Array(count)].map((_, i) => (
+        <div key={i} className="aspect-square bg-gray-200 rounded-lg overflow-hidden">
+          <Skeleton height="100%" animation="shimmer" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Customizer Preview Skeleton
+ * Used while customizer is loading
+ */
+export function CustomizerPreviewSkeleton() {
+  return (
+    <div className="flex flex-col lg:flex-row gap-6">
+      {/* Preview area */}
+      <div className="flex-1 bg-white rounded-xl shadow-lg p-6">
+        <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden relative">
+          <Skeleton height="100%" animation="shimmer" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Skeleton variant="circular" width={120} height={120} />
+          </div>
         </div>
       </div>
 
-      {/* Información del producto */}
-      <div className="space-y-6">
-        {/* Título y precio */}
-        <div className="space-y-3">
-          <Skeleton variant="text" height={32} className="w-3/4" />
-          <Skeleton variant="text" height={36} className="w-1/3" />
-        </div>
+      {/* Controls */}
+      <div className="w-full lg:w-96 bg-white rounded-xl shadow-lg p-6 space-y-6">
+        <Skeleton width="60%" height={28} className="mb-6" />
 
-        {/* Descripción */}
-        <div className="space-y-2">
-          <Skeleton variant="text" height={16} className="w-full" />
-          <Skeleton variant="text" height={16} className="w-full" />
-          <Skeleton variant="text" height={16} className="w-4/5" />
-        </div>
-
-        {/* Opciones */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Skeleton variant="text" height={20} width={100} />
-            <div className="flex gap-2">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} variant="circular" width={48} height={48} />
-              ))}
-            </div>
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton width="40%" height={16} />
+            <Skeleton height={40} className="rounded-lg" />
           </div>
+        ))}
 
-          <div className="space-y-2">
-            <Skeleton variant="text" height={20} width={80} />
-            <div className="flex gap-2">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} variant="rounded" width={60} height={40} />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Botones */}
-        <div className="space-y-3">
-          <Skeleton variant="rounded" height={56} className="w-full" />
-          <Skeleton variant="rounded" height={48} className="w-full" />
-        </div>
+        <Skeleton height={48} className="rounded-lg mt-8" />
       </div>
     </div>
   );
 }
+
+export default Skeleton;
