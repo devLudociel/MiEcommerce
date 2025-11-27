@@ -5,6 +5,8 @@ import { uploadCustomImage, auth } from '../../../lib/firebase';
 import { compressImage, validateImageFile, fileToBase64 } from '../../../utils/imageCompression';
 import { logger } from '../../../lib/logger';
 import InteractiveImageEditor from '../InteractiveImageEditor';
+import { validateImageQuality, getQualityPresetForCategory, type ImageQualityResult } from '../../../lib/validation/imageQualityValidator';
+import ImageQualityBadge from '../../common/ImageQualityBadge';
 
 interface ImageUploadFieldProps {
   fieldId: string;
@@ -15,6 +17,7 @@ interface ImageUploadFieldProps {
   onChange: (value: CustomizationValue) => void;
   helpText?: string;
   productType?: string; // 'camiseta', 'cuadro', etc. for storage path
+  categoryId?: string; // Category ID for quality validation preset
 }
 
 export default function ImageUploadField({
@@ -26,6 +29,7 @@ export default function ImageUploadField({
   onChange,
   helpText,
   productType = 'custom',
+  categoryId,
 }: ImageUploadFieldProps) {
   // Ensure config has required properties with defaults
   const safeConfig = {
@@ -42,6 +46,7 @@ export default function ImageUploadField({
   const [preview, setPreview] = useState<string | null>(
     (value?.imageUrl as string | undefined) || null
   );
+  const [imageQuality, setImageQuality] = useState<ImageQualityResult | null>(null);
 
   // Image transform state
   const [transform, setTransform] = useState<ImageTransform>(
@@ -104,6 +109,16 @@ export default function ImageUploadField({
       const base64 = await fileToBase64(file);
       setPreview(base64);
 
+      // Validate image quality
+      const qualityConfig = categoryId ? getQualityPresetForCategory(categoryId) : undefined;
+      const qualityResult = await validateImageQuality(file, qualityConfig);
+      setImageQuality(qualityResult);
+
+      logger.info('[ImageUploadField] Image quality validated', {
+        quality: qualityResult.quality,
+        isValid: qualityResult.isValid,
+      });
+
       // Compress and upload
       const compressedFile = await compressImage(file, {
         maxSizeMB: Math.min(safeConfig.maxSizeMB, 2),
@@ -143,6 +158,7 @@ export default function ImageUploadField({
 
   const handleRemoveImage = () => {
     setPreview(null);
+    setImageQuality(null);
     onChange({
       fieldId,
       value: '',
@@ -255,6 +271,13 @@ export default function ImageUploadField({
             <span className="font-bold">✓</span>
             <span>Imagen cargada correctamente</span>
           </div>
+
+          {/* Image Quality Badge */}
+          {imageQuality && (
+            <div className="mt-3">
+              <ImageQualityBadge quality={imageQuality} showDetails={true} />
+            </div>
+          )}
         </div>
       )}
 

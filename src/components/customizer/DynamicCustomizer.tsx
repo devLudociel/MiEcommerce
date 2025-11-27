@@ -462,6 +462,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
             onChange={(val) => handleFieldChange(field.id, val)}
             helpText={field.helpText}
             productType={product.categoryId}
+            categoryId={product.categoryId}
           />
         );
       }
