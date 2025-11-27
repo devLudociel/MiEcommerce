@@ -122,6 +122,49 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     }
   }, [product.id]);
 
+  // Check for shared design parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isShared = urlParams.get('shared');
+
+    if (isShared === 'true') {
+      const sharedKey = `shared_${product.id}`;
+      const sharedDataString = localStorage.getItem(sharedKey);
+
+      if (sharedDataString) {
+        try {
+          const sharedData = JSON.parse(sharedDataString);
+
+          // Load values and layers from shared design
+          if (sharedData.values) {
+            setValues(sharedData.values);
+            logger.info('[DynamicCustomizer] Shared design values loaded', {
+              productId: product.id,
+            });
+          }
+
+          if (sharedData.layers) {
+            setLayers(sharedData.layers);
+          }
+
+          // Clear shared data after loading
+          localStorage.removeItem(sharedKey);
+
+          // Show success notification
+          notify.success('¡Diseño compartido cargado! Puedes personalizarlo antes de agregar al carrito.');
+        } catch (error) {
+          logger.error('[DynamicCustomizer] Error loading shared design', error);
+          notify.error('Error al cargar el diseño compartido');
+        }
+      }
+
+      // Clean up URL
+      urlParams.delete('shared');
+      const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [product.id]);
+
   // Check for existing draft on mount (only if not reordering)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
