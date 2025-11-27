@@ -1,5 +1,6 @@
 // src/lib/emailTemplates.ts
 import type { OrderData } from './firebase';
+import { generateDesignPreviewHTML, generateCustomizationSummary } from './email/designPreview';
 
 /**
  * Plantilla de email de confirmación de pedido
@@ -70,7 +71,12 @@ export function orderConfirmationTemplate(order: OrderData): { subject: string; 
                             <td style="width: 70%;">
                               <div style="font-weight: bold; color: #1e293b; margin-bottom: 5px;">${item.name}</div>
                               ${item.variantName ? `<div style="font-size: 12px; color: #64748b;">Variante: ${item.variantName}</div>` : ''}
-                              ${item.customization ? '<div style="font-size: 12px; color: #9333ea; font-weight: bold;">✨ Personalizado</div>' : ''}
+                              ${item.customization ? `
+                                <div style="font-size: 12px; color: #9333ea; font-weight: bold;">
+                                  ✨ Personalizado
+                                  ${generateCustomizationSummary(item.customization) ? ` (${generateCustomizationSummary(item.customization)})` : ''}
+                                </div>
+                              ` : ''}
                             </td>
                             <td style="width: 30%; text-align: right;">
                               <div style="font-size: 12px; color: #64748b; margin-bottom: 5px;">Cantidad: ${item.quantity}</div>
@@ -78,6 +84,7 @@ export function orderConfirmationTemplate(order: OrderData): { subject: string; 
                             </td>
                           </tr>
                         </table>
+                        ${item.customization ? generateDesignPreviewHTML(item.name, item.customization, item.previewImageUrl) : ''}
                       </div>
                     `
                       )
