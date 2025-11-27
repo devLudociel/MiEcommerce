@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Loader, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { ShoppingCart, Loader, Sparkles, Image as ImageIcon, RotateCcw, Save } from 'lucide-react';
 import type {
   CustomizationSchema,
   CustomizationField,
@@ -24,6 +24,7 @@ import SaveDesignButton from './SaveDesignButton';
 import { addToCart } from '../../store/cartStore';
 import { logger } from '../../lib/logger';
 import { notify } from '../../lib/notifications';
+import { useAutoSaveDraft } from '../hooks/useAutoSaveDraft';
 
 interface FirebaseProduct {
   id: string;
@@ -49,6 +50,44 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   const [showCliparts, setShowCliparts] = useState(false);
   const [layers, setLayers] = useState<DesignLayer[]>([]);
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
+  const [showDraftNotification, setShowDraftNotification] = useState(false);
+
+  // Auto-save draft functionality
+  const draftKey = `draft_${product.id}`;
+  const {
+    loadDraft,
+    clearDraft,
+    getLastSavedTime,
+    hasDraft,
+  } = useAutoSaveDraft(draftKey, { values, layers }, true, 30000); // Auto-save every 30 seconds
+
+  // Check for existing draft on mount
+  useEffect(() => {
+    const draft = loadDraft();
+    const lastSavedTime = getLastSavedTime();
+
+    if (draft && hasDraft()) {
+      const timeSinceLastSave = lastSavedTime
+        ? Math.floor((Date.now() - new Date(lastSavedTime).getTime()) / 1000 / 60)
+        : null;
+
+      const timeText = timeSinceLastSave !== null
+        ? timeSinceLastSave < 1
+          ? 'hace menos de 1 minuto'
+          : `hace ${timeSinceLastSave} minuto${timeSinceLastSave > 1 ? 's' : ''}`
+        : '';
+
+      logger.info('[DynamicCustomizer] Draft found', { productId: product.id, lastSavedTime });
+      setShowDraftNotification(true);
+
+      // Auto-close notification after 15 seconds if user doesn't interact
+      const timer = setTimeout(() => {
+        setShowDraftNotification(false);
+      }, 15000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [product.id]);
 
   // Preload color preview images for faster switching
   useEffect(() => {
@@ -251,6 +290,24 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     return true;
   };
 
+  const handleLoadDraft = () => {
+    const draft = loadDraft();
+    if (draft) {
+      setValues(draft.values || {});
+      setLayers(draft.layers || []);
+      setShowDraftNotification(false);
+      notify.success('Borrador restaurado correctamente');
+      logger.info('[DynamicCustomizer] Draft loaded successfully', { productId: product.id });
+    }
+  };
+
+  const handleDismissDraft = () => {
+    setShowDraftNotification(false);
+    clearDraft();
+    notify.info('Borrador descartado');
+    logger.info('[DynamicCustomizer] Draft dismissed', { productId: product.id });
+  };
+
   const handleAddToCart = async () => {
     setError(null);
 
@@ -285,6 +342,9 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
         productId: product.id,
         customization: customizationData,
       });
+
+      // Clear draft after successful add to cart
+      clearDraft();
 
       // Reset form
       setValues({});
@@ -803,6 +863,54 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
           <h2 className="text-4xl font-bold text-gray-900 mb-2">Personaliza tu {product.name}</h2>
           <p className="text-gray-600">{product.description}</p>
         </div>
+
+        {/* Draft Recovery Notification */}
+        {showDraftNotification && (
+          <div className="mb-6 max-w-3xl mx-auto">
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-300 rounded-xl p-4 shadow-lg">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5">
+                  <Save className="w-6 h-6 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-blue-900 text-lg mb-1">
+                    Borrador Encontrado
+                  </h3>
+                  <p className="text-blue-700 text-sm mb-3">
+                    Encontramos un diseño guardado automáticamente. ¿Quieres continuar donde lo dejaste?
+                  </p>
+                  {getLastSavedTime() && (
+                    <p className="text-blue-600 text-xs mb-3">
+                      Última modificación: {(() => {
+                        const lastSaved = getLastSavedTime();
+                        if (!lastSaved) return '';
+                        const mins = Math.floor((Date.now() - new Date(lastSaved).getTime()) / 1000 / 60);
+                        return mins < 1
+                          ? 'hace menos de 1 minuto'
+                          : `hace ${mins} minuto${mins > 1 ? 's' : ''}`;
+                      })()}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleLoadDraft}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all flex items-center gap-2 text-sm"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Restaurar Borrador
+                    </button>
+                    <button
+                      onClick={handleDismissDraft}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-all text-sm"
+                    >
+                      Empezar de Nuevo
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Template Gallery Modal */}
         {showTemplates && (
