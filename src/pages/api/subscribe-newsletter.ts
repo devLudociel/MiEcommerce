@@ -4,6 +4,7 @@ import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { z } from 'zod';
+import { checkRateLimit, createRateLimitResponse, RATE_LIMIT_CONFIGS } from '../../lib/rate-limiter';
 
 // Simple console logger for API routes (avoids import issues)
 const logger = {
@@ -28,6 +29,13 @@ const subscribeSchema = z.object({
  * - Stores subscriber metadata for marketing
  */
 export const POST: APIRoute = async ({ request }) => {
+  // SECURITY: Rate limiting (strict to prevent spam subscriptions)
+  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STRICT, 'newsletter');
+  if (!rateLimitResult.allowed) {
+    logger.warn('[subscribe-newsletter] Rate limit exceeded');
+    return createRateLimitResponse(rateLimitResult);
+  }
+
   // SECURITY: CSRF protection
   const csrfCheck = validateCSRF(request);
   if (!csrfCheck.valid) {
