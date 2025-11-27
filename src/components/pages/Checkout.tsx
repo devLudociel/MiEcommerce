@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useStore } from '@nanostores/react';
 import { cartStore, cartLoadingStore, clearCart, updateCartItemQuantity, removeFromCart } from '../../store/cartStore';
 import type { CartItem } from '../../store/cartStore';
@@ -16,6 +16,8 @@ import { getUserData } from '../../lib/userProfile';
 import type { Address } from '../../lib/userProfile';
 import CustomizationDetails from '../cart/CustomizationDetails';
 import { Trash2, Plus, Minus } from 'lucide-react';
+// Analytics tracking
+import { trackBeginCheckout } from '../../lib/analytics';
 
 interface ShippingInfo {
   firstName: string;
@@ -186,6 +188,28 @@ export default function Checkout() {
     showToastOnError: false,
     formName: 'Checkout-Shipping',
   });
+
+  // Track flag to prevent duplicate begin_checkout events
+  const trackingInitialized = React.useRef(false);
+
+  // Track begin_checkout when checkout page loads with items
+  useEffect(() => {
+    if (!authLoading && !isCartSyncing && cart.items.length > 0 && !trackingInitialized.current) {
+      trackingInitialized.current = true;
+
+      // Track begin checkout in analytics
+      trackBeginCheckout(
+        cart.items.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          category: 'General',
+        })),
+        totals.total
+      );
+    }
+  }, [authLoading, isCartSyncing, cart.items, totals.total]);
 
   // Redirect to home if cart is empty (after initialization)
   // BUT: Don't redirect if we're processing a payment or already have an order

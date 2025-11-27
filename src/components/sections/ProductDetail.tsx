@@ -12,6 +12,8 @@ import { ProductGallery } from '../products/ProductGallery';
 import { ProductInfo } from '../products/ProductInfo';
 import { ProductTabs } from '../products/ProductTabs';
 import { RelatedProducts } from '../products/RelatedProducts';
+// Analytics tracking
+import { trackProductView, trackAddToCart as trackAnalyticsAddToCart, trackCustomizeProduct } from '../../lib/analytics';
 
 interface ProductImage {
   id: number;
@@ -213,6 +215,15 @@ export default function ProductDetail({ id, slug }: Props) {
         setSelectedImage(0);
         setQuantity(1);
 
+        // Track product view in analytics
+        trackProductView({
+          id: product.id,
+          name: product.name,
+          price: product.basePrice,
+          category: product.category,
+          brand: product.brand,
+        });
+
         // Cargar estadísticas de reseñas
         try {
           const stats = await getProductReviewStats(data.id);
@@ -266,6 +277,15 @@ export default function ProductDetail({ id, slug }: Props) {
         variantId: variant.id,
         variantName: variant.colorName ? `${variant.name} - ${variant.colorName}` : variant.name,
       });
+
+      // Track add to cart in analytics
+      trackAnalyticsAddToCart({
+        id: product.id,
+        name: product.name,
+        price: variant.price,
+        quantity: Math.max(1, quantity),
+        category: product.category,
+      });
     } finally {
       setTimeout(() => setIsAddingToCart(false), 600);
     }
@@ -278,6 +298,10 @@ export default function ProductDetail({ id, slug }: Props) {
 
   const handleCustomize = useCallback(() => {
     if (!uiProduct) return;
+
+    // Track customization start in analytics
+    trackCustomizeProduct(uiProduct.name);
+
     window.location.href = `/personalizar/${uiProduct.slug || uiProduct.id}`;
   }, [uiProduct]);
 

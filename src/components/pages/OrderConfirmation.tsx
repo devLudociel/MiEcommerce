@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import { db } from '../../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import type { OrderItem, ShippingInfo, PaymentInfo, BillingInfo } from '../../types/firebase';
+// Analytics tracking
+import { trackPurchase } from '../../lib/analytics';
 
 interface Order {
   id: string;
@@ -30,6 +32,9 @@ export default function OrderConfirmation() {
   const [guestAccessKey, setGuestAccessKey] = useState<string | null>(null);
   const [hasDigitalProducts, setHasDigitalProducts] = useState(false);
   const { user, loading: authLoading } = useAuth();
+
+  // Track flag to prevent duplicate purchase events
+  const purchaseTracked = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -105,6 +110,31 @@ export default function OrderConfirmation() {
       loadOrder();
     }
   }, [authLoading, user]);
+
+  // Track purchase in analytics (once per order)
+  useEffect(() => {
+    if (order && !purchaseTracked.current) {
+      purchaseTracked.current = true;
+
+      // Track purchase event
+      trackPurchase({
+        id: order.id,
+        total: order.total,
+        subtotal: order.subtotal,
+        shipping: order.shipping,
+        tax: order.tax,
+        items: order.items.map(item => ({
+          id: item.productId,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          category: 'General',
+        })),
+      });
+
+      logger.debug('[OrderConfirmation] Purchase tracked in analytics', { orderId: order.id });
+    }
+  }, [order]);
 
   // Check if order has digital products by querying Firestore
   useEffect(() => {
