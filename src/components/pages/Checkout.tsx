@@ -206,10 +206,10 @@ export default function Checkout() {
           quantity: item.quantity,
           category: 'General',
         })),
-        totals.total
+        cart.total
       );
     }
-  }, [authLoading, isCartSyncing, cart.items, totals.total]);
+  }, [authLoading, isCartSyncing, cart.items, cart.total]);
 
   // Redirect to home if cart is empty (after initialization)
   // BUT: Don't redirect if we're processing a payment or already have an order
