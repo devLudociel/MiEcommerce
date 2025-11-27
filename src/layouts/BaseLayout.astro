@@ -39,6 +39,14 @@ const {
     <meta property="twitter:image" content={new URL(ogImage, Astro.url)} />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Prefetch critical routes for faster navigation -->
+    <link rel="prefetch" href="/checkout" />
+    <link rel="prefetch" href="/cuenta/pedidos" />
+    <link rel="prefetch" href="/productos" />
+    <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
+    <link rel="dns-prefetch" href="https://www.googleapis.com" />
+
     <title>{title}</title>
     <style>
       /* Variable CSS para la altura del header - ajústala según tu header real */
