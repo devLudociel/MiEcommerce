@@ -3,7 +3,6 @@ import Header from '../components/layout/header.tsx';
 import { Toaster } from '../lib/notifications';
 import { toasterConfig } from '../lib/notifications';
 import ErrorBoundaryWrapper from '../components/wrappers/ErrorBoundaryWrapper.tsx';
-import QueryProvider from '../components/providers/QueryProvider.tsx';
 import Analytics from '../components/analytics/Analytics.tsx';
 import '../styles/global.css';
 
@@ -96,13 +95,10 @@ const {
     <a class="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
     <Header client:load />
     <main id="contenido-principal">
-      <!-- React Query Provider para cache y data fetching -->
-      <QueryProvider client:only="react">
-        <!-- Global Error Boundary para capturar errores de React -->
-        <ErrorBoundaryWrapper client:only="react">
-          <slot />
-        </ErrorBoundaryWrapper>
-      </QueryProvider>
+      <!-- Global Error Boundary para capturar errores de React -->
+      <ErrorBoundaryWrapper client:only="react">
+        <slot />
+      </ErrorBoundaryWrapper>
     </main>
     <!-- Toast Notifications Container -->
     <Toaster {...toasterConfig} client:load />

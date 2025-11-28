@@ -17,7 +17,8 @@
       "Bash(del nul)",
       "Bash(find:*)",
       "Bash(node:*)",
-      "Bash(ls -la \"C:\\Users\\Usuario\\.claude-worktrees\\ecommerce-personalizado-nuevo\\focused-jones\\src\\components\\admin\\charts\"\" 2>&1 || dir \"C:UsersUsuario.claude-worktreesecommerce-personalizado-nuevofocused-jonessrccomponentsadmincharts\"\")"
+      "Bash(ls -la \"C:\\Users\\Usuario\\.claude-worktrees\\ecommerce-personalizado-nuevo\\focused-jones\\src\\components\\admin\\charts\"\" 2>&1 || dir \"C:UsersUsuario.claude-worktreesecommerce-personalizado-nuevofocused-jonessrccomponentsadmincharts\"\")",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []
