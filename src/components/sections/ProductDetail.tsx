@@ -162,6 +162,7 @@ export default function ProductDetail({ id, slug }: Props) {
   const wishlist = useWishlist();
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [reviewStats, setReviewStats] = useState({ averageRating: 0, totalReviews: 0 });
+  const [mounted, setMounted] = useState(false);
 
   // Modal state
   const [modal, setModal] = useState<{
@@ -187,6 +188,11 @@ export default function ProductDetail({ id, slug }: Props) {
   const closeModal = () => {
     setModal({ ...modal, isOpen: false });
   };
+
+  // Mark component as mounted (for hydration safety)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Track product view and load related data when product loads
   useEffect(() => {
