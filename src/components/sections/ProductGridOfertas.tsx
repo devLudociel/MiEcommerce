@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
-import { db, getProductReviewStats } from '../../lib/firebase';
+import { useMemo } from 'react';
+import { useProducts } from '../../hooks/react-query/useProducts';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
-import { collection, query, where, getDocs } from 'firebase/firestore';
 
 interface Product {
   id: string;
@@ -20,70 +19,29 @@ interface Product {
 }
 
 export default function ProductGridOfertas() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Fetch products on sale with React Query
+  const { data: rawProducts = [], isLoading: loading, error: queryError } = useProducts({ onSale: true });
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
+  const error = queryError ? (queryError as Error).message : null;
 
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Query only products that are on sale
-      const q = query(
-        collection(db, 'products'),
-        where('active', '==', true),
-        where('onSale', '==', true)
-      );
-
-      const snap = await getDocs(q);
-
-      const productsPromises = snap.docs.map(async (d: any) => {
-        const data = d.data() || {};
-
-        // Load review statistics
-        let reviewStats = { averageRating: 0, totalReviews: 0 };
-        try {
-          const stats = await getProductReviewStats(d.id);
-          reviewStats = {
-            averageRating: stats.averageRating,
-            totalReviews: stats.totalReviews,
-          };
-        } catch (reviewError) {
-          console.error(`Error loading reviews for ${d.id}:`, reviewError);
-        }
-
-        return {
-          id: d.id,
-          name: data.name || 'Producto',
-          description: data.description || '',
-          basePrice: Number(data.basePrice) || 0,
-          salePrice: data.salePrice ? Number(data.salePrice) : undefined,
-          image: (data.images && data.images[0]) || FALLBACK_IMG_400x300,
-          images: data.images || [],
-          category: data.category || 'general',
-          rating: reviewStats.averageRating,
-          reviews: reviewStats.totalReviews,
-          inStock: !!data.active,
-          slug: data.slug || d.id,
-          onSale: !!data.onSale,
-        } as Product;
-      });
-
-      const list = await Promise.all(productsPromises);
-      setProducts(list);
-    } catch (e: any) {
-      console.error('[ProductGridOfertas] Error:', e);
-      setError(e?.message || 'Error cargando productos en oferta');
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Transform products to UI format
+  const products = useMemo(() => {
+    return rawProducts.map((doc) => ({
+      id: doc.id,
+      name: doc.name || 'Producto',
+      description: doc.description || '',
+      basePrice: Number(doc.price) || 0,
+      salePrice: doc.salePrice ? Number(doc.salePrice) : undefined,
+      image: (doc.images && doc.images[0]) || FALLBACK_IMG_400x300,
+      images: doc.images || [],
+      category: doc.category || 'general',
+      rating: doc.rating || 0,
+      reviews: doc.reviews || 0,
+      inStock: doc.inStock,
+      slug: doc.slug || doc.id,
+      onSale: doc.onSale,
+    })) as Product[];
+  }, [rawProducts]);
 
   if (loading) {
     return (

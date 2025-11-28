@@ -1,27 +1,25 @@
 // src/components/providers/QueryProvider.tsx
-import { QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { queryClient } from '../../lib/react-query/queryClient';
-import type { ReactNode } from 'react';
-
-interface QueryProviderProps {
-  children: ReactNode;
-}
 
 /**
- * TanStack Query Provider
+ * React Query Provider Component
  *
- * Wraps the application with QueryClientProvider for global caching.
- * Includes React Query Devtools in development for debugging.
+ * Wraps the application with QueryClientProvider to enable
+ * React Query hooks throughout the app.
+ *
+ * Must be used with client:only="react" directive in Astro.
  */
+
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '../../lib/react-query/queryClient';
+
+interface QueryProviderProps {
+  children: React.ReactNode;
+}
+
 export default function QueryProvider({ children }: QueryProviderProps) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      {/* Only show devtools in development */}
-      {import.meta.env.DEV && (
-        <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
-      )}
     </QueryClientProvider>
   );
 }

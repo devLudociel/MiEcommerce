@@ -31,6 +31,7 @@ export interface Product {
 interface ProductFilters {
   category?: string;
   featured?: boolean;
+  onSale?: boolean;
   limit?: number;
   onlyPhysical?: boolean;
   onlyDigital?: boolean;
@@ -53,6 +54,11 @@ async function fetchProducts(filters: ProductFilters = {}): Promise<Product[]> {
     // Filter by featured
     if (filters.featured !== undefined) {
       q = query(q, where('featured', '==', filters.featured));
+    }
+
+    // Filter by onSale
+    if (filters.onSale !== undefined) {
+      q = query(q, where('onSale', '==', filters.onSale));
     }
 
     // Filter physical/digital

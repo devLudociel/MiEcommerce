@@ -1,9 +1,7 @@
 // src/components/sections/BestSellers.tsx
-import { useState, useEffect } from 'react';
-import { db } from '../../lib/firebase';
-import { collection, query, where, limit, getDocs } from 'firebase/firestore';
+import { useState, useEffect, useMemo } from 'react';
+import { useProducts } from '../../hooks/react-query/useProducts';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
-import { logger } from '../../lib/logger';
 
 interface Product {
   id: string;
@@ -17,52 +15,27 @@ interface Product {
 }
 
 export default function BestSellers() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  useEffect(() => {
-    const loadBestSellers = async () => {
-      try {
-        setLoading(true);
-        // Fetch active products without orderBy to avoid needing a composite index
-        const q = query(
-          collection(db, 'products'),
-          where('active', '==', true),
-          limit(20) // Get more products to sort client-side
-        );
+  // Fetch products with React Query - get 20 to sort client-side
+  const { data: rawProducts = [], isLoading: loading } = useProducts({ limit: 20 });
 
-        const snapshot = await getDocs(q);
-        const items: Product[] = snapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            name: data.name || 'Producto',
-            price: Number(data.basePrice) || 0,
-            salePrice: data.salePrice ? Number(data.salePrice) : undefined,
-            image: (data.images && data.images[0]) || FALLBACK_IMG_400x300,
-            slug: data.slug || doc.id,
-            salesCount: data.salesCount || 0,
-            rating: data.rating || 4.5,
-          };
-        });
+  // Transform and sort products
+  const products = useMemo(() => {
+    const items: Product[] = rawProducts.map((doc) => ({
+      id: doc.id,
+      name: doc.name || 'Producto',
+      price: Number(doc.price) || 0,
+      salePrice: doc.salePrice ? Number(doc.salePrice) : undefined,
+      image: (doc.images && doc.images[0]) || FALLBACK_IMG_400x300,
+      slug: doc.slug || doc.id,
+      salesCount: (doc as any).salesCount || 0,
+      rating: doc.rating || 4.5,
+    }));
 
-        // Sort by salesCount client-side and take top 6
-        const sortedItems = items
-          .sort((a, b) => b.salesCount - a.salesCount)
-          .slice(0, 6);
-
-        setProducts(sortedItems);
-        logger.info('[BestSellers] Loaded products', { count: sortedItems.length });
-      } catch (error) {
-        logger.error('[BestSellers] Error loading products', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadBestSellers();
-  }, []);
+    // Sort by salesCount and take top 6
+    return items.sort((a, b) => b.salesCount - a.salesCount).slice(0, 6);
+  }, [rawProducts]);
 
   // Auto-rotate products every 4 seconds
   useEffect(() => {

@@ -1,11 +1,9 @@
-import { useState, useEffect } from 'react';
-import { db } from '../../lib/firebase';
+import { useState, useMemo } from 'react';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
-import { collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { Download } from 'lucide-react';
 import { ProductGridSkeleton } from '../ui/SkeletonLoader';
 import ErrorMessage from '../errors/ErrorMessage';
-import { logger } from '../../lib/logger';
+import { useProducts } from '../../hooks/react-query/useProducts';
 
 interface DigitalProduct {
   id: string;
@@ -23,51 +21,29 @@ interface DigitalProductsHomeProps {
 }
 
 const DigitalProductsHome: React.FC<DigitalProductsHomeProps> = ({ maxItems = 4 }) => {
-  const [products, setProducts] = useState<DigitalProduct[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [hoveredProduct, setHoveredProduct] = useState<string | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        logger.debug('[DigitalProductsHome] Loading digital products', { maxItems });
+  // Fetch digital products with React Query
+  const { data: rawProducts = [], isLoading: loading, error: queryError } = useProducts({
+    onlyDigital: true,
+    limit: maxItems
+  });
 
-        const q = query(
-          collection(db, 'products'),
-          where('active', '==', true),
-          where('isDigital', '==', true),
-          limit(maxItems)
-        );
-        const snap = await getDocs(q);
+  const error = queryError ? (queryError as Error).message : null;
 
-        const list: DigitalProduct[] = snap.docs.map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            name: data.name || 'Producto Digital',
-            description: data.description || '',
-            price: Number(data.basePrice) || 0,
-            image: (data.images && data.images[0]) || FALLBACK_IMG_400x300,
-            slug: data.slug || d.id,
-            tags: data.tags || [],
-            featured: data.featured || false,
-          };
-        });
-
-        setProducts(list);
-        logger.info('[DigitalProductsHome] Digital products loaded', { count: list.length });
-      } catch (e: any) {
-        logger.error('[DigitalProductsHome] Error loading products', e);
-        setError(e?.message || 'Error cargando productos digitales');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [maxItems]);
+  // Transform products to UI format
+  const products = useMemo(() => {
+    return rawProducts.map((doc) => ({
+      id: doc.id,
+      name: doc.name || 'Producto Digital',
+      description: doc.description || '',
+      price: Number(doc.price) || 0,
+      image: (doc.images && doc.images[0]) || FALLBACK_IMG_400x300,
+      slug: doc.slug || doc.id,
+      tags: (doc as any).tags || [],
+      featured: doc.featured || false,
+    })) as DigitalProduct[];
+  }, [rawProducts]);
 
   // Don't render section if no products
   if (!loading && products.length === 0) {

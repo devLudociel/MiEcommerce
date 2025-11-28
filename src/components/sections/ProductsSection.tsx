@@ -1,14 +1,16 @@
 import { logger } from '../../lib/logger';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { db } from '../../lib/firebase';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
-import { collection, query, where, limit, getDocs, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { useProducts } from '../../hooks/react-query/useProducts';
 import AccessibleModal from '../common/AccessibleModal';
 
 export default function ProductsSection() {
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Fetch products with React Query
+  const { data: products = [], isLoading: loading, error: queryError } = useProducts({ limit: 6 });
+
+  const error = queryError ? (queryError as Error).message : null;
 
   // Modal state
   const [modal, setModal] = useState<{
@@ -33,38 +35,6 @@ export default function ProductsSection() {
 
   const closeModal = () => {
     setModal({ ...modal, isOpen: false });
-  };
-
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  const loadProducts = async () => {
-    try {
-      logger.info('📦 Cargando productos desde Firebase...');
-      setLoading(true);
-      setError(null);
-
-      const q = query(collection(db, 'products'), where('active', '==', true), limit(6));
-
-      const querySnapshot = await getDocs(q);
-      const productsData: any[] = [];
-
-      querySnapshot.forEach((doc: any) => {
-        productsData.push({
-          id: doc.id,
-          ...doc.data(),
-        });
-      });
-
-      logger.info(`📊 ${productsData.length} productos encontrados`);
-      setProducts(productsData);
-    } catch (err) {
-      logger.error('❌ Error cargando productos:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const createSampleProducts = async () => {
