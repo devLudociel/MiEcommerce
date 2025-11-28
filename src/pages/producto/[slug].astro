@@ -1,7 +1,6 @@
 ---
 import Layout from '../../layouts/BaseLayout.astro';
-import ProductDetail from '../../components/sections/ProductDetail'; // Ajusta la ruta según dónde esté
-import QueryProvider from '../../components/providers/QueryProvider.tsx';
+import ProductDetailWithProvider from '../../components/sections/ProductDetailWithProvider';
 
 export const prerender = false;
 
@@ -13,7 +12,5 @@ if (!slug) {
 ---
 
 <Layout title="Producto">
-  <QueryProvider client:load>
-    <ProductDetail slug={slug} />
-  </QueryProvider>
+  <ProductDetailWithProvider slug={slug} client:load />
 </Layout>

@@ -1,13 +1,10 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import ProductGridOfertas from '../../components/sections/ProductGridOfertas.tsx';
-import QueryProvider from '../../components/providers/QueryProvider.tsx';
+import ProductGridOfertasWithProvider from '../../components/sections/ProductGridOfertasWithProvider.tsx';
 ---
 
 <BaseLayout title="Productos en Oferta - ImprimeArte">
   <div class="pt-32 pb-16">
-    <QueryProvider client:load>
-      <ProductGridOfertas />
-    </QueryProvider>
+    <ProductGridOfertasWithProvider client:load />
   </div>
 </BaseLayout>
