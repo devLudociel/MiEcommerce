@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useProducts } from '../../hooks/react-query/useProducts';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { ProductCardSkeleton } from '../ui/Skeleton';
 
 interface Product {
   id: string;
@@ -25,7 +26,7 @@ export default function BestSellers() {
     const items: Product[] = rawProducts.map((doc) => ({
       id: doc.id,
       name: doc.name || 'Producto',
-      price: Number(doc.price) || 0,
+      price: Number((doc as any).basePrice || doc.price) || 0,
       salePrice: doc.salePrice ? Number(doc.salePrice) : undefined,
       image: (doc.images && doc.images[0]) || FALLBACK_IMG_400x300,
       slug: doc.slug || doc.id,
@@ -50,13 +51,20 @@ export default function BestSellers() {
 
   if (loading) {
     return (
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-gradient-to-br from-gray-50 via-white to-cyan-50">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded w-64 mx-auto mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-96 mx-auto"></div>
-            </div>
+          {/* Header skeleton */}
+          <div className="text-center mb-16">
+            <div className="inline-block mb-4 h-8 w-48 bg-gray-200 rounded-full animate-pulse"></div>
+            <div className="h-10 w-96 bg-gray-200 rounded mx-auto mb-4 animate-pulse"></div>
+            <div className="h-6 w-64 bg-gray-200 rounded mx-auto animate-pulse"></div>
+          </div>
+
+          {/* Product grid skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
+            {[...Array(6)].map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
           </div>
         </div>
       </section>

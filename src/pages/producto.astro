@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ProductDetailRouter from '../components/sections/ProductDetailRouter.tsx';
+import ProductDetailRouterWithProvider from '../components/sections/ProductDetailRouterWithProvider.tsx';
 
 // SEO Optimizado
 const title = 'Detalles del Producto - Personalización Premium | ImprimeArte';
@@ -9,5 +9,5 @@ const ogImage = '/og-producto.jpg';
 ---
 
 <BaseLayout title={title} description={description} ogImage={ogImage}>
-  <ProductDetailRouter client:load />
+  <ProductDetailRouterWithProvider client:load />
 </BaseLayout>

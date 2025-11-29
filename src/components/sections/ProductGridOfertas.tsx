@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useProducts } from '../../hooks/react-query/useProducts';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { ProductGridSkeleton } from '../ui/Skeleton';
 
 interface Product {
   id: string;
@@ -30,7 +31,7 @@ export default function ProductGridOfertas() {
       id: doc.id,
       name: doc.name || 'Producto',
       description: doc.description || '',
-      basePrice: Number(doc.price) || 0,
+      basePrice: Number((doc as any).basePrice || doc.price) || 0,
       salePrice: doc.salePrice ? Number(doc.salePrice) : undefined,
       image: (doc.images && doc.images[0]) || FALLBACK_IMG_400x300,
       images: doc.images || [],
@@ -45,11 +46,12 @@ export default function ProductGridOfertas() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-red-500 border-r-transparent mb-4"></div>
-          <p className="text-gray-600">Cargando ofertas...</p>
+      <div className="container mx-auto px-6 py-12">
+        <div className="mb-12 text-center">
+          <div className="h-12 w-96 bg-gray-200 rounded mx-auto mb-4 animate-pulse"></div>
+          <div className="h-6 w-64 bg-gray-200 rounded mx-auto animate-pulse"></div>
         </div>
+        <ProductGridSkeleton count={6} />
       </div>
     );
   }

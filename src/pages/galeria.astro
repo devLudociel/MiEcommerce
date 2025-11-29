@@ -1,0 +1,72 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getAllGalleryItems } from '../lib/pages';
+
+let galleryItems = [];
+try {
+  galleryItems = await getAllGalleryItems();
+} catch (error) {
+  console.error('[Gallery] Error loading items:', error);
+  // Continue with empty gallery array
+}
+---
+
+<BaseLayout
+  title="Galería - ImprimeArte"
+  description="Galería de trabajos realizados - Impresión 3D, estampado textil, sublimación y más"
+>
+  <div class="min-h-screen bg-gray-50 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Header -->
+      <div class="text-center mb-12">
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Galería de Trabajos</h1>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+          Descubre algunos de nuestros trabajos más destacados
+        </p>
+      </div>
+
+      {
+        galleryItems.length === 0 ? (
+          <div class="bg-white rounded-2xl shadow-lg p-12 text-center">
+            <div class="text-6xl mb-4">🖼️</div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">Galería en Construcción</h2>
+            <p class="text-gray-600">
+              Estamos preparando nuestra galería de trabajos. ¡Pronto podrás ver nuestros mejores
+              proyectos!
+            </p>
+          </div>
+        ) : (
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {galleryItems.map((item) => (
+              <div class="group relative bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                <div class="aspect-square overflow-hidden">
+                  <img
+                    src={item.imageUrl}
+                    alt={item.title}
+                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                </div>
+
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
+                  <div class="p-4 w-full">
+                    <h3 class="text-white font-bold text-lg mb-1">{item.title}</h3>
+                    {item.description && (
+                      <p class="text-white/90 text-sm line-clamp-2">{item.description}</p>
+                    )}
+                    {item.category && (
+                      <div class="mt-2">
+                        <span class="inline-block px-3 py-1 bg-cyan-500 text-white text-xs font-semibold rounded-full">
+                          {item.category}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      }
+    </div>
+  </div>
+</BaseLayout>

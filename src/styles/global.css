@@ -269,6 +269,8 @@ button {
 }
 
 /* ===== CUSTOM CONTAINER UTILITIES ===== */
+/* Nota: Usando el contenedor de Tailwind configurado en tailwind.config.mjs */
+
 .container-xl {
   max-width: 1400px;
   margin: 0 auto;
@@ -278,6 +280,50 @@ button {
 .container-full {
   width: 100%;
   padding: 0 var(--spacing-4);
+}
+
+/* Section spacing utilities */
+.section {
+  padding-top: var(--spacing-12);
+  padding-bottom: var(--spacing-12);
+}
+
+@media (min-width: 768px) {
+  .section {
+    padding-top: var(--spacing-16);
+    padding-bottom: var(--spacing-16);
+  }
+}
+
+@media (min-width: 1024px) {
+  .section {
+    padding-top: var(--spacing-20);
+    padding-bottom: var(--spacing-20);
+  }
+}
+
+.section-sm {
+  padding-top: var(--spacing-8);
+  padding-bottom: var(--spacing-8);
+}
+
+@media (min-width: 768px) {
+  .section-sm {
+    padding-top: var(--spacing-10);
+    padding-bottom: var(--spacing-10);
+  }
+}
+
+.section-lg {
+  padding-top: var(--spacing-16);
+  padding-bottom: var(--spacing-16);
+}
+
+@media (min-width: 768px) {
+  .section-lg {
+    padding-top: var(--spacing-24);
+    padding-bottom: var(--spacing-24);
+  }
 }
 
 /* ===== SISTEMA DE BOTONES CMYK ===== */
@@ -574,32 +620,67 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-3) 0;
+  padding: var(--spacing-4) 0;
+  gap: var(--spacing-2);
+  flex-wrap: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .nav {
+    padding: var(--spacing-5) 0;
+    gap: var(--spacing-3);
+  }
+}
+
+@media (min-width: 1024px) {
+  .nav {
+    gap: var(--spacing-4);
+  }
 }
 
 /* Logo con estilo CMYK */
 .logo {
   display: flex;
   align-items: center;
-  gap: var(--spacing-3);
+  gap: var(--spacing-2);
   text-decoration: none;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .logo {
+    gap: var(--spacing-3);
+  }
 }
 
 .logo-icon {
-  width: 52px;
-  height: 52px;
+  width: 40px;
+  height: 40px;
   background: var(--gradient-rainbow);
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-xl);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-weight: 800;
-  font-size: 1.375rem;
-  box-shadow: var(--shadow-lg);
+  font-size: 1.125rem;
+  box-shadow: var(--shadow-md);
   transition: var(--transition-bounce);
   position: relative;
   overflow: hidden;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .logo-icon {
+    width: 52px;
+    height: 52px;
+    font-size: 1.375rem;
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-lg);
+  }
 }
 
 .logo-icon::before {
@@ -623,44 +704,94 @@ button {
 }
 
 .logo-text h1 {
-  font-size: 1.625rem;
+  font-size: 1.25rem;
   font-weight: 800;
   background: var(--gradient-rainbow);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+  .logo-text h1 {
+    font-size: 1.625rem;
+  }
 }
 
 .logo-text p {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--color-gray-500);
   margin-top: -2px;
   font-weight: 500;
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .logo-text p {
+    display: block;
+    font-size: 0.8rem;
+  }
 }
 
 /* Navegación mejorada */
 .nav-links {
   display: none;
   align-items: center;
-  gap: var(--spacing-2);
+  gap: var(--spacing-1);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.nav-links::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+@media (min-width: 1280px) {
+  .nav-links {
+    gap: var(--spacing-2);
+    overflow-x: visible;
+  }
 }
 
 .nav-item {
   position: relative;
+  flex-shrink: 0;
 }
 
 .nav-link {
   display: flex;
   align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-3) var(--spacing-5);
+  gap: var(--spacing-1);
+  padding: var(--spacing-2) var(--spacing-3);
   color: var(--color-gray-700);
   font-weight: 500;
-  border-radius: var(--radius-xl);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  border-radius: var(--radius-lg);
   transition: var(--transition-all);
   position: relative;
   overflow: hidden;
   background: white;
+}
+
+@media (min-width: 1150px) {
+  .nav-link {
+    font-size: 0.875rem;
+    padding: var(--spacing-3) var(--spacing-4);
+  }
+}
+
+@media (min-width: 1280px) {
+  .nav-link {
+    gap: var(--spacing-2);
+    padding: var(--spacing-3) var(--spacing-5);
+    font-size: 1rem;
+  }
 }
 
 .nav-link::before {

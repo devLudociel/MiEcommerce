@@ -1,0 +1,89 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getBlogPosts } from '../lib/pages';
+
+let posts = [];
+try {
+  posts = await getBlogPosts();
+} catch (error) {
+  console.error('[Blog] Error loading posts:', error);
+  // Continue with empty posts array
+}
+---
+
+<BaseLayout
+  title="Blog - ImprimeArte"
+  description="Artículos, tutoriales y novedades sobre impresión y personalización"
+>
+  <div class="min-h-screen bg-gray-50 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Header -->
+      <div class="text-center mb-12">
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Blog</h1>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+          Artículos, tutoriales y novedades sobre impresión y personalización
+        </p>
+      </div>
+
+      {
+        posts.length === 0 ? (
+          <div class="bg-white rounded-2xl shadow-lg p-12 text-center">
+            <div class="text-6xl mb-4">📝</div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">Próximamente</h2>
+            <p class="text-gray-600">Estamos preparando contenido interesante para ti.</p>
+          </div>
+        ) : (
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {posts.map((post) => (
+              <a
+                href={`/${post.slug}`}
+                class="group bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
+              >
+                {post.featuredImage && (
+                  <img
+                    src={post.featuredImage}
+                    alt={post.title}
+                    class="w-full h-48 object-cover"
+                  />
+                )}
+
+                <div class="p-6">
+                  <h2 class="text-2xl font-bold text-gray-900 mb-2 group-hover:text-cyan-600 transition-colors">
+                    {post.title}
+                  </h2>
+
+                  {post.excerpt && <p class="text-gray-600 mb-4 line-clamp-3">{post.excerpt}</p>}
+
+                  {post.publishedAt && (
+                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                      <span>📅</span>
+                      <span>
+                        {new Date(post.publishedAt.seconds * 1000).toLocaleDateString('es-ES', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </span>
+                    </div>
+                  )}
+
+                  <div class="mt-4 flex items-center gap-2 text-cyan-600 font-semibold">
+                    <span>Leer más</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        )
+      }
+    </div>
+  </div>
+</BaseLayout>

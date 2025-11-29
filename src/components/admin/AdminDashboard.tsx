@@ -365,6 +365,13 @@ export default function AdminDashboard() {
           <div className="text-sm font-semibold text-white">Personalización</div>
         </a>
         <a
+          href="/admin/pages"
+          className="p-4 bg-white border-2 border-gray-200 rounded-xl hover:border-pink-500 hover:shadow-lg transition-all text-center group"
+        >
+          <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">📝</div>
+          <div className="text-sm font-semibold text-gray-900">Blog & Páginas</div>
+        </a>
+        <a
           href="/test-customizer"
           target="_blank"
           className="p-4 bg-white border-2 border-dashed border-gray-300 rounded-xl hover:border-orange-500 hover:shadow-lg transition-all text-center group"

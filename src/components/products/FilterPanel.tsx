@@ -5,6 +5,7 @@ export interface FilterOptions {
   priceRange: { min: number; max: number };
   colors: string[];
   sizes: string[];
+  tags?: string[]; // ✅ NUEVO: Filtrar por tags (camisetas, tazas, etc.)
   minRating: number;
   inStock: boolean;
   sortBy: 'price-asc' | 'price-desc' | 'name' | 'rating' | 'newest';
@@ -148,6 +149,7 @@ export default function FilterPanel({
       priceRange,
       colors: selectedColors,
       sizes: selectedSizes,
+      tags: currentFilters?.tags, // ✅ Preservar tags de URL
       minRating,
       inStock,
       sortBy,
@@ -161,6 +163,7 @@ export default function FilterPanel({
     minRating,
     inStock,
     sortBy,
+    currentFilters?.tags, // ✅ Añadir como dependencia
     // onFilterChange is stable (useCallback), not needed in deps
   ]);
 

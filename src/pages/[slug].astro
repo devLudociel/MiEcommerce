@@ -1,0 +1,108 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getPageBySlug } from '../lib/pages';
+import type { Page } from '../lib/pages';
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/404');
+}
+
+let page: Page | null = null;
+
+try {
+  page = await getPageBySlug(slug);
+} catch (error) {
+  console.error('[Page] Error loading page:', error);
+  // Page will remain null and redirect to 404
+}
+
+if (!page) {
+  return Astro.redirect('/404');
+}
+
+const title = page.title;
+const description = page.metaDescription || page.title;
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="min-h-screen bg-gray-50 py-12">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Header -->
+      <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+        {
+          page.featuredImage && (
+            <img
+              src={page.featuredImage}
+              alt={page.title}
+              class="w-full h-64 object-cover rounded-xl mb-6"
+            />
+          )
+        }
+
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">{page.title}</h1>
+
+        {
+          page.type === 'blog' && (
+            <div class="flex items-center gap-6 text-sm text-gray-600 mb-6">
+              {page.author && (
+                <div class="flex items-center gap-2">
+                  <span class="font-semibold">Por {page.author}</span>
+                </div>
+              )}
+              {page.publishedAt && (
+                <div class="flex items-center gap-2">
+                  <span>📅</span>
+                  <span>
+                    {new Date(page.publishedAt.seconds * 1000).toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </span>
+                </div>
+              )}
+            </div>
+          )
+        }
+      </div>
+
+      <!-- Content -->
+      <div class="bg-white rounded-2xl shadow-lg p-8">
+        <div
+          class="prose prose-lg prose-cyan max-w-none
+          prose-headings:font-bold prose-headings:text-gray-900
+          prose-h1:text-4xl prose-h1:mb-6
+          prose-h2:text-3xl prose-h2:mt-8 prose-h2:mb-4
+          prose-h3:text-2xl prose-h3:mt-6 prose-h3:mb-3
+          prose-p:text-gray-700 prose-p:leading-relaxed prose-p:mb-4
+          prose-a:text-cyan-600 prose-a:no-underline hover:prose-a:underline
+          prose-strong:text-gray-900 prose-strong:font-bold
+          prose-ul:list-disc prose-ul:ml-6
+          prose-ol:list-decimal prose-ol:ml-6
+          prose-li:text-gray-700 prose-li:mb-2
+          prose-blockquote:border-l-4 prose-blockquote:border-cyan-500 prose-blockquote:pl-4 prose-blockquote:italic"
+          set:html={page.content.replace(/\n/g, '<br />')}
+        />
+      </div>
+
+      <!-- Back Button -->
+      <div class="mt-8 text-center">
+        <a
+          href="/"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white font-semibold rounded-xl hover:bg-cyan-700 transition-colors"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width={2}
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+          Volver al inicio
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

@@ -155,6 +155,18 @@ service cloud.firestore {
       allow write: if false; // Solo vía Admin SDK
     }
 
+    // Pages (páginas informativas, blog)
+    match /pages/{pageId} {
+      allow read: if true; // Cualquiera puede leer páginas publicadas
+      allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
+    }
+
+    // Gallery (galería de trabajos)
+    match /gallery/{itemId} {
+      allow read: if true; // Cualquiera puede ver la galería
+      allow write: if isAdmin(); // Solo admins pueden subir/editar/eliminar
+    }
+
     // Denegar por defecto
     match /{document=**} {
       allow read, write: if false;

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { Download } from 'lucide-react';
-import { ProductGridSkeleton } from '../ui/SkeletonLoader';
+import { ProductGridSkeleton } from '../ui/Skeleton';
 import ErrorMessage from '../errors/ErrorMessage';
 import { useProducts } from '../../hooks/react-query/useProducts';
 
@@ -37,7 +37,7 @@ const DigitalProductsHome: React.FC<DigitalProductsHomeProps> = ({ maxItems = 4 
       id: doc.id,
       name: doc.name || 'Producto Digital',
       description: doc.description || '',
-      price: Number(doc.price) || 0,
+      price: Number((doc as any).basePrice || doc.price) || 0,
       image: (doc.images && doc.images[0]) || FALLBACK_IMG_400x300,
       slug: doc.slug || doc.id,
       tags: (doc as any).tags || [],

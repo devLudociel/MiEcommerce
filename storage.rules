@@ -171,6 +171,58 @@ service firebase.storage {
     }
 
     // ==========================================================================
+    // USER CUSTOMIZER DESIGNS: Saved designs from customizer
+    // ==========================================================================
+    match /users/{userId}/customizer-designs/{fileName} {
+      // Users can only upload to their own folder
+      allow create, update: if isAuthenticated() &&
+                              request.auth.uid == userId &&
+                              isValidSize() &&
+                              isImage();
+
+      // Anyone can read (for previews and order processing)
+      allow read: if true;
+
+      // Users can only delete their own files or admin
+      allow delete: if isAuthenticated() &&
+                      (request.auth.uid == userId || isAdmin());
+    }
+
+    // ==========================================================================
+    // USER FILES: General user uploaded files
+    // ==========================================================================
+    match /users/{userId}/files/{fileName} {
+      // Users can only upload to their own folder
+      allow create, update: if isAuthenticated() &&
+                              request.auth.uid == userId &&
+                              isValidSize() &&
+                              isAllowedFileType();
+
+      // Anyone can read (for order processing)
+      allow read: if true;
+
+      // Users can only delete their own files or admin
+      allow delete: if isAuthenticated() &&
+                      (request.auth.uid == userId || isAdmin());
+    }
+
+    // ==========================================================================
+    // PAGES IMAGES: Images for blog posts and pages
+    // ==========================================================================
+    match /pages/{fileName} {
+      // Authenticated users (admins) can upload
+      allow create, update: if isAuthenticated() &&
+                              isValidSize() &&
+                              isImage();
+
+      // Anyone can read (public images for pages/blog)
+      allow read: if true;
+
+      // Only authenticated users (admins) can delete
+      allow delete: if isAuthenticated();
+    }
+
+    // ==========================================================================
     // DENY ALL OTHER PATHS
     // ==========================================================================
     match /{allPaths=**} {

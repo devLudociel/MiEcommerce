@@ -1,10 +1,10 @@
 ---
 import Layout from '../../../layouts/BaseLayout.astro';
-import CategoryPage from '../../../components/pages/CategoryPage';
+import CategoryPageOptimized from '../../../components/pages/CategoryPageOptimized';
 
 const { categorySlug } = Astro.params;
 ---
 
 <Layout title={`Categoría - ${categorySlug}`}>
-  <CategoryPage client:load categorySlug={categorySlug} />
+  <CategoryPageOptimized client:load categorySlug={categorySlug} />
 </Layout>

@@ -55,6 +55,8 @@ export const queryKeys = {
       [...queryKeys.products.lists(), filters] as const,
     details: () => [...queryKeys.products.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.products.details(), id] as const,
+    related: (categoryId: string, excludeId: string) =>
+      [...queryKeys.products.all, 'related', categoryId, excludeId] as const,
   },
 
   // Orders
