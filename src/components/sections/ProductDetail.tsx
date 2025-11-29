@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { collection, query, where, limit, getDocs } from 'firebase/firestore';
-import { db, getProductReviewStats } from '../../lib/firebase';
+import { getProductReviewStats } from '../../lib/firebase';
 import type { FirebaseProduct } from '../../types/firebase';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { addToCart } from '../../store/cartStore';
@@ -14,8 +13,8 @@ import { ProductTabs } from '../products/ProductTabs';
 import { RelatedProducts } from '../products/RelatedProducts';
 // Analytics tracking
 import { trackProductView, trackAddToCart as trackAnalyticsAddToCart, trackCustomizeProduct } from '../../lib/analytics';
-// React Query hook
-import { useProduct } from '../../hooks/react-query/useProducts';
+// React Query hooks
+import { useProduct, useRelatedProducts } from '../../hooks/react-query/useProducts';
 
 interface ProductImage {
   id: number;
@@ -151,7 +150,21 @@ export default function ProductDetail({ id, slug }: Props) {
     return toUIProduct({ id: productData.id, ...productData } as any);
   }, [productData]);
 
-  const [relatedProducts, setRelatedProducts] = useState<UIProduct[]>([]);
+  // Use category field for related products (most products use string category like 'general', 'tech')
+  const categoryForRelated = uiProduct?.category;
+
+  // Fetch related products using React Query
+  const { data: relatedProductsData = [], isLoading: relatedLoading } = useRelatedProducts(
+    categoryForRelated,
+    uiProduct?.id,
+    4
+  );
+
+  // Convert related products to UI format
+  const relatedProducts = useMemo(() => {
+    return relatedProductsData.map((doc) => toUIProduct({ id: doc.id, ...doc } as any));
+  }, [relatedProductsData]);
+
   const [selectedVariant, setSelectedVariant] = useState(0);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -224,29 +237,7 @@ export default function ProductDetail({ id, slug }: Props) {
         console.error('Error cargando estadísticas de reseñas:', reviewError);
       }
     })();
-
-    // Load related products
-    if (uiProduct.categoryId) {
-      (async () => {
-        try {
-          const relatedQuery = query(
-            collection(db, 'products'),
-            where('categoryId', '==', uiProduct.categoryId),
-            where('active', '==', true),
-            limit(5)
-          );
-          const relatedSnap = await getDocs(relatedQuery);
-          const related = relatedSnap.docs
-            .filter((doc) => doc.id !== uiProduct.id)
-            .slice(0, 4)
-            .map((doc) => toUIProduct({ id: doc.id, ...(doc.data() as any) }));
-          setRelatedProducts(related);
-        } catch (error) {
-          console.error('Error loading related products:', error);
-        }
-      })();
-    }
-  }, [uiProduct]); // ✅ AÑADE mounted a las dependencias
+  }, [uiProduct]);
 
   // PERFORMANCE: useCallback para prevenir re-creación de funciones en cada render
   const handleAddToCart = useCallback(async () => {

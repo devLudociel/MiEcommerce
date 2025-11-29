@@ -14,6 +14,7 @@ interface Product {
   slug?: string;
   categoryId: string; // Cambio: category → categoryId
   categoryName?: string; // Para mostrar el nombre
+  tags?: string[]; // ✅ NUEVO: Tags del producto
   rating: number;
   reviews: number;
   inStock: boolean;
@@ -39,6 +40,7 @@ export default function ProductsWithFilters() {
     priceRange: { min: 0, max: 200 },
     colors: [],
     sizes: [],
+    tags: [], // ✅ Inicializar tags vacío
     minRating: 0,
     inStock: false,
     sortBy: 'newest',
@@ -69,6 +71,7 @@ export default function ProductsWithFilters() {
       const urlParams = new URLSearchParams(window.location.search);
       const categorySlug = urlParams.get('category');
 
+      // Filtrar por categoría (legacy)
       if (categorySlug) {
         // Find category by slug and use its ID for filtering
         const category = categories.find((c) => c.slug === categorySlug);
@@ -82,6 +85,23 @@ export default function ProductsWithFilters() {
       }
     }
   }, [categories]);
+
+  // ✅ NUEVO: Leer parámetro tag de la URL (separado para no depender de categories)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tagParam = urlParams.get('tag');
+
+      if (tagParam) {
+        console.log('🏷️ Tag detectado en URL:', tagParam);
+        setCurrentFilters((prev) => ({
+          ...prev,
+          tags: [tagParam],
+        }));
+        logger.debug('[ProductsWithFilters] Tag filter applied', { tag: tagParam });
+      }
+    }
+  }, []); // Solo ejecutar una vez al montar
 
   // Load products from Firestore
   useEffect(() => {
@@ -113,6 +133,7 @@ export default function ProductsWithFilters() {
             slug: data.slug || doc.id,
             categoryId: categoryId,
             categoryName: category?.name || 'Otros',
+            tags: data.tags || [], // ✅ NUEVO: Cargar tags desde Firebase
             rating: data.rating || 0,
             reviews: data.reviewCount || 0,
             inStock: !!data.active,
@@ -137,6 +158,11 @@ export default function ProductsWithFilters() {
 
   // Apply filters
   useEffect(() => {
+    console.log('⚙️ INICIO - Aplicando filtros:', {
+      totalProducts: products.length,
+      filters: currentFilters
+    });
+
     let filtered = [...products];
 
     // Category filter (using categoryId instead of category)
@@ -163,6 +189,47 @@ export default function ProductsWithFilters() {
       filtered = filtered.filter((p) =>
         p.sizes?.some((size) => currentFilters.sizes.includes(size))
       );
+    }
+
+    // ✅ NUEVO: Tag filter (ejemplo: ?tag=camisetas)
+    if (currentFilters.tags && currentFilters.tags.length > 0) {
+      console.log('🔍 Antes de filtrar por tags:', {
+        totalProducts: filtered.length,
+        buscando: currentFilters.tags,
+        productosConTags: filtered.map(p => ({ name: p.name, tags: p.tags }))
+      });
+
+      filtered = filtered.filter((p) => {
+        // Buscar el tag exacto O su versión singular/plural
+        const hasTag = p.tags?.some((productTag) => {
+          return currentFilters.tags!.some((searchTag) => {
+            const searchLower = searchTag.toLowerCase();
+            const productLower = productTag.toLowerCase();
+
+            // Coincidencia exacta
+            if (searchLower === productLower) return true;
+
+            // Coincidencia singular/plural (camiseta <-> camisetas)
+            if (searchLower.endsWith('s') && searchLower.slice(0, -1) === productLower) return true;
+            if (productLower.endsWith('s') && productLower.slice(0, -1) === searchLower) return true;
+
+            return false;
+          });
+        });
+
+        console.log(`  - ${p.name}: tags=${JSON.stringify(p.tags)}, match=${hasTag}`);
+        return hasTag;
+      });
+
+      console.log('✅ Después de filtrar por tags:', {
+        remaining: filtered.length,
+        productos: filtered.map(p => p.name)
+      });
+
+      logger.debug('[ProductsWithFilters] Tag filter applied', {
+        tags: currentFilters.tags,
+        remaining: filtered.length
+      });
     }
 
     // Rating filter
@@ -194,6 +261,11 @@ export default function ProductsWithFilters() {
         // Keep default order (newest first from Firestore)
         break;
     }
+
+    console.log('🎯 FINAL - Productos que se mostrarán:', {
+      total: filtered.length,
+      nombres: filtered.map(p => p.name)
+    });
 
     setFilteredProducts(filtered);
   }, [currentFilters, products]);

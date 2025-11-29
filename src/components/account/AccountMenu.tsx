@@ -22,9 +22,9 @@ export default function AccountMenu() {
   return (
     <aside className="space-y-8">
       <nav className="space-y-8">
-        {/* Sección Cuenta */}
+        {/* Sección Mi Cuenta */}
         <div>
-          <h3 className="mb-3 text-gray-900 font-bold text-base">Cuenta</h3>
+          <h3 className="mb-3 text-gray-900 font-bold text-base">Mi Cuenta</h3>
           <div className="space-y-2">
             <a
               href="/account"
@@ -34,7 +34,7 @@ export default function AccountMenu() {
                   : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              Panel de control
+              Dashboard
             </a>
             <a
               href="/account/profile"
@@ -44,74 +44,7 @@ export default function AccountMenu() {
                   : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              Perfil de la cuenta
-            </a>
-          </div>
-        </div>
-
-        {/* Sección Espacio de trabajo */}
-        <div>
-          <h3 className="mb-3 text-gray-900 font-bold text-base">Espacio de trabajo</h3>
-          <div className="space-y-2">
-            <a
-              href="/account/projects"
-              className={`block px-0 py-2 text-sm transition-colors rounded-lg ${
-                isActive('/account/projects')
-                  ? 'text-cyan-600 font-semibold bg-cyan-50'
-                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              Mis proyectos
-            </a>
-            <a
-              href="/account/design"
-              className={`block px-0 py-2 text-sm transition-colors rounded-lg ${
-                isActive('/account/design')
-                  ? 'text-cyan-600 font-semibold bg-cyan-50'
-                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              Mis servicios de diseño
-            </a>
-            <a
-              href="/account/customizer"
-              className={`block px-0 py-2 text-sm transition-colors rounded-lg ${
-                isActive('/account/customizer')
-                  ? 'text-cyan-600 font-semibold bg-cyan-50'
-                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              Personalizador de diseños
-            </a>
-            <a
-              href="/account/websites"
-              className={`block px-0 py-2 text-sm transition-colors rounded-lg ${
-                isActive('/account/websites')
-                  ? 'text-cyan-600 font-semibold bg-cyan-50'
-                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              Páginas web y productos digitales
-            </a>
-            <a
-              href="/account/brand-kit"
-              className={`block px-0 py-2 text-sm transition-colors rounded-lg ${
-                isActive('/account/brand-kit')
-                  ? 'text-cyan-600 font-semibold bg-cyan-50'
-                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              Kit de marca
-            </a>
-            <a
-              href="/account/files"
-              className={`block px-0 py-2 text-sm transition-colors rounded-lg ${
-                isActive('/account/files')
-                  ? 'text-cyan-600 font-semibold bg-cyan-50'
-                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              Mis archivos subidos
+              Perfil
             </a>
             <a
               href="/account/wishlist"
@@ -121,14 +54,14 @@ export default function AccountMenu() {
                   : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              Mis favoritos
+              Favoritos
             </a>
           </div>
         </div>
 
-        {/* Sección Pedidos */}
+        {/* Sección Mis Pedidos */}
         <div>
-          <h3 className="mb-3 text-gray-900 font-bold text-base">Pedidos</h3>
+          <h3 className="mb-3 text-gray-900 font-bold text-base">Mis Pedidos</h3>
           <div className="space-y-2">
             <a
               href="/account/orders"
@@ -138,17 +71,44 @@ export default function AccountMenu() {
                   : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              Historial de compras
+              Historial de Pedidos
             </a>
             <a
-              href="/account/subscriptions"
+              href="/account/addresses"
               className={`block px-0 py-2 text-sm transition-colors rounded-lg ${
-                isActive('/account/subscriptions')
+                isActive('/account/addresses')
                   ? 'text-cyan-600 font-semibold bg-cyan-50'
                   : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              Suscripciones
+              Direcciones de Envío
+            </a>
+          </div>
+        </div>
+
+        {/* Sección Mis Diseños */}
+        <div>
+          <h3 className="mb-3 text-gray-900 font-bold text-base">Mis Diseños</h3>
+          <div className="space-y-2">
+            <a
+              href="/account/files"
+              className={`block px-0 py-2 text-sm transition-colors rounded-lg ${
+                isActive('/account/files')
+                  ? 'text-cyan-600 font-semibold bg-cyan-50'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              Archivos Subidos
+            </a>
+            <a
+              href="/account/customizer"
+              className={`block px-0 py-2 text-sm transition-colors rounded-lg ${
+                isActive('/account/customizer')
+                  ? 'text-cyan-600 font-semibold bg-cyan-50'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              Personalizador
             </a>
           </div>
         </div>
@@ -165,17 +125,17 @@ export default function AccountMenu() {
                   : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              Configuración de la cuenta
+              Ajustes de Cuenta
             </a>
             <a
-              href="/account/addresses"
+              href="/account/wallet"
               className={`block px-0 py-2 text-sm transition-colors rounded-lg ${
-                isActive('/account/addresses')
+                isActive('/account/wallet')
                   ? 'text-cyan-600 font-semibold bg-cyan-50'
                   : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              Pago y envío
+              Monedero
             </a>
           </div>
         </div>

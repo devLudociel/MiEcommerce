@@ -6,7 +6,6 @@ import BestSellersWithProvider from '../components/sections/BestSellersWithProvi
 import ProductGrid from '../components/sections/ProductGrid.tsx';
 import DigitalProductsHomeWithProvider from '../components/sections/DigitalProductsHomeWithProvider.tsx';
 import WhyChooseUs from '../components/sections/WhyChooseUs.tsx';
-import NewsletterSignup from '../components/sections/NewsletterSignup.tsx';
 import FooterComponent from '../components/sections/Footer.tsx';
 
 // SEO Optimizado
@@ -40,12 +39,9 @@ const ogImage = '/og-home.jpg';
   <!-- client:idle = Cargar cuando el navegador está idle (no muy interactivo) -->
   <WhyChooseUs client:idle />
 
-  <!-- 7. Newsletter: Captura de leads antes de perderlos -->
-  <!-- client:idle = Cargar cuando el navegador está idle (formulario simple) -->
-  <NewsletterSignup client:idle />
-
-  <!-- 8. Footer: Información de contacto y legal -->
+  <!-- 7. Footer: Información de contacto, legal y newsletter -->
   <!-- client:only = Solo renderizar en cliente (mejor para contenido estático) -->
+  <!-- Newsletter integrado en el footer - un solo sistema unificado -->
   <footer class="bg-gray-800 text-white py-12">
     <FooterComponent client:only="react" />
   </footer>

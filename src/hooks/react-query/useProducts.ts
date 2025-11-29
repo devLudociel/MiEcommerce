@@ -30,11 +30,13 @@ export interface Product {
 
 interface ProductFilters {
   category?: string;
+  categoryId?: string;
   featured?: boolean;
   onSale?: boolean;
   limit?: number;
   onlyPhysical?: boolean;
   onlyDigital?: boolean;
+  excludeIds?: string[];
 }
 
 /**
@@ -49,6 +51,11 @@ async function fetchProducts(filters: ProductFilters = {}): Promise<Product[]> {
     // Filter by category
     if (filters.category) {
       q = query(q, where('category', '==', filters.category));
+    }
+
+    // Filter by categoryId
+    if (filters.categoryId) {
+      q = query(q, where('categoryId', '==', filters.categoryId));
     }
 
     // Filter by featured
@@ -75,11 +82,16 @@ async function fetchProducts(filters: ProductFilters = {}): Promise<Product[]> {
 
     const snapshot = await getDocs(q);
 
-    const products = snapshot.docs.map((doc) => ({
+    let products = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate(),
     })) as Product[];
+
+    // Exclude specific IDs (client-side filter for related products)
+    if (filters.excludeIds && filters.excludeIds.length > 0) {
+      products = products.filter(p => !filters.excludeIds!.includes(p.id));
+    }
 
     logger.debug('[useProducts] Fetched products', { count: products.length });
 
@@ -101,7 +113,7 @@ async function fetchProduct(identifier: string, bySlug: boolean = false): Promis
 
     if (bySlug) {
       // Search by slug
-      const q = query(collection(db, 'products'), where('slug', '==', identifier), limit(1));
+      const q = query(collection(db, 'products'), where('slug', '==', identifier), firestoreLimit(1));
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
@@ -177,6 +189,36 @@ export function useProduct(identifier: string, bySlug: boolean = false) {
     enabled: !!identifier, // Only fetch if identifier exists
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+
+/**
+ * Hook: Fetch related products for a given product
+ *
+ * Benefits:
+ * - Automatic caching and deduplication
+ * - Fetches products from same category
+ * - Excludes current product from results
+ * - Only fetches when category is available
+ * - Supports both categoryId and category string filters
+ *
+ * @example
+ * const { data: related, isLoading } = useRelatedProducts('general', 'currentProductId', 4);
+ */
+export function useRelatedProducts(categoryOrId?: string, excludeProductId?: string, limit: number = 4) {
+  return useQuery({
+    queryKey: queryKeys.products.related(categoryOrId || '', excludeProductId || ''),
+    queryFn: () => fetchProducts({
+      // Try both category filters - categoryId first, then category string
+      // Most products use category string field (e.g., 'general', 'tech')
+      category: categoryOrId,
+      excludeIds: excludeProductId ? [excludeProductId] : [],
+      limit: limit + 1, // Fetch one extra to ensure we have enough after exclusion
+    }),
+    enabled: !!categoryOrId, // Only fetch if category exists
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    select: (data) => data.slice(0, limit), // Ensure we only return the requested limit
   });
 }
 

@@ -27,7 +27,9 @@ interface Product {
   name: string;
   description: string;
   categoryId: string;
+  category: string; // Slug de la categoría (textiles, sublimados, etc.) - REQUERIDO para búsquedas
   subcategoryId: string;
+  subcategory?: string; // Slug de la subcategoría (ropa-personalizada, llaveros, etc.) - OPCIONAL
   basePrice: number;
   images: string[];
   tags: string[];
@@ -61,13 +63,57 @@ interface CustomizationSchema {
   fieldsCount: number;
 }
 
+interface Subcategory {
+  id: string;
+  categoryId: string;
+  name: string;
+  slug: string;
+}
+
+// ============================================================================
+// CATEGORÍAS Y SUBCATEGORÍAS DEL NAVBAR (hardcodeadas - LA VERDAD DEL SISTEMA)
+// ============================================================================
+
+// Estas son las categorías REALES del navbar - NO usar categorías de Firebase
+const navbarCategories = [
+  { id: '1', name: 'Productos Gráficos', slug: 'graficos-impresos' },
+  { id: '2', name: 'Productos Textiles', slug: 'textiles' },
+  { id: '3', name: 'Productos de Papelería', slug: 'papeleria' },
+  { id: '4', name: 'Productos Sublimados', slug: 'sublimados' },
+  { id: '5', name: 'Corte y Grabado Láser', slug: 'corte-grabado' },
+  { id: '6', name: 'Eventos y Celebraciones', slug: 'eventos' },
+  { id: '7', name: 'Impresión 3D', slug: 'impresion-3d' },
+  { id: '8', name: 'Servicios Digitales', slug: 'servicios-digitales' },
+];
+
+const subcategories: Subcategory[] = [
+  { id: '1', categoryId: '1', name: 'Tarjetas de Visita', slug: 'tarjetas-visita' },
+  { id: '2', categoryId: '1', name: 'Etiquetas y Pegatinas', slug: 'etiquetas-pegatinas' },
+  { id: '3', categoryId: '1', name: 'Carteles para Eventos', slug: 'carteles-eventos' },
+  { id: '4', categoryId: '2', name: 'Ropa Personalizada', slug: 'ropa-personalizada' },
+  { id: '5', categoryId: '2', name: 'Complementos Textiles', slug: 'complementos-textiles' },
+  { id: '6', categoryId: '3', name: 'Cuadernos y Libretas', slug: 'cuadernos-libretas' },
+  { id: '7', categoryId: '3', name: 'Packaging Corporativo', slug: 'packaging-corporativo' },
+  { id: '8', categoryId: '4', name: 'Vajilla Personalizada', slug: 'vajilla-personalizada' },
+  { id: '9', categoryId: '4', name: 'Decoración Sublimada', slug: 'decoracion-sublimada' },
+  { id: '10', categoryId: '5', name: 'Llaveros Personalizados', slug: 'llaveros' },
+  { id: '11', categoryId: '5', name: 'Decoración en Madera', slug: 'decoracion-madera-eventos' },
+  { id: '12', categoryId: '5', name: 'Cuadros de Madera', slug: 'cuadros-madera' },
+  { id: '13', categoryId: '6', name: 'Packaging para Eventos', slug: 'packaging-eventos' },
+  { id: '14', categoryId: '7', name: 'Impresión en Resina', slug: 'impresion-resina' },
+  { id: '15', categoryId: '7', name: 'Impresión en Filamento', slug: 'impresion-filamento' },
+  { id: '16', categoryId: '8', name: 'Diseño Gráfico', slug: 'diseno-grafico' },
+  { id: '17', categoryId: '8', name: 'Desarrollo Web', slug: 'desarrollo-web' },
+];
+
 // ============================================================================
 // COMPONENTE PRINCIPAL
 // ============================================================================
 
 export default function AdminProductsPanelV2() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  // ✅ USAMOS CATEGORÍAS HARDCODEADAS DEL NAVBAR - NO de Firebase
+  const categories = navbarCategories;
   const [schemas, setSchemas] = useState<CustomizationSchema[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -93,44 +139,13 @@ export default function AdminProductsPanelV2() {
       setLoading(false);
     });
 
-    // Cargar categorías desde Firestore
-    loadCategories();
-
     // Cargar schemas de personalización
     loadSchemas();
 
     return () => unsubProducts();
   }, []);
 
-  const loadCategories = async () => {
-    try {
-      const snapshot = await getDocs(collection(db, 'categories'));
-      const cats = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Category[];
-      setCategories(cats);
-
-      // Si no hay categorías en Firestore, crear algunas por defecto
-      if (cats.length === 0) {
-        const defaultCategories = [
-          { name: 'Textiles', slug: 'textiles', description: 'Camisetas, sudaderas, bolsas' },
-          { name: 'Sublimados', slug: 'sublimados', description: 'Tazas, vasos, termos' },
-          { name: 'Marcos', slug: 'marcos', description: 'Cuadros decorativos' },
-          { name: 'Resina', slug: 'resina', description: 'Figuras de resina' },
-          { name: 'Otros', slug: 'otros', description: 'Otros productos' },
-        ];
-
-        for (const cat of defaultCategories) {
-          await addDoc(collection(db, 'categories'), cat);
-        }
-
-        loadCategories(); // Recargar
-      }
-    } catch (error) {
-      logger.error('[AdminProducts] Error loading categories', error);
-    }
-  };
+  // ✅ YA NO NECESITAMOS loadCategories - usamos las hardcodeadas del navbar
 
   const loadSchemas = async () => {
     try {
@@ -161,6 +176,7 @@ export default function AdminProductsPanelV2() {
       name: '',
       description: '',
       categoryId: categories[0]?.id || '',
+      category: categories[0]?.slug || 'otros', // ← NUEVO: Incluir slug de categoría
       subcategoryId: '',
       basePrice: 0,
       images: [],
@@ -305,11 +321,21 @@ export default function AdminProductsPanelV2() {
     }
 
     try {
+      // Obtener el slug de la categoría seleccionada
+      const selectedCategory = categories.find((cat) => cat.id === formData.categoryId);
+      const categorySlug = selectedCategory?.slug || 'otros';
+
+      // Obtener el slug de la subcategoría seleccionada
+      const selectedSubcategory = subcategories.find((sub) => sub.id === formData.subcategoryId);
+      const subcategorySlug = selectedSubcategory?.slug || '';
+
       const data: any = {
         name: formData.name,
         description: formData.description || '',
         categoryId: formData.categoryId || categories[0]?.id || 'otros',
+        category: categorySlug, // ✅ Slug de categoría (textiles, sublimados, etc.) - PRINCIPAL para búsquedas
         subcategoryId: formData.subcategoryId || '',
+        subcategory: subcategorySlug, // ✅ Slug de subcategoría (ropa-personalizada, llaveros, etc.) - OPCIONAL
         basePrice: Number(formData.basePrice) || 0,
         images: formData.images || [],
         tags: formData.tags || [],
@@ -619,7 +645,16 @@ export default function AdminProductsPanelV2() {
                     </label>
                     <select
                       value={formData.categoryId || ''}
-                      onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                      onChange={(e) => {
+                        const selectedCat = categories.find((c) => c.id === e.target.value);
+                        setFormData({
+                          ...formData,
+                          categoryId: e.target.value,
+                          category: selectedCat?.slug || 'otros',
+                          subcategoryId: '', // Reset subcategory cuando cambia category
+                          subcategory: '',
+                        });
+                      }}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     >
                       <option value="">Seleccionar...</option>
@@ -629,6 +664,41 @@ export default function AdminProductsPanelV2() {
                         </option>
                       ))}
                     </select>
+                    <p className="mt-1 text-xs text-gray-500">
+                      📂 Categoría principal (textiles, sublimados, resina, etc.) - Aparecerá en <code className="text-cyan-600">/categoria/{formData.category || 'categoria'}</code>
+                    </p>
+                  </div>
+
+                  {/* Subcategoría */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Subcategoría (Opcional)
+                    </label>
+                    <select
+                      value={formData.subcategoryId || ''}
+                      onChange={(e) => {
+                        const selectedSubcat = subcategories.find((s) => s.id === e.target.value);
+                        setFormData({
+                          ...formData,
+                          subcategoryId: e.target.value,
+                          subcategory: selectedSubcat?.slug || '',
+                        });
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      disabled={!formData.categoryId}
+                    >
+                      <option value="">Sin subcategoría</option>
+                      {subcategories
+                        .filter((sub) => sub.categoryId === formData.categoryId)
+                        .map((sub) => (
+                          <option key={sub.id} value={sub.id}>
+                            {sub.name}
+                          </option>
+                        ))}
+                    </select>
+                    <p className="mt-1 text-xs text-gray-500">
+                      📁 Subcategoría específica - Aparecerá en <code className="text-cyan-600">/categoria/{formData.category || 'categoria'}/{formData.subcategory || 'subcategoria'}</code>
+                    </p>
                   </div>
 
                   {/* Descripción */}
@@ -789,6 +859,56 @@ export default function AdminProductsPanelV2() {
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* Tags / Etiquetas */}
+              <div className="bg-blue-50 rounded-xl p-4 space-y-4">
+                <h4 className="font-semibold text-gray-800 flex items-center gap-2">
+                  <span className="text-lg">🏷️</span>
+                  Etiquetas (Tags)
+                </h4>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Añadir etiquetas
+                  </label>
+                  <input
+                    type="text"
+                    value={(formData.tags || []).join(', ')}
+                    onChange={(e) => {
+                      const tagsArray = e.target.value
+                        .split(',')
+                        .map((t) => t.trim())
+                        .filter((t) => t.length > 0);
+                      setFormData({ ...formData, tags: tagsArray });
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="camisetas, ropa, personalizable, regalo"
+                  />
+                  <p className="mt-2 text-xs text-gray-500">
+                    🏷️ Tipos de producto (camisetas, tazas, llaveros, etc.) - Separados por comas
+                  </p>
+                  <div className="mt-2 p-3 bg-white rounded-lg border border-blue-200">
+                    <p className="text-xs text-blue-700 font-semibold mb-1">💡 Dónde aparecerá este producto:</p>
+                    <ul className="text-xs text-gray-600 space-y-1">
+                      <li>• <strong>Por categoría:</strong> <code className="text-cyan-600">/categoria/{formData.category || 'categoria'}</code></li>
+                      {formData.subcategory && (
+                        <li>• <strong>Por subcategoría:</strong> <code className="text-cyan-600">/categoria/{formData.category}/{formData.subcategory}</code></li>
+                      )}
+                      {formData.tags && formData.tags.length > 0 && (
+                        <li>• <strong>Por tags:</strong> {formData.tags.slice(0, 3).map(tag => (
+                          <code key={tag} className="text-purple-600 ml-1">/productos?tag={tag}</code>
+                        ))}</li>
+                      )}
+                    </ul>
+                    <p className="text-xs text-green-700 font-semibold mt-2 pt-2 border-t border-blue-200">✅ Ejemplos completos:</p>
+                    <ul className="text-xs text-gray-600 space-y-1 mt-1">
+                      <li>• Camiseta → Tags: <code className="text-purple-600">camisetas, ropa, algodon</code> → <code className="text-green-600">/productos?tag=camisetas</code></li>
+                      <li>• Taza → Tags: <code className="text-purple-600">tazas, cocina, regalo</code> → <code className="text-green-600">/productos?tag=tazas</code></li>
+                      <li>• Llavero → Tags: <code className="text-purple-600">llaveros, madera</code> → <code className="text-green-600">/productos?tag=llaveros</code></li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
               {/* Opciones */}

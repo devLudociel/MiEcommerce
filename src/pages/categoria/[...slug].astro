@@ -1,6 +1,6 @@
 ---
 import Layout from '../../layouts/BaseLayout.astro';
-import CategoryPage from '../../components/pages/CategoryPage';
+import CategoryPageOptimized from '../../components/pages/CategoryPageOptimized';
 
 export const prerender = false; // Habilita SSR para esta página
 
@@ -11,5 +11,5 @@ const subcategorySlug = slugArray[1];
 ---
 
 <Layout title={`Categoría`}>
-  <CategoryPage categorySlug={categorySlug} subcategorySlug={subcategorySlug} client:load />
+  <CategoryPageOptimized categorySlug={categorySlug} subcategorySlug={subcategorySlug} client:load />
 </Layout>

@@ -2,7 +2,6 @@
 import Header from '../components/layout/header.tsx';
 import { Toaster } from '../lib/notifications';
 import { toasterConfig } from '../lib/notifications';
-import ErrorBoundaryWrapper from '../components/wrappers/ErrorBoundaryWrapper.tsx';
 import Analytics from '../components/analytics/Analytics.tsx';
 import '../styles/global.css';
 
@@ -50,9 +49,9 @@ const {
 
     <title>{title}</title>
     <style>
-      /* Variable CSS para la altura del header - ajústala según tu header real */
+      /* Variable CSS para la altura del header - ajustada para mejor spacing */
       :root {
-        --header-height: 208px;
+        --header-height: 80px;
       }
 
       .skip-link {
@@ -75,18 +74,19 @@ const {
 
       main {
         padding-top: var(--header-height);
+        min-height: calc(100vh - var(--header-height));
       }
 
-      /* Breakpoints responsivos si es necesario */
-      @media (max-width: 1024px) {
+      /* Breakpoints responsivos */
+      @media (min-width: 768px) {
         :root {
-          --header-height: 208px;
+          --header-height: 90px;
         }
       }
 
-      @media (max-width: 768px) {
+      @media (min-width: 1024px) {
         :root {
-          --header-height: 220px; /* Puede ser más en móvil si tienes más elementos */
+          --header-height: 100px;
         }
       }
     </style>
@@ -95,10 +95,7 @@ const {
     <a class="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
     <Header client:load />
     <main id="contenido-principal">
-      <!-- Global Error Boundary para capturar errores de React -->
-      <ErrorBoundaryWrapper client:only="react">
-        <slot />
-      </ErrorBoundaryWrapper>
+      <slot />
     </main>
     <!-- Toast Notifications Container -->
     <Toaster {...toasterConfig} client:load />
