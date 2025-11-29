@@ -88,6 +88,8 @@ export interface OrderItem {
     [key: string]: string | number | boolean | { x: number; y: number } | null | undefined;
   };
   uploadedFiles?: string[]; // URLs de los archivos subidos
+  productionNotes?: string; // Notas internas del equipo de producción
+  productionStatus?: 'pending' | 'in_production' | 'ready' | 'shipped'; // Estado individual del producto
 }
 
 // CHECKOUT & ORDER: Shipping information

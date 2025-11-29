@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Loader, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { ShoppingCart, Loader, Sparkles, Image as ImageIcon, RotateCcw, Save } from 'lucide-react';
 import type {
   CustomizationSchema,
   CustomizationField,
@@ -24,6 +24,7 @@ import SaveDesignButton from './SaveDesignButton';
 import { addToCart } from '../../store/cartStore';
 import { logger } from '../../lib/logger';
 import { notify } from '../../lib/notifications';
+import { useAutoSaveDraft } from '../hooks/useAutoSaveDraft';
 
 interface FirebaseProduct {
   id: string;
@@ -49,6 +50,176 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   const [showCliparts, setShowCliparts] = useState(false);
   const [layers, setLayers] = useState<DesignLayer[]>([]);
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
+  const [showDraftNotification, setShowDraftNotification] = useState(false);
+
+  // Auto-save draft functionality
+  const draftKey = `draft_${product.id}`;
+  const {
+    loadDraft,
+    clearDraft,
+    getLastSavedTime,
+    hasDraft,
+  } = useAutoSaveDraft(draftKey, { values, layers }, true, 30000); // Auto-save every 30 seconds
+
+  // Check for reorder query parameter first
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const reorderMode = urlParams.get('reorder');
+
+    if (reorderMode) {
+      const reorderKey = `reorder_${product.id}`;
+      const reorderDataString = localStorage.getItem(reorderKey);
+
+      if (reorderDataString) {
+        try {
+          const reorderData = JSON.parse(reorderDataString);
+
+          // Load values and layers from previous order
+          if (reorderData.values) {
+            setValues(reorderData.values);
+            logger.info('[DynamicCustomizer] Reorder values loaded', {
+              productId: product.id,
+              mode: reorderMode,
+            });
+          }
+
+          if (reorderData.layers) {
+            setLayers(reorderData.layers);
+          }
+
+          // If auto mode, add to cart immediately
+          if (reorderMode === 'auto' && reorderData.autoAddToCart) {
+            logger.info('[DynamicCustomizer] Auto-adding to cart from reorder');
+
+            // Give React time to update state before adding to cart
+            setTimeout(() => {
+              const addButton = document.querySelector('[data-add-to-cart]') as HTMLButtonElement;
+              if (addButton) {
+                addButton.click();
+              }
+            }, 500);
+          }
+
+          // Clear reorder data after loading
+          localStorage.removeItem(reorderKey);
+
+          // Show success notification
+          if (reorderMode === 'edit') {
+            notify.success('Configuración anterior cargada. Puedes editarla antes de agregar al carrito.');
+          } else {
+            notify.success('Reordenando producto con la configuración anterior...');
+          }
+        } catch (error) {
+          logger.error('[DynamicCustomizer] Error loading reorder data', error);
+          notify.error('Error al cargar la configuración anterior');
+        }
+      }
+
+      // Clean up URL
+      urlParams.delete('reorder');
+      const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [product.id]);
+
+  // Check for shared design parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isShared = urlParams.get('shared');
+
+    if (isShared === 'true') {
+      const sharedKey = `shared_${product.id}`;
+      const sharedDataString = localStorage.getItem(sharedKey);
+
+      if (sharedDataString) {
+        try {
+          const sharedData = JSON.parse(sharedDataString);
+
+          // Load values and layers from shared design
+          if (sharedData.values) {
+            setValues(sharedData.values);
+            logger.info('[DynamicCustomizer] Shared design values loaded', {
+              productId: product.id,
+            });
+          }
+
+          if (sharedData.layers) {
+            setLayers(sharedData.layers);
+          }
+
+          // Clear shared data after loading
+          localStorage.removeItem(sharedKey);
+
+          // Show success notification
+          notify.success('¡Diseño compartido cargado! Puedes personalizarlo antes de agregar al carrito.');
+        } catch (error) {
+          logger.error('[DynamicCustomizer] Error loading shared design', error);
+          notify.error('Error al cargar el diseño compartido');
+        }
+      }
+
+      // Clean up URL
+      urlParams.delete('shared');
+      const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [product.id]);
+
+  // Check for existing draft on mount (only if not reordering)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const reorderMode = urlParams.get('reorder');
+
+    // Skip draft loading if we're in reorder mode
+    if (reorderMode) return;
+
+    const draft = loadDraft();
+    const lastSavedTime = getLastSavedTime();
+
+    if (draft && hasDraft()) {
+      const timeSinceLastSave = lastSavedTime
+        ? Math.floor((Date.now() - new Date(lastSavedTime).getTime()) / 1000 / 60)
+        : null;
+
+      const timeText = timeSinceLastSave !== null
+        ? timeSinceLastSave < 1
+          ? 'hace menos de 1 minuto'
+          : `hace ${timeSinceLastSave} minuto${timeSinceLastSave > 1 ? 's' : ''}`
+        : '';
+
+      logger.info('[DynamicCustomizer] Draft found', { productId: product.id, lastSavedTime });
+      setShowDraftNotification(true);
+
+      // Auto-close notification after 15 seconds if user doesn't interact
+      const timer = setTimeout(() => {
+        setShowDraftNotification(false);
+      }, 15000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [product.id]);
+
+  // Preload color preview images for faster switching
+  useEffect(() => {
+    const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
+    if (colorField) {
+      const colorConfig = colorField.config as ColorSelectorConfig;
+      colorConfig.availableColors?.forEach(color => {
+        // Preload images in order of priority
+        const imagesToPreload: string[] = [];
+
+        if (color.previewImages?.default) imagesToPreload.push(color.previewImages.default);
+        if (color.previewImages?.front) imagesToPreload.push(color.previewImages.front);
+        if (color.previewImages?.back) imagesToPreload.push(color.previewImages.back);
+        if (color.previewImage) imagesToPreload.push(color.previewImage);
+
+        imagesToPreload.forEach(url => {
+          const img = new Image();
+          img.src = url;
+        });
+      });
+    }
+  }, [schema]);
 
   // Calculate pricing
   const pricing: CustomizationPricing = {
@@ -229,6 +400,24 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     return true;
   };
 
+  const handleLoadDraft = () => {
+    const draft = loadDraft();
+    if (draft) {
+      setValues(draft.values || {});
+      setLayers(draft.layers || []);
+      setShowDraftNotification(false);
+      notify.success('Borrador restaurado correctamente');
+      logger.info('[DynamicCustomizer] Draft loaded successfully', { productId: product.id });
+    }
+  };
+
+  const handleDismissDraft = () => {
+    setShowDraftNotification(false);
+    clearDraft();
+    notify.info('Borrador descartado');
+    logger.info('[DynamicCustomizer] Draft dismissed', { productId: product.id });
+  };
+
   const handleAddToCart = async () => {
     setError(null);
 
@@ -263,6 +452,9 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
         productId: product.id,
         customization: customizationData,
       });
+
+      // Clear draft after successful add to cart
+      clearDraft();
 
       // Reset form
       setValues({});
@@ -380,6 +572,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
             onChange={(val) => handleFieldChange(field.id, val)}
             helpText={field.helpText}
             productType={product.categoryId}
+            categoryId={product.categoryId}
           />
         );
       }
@@ -408,12 +601,16 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
     if (!colorField) {
       // No color selector, use default image from schema
+      console.log('[getBaseImage] No color field found, using default');
       return schema.previewImages?.default || product.images[0] || '';
     }
 
     const colorValue = values[colorField.id];
+    console.log('[getBaseImage] Color value:', colorValue);
+
     if (!colorValue) {
       // No color selected yet, use default
+      console.log('[getBaseImage] No color selected, using default');
       return schema.previewImages?.default || product.images[0] || '';
     }
 
@@ -421,11 +618,38 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     const colorConfig = colorField.config as ColorSelectorConfig;
     const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
 
-    if (selectedColor?.previewImage) {
-      return selectedColor.previewImage;
+    console.log('[getBaseImage] Selected color:', selectedColor);
+    console.log('[getBaseImage] previewImages object:', selectedColor?.previewImages);
+    console.log('[getBaseImage] previewImages keys:', selectedColor?.previewImages ? Object.keys(selectedColor.previewImages) : 'N/A');
+
+    // NUEVO: Soportar múltiples formatos de imagen
+    let previewImage: string | undefined;
+
+    // Formato 1: previewImages.default (preferido para productos simples)
+    if (selectedColor?.previewImages?.default) {
+      previewImage = selectedColor.previewImages.default;
+      console.log('[getBaseImage] ✅ Using previewImages.default:', previewImage);
+    }
+    // Formato 2: previewImages.front (para productos con frente/espalda o cuadros)
+    else if (selectedColor?.previewImages?.front) {
+      previewImage = selectedColor.previewImages.front;
+      console.log('[getBaseImage] ✅ Using previewImages.front:', previewImage);
+    }
+    // Formato 3: previewImage (string directo, legacy)
+    else if (selectedColor?.previewImage) {
+      previewImage = selectedColor.previewImage;
+      console.log('[getBaseImage] ✅ Using previewImage (legacy):', previewImage);
+    }
+    else {
+      console.log('[getBaseImage] ❌ No valid preview image found in color config');
+    }
+
+    if (previewImage) {
+      return previewImage;
     }
 
     // Fallback to default
+    console.log('[getBaseImage] No preview image in color, using fallback');
     return schema.previewImages?.default || product.images[0] || '';
   };
 
@@ -751,6 +975,54 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
           <p className="text-gray-600">{product.description}</p>
         </div>
 
+        {/* Draft Recovery Notification */}
+        {showDraftNotification && (
+          <div className="mb-6 max-w-3xl mx-auto">
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-300 rounded-xl p-4 shadow-lg">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5">
+                  <Save className="w-6 h-6 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-blue-900 text-lg mb-1">
+                    Borrador Encontrado
+                  </h3>
+                  <p className="text-blue-700 text-sm mb-3">
+                    Encontramos un diseño guardado automáticamente. ¿Quieres continuar donde lo dejaste?
+                  </p>
+                  {getLastSavedTime() && (
+                    <p className="text-blue-600 text-xs mb-3">
+                      Última modificación: {(() => {
+                        const lastSaved = getLastSavedTime();
+                        if (!lastSaved) return '';
+                        const mins = Math.floor((Date.now() - new Date(lastSaved).getTime()) / 1000 / 60);
+                        return mins < 1
+                          ? 'hace menos de 1 minuto'
+                          : `hace ${mins} minuto${mins > 1 ? 's' : ''}`;
+                      })()}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleLoadDraft}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all flex items-center gap-2 text-sm"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Restaurar Borrador
+                    </button>
+                    <button
+                      onClick={handleDismissDraft}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-all text-sm"
+                    >
+                      Empezar de Nuevo
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Template Gallery Modal */}
         {showTemplates && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
@@ -890,6 +1162,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
             <button
               onClick={handleAddToCart}
               disabled={isAddingToCart}
+              data-add-to-cart="true"
               className="w-full bg-gradient-to-r from-purple-500 to-cyan-500 text-white py-4 rounded-xl font-bold text-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
             >
               {isAddingToCart ? (

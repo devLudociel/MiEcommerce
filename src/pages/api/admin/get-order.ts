@@ -11,8 +11,11 @@ export const GET: APIRoute = async ({ request, url }) => {
   try {
     // SECURITY: Verificar autenticación de admin
     const authResult = await verifyAdminAuth(request);
-    if (!authResult.success) {
-      return authResult.error!;
+    if (!authResult.isAuthenticated && !authResult.isAdmin) {
+      return createErrorResponse(
+        authResult.error || 'Forbidden: Admin access required',
+        authResult.isAuthenticated ? 403 : 401
+      );
     }
 
     const id = url.searchParams.get('id');

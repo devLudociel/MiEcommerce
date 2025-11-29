@@ -2,7 +2,7 @@
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
-import { rateLimit } from '../../lib/rateLimit';
+import { checkRateLimit, createRateLimitResponse, RATE_LIMIT_CONFIGS } from '../../lib/rate-limiter';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { finalizeOrder } from '../../lib/orders/finalizeOrder';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
@@ -71,33 +71,18 @@ const orderDataSchema = z.object({
 });
 
 export const POST: APIRoute = async ({ request }) => {
+  // SECURITY: Rate limiting (strict for order creation)
+  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STRICT, 'save-order');
+  if (!rateLimitResult.allowed) {
+    logger.warn('[save-order] Rate limit exceeded');
+    return createRateLimitResponse(rateLimitResult);
+  }
+
   // SECURITY: CSRF protection
   const csrfCheck = validateCSRF(request);
   if (!csrfCheck.valid) {
     logger.warn('[save-order] CSRF validation failed:', csrfCheck.reason);
     return createCSRFErrorResponse();
-  }
-
-  // Rate limit básico: 10/min por IP para guardar orden
-  try {
-    const { ok, remaining, resetAt } = await rateLimit(request, 'save-order', {
-      intervalMs: 60_000,
-      max: 10,
-    });
-    if (!ok) {
-      return new Response(JSON.stringify({ error: 'Too many requests' }), {
-        status: 429,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-RateLimit-Remaining': String(remaining),
-          'X-RateLimit-Reset': String(resetAt),
-        },
-      });
-    }
-  } catch (rateLimitError) {
-    // SECURITY FIX: Log rate limit failures instead of silently ignoring
-    logger.error('[save-order] Rate limit check failed:', rateLimitError);
-    // Continue anyway - don't block orders if rate limiting system fails
   }
   const isProd = import.meta.env.PROD === true;
   logger.info('API save-order: Solicitud recibida');

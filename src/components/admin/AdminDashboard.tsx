@@ -289,6 +289,27 @@ export default function AdminDashboard() {
         <p className="text-gray-600">Vista general de tu negocio</p>
       </div>
 
+      {/* Banner: Nuevo Dashboard con Gráficos */}
+      <div className="mb-6 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl p-6 text-white shadow-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">📊 Nuevo Dashboard con Gráficos Interactivos</h2>
+            <p className="text-white/90 mb-4">
+              Visualiza tus ventas con gráficos de línea, área, barras y circular. Análisis completo de tu negocio.
+            </p>
+            <a
+              href="/admin/dashboard-ventas"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-purple-600 rounded-xl font-bold hover:shadow-xl transition-all"
+            >
+              <span>✨</span>
+              Ver Dashboard con Gráficos
+              <span>→</span>
+            </a>
+          </div>
+          <div className="hidden lg:block text-8xl opacity-50">📈</div>
+        </div>
+      </div>
+
       {/* Accesos Rápidos */}
       <div className="mb-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <a
@@ -313,6 +334,16 @@ export default function AdminDashboard() {
           <div className="text-sm font-semibold text-gray-900">Pedidos</div>
         </a>
         <a
+          href="/admin/dashboard-ventas"
+          className="p-4 bg-gradient-to-br from-cyan-500 to-purple-600 border-2 border-cyan-400 rounded-xl hover:shadow-xl transition-all text-center group relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 bg-yellow-400 text-xs font-bold px-2 py-0.5 rounded-bl-lg text-gray-900">
+            NUEVO
+          </div>
+          <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">📊</div>
+          <div className="text-sm font-semibold text-white">Gráficos</div>
+        </a>
+        <a
           href="/admin/cupones"
           className="p-4 bg-white border-2 border-gray-200 rounded-xl hover:border-green-500 hover:shadow-lg transition-all text-center group"
         >
@@ -330,9 +361,6 @@ export default function AdminDashboard() {
           href="/admin/customization"
           className="p-4 bg-gradient-to-br from-purple-500 to-cyan-500 border-2 border-purple-400 rounded-xl hover:shadow-xl transition-all text-center group relative overflow-hidden"
         >
-          <div className="absolute top-0 right-0 bg-yellow-400 text-xs font-bold px-2 py-0.5 rounded-bl-lg text-gray-900">
-            NUEVO
-          </div>
           <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🎨</div>
           <div className="text-sm font-semibold text-white">Personalización</div>
         </a>

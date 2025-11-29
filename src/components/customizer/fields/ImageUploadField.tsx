@@ -4,7 +4,9 @@ import type { ImageUploadConfig, CustomizationValue, ImageTransform } from '../.
 import { uploadCustomImage, auth } from '../../../lib/firebase';
 import { compressImage, validateImageFile, fileToBase64 } from '../../../utils/imageCompression';
 import { logger } from '../../../lib/logger';
-import ImagePositionEditor from '../ImagePositionEditor';
+import InteractiveImageEditor from '../InteractiveImageEditor';
+import { validateImageQuality, getQualityPresetForCategory, type ImageQualityResult } from '../../../lib/validation/imageQualityValidator';
+import ImageQualityBadge from '../../common/ImageQualityBadge';
 
 interface ImageUploadFieldProps {
   fieldId: string;
@@ -15,6 +17,7 @@ interface ImageUploadFieldProps {
   onChange: (value: CustomizationValue) => void;
   helpText?: string;
   productType?: string; // 'camiseta', 'cuadro', etc. for storage path
+  categoryId?: string; // Category ID for quality validation preset
 }
 
 export default function ImageUploadField({
@@ -26,6 +29,7 @@ export default function ImageUploadField({
   onChange,
   helpText,
   productType = 'custom',
+  categoryId,
 }: ImageUploadFieldProps) {
   // Ensure config has required properties with defaults
   const safeConfig = {
@@ -42,6 +46,7 @@ export default function ImageUploadField({
   const [preview, setPreview] = useState<string | null>(
     (value?.imageUrl as string | undefined) || null
   );
+  const [imageQuality, setImageQuality] = useState<ImageQualityResult | null>(null);
 
   // Image transform state
   const [transform, setTransform] = useState<ImageTransform>(
@@ -104,6 +109,16 @@ export default function ImageUploadField({
       const base64 = await fileToBase64(file);
       setPreview(base64);
 
+      // Validate image quality
+      const qualityConfig = categoryId ? getQualityPresetForCategory(categoryId) : undefined;
+      const qualityResult = await validateImageQuality(file, qualityConfig);
+      setImageQuality(qualityResult);
+
+      logger.info('[ImageUploadField] Image quality validated', {
+        quality: qualityResult.quality,
+        isValid: qualityResult.isValid,
+      });
+
       // Compress and upload
       const compressedFile = await compressImage(file, {
         maxSizeMB: Math.min(safeConfig.maxSizeMB, 2),
@@ -143,6 +158,7 @@ export default function ImageUploadField({
 
   const handleRemoveImage = () => {
     setPreview(null);
+    setImageQuality(null);
     onChange({
       fieldId,
       value: '',
@@ -185,16 +201,26 @@ export default function ImageUploadField({
         <div
           onDragOver={handleDragOver}
           onDrop={handleDrop}
-          className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition-colors cursor-pointer bg-gray-50"
+          className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition-colors cursor-pointer bg-gray-50 focus-within:ring-4 focus-within:ring-purple-300 focus-within:border-purple-500"
           onClick={() => fileInputRef.current?.click()}
+          tabIndex={0}
+          role="button"
+          aria-label={`${label} - Subir imagen o arrastrar aquí`}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
         >
           <input
             ref={fileInputRef}
             type="file"
             accept={safeConfig.allowedFormats.map((f) => `.${f}`).join(',')}
             onChange={handleFileSelect}
-            className="hidden"
+            className="sr-only"
             required={required && !preview}
+            aria-label={`Seleccionar archivo: ${label}`}
           />
 
           {isLoading ? (
@@ -208,9 +234,12 @@ export default function ImageUploadField({
               <p className="text-sm font-medium text-gray-700 mb-1">
                 Haz clic o arrastra una imagen aquí
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 mb-1">
                 Formatos: {safeConfig.allowedFormats.join(', ').toUpperCase()} • Máx:{' '}
                 {safeConfig.maxSizeMB}MB
+              </p>
+              <p className="text-xs text-gray-400">
+                Pulsa Enter o Espacio para abrir
               </p>
             </>
           )}
@@ -242,13 +271,21 @@ export default function ImageUploadField({
             <span className="font-bold">✓</span>
             <span>Imagen cargada correctamente</span>
           </div>
+
+          {/* Image Quality Badge */}
+          {imageQuality && (
+            <div className="mt-3">
+              <ImageQualityBadge quality={imageQuality} showDetails={true} />
+            </div>
+          )}
         </div>
       )}
 
-      {/* Position Controls */}
+      {/* Editor Visual Interactivo */}
       {preview && safeConfig.showPositionControls && (
         <div className="mt-4">
-          <ImagePositionEditor
+          <InteractiveImageEditor
+            image={preview}
             transform={transform}
             onChange={handleTransformChange}
             disabled={isLoading}

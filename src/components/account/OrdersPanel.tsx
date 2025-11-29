@@ -173,6 +173,67 @@ export default function OrdersPanel() {
     }).format(date);
   };
 
+  /**
+   * Maneja el reordenamiento de productos desde la lista de pedidos
+   * @param order - Pedido a reordenar
+   * @param editMode - Si es true, abre el customizer para editar; si es false, agrega directamente al carrito
+   */
+  const handleReorder = (order: OrderData, editMode: boolean) => {
+    if (!order || order.items.length === 0) return;
+
+    const firstItem = order.items[0];
+
+    if (!firstItem.productId) {
+      logger.warn('[OrdersPanel] Product ID not found in order item');
+      alert('No se pudo identificar el producto. Por favor, contacta con soporte.');
+      return;
+    }
+
+    // Si el producto tiene personalización
+    if (firstItem.customization) {
+      if (editMode) {
+        // Editar y Reordenar: Guardar configuración en localStorage y redirigir al customizer
+        const reorderData = {
+          values: firstItem.customization.values || [],
+          layers: firstItem.customization.layers || [],
+          timestamp: Date.now(),
+        };
+
+        localStorage.setItem(`reorder_${firstItem.productId}`, JSON.stringify(reorderData));
+        logger.info('[OrdersPanel] Reorder data saved for editing', {
+          productId: firstItem.productId,
+          orderId: order.id,
+        });
+
+        // Redirigir al customizer con flag de edición
+        window.location.href = `/producto/${firstItem.productId}?reorder=edit`;
+      } else {
+        // Reordenar: Guardar configuración y agregar directamente al carrito
+        const reorderData = {
+          values: firstItem.customization.values || [],
+          layers: firstItem.customization.layers || [],
+          timestamp: Date.now(),
+          autoAddToCart: true,
+        };
+
+        localStorage.setItem(`reorder_${firstItem.productId}`, JSON.stringify(reorderData));
+        logger.info('[OrdersPanel] Reorder data saved for auto-add', {
+          productId: firstItem.productId,
+          orderId: order.id,
+        });
+
+        // Redirigir al customizer con flag de auto-add
+        window.location.href = `/producto/${firstItem.productId}?reorder=auto`;
+      }
+    } else {
+      // Producto sin personalización: redirigir directamente a la página del producto
+      logger.info('[OrdersPanel] Reordering product without customization', {
+        productId: firstItem.productId,
+      });
+      window.location.href = `/producto/${firstItem.productId}`;
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="mb-6">
@@ -272,13 +333,25 @@ export default function OrdersPanel() {
                   >
                     Ver detalle
                   </a>
-                  {order.status === 'delivered' && (
-                    <a
-                      href={`/producto/${order.items[0]?.productId}`}
-                      className="btn btn-outline border-2 border-gray-300 px-6 py-2 rounded-xl font-bold hover:border-cyan-500 transition-all text-center text-sm"
-                    >
-                      Volver a comprar
-                    </a>
+                  {(order.status === 'delivered' || order.status === 'processing' || order.status === 'shipped') && order.items.length > 0 && (
+                    <>
+                      <button
+                        onClick={() => handleReorder(order, false)}
+                        className="btn bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2 rounded-xl font-bold hover:shadow-lg transition-all text-center text-sm flex items-center justify-center gap-1"
+                      >
+                        <span>🔄</span>
+                        Reordenar
+                      </button>
+                      {order.items[0]?.customization && (
+                        <button
+                          onClick={() => handleReorder(order, true)}
+                          className="btn btn-outline border-2 border-gray-300 px-6 py-2 rounded-xl font-bold hover:border-cyan-500 transition-all text-center text-sm flex items-center justify-center gap-1"
+                        >
+                          <span>✏️</span>
+                          Editar
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

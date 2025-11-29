@@ -2,9 +2,9 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import HeroCarousel from '../components/sections/HeroCarousel.tsx';
 import CategoriesShowcase from '../components/sections/CategoriesShowcase.tsx';
-import BestSellers from '../components/sections/BestSellers.tsx';
+import BestSellersWithProvider from '../components/sections/BestSellersWithProvider.tsx';
 import ProductGrid from '../components/sections/ProductGrid.tsx';
-import DigitalProductsHome from '../components/sections/DigitalProductsHome.tsx';
+import DigitalProductsHomeWithProvider from '../components/sections/DigitalProductsHomeWithProvider.tsx';
 import WhyChooseUs from '../components/sections/WhyChooseUs.tsx';
 import NewsletterSignup from '../components/sections/NewsletterSignup.tsx';
 import FooterComponent from '../components/sections/Footer.tsx';
@@ -26,7 +26,7 @@ const ogImage = '/og-home.jpg';
 
   <!-- 3. Best Sellers: Social proof + productos populares -->
   <!-- client:visible = Cargar cuando es visible (below the fold) -->
-  <BestSellers client:visible />
+  <BestSellersWithProvider client:visible />
 
   <!-- 4. Product Grid: Productos FÍSICOS destacados de Firebase -->
   <!-- client:visible = Cargar cuando es visible (below the fold) -->
@@ -34,7 +34,7 @@ const ogImage = '/og-home.jpg';
 
   <!-- 5. Digital Products: Productos DIGITALES descargables -->
   <!-- client:visible = Cargar cuando es visible (below the fold) -->
-  <DigitalProductsHome client:visible maxItems={4} />
+  <DigitalProductsHomeWithProvider client:visible maxItems={4} />
 
   <!-- 6. Why Choose Us: Generar confianza con stats reales -->
   <!-- client:idle = Cargar cuando el navegador está idle (no muy interactivo) -->

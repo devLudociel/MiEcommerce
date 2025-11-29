@@ -3,6 +3,7 @@ import { getAdminDb, getAdminAuth } from '../../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { logger } from '../../../lib/logger';
 import { z } from 'zod';
+import { checkRateLimit, createRateLimitResponse, RATE_LIMIT_CONFIGS } from '../../../lib/rate-limiter';
 
 const saveDesignSchema = z.object({
   name: z.string().min(1).max(100),
@@ -33,6 +34,13 @@ const saveDesignSchema = z.object({
  * Returns: { designId: string }
  */
 export const POST: APIRoute = async ({ request }) => {
+  // SECURITY: Rate limiting (standard limit for saving designs)
+  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'designs-save');
+  if (!rateLimitResult.allowed) {
+    logger.warn('[designs/save] Rate limit exceeded');
+    return createRateLimitResponse(rateLimitResult);
+  }
+
   try {
     // Get auth token
     const authHeader = request.headers.get('Authorization');

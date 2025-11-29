@@ -6,6 +6,7 @@ import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { executeStripeOperation } from '../../lib/externalServices';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
 import { z } from 'zod';
+import { checkRateLimit, createRateLimitResponse, RATE_LIMIT_CONFIGS } from '../../lib/rate-limiter';
 
 const logger = createScopedLogger('create-payment-intent');
 
@@ -31,6 +32,13 @@ const paymentIntentSchema = z.object({
  * - Previene manipulación de montos
  */
 export const POST: APIRoute = async ({ request }) => {
+  // SECURITY: Rate limiting (very strict for payment operations)
+  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.VERY_STRICT, 'payment');
+  if (!rateLimitResult.allowed) {
+    logger.warn('[create-payment-intent] Rate limit exceeded');
+    return createRateLimitResponse(rateLimitResult);
+  }
+
   // SECURITY: CSRF protection
   const csrfCheck = validateCSRF(request);
   if (!csrfCheck.valid) {

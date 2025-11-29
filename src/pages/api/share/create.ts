@@ -4,6 +4,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { logger } from '../../../lib/logger';
 import { z } from 'zod';
 import { customAlphabet } from 'nanoid';
+import { checkRateLimit, createRateLimitResponse, RATE_LIMIT_CONFIGS } from '../../../lib/rate-limiter';
 
 // Generate short IDs (8 characters, URL-safe)
 const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 8);
@@ -30,6 +31,13 @@ const createShareSchema = z.object({
  * Returns: { shareId: string; shareUrl: string }
  */
 export const POST: APIRoute = async ({ request }) => {
+  // SECURITY: Rate limiting (standard limit for share creation)
+  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'share-create');
+  if (!rateLimitResult.allowed) {
+    logger.warn('[share/create] Rate limit exceeded');
+    return createRateLimitResponse(rateLimitResult);
+  }
+
   try {
     const rawData = await request.json();
 

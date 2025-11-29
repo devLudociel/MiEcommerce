@@ -7,6 +7,7 @@ import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import OrderItemPreview from './OrderItemPreview';
 import { FRONT_POSITIONS, BACK_POSITIONS, getContainerTransform, type PresetPosition } from '../../constants/textilePositions';
+import JSZip from 'jszip';
 
 const statusLabels: Record<string, string> = {
   pending: 'Pendiente',
@@ -79,6 +80,10 @@ export default function AdminOrderDetail() {
     title: '',
     message: '',
   });
+
+  // Production notes state - track editing per item
+  const [editingNotes, setEditingNotes] = useState<Record<number, boolean>>({});
+  const [notesContent, setNotesContent] = useState<Record<number, string>>({});
 
   const showModal = (
     type: 'info' | 'warning' | 'error' | 'success',
@@ -241,6 +246,248 @@ export default function AdminOrderDetail() {
     }
   };
 
+  /**
+   * Descarga una imagen personalizada del cliente
+   * Soporta URLs (Firebase Storage) y base64
+   */
+  const handleImageDownload = async (imageUrl: string, fieldLabel: string, itemName: string) => {
+    try {
+      let blob: Blob;
+
+      // Detectar si es base64 o URL
+      if (imageUrl.startsWith('data:')) {
+        // Es base64 - convertir directamente a blob
+        const response = await fetch(imageUrl);
+        blob = await response.blob();
+      } else {
+        // Es URL (Firebase Storage) - descargar con CORS
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+          throw new Error('No se pudo descargar la imagen');
+        }
+        blob = await response.blob();
+      }
+
+      // Crear nombre de archivo descriptivo
+      const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const sanitizedItemName = itemName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+      const sanitizedFieldLabel = fieldLabel.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+      const orderIdShort = order?.id?.slice(0, 8) || 'pedido';
+      const fileName = `${orderIdShort}_${sanitizedItemName}_${sanitizedFieldLabel}_${timestamp}.jpg`;
+
+      // Descargar
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+
+      notify.success(`Imagen descargada: ${fileName}`);
+      logger.info('[AdminOrderDetail] Image downloaded successfully', { fileName });
+    } catch (error) {
+      logger.error('[AdminOrderDetail] Error downloading image', error);
+      notify.error('No se pudo descargar la imagen. Intenta nuevamente.');
+    }
+  };
+
+  /**
+   * Guarda las notas de producción de un item específico
+   */
+  const handleSaveProductionNotes = async (itemIndex: number) => {
+    if (!orderId || !user) return;
+
+    try {
+      const notes = notesContent[itemIndex] || '';
+      const token = await user.getIdToken();
+
+      const response = await fetch('/api/admin/update-item-notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          orderId,
+          itemIndex,
+          notes,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update notes');
+      }
+
+      // Actualizar el estado local
+      if (order) {
+        const updatedItems = [...order.items];
+        updatedItems[itemIndex] = {
+          ...updatedItems[itemIndex],
+          productionNotes: notes,
+        };
+        setOrder({ ...order, items: updatedItems });
+      }
+
+      // Salir del modo edición
+      setEditingNotes({ ...editingNotes, [itemIndex]: false });
+      notify.success('Notas de producción guardadas');
+      logger.info('[AdminOrderDetail] Production notes saved', { itemIndex });
+    } catch (error) {
+      logger.error('[AdminOrderDetail] Error saving production notes', error);
+      notify.error('No se pudieron guardar las notas. Intenta nuevamente.');
+    }
+  };
+
+  /**
+   * Inicia la edición de notas para un item
+   */
+  const handleStartEditNotes = (itemIndex: number, currentNotes?: string) => {
+    setEditingNotes({ ...editingNotes, [itemIndex]: true });
+    setNotesContent({ ...notesContent, [itemIndex]: currentNotes || '' });
+  };
+
+  /**
+   * Cancela la edición de notas para un item
+   */
+  const handleCancelEditNotes = (itemIndex: number) => {
+    setEditingNotes({ ...editingNotes, [itemIndex]: false });
+  };
+
+  /**
+   * Actualiza el estado de producción de un item específico
+   */
+  const handleUpdateProductionStatus = async (itemIndex: number, newStatus: string) => {
+    if (!orderId || !user) return;
+
+    try {
+      const token = await user.getIdToken();
+
+      const response = await fetch('/api/admin/update-item-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          orderId,
+          itemIndex,
+          status: newStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      // Actualizar el estado local
+      if (order) {
+        const updatedItems = [...order.items];
+        updatedItems[itemIndex] = {
+          ...updatedItems[itemIndex],
+          productionStatus: newStatus as any,
+        };
+        setOrder({ ...order, items: updatedItems });
+      }
+
+      notify.success('Estado de producción actualizado');
+      logger.info('[AdminOrderDetail] Production status updated', { itemIndex, newStatus });
+    } catch (error) {
+      logger.error('[AdminOrderDetail] Error updating production status', error);
+      notify.error('No se pudo actualizar el estado. Intenta nuevamente.');
+    }
+  };
+
+  /**
+   * Descarga todas las imágenes personalizadas del pedido en un archivo ZIP
+   * Útil para pedidos con múltiples productos personalizados
+   */
+  const handleBulkImageDownload = async () => {
+    if (!order) return;
+
+    try {
+      // Buscar todas las imágenes en todos los items del pedido
+      const imageData: Array<{ url: string; name: string }> = [];
+      let itemIndex = 0;
+
+      for (const item of order.items || []) {
+        itemIndex++;
+        if (item.customization?.values) {
+          let fieldIndex = 0;
+          for (const field of item.customization.values) {
+            if (field.imageUrl) {
+              fieldIndex++;
+              const sanitizedItemName = item.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+              const sanitizedFieldLabel = field.fieldLabel.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+              const fileName = `${itemIndex}_${sanitizedItemName}_${fieldIndex}_${sanitizedFieldLabel}.jpg`;
+              imageData.push({ url: field.imageUrl, name: fileName });
+            }
+          }
+        }
+      }
+
+      if (imageData.length === 0) {
+        notify.warning('Este pedido no tiene imágenes personalizadas para descargar');
+        return;
+      }
+
+      notify.info(`Preparando ${imageData.length} imagen(es) para descargar...`);
+      logger.info('[AdminOrderDetail] Starting bulk download', { count: imageData.length });
+
+      // Crear ZIP
+      const zip = new JSZip();
+      const timestamp = new Date().toISOString().split('T')[0];
+      const orderIdShort = order.id?.slice(0, 8) || 'pedido';
+
+      // Descargar todas las imágenes y agregarlas al ZIP
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const { url, name } of imageData) {
+        try {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error('Download failed');
+          const blob = await response.blob();
+          zip.file(name, blob);
+          successCount++;
+        } catch (error) {
+          logger.warn('[AdminOrderDetail] Failed to download image', { url, error });
+          failCount++;
+        }
+      }
+
+      if (successCount === 0) {
+        notify.error('No se pudo descargar ninguna imagen. Verifica la conexión.');
+        return;
+      }
+
+      // Generar archivo ZIP
+      notify.info('Generando archivo ZIP...');
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+      // Descargar ZIP
+      const zipUrl = URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+      link.href = zipUrl;
+      link.download = `${orderIdShort}_imagenes_pedido_${timestamp}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(zipUrl);
+
+      const message = failCount > 0
+        ? `${successCount} imágenes descargadas (${failCount} fallaron)`
+        : `${successCount} imágenes descargadas correctamente`;
+
+      notify.success(message);
+      logger.info('[AdminOrderDetail] Bulk download completed', { successCount, failCount });
+    } catch (error) {
+      logger.error('[AdminOrderDetail] Error in bulk download', error);
+      notify.error('Error al crear el archivo ZIP. Intenta nuevamente.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -297,6 +544,85 @@ export default function AdminOrderDetail() {
                 <h2 className="text-2xl font-black text-gray-800 mb-4 inline-flex items-center gap-2">
                   <Icon name="package" className="w-6 h-6" /> Productos
                 </h2>
+
+                {/* Resumen del progreso de producción */}
+                {(() => {
+                  const statusCounts = (order.items || []).reduce(
+                    (acc, item) => {
+                      const status = item.productionStatus || 'pending';
+                      acc[status] = (acc[status] || 0) + 1;
+                      return acc;
+                    },
+                    {} as Record<string, number>
+                  );
+
+                  const total = order.items?.length || 0;
+                  const shipped = statusCounts['shipped'] || 0;
+                  const ready = statusCounts['ready'] || 0;
+                  const inProduction = statusCounts['in_production'] || 0;
+                  const pending = statusCounts['pending'] || 0;
+
+                  return (
+                    <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-bold text-gray-700">Progreso de Producción</span>
+                        <span className="text-xs text-gray-500">{total} producto(s) total</span>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-3">
+                        <div className="text-center p-2 bg-white rounded-lg border border-gray-200">
+                          <div className="text-2xl font-black text-gray-700">{pending}</div>
+                          <div className="text-xs text-gray-500 mt-1">⏳ Pendientes</div>
+                        </div>
+                        <div className="text-center p-2 bg-white rounded-lg border border-yellow-200">
+                          <div className="text-2xl font-black text-yellow-700">{inProduction}</div>
+                          <div className="text-xs text-yellow-600 mt-1">🔧 En Producción</div>
+                        </div>
+                        <div className="text-center p-2 bg-white rounded-lg border border-green-200">
+                          <div className="text-2xl font-black text-green-700">{ready}</div>
+                          <div className="text-xs text-green-600 mt-1">✅ Listos</div>
+                        </div>
+                        <div className="text-center p-2 bg-white rounded-lg border border-blue-200">
+                          <div className="text-2xl font-black text-blue-700">{shipped}</div>
+                          <div className="text-xs text-blue-600 mt-1">📦 Enviados</div>
+                        </div>
+                      </div>
+
+                      {/* Barra de progreso */}
+                      <div className="mt-3 h-3 bg-gray-200 rounded-full overflow-hidden flex">
+                        {pending > 0 && (
+                          <div
+                            className="bg-gray-400 transition-all"
+                            style={{ width: `${(pending / total) * 100}%` }}
+                            title={`${pending} pendientes`}
+                          />
+                        )}
+                        {inProduction > 0 && (
+                          <div
+                            className="bg-yellow-400 transition-all"
+                            style={{ width: `${(inProduction / total) * 100}%` }}
+                            title={`${inProduction} en producción`}
+                          />
+                        )}
+                        {ready > 0 && (
+                          <div
+                            className="bg-green-400 transition-all"
+                            style={{ width: `${(ready / total) * 100}%` }}
+                            title={`${ready} listos`}
+                          />
+                        )}
+                        {shipped > 0 && (
+                          <div
+                            className="bg-blue-400 transition-all"
+                            style={{ width: `${(shipped / total) * 100}%` }}
+                            title={`${shipped} enviados`}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <div className="space-y-4">
                   {(order.items || []).map((item: any, index: number) => (
                     <div key={index} className="flex gap-4 p-4 bg-gray-50 rounded-xl">
@@ -308,7 +634,33 @@ export default function AdminOrderDetail() {
                         height={96}
                       />
                       <div className="flex-1">
-                        <h3 className="font-bold text-gray-800 text-lg">{item.name}</h3>
+                        <div className="flex items-center justify-between gap-4 mb-2">
+                          <h3 className="font-bold text-gray-800 text-lg">{item.name}</h3>
+
+                          {/* Estado de producción por producto */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500 font-medium">Estado:</span>
+                            <select
+                              value={item.productionStatus || 'pending'}
+                              onChange={(e) => handleUpdateProductionStatus(index, e.target.value)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 outline-none transition-all ${
+                                item.productionStatus === 'shipped'
+                                  ? 'bg-blue-100 border-blue-300 text-blue-800'
+                                  : item.productionStatus === 'ready'
+                                  ? 'bg-green-100 border-green-300 text-green-800'
+                                  : item.productionStatus === 'in_production'
+                                  ? 'bg-yellow-100 border-yellow-300 text-yellow-800'
+                                  : 'bg-gray-100 border-gray-300 text-gray-700'
+                              }`}
+                            >
+                              <option value="pending">⏳ Pendiente</option>
+                              <option value="in_production">🔧 En Producción</option>
+                              <option value="ready">✅ Listo</option>
+                              <option value="shipped">📦 Enviado</option>
+                            </select>
+                          </div>
+                        </div>
+
                         {item.variantName && (
                           <p className="text-sm text-gray-500">Variante: {item.variantName}</p>
                         )}
@@ -331,17 +683,29 @@ export default function AdminOrderDetail() {
                                     {/* Si tiene imagen, mostrarla */}
                                     {field.imageUrl ? (
                                       <div className="mt-2 ml-4">
-                                        <img
-                                          src={field.imageUrl}
-                                          alt={field.fieldLabel}
-                                          className="w-32 h-32 object-contain border-2 border-purple-200 rounded-lg bg-white"
-                                        />
+                                        <div className="flex items-start gap-3">
+                                          <img
+                                            src={field.imageUrl}
+                                            alt={field.fieldLabel}
+                                            className="w-32 h-32 object-contain border-2 border-purple-200 rounded-lg bg-white flex-shrink-0"
+                                          />
+
+                                          {/* Botón de descarga */}
+                                          <button
+                                            onClick={() => handleImageDownload(field.imageUrl, field.fieldLabel, item.name)}
+                                            className="px-3 py-2 bg-cyan-500 text-white rounded-lg font-bold hover:bg-cyan-600 transition-all flex items-center gap-2 text-sm flex-shrink-0"
+                                            title="Descargar imagen del cliente para editar y producir"
+                                          >
+                                            <Icon name="download" className="w-4 h-4" />
+                                            Descargar
+                                          </button>
+                                        </div>
 
                                         {/* Mostrar transformaciones si existen */}
                                         {field.imageTransform && (() => {
                                           const detectedPreset = detectPresetPosition(field.imageTransform, field.fieldLabel);
                                           return (
-                                            <div className="mt-1 text-xs space-y-1">
+                                            <div className="mt-2 text-xs space-y-1">
                                               {/* Mostrar preset detectado */}
                                               {detectedPreset ? (
                                                 <div className="p-2 bg-green-100 border border-green-300 rounded">
@@ -403,6 +767,65 @@ export default function AdminOrderDetail() {
                           <span className="font-bold text-cyan-600 text-lg">
                             {eur(Number(item.price ?? 0) * Number(item.quantity ?? 0))}
                           </span>
+                        </div>
+
+                        {/* Notas de producción internas */}
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Icon name="pen" className="w-4 h-4 text-orange-600" />
+                            <span className="font-bold text-sm text-gray-700">Notas de Producción (Interno)</span>
+                          </div>
+
+                          {editingNotes[index] ? (
+                            /* Modo edición */
+                            <div className="space-y-2">
+                              <textarea
+                                value={notesContent[index] || ''}
+                                onChange={(e) => setNotesContent({ ...notesContent, [index]: e.target.value })}
+                                placeholder="Ej: Usar tela premium, Cliente pidió entrega urgente, Revisar colores antes de imprimir..."
+                                className="w-full px-3 py-2 border-2 border-orange-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none resize-none text-sm"
+                                rows={3}
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleSaveProductionNotes(index)}
+                                  className="px-3 py-1.5 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition-all text-sm flex items-center gap-1"
+                                >
+                                  <Icon name="save" className="w-4 h-4" />
+                                  Guardar
+                                </button>
+                                <button
+                                  onClick={() => handleCancelEditNotes(index)}
+                                  className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition-all text-sm"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            /* Modo lectura */
+                            <div>
+                              {item.productionNotes ? (
+                                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 relative group">
+                                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{item.productionNotes}</p>
+                                  <button
+                                    onClick={() => handleStartEditNotes(index, item.productionNotes)}
+                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 bg-orange-500 text-white rounded text-xs font-bold hover:bg-orange-600"
+                                  >
+                                    Editar
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => handleStartEditNotes(index)}
+                                  className="w-full px-3 py-2 border-2 border-dashed border-orange-300 rounded-lg text-orange-600 hover:bg-orange-50 hover:border-orange-400 transition-all text-sm font-medium flex items-center justify-center gap-2"
+                                >
+                                  <Icon name="plus" className="w-4 h-4" />
+                                  Agregar notas para el equipo de producción
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -511,6 +934,27 @@ export default function AdminOrderDetail() {
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-xl font-black text-gray-800 mb-4">Acciones</h2>
                 <div className="space-y-3">
+                  {/* Descarga masiva de imágenes - destacado */}
+                  {(() => {
+                    const imageCount = (order.items || []).reduce((count, item) => {
+                      if (item.customization?.values) {
+                        return count + item.customization.values.filter(f => f.imageUrl).length;
+                      }
+                      return count;
+                    }, 0);
+
+                    return imageCount > 0 ? (
+                      <button
+                        onClick={handleBulkImageDownload}
+                        className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg"
+                        title={`Descargar ${imageCount} imagen(es) en un archivo ZIP`}
+                      >
+                        <Icon name="download" className="w-5 h-5" />
+                        Descargar Todas las Imágenes ({imageCount})
+                      </button>
+                    ) : null;
+                  })()}
+
                   <button
                     onClick={() => window.print()}
                     className="w-full px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-all flex items-center justify-center gap-2"

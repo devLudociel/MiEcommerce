@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { doc, getDoc, collection, query, where, limit, getDocs } from 'firebase/firestore';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { db, getProductReviewStats } from '../../lib/firebase';
 import type { FirebaseProduct } from '../../types/firebase';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
@@ -12,6 +12,10 @@ import { ProductGallery } from '../products/ProductGallery';
 import { ProductInfo } from '../products/ProductInfo';
 import { ProductTabs } from '../products/ProductTabs';
 import { RelatedProducts } from '../products/RelatedProducts';
+// Analytics tracking
+import { trackProductView, trackAddToCart as trackAnalyticsAddToCart, trackCustomizeProduct } from '../../lib/analytics';
+// React Query hook
+import { useProduct } from '../../hooks/react-query/useProducts';
 
 interface ProductImage {
   id: number;
@@ -133,11 +137,21 @@ function toUIProduct(data: FirebaseProduct & { id: string }): UIProduct {
 }
 
 export default function ProductDetail({ id, slug }: Props) {
-  const [mounted, setMounted] = useState(false);
-  const [uiProduct, setUiProduct] = useState<UIProduct | null>(null);
+  // Use React Query hook for product fetching with automatic caching
+  const identifier = slug || id || '';
+  const {
+    data: productData,
+    isLoading: productLoading,
+    error: productError
+  } = useProduct(identifier, !!slug);
+
+  // Convert React Query data to UI format
+  const uiProduct = useMemo(() => {
+    if (!productData) return null;
+    return toUIProduct({ id: productData.id, ...productData } as any);
+  }, [productData]);
+
   const [relatedProducts, setRelatedProducts] = useState<UIProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState(0);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -148,6 +162,7 @@ export default function ProductDetail({ id, slug }: Props) {
   const wishlist = useWishlist();
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [reviewStats, setReviewStats] = useState({ averageRating: 0, totalReviews: 0 });
+  const [mounted, setMounted] = useState(false);
 
   // Modal state
   const [modal, setModal] = useState<{
@@ -174,80 +189,64 @@ export default function ProductDetail({ id, slug }: Props) {
     setModal({ ...modal, isOpen: false });
   };
 
+  // Mark component as mounted (for hydration safety)
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Track product view and load related data when product loads
   useEffect(() => {
-    async function load() {
+    if (!uiProduct) return;
+
+    // Track product view in analytics
+    trackProductView({
+      id: uiProduct.id,
+      name: uiProduct.name,
+      price: uiProduct.basePrice,
+      category: uiProduct.category,
+      brand: uiProduct.brand,
+    });
+
+    // Reset selections when product changes
+    setSelectedVariant(0);
+    setSelectedImage(0);
+    setQuantity(1);
+
+    // Load review stats
+    (async () => {
       try {
-        setLoading(true);
-        setError(null);
-        let data: (FirebaseProduct & { id: string }) | null = null;
-        if (id) {
-          const ref = doc(db, 'products', id);
-          const snap = await getDoc(ref);
-          if (snap.exists()) data = { id: snap.id, ...(snap.data() as any) };
-        } else if (slug) {
-          const q = query(collection(db, 'products'), where('slug', '==', slug), limit(1));
-          const snap = await getDocs(q);
-          if (!snap.empty) {
-            const d = snap.docs[0];
-            data = { id: d.id, ...(d.data() as any) };
-          } else {
-            try {
-              const ref = doc(db, 'products', slug);
-              const byId = await getDoc(ref);
-              if (byId.exists()) data = { id: byId.id, ...(byId.data() as any) };
-            } catch {}
-          }
-        }
-        if (!data) {
-          setError('Producto no encontrado');
-          setUiProduct(null);
-          return;
-        }
-        const product = toUIProduct(data);
-        setUiProduct(product);
-        setSelectedVariant(0);
-        setSelectedImage(0);
-        setQuantity(1);
+        const stats = await getProductReviewStats(uiProduct.id);
+        setReviewStats({
+          averageRating: stats.averageRating,
+          totalReviews: stats.totalReviews,
+        });
+      } catch (reviewError) {
+        console.error('Error cargando estadísticas de reseñas:', reviewError);
+      }
+    })();
 
-        // Cargar estadísticas de reseñas
+    // Load related products
+    if (uiProduct.categoryId) {
+      (async () => {
         try {
-          const stats = await getProductReviewStats(data.id);
-          setReviewStats({
-            averageRating: stats.averageRating,
-            totalReviews: stats.totalReviews,
-          });
-        } catch (reviewError) {
-          console.error('Error cargando estadísticas de reseñas:', reviewError);
-        }
-
-        // Cargar productos relacionados
-        if (product.categoryId) {
           const relatedQuery = query(
             collection(db, 'products'),
-            where('categoryId', '==', product.categoryId),
+            where('categoryId', '==', uiProduct.categoryId),
             where('active', '==', true),
             limit(5)
           );
           const relatedSnap = await getDocs(relatedQuery);
           const related = relatedSnap.docs
-            .filter((doc) => doc.id !== product.id)
+            .filter((doc) => doc.id !== uiProduct.id)
             .slice(0, 4)
             .map((doc) => toUIProduct({ id: doc.id, ...(doc.data() as any) }));
           setRelatedProducts(related);
+        } catch (error) {
+          console.error('Error loading related products:', error);
         }
-      } catch (e: any) {
-        setError(e?.message || 'Error cargando producto');
-        setUiProduct(null);
-      } finally {
-        setLoading(false);
-      }
+      })();
     }
-    if (mounted && (id || slug)) load(); // ✅ AÑADE mounted &&
-  }, [id, slug, mounted]); // ✅ AÑADE mounted a las dependencias
+  }, [uiProduct]); // ✅ AÑADE mounted a las dependencias
 
   // PERFORMANCE: useCallback para prevenir re-creación de funciones en cada render
   const handleAddToCart = useCallback(async () => {
@@ -266,6 +265,15 @@ export default function ProductDetail({ id, slug }: Props) {
         variantId: variant.id,
         variantName: variant.colorName ? `${variant.name} - ${variant.colorName}` : variant.name,
       });
+
+      // Track add to cart in analytics
+      trackAnalyticsAddToCart({
+        id: product.id,
+        name: product.name,
+        price: variant.price,
+        quantity: Math.max(1, quantity),
+        category: product.category,
+      });
     } finally {
       setTimeout(() => setIsAddingToCart(false), 600);
     }
@@ -278,6 +286,10 @@ export default function ProductDetail({ id, slug }: Props) {
 
   const handleCustomize = useCallback(() => {
     if (!uiProduct) return;
+
+    // Track customization start in analytics
+    trackCustomizeProduct(uiProduct.name);
+
     window.location.href = `/personalizar/${uiProduct.slug || uiProduct.id}`;
   }, [uiProduct]);
 
@@ -348,7 +360,8 @@ export default function ProductDetail({ id, slug }: Props) {
     );
   }
 
-  if (loading)
+  // React Query loading state
+  if (productLoading)
     return (
       <section className="py-20" style={{ background: 'white' }}>
         <div className="container">
@@ -360,13 +373,14 @@ export default function ProductDetail({ id, slug }: Props) {
       </section>
     );
 
-  if (error || !uiProduct)
+  // React Query error state
+  if (productError || !uiProduct)
     return (
       <section className="py-20" style={{ background: 'white' }}>
         <div className="container">
           <div className="text-center py-12">
             <div className="error-box mb-4">
-              <strong>Error:</strong> {error || 'Producto no encontrado'}
+              <strong>Error:</strong> {productError?.message || 'Producto no encontrado'}
             </div>
             <a href="/" className="btn btn-primary">
               Volver al inicio

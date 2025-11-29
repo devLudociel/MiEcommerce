@@ -2,37 +2,26 @@
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { validateCouponCodeSchema } from '../../lib/validation/schemas';
-import { rateLimit } from '../../lib/rateLimit';
+import { checkRateLimit, createRateLimitResponse, RATE_LIMIT_CONFIGS } from '../../lib/rate-limiter';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
 
 const logger = createScopedLogger('validate-coupon');
 
 export const POST: APIRoute = async ({ request }) => {
+  // SECURITY: Rate limiting (standard limit for coupon validation)
+  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'validate-coupon');
+  if (!rateLimitResult.allowed) {
+    logger.warn('[validate-coupon] Rate limit exceeded');
+    return createRateLimitResponse(rateLimitResult);
+  }
+
   // SECURITY: CSRF protection
   const csrfCheck = validateCSRF(request);
   if (!csrfCheck.valid) {
     logger.warn('[validate-coupon] CSRF validation failed', { reason: csrfCheck.reason });
     return createCSRFErrorResponse();
   }
-
-  // Rate limit básico: 30/min por IP para este endpoint
-  try {
-    const { ok, remaining, resetAt } = await rateLimit(request, 'validate-coupon', {
-      intervalMs: 60_000,
-      max: 30,
-    });
-    if (!ok) {
-      return new Response(JSON.stringify({ error: 'Too many requests' }), {
-        status: 429,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-RateLimit-Remaining': String(remaining),
-          'X-RateLimit-Reset': String(resetAt),
-        },
-      });
-    }
-  } catch {}
   logger.info('[validate-coupon] Request received');
 
   try {
