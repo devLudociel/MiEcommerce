@@ -25,15 +25,15 @@
 import { useState, useCallback } from 'react';
 import { logger } from '../lib/logger';
 
-export interface UseAsyncReturn<T> {
-  execute: (...args: any[]) => Promise<T | undefined>;
+export interface UseAsyncReturn<T, TArgs extends unknown[] = unknown[]> {
+  execute: (...args: TArgs) => Promise<T | undefined>;
   loading: boolean;
   error: Error | null;
   data: T | null;
   reset: () => void;
 }
 
-export interface UseAsyncOptions {
+export interface UseAsyncOptions<T> {
   /**
    * Ejecutar automáticamente al montar
    */
@@ -42,7 +42,7 @@ export interface UseAsyncOptions {
   /**
    * Callback cuando la operación es exitosa
    */
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: T) => void;
 
   /**
    * Callback cuando hay error
@@ -58,10 +58,10 @@ export interface UseAsyncOptions {
 /**
  * Hook para manejar operaciones asíncronas
  */
-export function useAsync<T>(
-  asyncFunction: (...args: any[]) => Promise<T>,
-  options: UseAsyncOptions = {}
-): UseAsyncReturn<T> {
+export function useAsync<T, TArgs extends unknown[] = unknown[]>(
+  asyncFunction: (...args: TArgs) => Promise<T>,
+  options: UseAsyncOptions<T> = {}
+): UseAsyncReturn<T, TArgs> {
   const { immediate = false, onSuccess, onError, name = 'AsyncOperation' } = options;
 
   const [loading, setLoading] = useState(false);
@@ -69,7 +69,7 @@ export function useAsync<T>(
   const [data, setData] = useState<T | null>(null);
 
   const execute = useCallback(
-    async (...args: any[]): Promise<T | undefined> => {
+    async (...args: TArgs): Promise<T | undefined> => {
       setLoading(true);
       setError(null);
 
@@ -117,8 +117,8 @@ export function useAsync<T>(
  */
 export function useFetch<T>(
   fetchFunction: () => Promise<T>,
-  options: UseAsyncOptions = {}
-): UseAsyncReturn<T> {
+  options: UseAsyncOptions<T> = {}
+): UseAsyncReturn<T, []> {
   return useAsync(fetchFunction, { ...options, name: options.name || 'Fetch' });
 }
 

@@ -25,6 +25,7 @@
  */
 
 import toast, { Toaster } from 'react-hot-toast';
+import type { ToastOptions } from 'react-hot-toast';
 import { logger } from './logger';
 
 // Configuración de estilos
@@ -74,7 +75,7 @@ export const notify = {
   /**
    * Notificación de éxito
    */
-  success(message: string, options?: any): string {
+  success(message: string, options?: ToastOptions): string {
     logger.info('[Notify] Success toast', { message });
     return toast.success(message, {
       ...toastConfig,
@@ -86,7 +87,7 @@ export const notify = {
   /**
    * Notificación de error
    */
-  error(message: string, options?: any): string {
+  error(message: string, options?: ToastOptions): string {
     logger.error('[Notify] Error toast', { message });
     return toast.error(message, {
       ...toastConfig,
@@ -98,7 +99,7 @@ export const notify = {
   /**
    * Notificación de advertencia
    */
-  warning(message: string, options?: any): string {
+  warning(message: string, options?: ToastOptions): string {
     logger.warn('[Notify] Warning toast', { message });
     return toast(message, {
       ...toastConfig,
@@ -114,7 +115,7 @@ export const notify = {
   /**
    * Notificación informativa
    */
-  info(message: string, options?: any): string {
+  info(message: string, options?: ToastOptions): string {
     logger.info('[Notify] Info toast', { message });
     return toast(message, {
       ...toastConfig,
@@ -135,9 +136,9 @@ export const notify = {
     messages: {
       loading: string;
       success: string | ((data: T) => string);
-      error: string | ((error: any) => string);
+      error: string | ((error: unknown) => string);
     },
-    options?: any
+    options?: ToastOptions
   ): Promise<T> {
     logger.debug('[Notify] Promise toast', { messages });
     return toast.promise(promise, messages, {
@@ -149,7 +150,7 @@ export const notify = {
   /**
    * Notificación personalizada con JSX
    */
-  custom(content: React.ReactNode, options?: any): string {
+  custom(content: React.ReactNode, options?: ToastOptions): string {
     return toast.custom(content, {
       ...toastConfig,
       ...options,

@@ -4,6 +4,29 @@
 
 import { debounce } from '../lib/utils/debounce';
 
+/** Geoapify feature properties interface */
+interface GeoapifyProperties {
+  formatted?: string;
+  address_line1?: string;
+  name?: string;
+  street?: string;
+  road?: string;
+  housenumber?: string;
+  postcode?: string;
+  city?: string;
+  municipality?: string;
+  town?: string;
+  village?: string;
+  state?: string;
+  region?: string;
+  country?: string;
+}
+
+/** Geoapify feature interface */
+interface GeoapifyFeature {
+  properties?: GeoapifyProperties;
+}
+
 // Re-export debounce for backward compatibility
 export { debounce };
 
@@ -50,8 +73,8 @@ export async function autocompleteStreetES(
   const q = (query || '').trim();
   if (q.length < 3) return [];
   const apiKey =
-    (import.meta as any)?.env?.VITE_GEOAPIFY_API_KEY ||
-    (import.meta as any)?.env?.PUBLIC_GEOAPIFY_KEY;
+    import.meta.env?.VITE_GEOAPIFY_API_KEY ||
+    import.meta.env?.PUBLIC_GEOAPIFY_KEY;
   if (!apiKey) return [];
   const parts = [q];
   if (opts?.postcode) parts.push(opts.postcode);
@@ -66,9 +89,9 @@ export async function autocompleteStreetES(
     const res = await fetch(url.toString());
     if (!res.ok) return [];
     const data = await res.json();
-    const feats = Array.isArray(data?.features) ? data.features : [];
-    return feats.map((f: any) => {
-      const p = f?.properties || {};
+    const feats: GeoapifyFeature[] = Array.isArray(data?.features) ? data.features : [];
+    return feats.map((f) => {
+      const p = f?.properties ?? {};
       const label: string = p.formatted || p.address_line1 || p.name || '';
       return {
         label,

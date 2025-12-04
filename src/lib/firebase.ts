@@ -98,7 +98,7 @@ export interface CustomImageUpload {
 export interface CustomizationData {
   userId: string;
   productType: string;
-  [key: string]: any;
+  [key: string]: string | number | boolean | null | undefined | object;
 }
 
 export interface CustomizationDoc extends DocumentData {
@@ -117,7 +117,7 @@ export interface ProductData {
   descripcion?: string;
   precio?: number;
   variantes?: string[];
-  [key: string]: any;
+  [key: string]: string | number | boolean | null | undefined | object | string[];
 }
 
 // ============================================

@@ -7,6 +7,14 @@
  * sin necesidad de tocar código.
  */
 
+import type { Timestamp, FieldValue } from 'firebase/firestore';
+
+/** Firebase timestamp type - can be Timestamp object or FieldValue during writes */
+export type FirebaseTimestamp = Timestamp | FieldValue;
+
+/** Template field value - can be string, number, boolean, array, or object */
+export type TemplateFieldValue = string | number | boolean | string[] | Record<string, unknown>;
+
 // ============================================================================
 // TIPOS DE CAMPOS DISPONIBLES
 // ============================================================================
@@ -193,8 +201,8 @@ export interface ProductCategory {
   customizationSchema?: CustomizationSchema;
 
   // Metadata
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirebaseTimestamp;
+  updatedAt?: FirebaseTimestamp;
 }
 
 // ============================================================================
@@ -239,7 +247,7 @@ export interface ProductCustomization {
 
   // Preview/snapshot
   previewImage?: string;
-  previewData?: any;  // Datos específicos del customizer (posición de imagen, etc.)
+  previewData?: Record<string, unknown>;  // Datos específicos del customizer (posición de imagen, etc.)
 }
 
 // ============================================================================
@@ -280,7 +288,7 @@ export interface DesignTemplate {
   template: {
     fields: Array<{
       fieldId: string;
-      value: any;
+      value: TemplateFieldValue;
       displayValue?: string;
       imageUrl?: string;
       imageTransform?: ImageTransform;
@@ -289,8 +297,8 @@ export interface DesignTemplate {
   };
 
   // Metadata
-  createdAt: any;                  // Firestore Timestamp
-  updatedAt: any;
+  createdAt: FirebaseTimestamp;
+  updatedAt: FirebaseTimestamp;
   createdBy?: string;              // userId o 'system'
 }
 
@@ -322,7 +330,7 @@ export interface Clipart {
     height: number;
   };
   colors: string[];                // Colores predominantes
-  createdAt: any;
+  createdAt: FirebaseTimestamp;
   createdBy: string;               // 'system' o userId
 }
 
@@ -355,8 +363,8 @@ export interface SavedDesign {
   products: string[];              // IDs de productos donde se usó
   tags?: string[];
   isFavorite: boolean;
-  createdAt: any;
-  lastUsedAt: any;
+  createdAt: FirebaseTimestamp;
+  lastUsedAt: FirebaseTimestamp;
 }
 
 // ============================================================================
@@ -383,6 +391,6 @@ export interface SharedDesign {
     email: number;
     link: number;
   };
-  createdAt: any;
-  expiresAt: any;                  // Auto-delete después de 90 días
+  createdAt: FirebaseTimestamp;
+  expiresAt: FirebaseTimestamp;    // Auto-delete después de 90 días
 }
