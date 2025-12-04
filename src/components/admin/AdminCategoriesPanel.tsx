@@ -8,10 +8,15 @@ import {
   doc,
   onSnapshot,
   Timestamp,
+  getDocs,
+  query,
+  where,
+  writeBatch,
 } from 'firebase/firestore';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
-import { Plus, Edit2, Trash2, X, Save } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, Download } from 'lucide-react';
+import { categories as navbarCategories } from '../../data/categories';
 
 interface Category {
   id: string;
@@ -137,6 +142,70 @@ export default function AdminCategoriesPanel() {
     }));
   };
 
+  const importNavbarCategories = async () => {
+    if (!confirm('¿Importar todas las categorías del navbar? Esto creará las categorías que no existan.')) {
+      return;
+    }
+
+    try {
+      const batch = writeBatch(db);
+      let imported = 0;
+      let skipped = 0;
+
+      // Obtener categorías existentes
+      const existingCategoriesSnapshot = await getDocs(collection(db, 'categories'));
+      const existingSlugs = new Set(
+        existingCategoriesSnapshot.docs.map(doc => doc.data().slug)
+      );
+
+      // Procesar todas las categorías y subcategorías del navbar
+      for (const mainCategory of navbarCategories) {
+        // Agregar categoría principal si no existe
+        if (!existingSlugs.has(mainCategory.slug)) {
+          const mainCatRef = doc(collection(db, 'categories'));
+          batch.set(mainCatRef, {
+            name: mainCategory.name,
+            slug: mainCategory.slug,
+            description: `Categoría principal: ${mainCategory.name}`,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+          });
+          imported++;
+          existingSlugs.add(mainCategory.slug);
+        } else {
+          skipped++;
+        }
+
+        // Agregar subcategorías
+        for (const subCategory of mainCategory.subcategories) {
+          if (!existingSlugs.has(subCategory.slug)) {
+            const subCatRef = doc(collection(db, 'categories'));
+            batch.set(subCatRef, {
+              name: subCategory.name,
+              slug: subCategory.slug,
+              description: subCategory.description,
+              createdAt: Timestamp.now(),
+              updatedAt: Timestamp.now(),
+            });
+            imported++;
+            existingSlugs.add(subCategory.slug);
+          } else {
+            skipped++;
+          }
+        }
+      }
+
+      // Ejecutar el batch
+      await batch.commit();
+
+      notify.success(`Importación completa: ${imported} categorías agregadas, ${skipped} ya existían`);
+      logger.info('[AdminCategories] Navbar categories imported', { imported, skipped });
+    } catch (error) {
+      logger.error('[AdminCategories] Error importing navbar categories', error);
+      notify.error('Error al importar categorías del navbar');
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6 flex justify-center items-center min-h-screen">
@@ -153,13 +222,22 @@ export default function AdminCategoriesPanel() {
           <h2 className="text-2xl font-bold text-gray-800">Categorías</h2>
           <p className="text-gray-600 mt-1">{categories.length} categoría(s)</p>
         </div>
-        <button
-          onClick={handleCreate}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg hover:shadow-lg transition-all font-semibold"
-        >
-          <Plus className="w-5 h-5" />
-          Nueva Categoría
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={importNavbarCategories}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg transition-all font-semibold"
+          >
+            <Download className="w-5 h-5" />
+            Importar del Navbar
+          </button>
+          <button
+            onClick={handleCreate}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg hover:shadow-lg transition-all font-semibold"
+          >
+            <Plus className="w-5 h-5" />
+            Nueva Categoría
+          </button>
+        </div>
       </div>
 
       {/* Tabla de categorías */}
