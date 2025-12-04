@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   onAuthStateChanged,
   signOut,
   createUserWithEmailAndPassword,
@@ -31,9 +33,18 @@ export default function LoginPanel() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [tabMode, setTabMode] = useState<TabMode>('login');
+  const [tabMode, setTabMode] = useState<TabMode>(() => {
+    // Check URL parameter for initial tab mode
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get('mode');
+      if (mode === 'register') return 'register';
+    }
+    return 'login';
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   // Modal state
   const [modal, setModal] = useState<{
@@ -60,15 +71,123 @@ export default function LoginPanel() {
     setModal({ ...modal, isOpen: false });
   };
 
+  // Helper to detect mobile device
+  const isMobileDevice = () => {
+    if (typeof window === 'undefined') return false;
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
+
+  // Check for redirect result on mount (for mobile)
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      try {
+        // Check if we're expecting a redirect result
+        const expectingRedirect = sessionStorage.getItem('auth_redirect_pending');
+
+        if (expectingRedirect) {
+          logger.info('[LoginPanel] 🔄 Expecting redirect result from Google...');
+          setRedirecting(true); // Show loading immediately
+        }
+
+        setLoading(true);
+        logger.info('[LoginPanel] Checking for redirect result...', {
+          expectingRedirect: !!expectingRedirect,
+          userAgent: navigator.userAgent,
+          currentUrl: window.location.href
+        });
+
+        const result = await getRedirectResult(auth);
+
+        if (result?.user) {
+          logger.info('[LoginPanel] ✅ Redirect result successful!', {
+            email: result.user.email,
+            uid: result.user.uid,
+            providerId: result.providerId,
+            operationType: result.operationType
+          });
+
+          // Clear the redirect flag
+          sessionStorage.removeItem('auth_redirect_pending');
+
+          setRedirecting(true);
+
+          // Wait a bit for auth state to settle
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+          // Get redirect URL
+          const adminEmails = (import.meta.env.PUBLIC_ADMIN_EMAILS || '')
+            .split(',')
+            .map((s: string) => s.trim().toLowerCase())
+            .filter(Boolean);
+
+          const email = (result.user.email || '').toLowerCase();
+          const isAdmin = adminEmails.includes(email);
+          const targetUrl = isAdmin ? '/admin/products' : '/account';
+
+          logger.info('[LoginPanel] Redirecting to:', targetUrl);
+          window.location.href = targetUrl;
+        } else {
+          if (expectingRedirect) {
+            logger.warn('[LoginPanel] ⚠️ Expected redirect result but got null', {
+              authState: auth.currentUser ? 'user exists' : 'no user',
+              currentUserEmail: auth.currentUser?.email
+            });
+
+            // Clear the flag
+            sessionStorage.removeItem('auth_redirect_pending');
+
+            // Check if user is already authenticated
+            if (auth.currentUser) {
+              logger.info('[LoginPanel] User already authenticated, redirecting...');
+              const adminEmails = (import.meta.env.PUBLIC_ADMIN_EMAILS || '')
+                .split(',')
+                .map((s: string) => s.trim().toLowerCase())
+                .filter(Boolean);
+              const email = (auth.currentUser.email || '').toLowerCase();
+              const isAdmin = adminEmails.includes(email);
+              const targetUrl = isAdmin ? '/admin/products' : '/account';
+              window.location.href = targetUrl;
+              return;
+            }
+
+            setError('No se pudo completar el inicio de sesión. Por favor intenta de nuevo.');
+          } else {
+            logger.info('[LoginPanel] No redirect result (normal page load)');
+          }
+        }
+      } catch (error: any) {
+        logger.error('[LoginPanel] ❌ Redirect result error', {
+          code: error?.code,
+          message: error?.message,
+          stack: error?.stack,
+          name: error?.name
+        });
+
+        // Clear the redirect flag on error
+        sessionStorage.removeItem('auth_redirect_pending');
+
+        if (error?.code && !error.code.includes('auth/popup-closed-by-user')) {
+          setError('Error al iniciar sesión con Google. Por favor intenta de nuevo.');
+        }
+      } finally {
+        setLoading(false);
+        setRedirecting(false);
+      }
+    };
+    checkRedirectResult();
+  }, []);
+
   // Debug env/context on mount
   useEffect(() => {
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const isMobile = isMobileDevice();
       logger.info('[LoginPanel] env', {
         authDomain: (import.meta as any).env.PUBLIC_FIREBASE_AUTH_DOMAIN,
         projectId: (import.meta as any).env.PUBLIC_FIREBASE_PROJECT_ID,
         appUrl: (import.meta as any).env.PUBLIC_APP_URL,
         origin,
+        isMobile,
       });
     } catch {}
   }, []);
@@ -92,31 +211,49 @@ export default function LoginPanel() {
       setLoading(true);
       const provider = new GoogleAuthProvider();
       if (selectAccount) provider.setCustomParameters({ prompt: 'select_account' });
+
+      const isMobile = isMobileDevice();
+
+      // Try popup first on all devices (works better with dev tunnels)
       try {
-        logger.info('[LoginPanel] signInWithGoogle via popup: start');
+        logger.info('[LoginPanel] signInWithGoogle via popup: start', { isMobile });
         await signInWithPopup(auth, provider);
         logger.info('[LoginPanel] signInWithGoogle via popup: success');
+        await redirectAfterLogin();
+        return;
       } catch (e: any) {
         const code = e?.code || '';
-        logger.warn('[LoginPanel] signInWithGoogle popup error', { code, message: e?.message });
-        if (
-          code.includes('auth/popup-blocked') ||
-          code.includes('auth/popup-closed-by-user') ||
-          code.includes('auth/cancelled-popup-request')
-        ) {
-          setError(
-            'La ventana de Google se bloqueó o se cerró. Permite pop-ups y vuelve a intentarlo.'
-          );
+        logger.warn('[LoginPanel] signInWithGoogle popup error', { code, message: e?.message, isMobile });
+
+        // Only show popup-blocked error on desktop
+        if (!isMobile) {
+          if (
+            code.includes('auth/popup-blocked') ||
+            code.includes('auth/popup-closed-by-user') ||
+            code.includes('auth/cancelled-popup-request')
+          ) {
+            setError(
+              'La ventana de Google se bloqueó o se cerró. Permite pop-ups y vuelve a intentarlo.'
+            );
+            return;
+          }
+        }
+
+        // On mobile, if popup fails, try redirect as fallback
+        if (isMobile) {
+          logger.info('[LoginPanel] Popup failed on mobile, trying redirect fallback...');
+          // Set flag to indicate we're expecting a redirect result
+          sessionStorage.setItem('auth_redirect_pending', 'true');
+          await signInWithRedirect(auth, provider);
+          // Redirect will happen, no need to await or call redirectAfterLogin here
           return;
         }
+
+        // If not mobile and not a known popup error, rethrow
         throw e;
       }
-      await redirectAfterLogin();
     } catch (error: unknown) {
-      logger.error('[LoginPanel] signInWithGoogle fatal error', {
-        code: err?.code,
-        message: err?.message,
-      });
+      logger.error('[LoginPanel] signInWithGoogle fatal error', error);
       setError(isFirebaseError(error) ? error.message || 'Error iniciando sesión con Google' : 'Error iniciando sesión con Google');
     } finally {
       setLoading(false);
@@ -276,6 +413,17 @@ export default function LoginPanel() {
         <div className="absolute top-20 left-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
         <div className="absolute top-40 right-10 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
         <div className="absolute -bottom-8 left-1/2 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
+
+        {/* Redirecting overlay */}
+        {redirecting && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-8 text-center max-w-sm mx-4">
+              <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">¡Inicio de sesión exitoso!</h3>
+              <p className="text-gray-600">Redirigiendo a tu cuenta...</p>
+            </div>
+          </div>
+        )}
 
         <div className="container mx-auto px-4 relative z-10" style={{ maxWidth: 480 }}>
           <div className="bg-white rounded-3xl shadow-2xl p-8 backdrop-blur-sm bg-opacity-95">

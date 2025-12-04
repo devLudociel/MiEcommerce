@@ -1,6 +1,11 @@
 // src/data/exampleSchemas.ts
 
 import type { CustomizationSchema } from '../types/customization';
+import {
+  SCHEMA_CAJAS_PERSONALIZADAS,
+  SCHEMA_BOLSAS_PAPEL,
+  SCHEMA_ETIQUETAS_ADHESIVAS,
+} from '../lib/customization/schema-templates';
 
 /**
  * Schemas de ejemplo para diferentes tipos de productos
@@ -548,6 +553,10 @@ export const exampleSchemas = {
   cuadros: cuadrosSchema,
   resina: resinaSchema,
   tazas: tazasSchema,
+  // Packaging schemas
+  cajasPersonalizadas: SCHEMA_CAJAS_PERSONALIZADAS,
+  bolsasPapel: SCHEMA_BOLSAS_PAPEL,
+  etiquetasAdhesivas: SCHEMA_ETIQUETAS_ADHESIVAS,
 };
 
 // Schema names for dropdown selection
@@ -559,5 +568,9 @@ export const schemaOptions = [
   { value: 'cuadros', label: 'Cuadros / Marcos' },
   { value: 'resina', label: 'Figuras de Resina' },
   { value: 'tazas', label: 'Tazas / Sublimados' },
+  // Packaging options
+  { value: 'cajasPersonalizadas', label: '📦 Cajas Personalizadas' },
+  { value: 'bolsasPapel', label: '🛍️ Bolsas de Papel' },
+  { value: 'etiquetasAdhesivas', label: '🏷️ Etiquetas Adhesivas' },
   { value: 'custom', label: 'Personalizado (crear desde cero)' },
 ];

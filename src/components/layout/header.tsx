@@ -162,9 +162,11 @@ const Header: React.FC<HeaderProps> = () => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -228,57 +230,80 @@ const Header: React.FC<HeaderProps> = () => {
     };
   }, [isMenuOpen]);
 
+  // Detectar si estamos en móvil/tablet (< 1024px = lg breakpoint)
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Bloquear scroll del body cuando el modal de búsqueda móvil está abierto
+  useEffect(() => {
+    if (isMobileSearchOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileSearchOpen]);
+
   return (
     <header
       ref={headerRef}
-      className="header"
-      style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 'var(--z-fixed)' }}
+      className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm"
     >
       {/* Barra principal */}
-      <div>
-        <div className="container">
-          <nav className="nav">
+      <div className="bg-white relative z-50 border-b border-gray-100">
+        <div className="container mx-auto px-4">
+          <nav className="flex items-center justify-between gap-2 md:gap-4 py-3 md:py-4">
             {/* Logo */}
-            <div className="logo">
-              <a href="/" className="logo">
-                <div className="logo-icon">IA</div>
-                <div className="logo-text">
-                  <h1>ImprimeArte</h1>
-                  <p>Impresión y personalización</p>
-                </div>
-              </a>
-            </div>
+            <a href="/" className="flex items-center gap-2 flex-shrink-0 hover:opacity-80 transition-opacity">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg md:text-xl shadow-md">
+                IA
+              </div>
+              <div className="hidden md:block">
+                <h1 className="text-lg md:text-xl font-bold text-gray-800 leading-tight">ImprimeArte</h1>
+                <p className="text-xs text-gray-600">Impresión y personalización</p>
+              </div>
+            </a>
 
-            {/* Barra de búsqueda central con dropdown integrado */}
-            <div
-              className="md:block hidden"
-              style={{
-                flex: '1 1 auto',
-                maxWidth: '32rem',
-                minWidth: 0,
-              }}
-            >
-              <SearchDropdown
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                isSearchFocused={isSearchFocused}
-                onSearchFocus={setIsSearchFocused}
-              />
-            </div>
+            {/* Barra de búsqueda central con dropdown integrado - SOLO DESKTOP */}
+            {!isMobile && (
+              <div className="flex-1 max-w-lg">
+                <SearchDropdown
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  isSearchFocused={isSearchFocused}
+                  onSearchFocus={setIsSearchFocused}
+                />
+              </div>
+            )}
 
             {/* Iconos de usuario */}
-            <div className="flex items-center flex-shrink-0" style={{ gap: 'var(--spacing-3)' }}>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              {/* Búsqueda móvil - Solo visible en móvil/tablet */}
+              <button
+                onClick={() => setIsMobileSearchOpen(true)}
+                className="lg:hidden flex items-center text-gray-600 hover:text-cyan-600 transition-colors"
+                aria-label="Buscar"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+
               {/* WhatsApp */}
               <a
                 href="https://wa.me/34645341452?text=¡Hola%20ImprimeArte!%20👋%20Tengo%20una%20consulta%20sobre%20sus%20servicios%20de%20impresión%20y%20personalización.%20¿Podrían%20ayudarme?"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="lg:flex hidden items-center hover:text-green-600 transition-all hover:scale-105"
-                style={{
-                  gap: 'var(--spacing-3)',
-                  color: 'var(--color-gray-600)',
-                  transition: 'var(--transition-all)',
-                }}
+                className="hidden lg:flex items-center gap-2 text-gray-600 hover:text-green-600 transition-all hover:scale-105"
               >
                 <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -292,12 +317,7 @@ const Header: React.FC<HeaderProps> = () => {
               {/* Favoritos */}
               <a
                 href="/account/wishlist"
-                className="lg:flex hidden items-center hover:text-cyan-600"
-                style={{
-                  gap: 'var(--spacing-2)',
-                  color: 'var(--color-gray-600)',
-                  transition: 'var(--transition-all)',
-                }}
+                className="hidden lg:flex items-center gap-2 text-gray-600 hover:text-cyan-600 transition-colors"
               >
                 <Icon name="heart" className="w-5 h-5" />
                 <span className="text-sm">Mis favoritos</span>
@@ -307,43 +327,23 @@ const Header: React.FC<HeaderProps> = () => {
               <div className="relative">
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center"
-                  style={{
-                    gap: 'var(--spacing-2)',
-                    color: 'var(--color-gray-600)',
-                    transition: 'var(--transition-all)',
-                  }}
+                  className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
                 >
                   <Icon name="user" className="w-5 h-5" />
-                  <span className="text-sm lg:block hidden">Mi cuenta</span>
+                  <span className="text-sm hidden lg:block">Mi cuenta</span>
                 </button>
 
                 {isUserMenuOpen && (
                   <div
-                    className="absolute bg-white rounded-lg shadow-xl border z-50"
-                    style={{
-                      top: '100%',
-                      right: 0,
-                      marginTop: 'var(--spacing-2)',
-                      width: '280px',
-                      borderColor: 'var(--color-gray-200)',
-                    }}
+                    className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {isAuthenticated ? (
                       <>
                         {/* Header con info del usuario */}
-                        <div
-                          style={{
-                            padding: 'var(--spacing-4)',
-                            borderBottom: '1px solid var(--color-gray-200)',
-                          }}
-                        >
-                          <div className="flex items-center" style={{ gap: 'var(--spacing-3)' }}>
-                            <div
-                              className="flex items-center justify-center rounded-full bg-cyan-100 text-cyan-700 font-semibold"
-                              style={{ width: '40px', height: '40px', fontSize: '1.125rem' }}
-                            >
+                        <div className="p-4 border-b border-gray-200">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 flex items-center justify-center rounded-full bg-cyan-100 text-cyan-700 font-semibold text-lg">
                               {(displayName || email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -558,7 +558,7 @@ const Header: React.FC<HeaderProps> = () => {
                             Iniciar sesión
                           </a>
                           <a
-                            href="/register"
+                            href="/login?mode=register"
                             className="block w-full px-4 py-2 text-sm text-center border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
                             onClick={() => setIsUserMenuOpen(false)}
                           >
@@ -603,8 +603,7 @@ const Header: React.FC<HeaderProps> = () => {
 
       {/* Búsqueda móvil */}
       <div
-        className="md:hidden"
-        style={{ borderBottom: '1px solid var(--color-gray-200)', background: 'white' }}
+        className="md:hidden bg-white border-b border-gray-200 relative z-50"
       >
         <div className="container" style={{ padding: 'var(--spacing-4) var(--spacing-4)' }}>
           <SearchDropdown
@@ -617,17 +616,13 @@ const Header: React.FC<HeaderProps> = () => {
       </div>
 
       {/* Menú de categorías */}
-      <div className="bg-white" style={{ borderBottom: '1px solid var(--color-gray-200)' }}>
-        <div className="container">
-          <div
-            className="flex items-center justify-between"
-            style={{ padding: 'var(--spacing-2) 0' }}
-          >
+      <div className="bg-white border-b border-gray-200 relative">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between py-2">
             {/* Botón móvil */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden flex items-center text-gray-700 hover:text-cyan"
-              style={{ gap: 'var(--spacing-2)', padding: 'var(--spacing-4) 0' }}
+              className="lg:hidden flex items-center gap-2 text-gray-700 hover:text-cyan-600 py-4 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -637,176 +632,134 @@ const Header: React.FC<HeaderProps> = () => {
                   d="M4 6h16M4 12h16M4 18h16"
                 />
               </svg>
-              <span className="text-sm">Todas las categorías</span>
+              <span className="text-sm font-medium">Todas las categorías</span>
             </button>
 
-            {/* Navegación desktop */}
-            <nav
-              className="lg:flex hidden items-center nav-links"
-              style={{ overflow: 'visible', position: 'relative' }}
-            >
+            {/* Navegación desktop - NUEVO CON TAILWIND PURO */}
+            <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1 overflow-x-auto scrollbar-hide relative" style={{ overflowY: 'visible' }}>
               {categories.map((category) => (
                 <div
                   key={category.id}
-                  className="nav-item"
-                  style={{ position: 'relative' }}
+                  className="flex-shrink-0"
+                  style={{ position: 'static' }}
                   onMouseEnter={() => setActiveMenu(category.id)}
-                  onMouseLeave={() => setActiveMenu(null)}
+                  onMouseLeave={(e) => {
+                    // Solo cerrar si el mouse realmente salió del área
+                    const relatedTarget = e.relatedTarget as HTMLElement;
+                    if (!relatedTarget || !relatedTarget.closest('[data-mega-menu]')) {
+                      setActiveMenu(null);
+                    }
+                  }}
                 >
                   <button
-                    className="nav-link has-dropdown"
-                    style={{ whiteSpace: 'nowrap' }}
+                    className="px-2 xl:px-3 py-2.5 text-xs xl:text-sm font-medium text-gray-700 hover:text-cyan-600 hover:bg-gray-50 rounded-lg transition-all whitespace-nowrap flex items-center gap-0.5 xl:gap-1"
                     onClick={() => (window.location.href = `/categoria/${category.slug}`)}
                   >
                     {category.name}
+                    <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   </button>
 
-                  {/* Mega menú actualizado */}
+                  {/* Mega menú - UI MEJORADA */}
                   {activeMenu === category.id && (
-                    <div
-                      className="mega-menu"
-                      style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        background: 'white',
-                        border: '1px solid var(--color-gray-200)',
-                        borderTop: 'none',
-                        boxShadow: 'var(--shadow-lg)',
-                        zIndex: 'var(--z-dropdown)',
-                      }}
-                    >
+                    <>
+                      {/* Puente invisible para mantener el menú abierto */}
                       <div
-                        className="mega-content"
+                        data-mega-menu
+                        className="fixed"
                         style={{
-                          display: 'grid',
-                          gridTemplateColumns:
-                            category.subcategories.length === 1
-                              ? '1fr'
-                              : 'repeat(auto-fit, minmax(300px, 1fr))',
-                          gap: 'var(--spacing-8)',
-                          padding: 'var(--spacing-8)',
-                          maxWidth: '800px',
+                          zIndex: 9998,
+                          top: '130px',
+                          left: 0,
+                          right: 0,
+                          height: '50px',
+                          background: 'transparent'
                         }}
+                        onMouseEnter={() => setActiveMenu(category.id)}
+                      />
+                      {/* Menú visible */}
+                      <div
+                        data-mega-menu
+                        className="fixed bg-white border border-gray-200 shadow-2xl rounded-xl p-4 md:p-8 w-[95vw] md:w-auto"
+                        style={{
+                          zIndex: 9999,
+                          minWidth: 'auto',
+                          maxWidth: '900px',
+                          top: '155px',
+                          left: '50%',
+                          transform: 'translateX(-50%)'
+                        }}
+                        onMouseEnter={() => setActiveMenu(category.id)}
+                        onMouseLeave={() => setActiveMenu(null)}
                       >
-                        {category.subcategories.map((subcategory) => (
-                          <div key={subcategory.id} className="mega-section">
+                      {category.subcategories && category.subcategories.length > 0 ? (
+                        <div className={`grid gap-6 ${
+                          category.subcategories.length === 1
+                            ? 'grid-cols-1'
+                            : category.subcategories.length === 2
+                            ? 'grid-cols-2'
+                            : 'grid-cols-2 lg:grid-cols-3'
+                        }`}>
+                          {category.subcategories.map((subcategory) => (
                             <a
+                              key={subcategory.id}
                               href={`/categoria/${category.slug}/${subcategory.slug}`}
-                              className="mega-item"
-                              style={{
-                                display: 'block',
-                                textDecoration: 'none',
-                                padding: 'var(--spacing-4)',
-                                borderRadius: '8px',
-                                border: '1px solid var(--color-gray-200)',
-                                transition: 'all 0.3s ease',
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = 'var(--color-cyan-500)';
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.borderColor = 'var(--color-gray-200)';
-                                e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = 'none';
-                              }}
+                              className="block p-4 border border-gray-200 rounded-lg hover:border-cyan-500 hover:bg-cyan-50/50 hover:shadow-md transition-all duration-300 group"
                             >
-                              <div className="mega-item-content">
-                                <div
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 'var(--spacing-3)',
-                                    marginBottom: 'var(--spacing-2)',
-                                  }}
-                                >
-                                  <span style={{ fontSize: '1.5rem' }}>{subcategory.icon}</span>
-                                  <h4
-                                    style={{
-                                      fontSize: '1.1rem',
-                                      fontWeight: '600',
-                                      color: 'var(--color-gray-800)',
-                                      margin: 0,
-                                    }}
-                                  >
+                              <div className="flex items-start gap-3 mb-2">
+                                <span className="text-3xl flex-shrink-0">{subcategory.icon}</span>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="text-base font-semibold text-gray-800 group-hover:text-cyan-600 transition-colors mb-1">
                                     {subcategory.name}
                                   </h4>
+                                  <p className="text-sm text-gray-600 leading-relaxed">
+                                    {subcategory.description}
+                                  </p>
                                 </div>
-                                <p
-                                  style={{
-                                    fontSize: '0.875rem',
-                                    color: 'var(--color-gray-600)',
-                                    margin: 0,
-                                    lineHeight: '1.4',
-                                  }}
-                                >
-                                  {subcategory.description}
-                                </p>
                               </div>
                             </a>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center text-gray-500 py-8">
+                          No hay subcategorías disponibles
+                        </div>
+                      )}
 
                       {/* Footer del mega menú */}
-                      <div
-                        style={{
-                          borderTop: '1px solid var(--color-gray-200)',
-                          padding: 'var(--spacing-4) var(--spacing-8)',
-                          background: 'var(--color-gray-50)',
-                        }}
-                      >
+                      <div className="mt-6 pt-6 border-t border-gray-200 text-center">
                         <a
                           href={`/categoria/${category.slug}`}
-                          style={{
-                            color: 'var(--color-cyan-600)',
-                            fontSize: '0.875rem',
-                            fontWeight: '500',
-                            textDecoration: 'none',
-                          }}
+                          className="inline-flex items-center gap-2 text-cyan-600 font-medium hover:text-cyan-700 hover:gap-3 transition-all"
                         >
-                          Ver todos los productos de {category.name} →
+                          Ver todos los productos de {category.name}
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
                         </a>
                       </div>
                     </div>
+                    </>
                   )}
                 </div>
               ))}
 
-              {/* Enlaces adicionales */}
-              <div
-                className="flex items-center"
-                style={{ marginLeft: 'auto', gap: 'var(--spacing-6)' }}
-              >
+              {/* Enlaces adicionales - TAILWIND PURO */}
+              <div className="flex items-center ml-auto gap-2 xl:gap-4 flex-shrink-0">
                 <a
                   href="/productos/digitales"
-                  className="text-sm font-medium hover:text-cyan-600 flex items-center"
-                  style={{
-                    color: '#0891b2',
-                    padding: 'var(--spacing-5)',
-                    gap: 'var(--spacing-2)',
-                  }}
+                  className="flex items-center gap-1 xl:gap-2 px-2 xl:px-4 py-2.5 text-xs xl:text-sm font-medium text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50 rounded-lg transition-all whitespace-nowrap"
                 >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
                   </svg>
-                  Productos Digitales
+                  <span className="hidden xl:inline">Productos Digitales</span>
+                  <span className="xl:hidden">Digitales</span>
                 </a>
-                <button
-                  className="text-sm text-gray-700 hover:text-cyan"
-                  style={{ padding: 'var(--spacing-5)' }}
-                >
-                  Más
-                </button>
                 <a
                   href="/ofertas"
-                  className="text-sm font-medium hover:text-red-600"
-                  style={{
-                    color: '#ef4444',
-                    padding: 'var(--spacing-5)',
-                  }}
+                  className="px-2 xl:px-4 py-2.5 text-xs xl:text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all whitespace-nowrap"
                 >
                   Ofertas
                 </a>
@@ -818,8 +771,7 @@ const Header: React.FC<HeaderProps> = () => {
 
       {/* Banner promocional */}
       <div
-        className="bg-black text-white text-center relative overflow-hidden"
-        style={{ padding: 'var(--spacing-3) 0' }}
+        className="bg-black text-white text-center relative overflow-hidden z-30 py-3"
       >
         <div className="container">
           <div
@@ -1026,6 +978,58 @@ const Header: React.FC<HeaderProps> = () => {
                   <span style={{ fontSize: '0.75rem', color: '#dc2626' }}>Ver ofertas →</span>
                 </a>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de búsqueda móvil */}
+      {isMobileSearchOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-[9999] lg:hidden"
+          onClick={() => {
+            setIsMobileSearchOpen(false);
+            setSearchQuery('');
+          }}
+        >
+          <div
+            className="bg-white h-full overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header del modal */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center gap-3 shadow-sm">
+              <button
+                onClick={() => {
+                  setIsMobileSearchOpen(false);
+                  setSearchQuery('');
+                }}
+                className="flex-shrink-0 text-gray-600 hover:text-gray-800 transition-colors"
+                aria-label="Cerrar búsqueda"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <div className="flex-1" onClick={(e) => e.stopPropagation()}>
+                <SearchDropdown
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  isSearchFocused={true}
+                  onSearchFocus={() => {}}
+                />
+              </div>
+            </div>
+
+            {/* Contenido del modal - resultados de búsqueda se muestran aquí */}
+            <div className="p-4">
+              {!searchQuery && (
+                <div className="text-center text-gray-500 mt-8">
+                  <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <p className="text-sm">Busca productos, categorías y más...</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
