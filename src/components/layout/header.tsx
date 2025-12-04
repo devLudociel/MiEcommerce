@@ -166,7 +166,7 @@ const Header: React.FC<HeaderProps> = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(true); // Inicializar en true para evitar flash
   const headerRef = useRef<HTMLElement>(null);
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -274,16 +274,14 @@ const Header: React.FC<HeaderProps> = () => {
             </a>
 
             {/* Barra de búsqueda central con dropdown integrado - SOLO DESKTOP */}
-            {!isMobile && (
-              <div className="flex-1 max-w-lg">
-                <SearchDropdown
-                  searchQuery={searchQuery}
-                  onSearchChange={setSearchQuery}
-                  isSearchFocused={isSearchFocused}
-                  onSearchFocus={setIsSearchFocused}
-                />
-              </div>
-            )}
+            <div className="hidden lg:flex flex-1 max-w-lg">
+              <SearchDropdown
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                isSearchFocused={isSearchFocused}
+                onSearchFocus={setIsSearchFocused}
+              />
+            </div>
 
             {/* Iconos de usuario */}
             <div className="flex items-center gap-3 flex-shrink-0">
