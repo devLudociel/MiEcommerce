@@ -62,44 +62,44 @@ export default function CategoriesShowcase() {
   ];
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-10 sm:py-16 lg:py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+        {/* Header - Responsive */}
+        <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800 mb-2 sm:mb-4">
             Explora nuestras categorías
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base lg:text-xl text-gray-600 max-w-2xl mx-auto px-2">
             Encuentra el producto perfecto para personalizar
           </p>
         </div>
 
-        {/* Categories Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* Categories Grid - Responsive con scroll horizontal en móvil muy pequeño */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 lg:gap-8">
           {categories.map((category, index) => (
             <a
               key={category.id}
               href={category.href}
-              className="group relative bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-2 border-2 border-gray-100 hover:border-cyan-200"
+              className="group relative bg-white rounded-xl sm:rounded-2xl lg:rounded-3xl shadow-md hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-1 sm:hover:-translate-y-2 border border-gray-100 sm:border-2 hover:border-cyan-200 active:scale-[0.98]"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               {/* Badge */}
               {category.badge && (
-                <div className="absolute top-4 right-4 z-10">
+                <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10">
                   <span
-                    className={`${category.badgeColor} text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse`}
+                    className={`${category.badgeColor} text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-lg animate-pulse`}
                   >
                     {category.badge}
                   </span>
                 </div>
               )}
 
-              {/* Image/Gradient Background */}
+              {/* Image/Gradient Background - Altura responsive */}
               <div
-                className={`${category.image} h-48 flex items-center justify-center relative overflow-hidden`}
+                className={`${category.image} h-28 sm:h-36 lg:h-48 flex items-center justify-center relative overflow-hidden`}
               >
-                {/* Icon */}
-                <div className="text-9xl transform group-hover:scale-125 transition-transform duration-500 filter drop-shadow-2xl">
+                {/* Icon - Tamaño responsive */}
+                <div className="text-5xl sm:text-7xl lg:text-9xl transform group-hover:scale-110 sm:group-hover:scale-125 transition-transform duration-500 filter drop-shadow-2xl">
                   {category.icon}
                 </div>
 
@@ -107,22 +107,24 @@ export default function CategoriesShowcase() {
                 <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
               </div>
 
-              {/* Content */}
-              <div className="p-6">
-                <h3 className="text-2xl font-bold text-gray-800 mb-2 group-hover:text-cyan-600 transition-colors">
+              {/* Content - Padding responsive */}
+              <div className="p-3 sm:p-4 lg:p-6">
+                <h3 className="text-base sm:text-lg lg:text-2xl font-bold text-gray-800 mb-1 sm:mb-2 group-hover:text-cyan-600 transition-colors leading-tight">
                   {category.name}
                 </h3>
-                <p className="text-gray-600 mb-4 text-sm">{category.description}</p>
+                <p className="text-gray-600 mb-2 sm:mb-4 text-xs sm:text-sm line-clamp-2 sm:line-clamp-none">
+                  {category.description}
+                </p>
 
-                {/* Price */}
-                <div className="flex items-center justify-between">
-                  <div className="text-cyan-600 font-bold text-lg">
+                {/* Price - Layout responsive */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                  <div className="text-cyan-600 font-bold text-sm sm:text-base lg:text-lg">
                     Desde €{category.priceFrom}
                   </div>
                   <div className="flex items-center gap-1 text-gray-400 group-hover:text-cyan-500 transition-colors">
-                    <span className="text-sm font-semibold">Ver más</span>
+                    <span className="text-xs sm:text-sm font-semibold">Ver más</span>
                     <svg
-                      className="w-4 h-4 transform group-hover:translate-x-1 transition-transform"
+                      className="w-3 h-3 sm:w-4 sm:h-4 transform group-hover:translate-x-1 transition-transform"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -138,22 +140,22 @@ export default function CategoriesShowcase() {
                 </div>
               </div>
 
-              {/* Hover shine effect */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500 pointer-events-none">
+              {/* Hover shine effect - Solo desktop */}
+              <div className="hidden sm:block absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500 pointer-events-none">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent transform translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               </div>
             </a>
           ))}
         </div>
 
-        {/* View All CTA */}
-        <div className="text-center mt-12">
+        {/* View All CTA - Responsive */}
+        <div className="text-center mt-8 sm:mt-10 lg:mt-12">
           <a
             href="/productos"
-            className="inline-flex items-center gap-2 px-8 py-4 border-2 border-cyan-500 text-cyan-600 font-semibold rounded-full hover:bg-cyan-500 hover:text-white transform hover:scale-105 transition-all duration-300"
+            className="inline-flex items-center gap-2 px-5 py-2.5 sm:px-8 sm:py-4 border-2 border-cyan-500 text-cyan-600 text-sm sm:text-base font-semibold rounded-full hover:bg-cyan-500 hover:text-white transform hover:scale-105 active:scale-95 transition-all duration-300"
           >
             <span>Ver todos los productos</span>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"

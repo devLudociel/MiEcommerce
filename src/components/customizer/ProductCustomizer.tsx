@@ -8,8 +8,9 @@ import { logger } from '../../lib/logger';
 import { getSchemaForProduct } from '../../lib/customization/schemas';
 import CustomizerErrorBoundary from './CustomizerErrorBoundary';
 
-// PERFORMANCE: Lazy load DynamicCustomizer for code splitting
+// PERFORMANCE: Lazy load customizers for code splitting
 const DynamicCustomizer = lazy(() => import('./DynamicCustomizer.tsx'));
+const StepWizardCustomizer = lazy(() => import('./StepWizardCustomizer'));
 const SimpleMugCustomizer = lazy(() => import('./mug/SimpleMugCustomizer'));
 
 interface FirebaseProduct {
@@ -30,6 +31,8 @@ interface FirebaseProduct {
 
 interface Props {
   slug?: string;
+  /** Force wizard mode (step-by-step) regardless of screen size */
+  forceWizard?: boolean;
 }
 
 /**
@@ -85,11 +88,23 @@ function detectSchemaId(product: FirebaseProduct): string | null {
   return null;
 }
 
-export default function ProductCustomizer({ slug }: Props) {
+export default function ProductCustomizer({ slug, forceWizard }: Props) {
   const [product, setProduct] = useState<FirebaseProduct | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dynamicSchema, setDynamicSchema] = useState<CustomizationSchema | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen for responsive customizer selection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     async function loadProduct() {
@@ -229,6 +244,21 @@ export default function ProductCustomizer({ slug }: Props) {
   const schemaId = detectSchemaId(product);
   const isMugProduct = schemaId === 'cat_tazas';
 
+  // Determinar qué customizer usar:
+  // - Tazas siempre usan SimpleMugCustomizer (optimizado para tazas)
+  // - En móvil/tablet (<lg) o si forceWizard, usar StepWizardCustomizer
+  // - En desktop, usar DynamicCustomizer tradicional
+  const useWizard = !isMugProduct && (forceWizard || isMobile);
+
+  logger.info('[ProductCustomizer] Seleccionando customizer', {
+    productId: product.id,
+    isMugProduct,
+    isMobile,
+    forceWizard,
+    useWizard,
+    customizer: isMugProduct ? 'SimpleMugCustomizer' : useWizard ? 'StepWizardCustomizer' : 'DynamicCustomizer',
+  });
+
   return (
     <CustomizerErrorBoundary>
       <Suspense
@@ -243,6 +273,8 @@ export default function ProductCustomizer({ slug }: Props) {
       >
         {isMugProduct ? (
           <SimpleMugCustomizer product={product} />
+        ) : useWizard ? (
+          <StepWizardCustomizer product={product} schema={dynamicSchema} />
         ) : (
           <DynamicCustomizer product={product} schema={dynamicSchema} />
         )}

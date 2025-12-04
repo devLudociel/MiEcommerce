@@ -24,7 +24,8 @@
       "Bash(del \"C:\\Users\\Usuario\\.claude-worktrees\\ecommerce-personalizado-nuevo\\focused-jones\\src\\pages\\account\\websites.astro\")",
       "Bash(del \"C:\\Users\\Usuario\\.claude-worktrees\\ecommerce-personalizado-nuevo\\focused-jones\\src\\pages\\account\\brand-kit.astro\")",
       "Bash(del \"C:\\Users\\Usuario\\.claude-worktrees\\ecommerce-personalizado-nuevo\\focused-jones\\src\\pages\\account\\subscriptions.astro\")",
-      "Bash(del /s /q .astro dist)"
+      "Bash(del /s /q .astro dist)",
+      "Bash(npx astro build)"
     ],
     "deny": [],
     "ask": []

@@ -21,130 +21,6 @@ interface ProductCardProps {
   onClick?: () => void;
 }
 
-// PERFORMANCE: Move static styles outside component to prevent recreation
-const cardStyle: React.CSSProperties = {
-  background: 'white',
-  borderRadius: '12px',
-  overflow: 'hidden',
-  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-  border: '1px solid var(--color-gray-200)',
-  transition: 'all 0.3s ease',
-  cursor: 'pointer',
-};
-
-const imageContainerStyle: React.CSSProperties = {
-  position: 'relative',
-  paddingBottom: '60%',
-  overflow: 'hidden',
-};
-
-const imageStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  width: '100%',
-  height: '100%',
-  objectFit: 'cover',
-};
-
-const featuredBadgeStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '0.5rem',
-  right: '0.5rem',
-  background: 'var(--color-cyan-600)',
-  color: 'white',
-  padding: '0.25rem 0.5rem',
-  borderRadius: '4px',
-  fontSize: '0.75rem',
-  fontWeight: '500',
-};
-
-const contentStyle: React.CSSProperties = {
-  padding: '1rem',
-};
-
-const titleStyle: React.CSSProperties = {
-  fontSize: '1.1rem',
-  fontWeight: '600',
-  marginBottom: '0.5rem',
-  color: 'var(--color-gray-800)',
-  lineHeight: '1.3',
-};
-
-const descriptionStyle: React.CSSProperties = {
-  fontSize: '0.875rem',
-  color: 'var(--color-gray-600)',
-  marginBottom: '0.75rem',
-  lineHeight: '1.4',
-  display: '-webkit-box',
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: 'vertical',
-  overflow: 'hidden',
-};
-
-const attributeContainerStyle: React.CSSProperties = {
-  marginBottom: '0.75rem',
-};
-
-const flexWrapStyle: React.CSSProperties = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '0.25rem',
-};
-
-const attributeBadgeStyle: React.CSSProperties = {
-  fontSize: '0.75rem',
-  background: 'var(--color-gray-100)',
-  color: 'var(--color-gray-700)',
-  padding: '0.125rem 0.5rem',
-  borderRadius: '12px',
-};
-
-const moreAttributesStyle: React.CSSProperties = {
-  fontSize: '0.75rem',
-  color: 'var(--color-gray-500)',
-  padding: '0.125rem 0.5rem',
-};
-
-const tagBadgeStyle: React.CSSProperties = {
-  fontSize: '0.75rem',
-  background: 'var(--color-cyan-50)',
-  color: 'var(--color-cyan-700)',
-  padding: '0.125rem 0.5rem',
-  borderRadius: '12px',
-  border: '1px solid var(--color-cyan-200)',
-};
-
-const priceContainerStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-};
-
-const priceStyle: React.CSSProperties = {
-  fontSize: '1.25rem',
-  fontWeight: '700',
-  color: 'var(--color-gray-900)',
-};
-
-const priceSubtextStyle: React.CSSProperties = {
-  fontSize: '0.75rem',
-  color: 'var(--color-gray-500)',
-  marginLeft: '0.25rem',
-};
-
-const buttonStyle: React.CSSProperties = {
-  background: 'var(--color-cyan-600)',
-  color: 'white',
-  border: 'none',
-  padding: '0.5rem 1rem',
-  borderRadius: '6px',
-  fontSize: '0.875rem',
-  fontWeight: '500',
-  cursor: 'pointer',
-  transition: 'background-color 0.2s ease',
-};
-
 // PERFORMANCE: Memoize component to prevent unnecessary re-renders
 const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }) => {
   // PERFORMANCE: Wrap click handler in useCallback
@@ -162,24 +38,6 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
     img.src = FALLBACK_IMG_400x300;
   }, []);
 
-  const handleCardMouseEnter = useCallback((e: React.MouseEvent<HTMLElement>) => {
-    e.currentTarget.style.transform = 'translateY(-4px)';
-    e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
-  }, []);
-
-  const handleCardMouseLeave = useCallback((e: React.MouseEvent<HTMLElement>) => {
-    e.currentTarget.style.transform = 'translateY(0)';
-    e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-  }, []);
-
-  const handleButtonMouseEnter = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    e.currentTarget.style.backgroundColor = 'var(--color-cyan-700)';
-  }, []);
-
-  const handleButtonMouseLeave = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    e.currentTarget.style.backgroundColor = 'var(--color-cyan-600)';
-  }, []);
-
   const handleButtonClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     console.log('Añadir al carrito:', product.id);
@@ -187,63 +45,67 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
 
   return (
     <article
-      style={cardStyle}
+      className="bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-200 hover:border-gray-300 transition-all duration-300 cursor-pointer hover:-translate-y-1 active:scale-[0.98]"
       onClick={handleClick}
-      onMouseEnter={handleCardMouseEnter}
-      onMouseLeave={handleCardMouseLeave}
     >
-      {/* Imagen del producto */}
-      <div style={imageContainerStyle}>
+      {/* Imagen del producto - Responsive aspect ratio */}
+      <div className="relative aspect-[4/3] sm:aspect-[3/2] overflow-hidden bg-gray-100">
         <img
           src={product.images[0] || FALLBACK_IMG_400x300}
           alt={product.name}
           loading="lazy"
           decoding="async"
-          style={imageStyle}
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           onError={handleImageError}
         />
 
         {product.featured && (
-          <div style={featuredBadgeStyle}>
+          <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-cyan-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded text-[10px] sm:text-xs font-medium shadow-md">
             Destacado
           </div>
         )}
       </div>
 
-      {/* Contenido del producto */}
-      <div style={contentStyle}>
-        <h3 style={titleStyle}>
+      {/* Contenido del producto - Padding responsive */}
+      <div className="p-3 sm:p-4">
+        <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800 leading-tight mb-1 sm:mb-2 line-clamp-2">
           {product.name}
         </h3>
 
-        <p style={descriptionStyle}>
+        <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 leading-relaxed line-clamp-2 hidden sm:block">
           {product.description}
         </p>
 
-        {/* Atributos destacados */}
+        {/* Atributos destacados - Ocultos en móvil muy pequeño */}
         {product.attributes.length > 0 && (
-          <div style={attributeContainerStyle}>
-            <div style={flexWrapStyle}>
+          <div className="hidden sm:block mb-2 sm:mb-3">
+            <div className="flex flex-wrap gap-1">
               {product.attributes.slice(0, 3).map((attr, index) => (
-                <span key={index} style={attributeBadgeStyle}>
+                <span
+                  key={index}
+                  className="text-[10px] sm:text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full"
+                >
                   {attr.value}
                 </span>
               ))}
               {product.attributes.length > 3 && (
-                <span style={moreAttributesStyle}>
-                  +{product.attributes.length - 3} más
+                <span className="text-[10px] sm:text-xs text-gray-500 px-1">
+                  +{product.attributes.length - 3}
                 </span>
               )}
             </div>
           </div>
         )}
 
-        {/* Tags */}
+        {/* Tags - Solo en desktop */}
         {product.tags.length > 0 && (
-          <div style={attributeContainerStyle}>
-            <div style={flexWrapStyle}>
+          <div className="hidden md:block mb-3">
+            <div className="flex flex-wrap gap-1">
               {product.tags.slice(0, 2).map((tag) => (
-                <span key={tag} style={tagBadgeStyle}>
+                <span
+                  key={tag}
+                  className="text-xs bg-cyan-50 text-cyan-700 px-2 py-0.5 rounded-full border border-cyan-200"
+                >
                   #{tag}
                 </span>
               ))}
@@ -251,24 +113,23 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
           </div>
         )}
 
-        {/* Precio y botón */}
-        <div style={priceContainerStyle}>
-          <div>
-            <span style={priceStyle}>
+        {/* Precio y botón - Layout responsive */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1">
+            <span className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">
               €{product.basePrice.toFixed(2)}
             </span>
-            <span style={priceSubtextStyle}>
+            <span className="text-[10px] sm:text-xs text-gray-500">
               desde
             </span>
           </div>
 
           <button
-            style={buttonStyle}
-            onMouseEnter={handleButtonMouseEnter}
-            onMouseLeave={handleButtonMouseLeave}
+            className="bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap active:scale-95"
             onClick={handleButtonClick}
           >
-            Ver detalles
+            <span className="hidden sm:inline">Ver detalles</span>
+            <span className="sm:hidden">Ver</span>
           </button>
         </div>
       </div>

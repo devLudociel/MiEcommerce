@@ -1661,3 +1661,275 @@ input[type='color']:hover::-webkit-color-swatch {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ===== MEJORAS RESPONSIVE MÓVILES ===== */
+
+/* Tamaños táctiles mínimos (44px recomendado por Apple/Google HIG) */
+@media (max-width: 640px) {
+  /* Botones más grandes en móvil */
+  .btn,
+  button:not(.btn-ghost) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Inputs más grandes para fácil toque */
+  .form-input,
+  .input,
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  input[type='search'],
+  input[type='tel'],
+  input[type='number'],
+  select,
+  textarea {
+    min-height: 48px;
+    font-size: 16px; /* Prevenir zoom en iOS */
+    padding: var(--spacing-3) var(--spacing-4);
+  }
+
+  /* Botones de navegación más accesibles */
+  .nav-link,
+  .mega-item {
+    min-height: 44px;
+    padding: var(--spacing-3) var(--spacing-4);
+  }
+
+  /* Cards con menos padding en móvil */
+  .card {
+    padding: var(--spacing-4);
+    border-radius: var(--radius-xl);
+  }
+
+  /* Hero section más compacto */
+  .hero {
+    padding: var(--spacing-12) 0;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
+    margin-bottom: var(--spacing-4);
+  }
+
+  .hero p {
+    font-size: clamp(0.875rem, 3vw, 1.125rem);
+    margin-bottom: var(--spacing-6);
+  }
+
+  /* Botones del hero en stack vertical */
+  .hero-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .hero-buttons .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Precios más legibles */
+  .price {
+    font-size: 1.25rem;
+  }
+
+  /* Badges más pequeños */
+  .badge {
+    padding: var(--spacing-1) var(--spacing-2);
+    font-size: 0.7rem;
+  }
+
+  /* Alertas más compactas */
+  .alert {
+    padding: var(--spacing-3);
+    gap: var(--spacing-2);
+    font-size: 0.875rem;
+  }
+
+  /* Section spacing reducido */
+  .section {
+    padding-top: var(--spacing-8);
+    padding-bottom: var(--spacing-8);
+  }
+
+  .section-lg {
+    padding-top: var(--spacing-10);
+    padding-bottom: var(--spacing-10);
+  }
+
+  /* Container padding ajustado */
+  .container,
+  .container-xl,
+  .container-full {
+    padding-left: var(--spacing-4);
+    padding-right: var(--spacing-4);
+  }
+
+  /* Dropdown del carrito más ancho en móvil */
+  .cart-dropdown {
+    width: calc(100vw - 2rem);
+    max-width: 380px;
+    right: -1rem;
+  }
+
+  /* Mega menu en full width */
+  .mega-menu {
+    width: calc(100vw - 2rem);
+    max-width: none;
+    left: 1rem;
+    right: 1rem;
+    transform: none;
+    padding: var(--spacing-4);
+  }
+
+  /* Grid de mega menu en una columna */
+  .mega-content {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-4);
+  }
+
+  /* Quitar efectos hover en móvil (son para mouse) */
+  .card:hover,
+  .product-card:hover,
+  .btn:hover {
+    transform: none;
+  }
+
+  /* Active states para móvil */
+  .card:active,
+  .product-card:active,
+  .btn:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .section {
+    padding-top: var(--spacing-12);
+    padding-bottom: var(--spacing-12);
+  }
+
+  .hero {
+    padding: var(--spacing-16) 0;
+  }
+
+  .mega-menu {
+    max-width: 700px;
+  }
+
+  .mega-content {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Prevenir zoom en inputs en iOS */
+@supports (-webkit-touch-callout: none) {
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  input[type='search'],
+  input[type='tel'],
+  input[type='number'],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Safe area insets para notch y home indicator */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .footer,
+  .bottom-nav,
+  .sticky-bottom {
+    padding-bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom));
+  }
+
+  .header,
+  .sticky-top {
+    padding-top: calc(var(--spacing-4) + env(safe-area-inset-top));
+  }
+}
+
+/* Optimizaciones de rendimiento para móviles */
+@media (max-width: 768px) {
+  /* Reducir animaciones en móvil */
+  .animate-float,
+  .animate-pulse-cmyk {
+    animation: none;
+  }
+
+  /* Simplificar transiciones */
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.15s !important;
+  }
+
+  /* Desactivar backdrop-filter en dispositivos de bajo rendimiento */
+  @media (prefers-reduced-motion: reduce) {
+    .backdrop-blur-sm,
+    .backdrop-blur {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      background-color: rgba(255, 255, 255, 0.95);
+    }
+  }
+}
+
+/* Focus visible para accesibilidad */
+@media (pointer: coarse) {
+  /* Eliminar outlines en dispositivos táctiles */
+  :focus {
+    outline: none;
+  }
+
+  /* Pero mantenerlos para navegación por teclado */
+  :focus-visible {
+    outline: 2px solid var(--color-cyan-500);
+    outline-offset: 2px;
+  }
+}
+
+/* Estilos específicos para landscape en móvil */
+@media (max-width: 896px) and (orientation: landscape) {
+  .hero {
+    min-height: 300px;
+    padding: var(--spacing-8) 0;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+  }
+
+  .hero-buttons {
+    flex-direction: row;
+  }
+
+  .section {
+    padding-top: var(--spacing-6);
+    padding-bottom: var(--spacing-6);
+  }
+}
+
+/* Scrollbar personalizado para móviles que lo muestran */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-gray-100);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-gray-300);
+    border-radius: var(--radius-full);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-gray-400);
+  }
+}

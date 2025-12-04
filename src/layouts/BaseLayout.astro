@@ -49,9 +49,9 @@ const {
 
     <title>{title}</title>
     <style>
-      /* Variable CSS para la altura del header - ajustada para mejor spacing */
+      /* Variable CSS para la altura del header - responsive */
       :root {
-        --header-height: 160px; /* 10rem = 160px */
+        --header-height: 120px; /* Móvil: más compacto */
       }
 
       .skip-link {
@@ -77,24 +77,30 @@ const {
         min-height: calc(100vh - var(--header-height));
       }
 
-      /* Breakpoints responsivos */
+      /* Breakpoints responsivos para header */
+      @media (min-width: 640px) {
+        :root {
+          --header-height: 140px; /* Tablet pequeña */
+        }
+      }
+
       @media (min-width: 768px) {
         :root {
-          --header-height: 160px; /* 10rem = 160px */
+          --header-height: 150px; /* Tablet */
         }
       }
 
       @media (min-width: 1024px) {
         :root {
-          --header-height: 160px; /* 10rem = 160px */
+          --header-height: 160px; /* Desktop */
         }
       }
 
-      /* Mobile optimizations - reduce excessive padding */
+      /* Mobile optimizations */
       @media (max-width: 640px) {
         main > * {
-          padding-top: max(var(--spacing-6, 1.5rem), env(safe-area-inset-top));
-          padding-bottom: max(var(--spacing-6, 1.5rem), env(safe-area-inset-bottom));
+          padding-top: max(var(--spacing-4, 1rem), env(safe-area-inset-top));
+          padding-bottom: max(var(--spacing-4, 1rem), env(safe-area-inset-bottom));
         }
       }
     </style>

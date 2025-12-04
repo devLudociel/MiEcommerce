@@ -599,19 +599,7 @@ const Header: React.FC<HeaderProps> = () => {
         </div>
       </div>
 
-      {/* Búsqueda móvil */}
-      <div
-        className="md:hidden bg-white border-b border-gray-200 relative z-50"
-      >
-        <div className="container" style={{ padding: 'var(--spacing-4) var(--spacing-4)' }}>
-          <SearchDropdown
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            isSearchFocused={isSearchFocused}
-            onSearchFocus={setIsSearchFocused}
-          />
-        </div>
-      </div>
+      {/* Búsqueda móvil - ELIMINADA: Ahora se usa solo el modal de búsqueda activado por el icono */}
 
       {/* Menú de categorías */}
       <div className="bg-white border-b border-gray-200 relative">

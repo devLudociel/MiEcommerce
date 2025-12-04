@@ -60,8 +60,7 @@ const HeroCarousel = memo(() => {
 
   return (
     <section
-      className="relative overflow-hidden"
-      style={{ height: '65vh', minHeight: '500px', maxHeight: '700px' }}
+      className="relative overflow-hidden h-[50vh] sm:h-[55vh] md:h-[60vh] lg:h-[65vh] min-h-[320px] sm:min-h-[400px] md:min-h-[450px] lg:min-h-[500px] max-h-[600px] lg:max-h-[700px]"
     >
       {/* Slides Container */}
       <div className="relative h-full">
@@ -90,14 +89,14 @@ const HeroCarousel = memo(() => {
                 }}
               />
 
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+              {/* Overlay - más oscuro en móvil para mejor legibilidad */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/80 sm:from-black/70 via-black/50 sm:via-black/40 to-black/30 sm:to-transparent" />
 
-              {/* Content */}
-              <div className="relative z-10 h-full flex items-center py-8">
-                <div className="container mx-auto px-6">
-                  <div style={{ maxWidth: '48rem' }}>
-                    {/* Subtitle */}
+              {/* Content - Padding responsive */}
+              <div className="relative z-10 h-full flex items-center py-4 sm:py-6 md:py-8">
+                <div className="container mx-auto px-4 sm:px-6">
+                  <div className="max-w-xs sm:max-w-md md:max-w-xl lg:max-w-2xl">
+                    {/* Subtitle - Responsive */}
                     <div
                       className="transform transition-all duration-1000"
                       style={{
@@ -106,16 +105,15 @@ const HeroCarousel = memo(() => {
                         transitionDelay: '200ms',
                       }}
                     >
-                      <span className="inline-block px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-white/20 backdrop-blur-sm border border-white/30 text-white mb-4">
+                      <span className="inline-block px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-white/20 backdrop-blur-sm border border-white/30 text-white mb-2 sm:mb-4">
                         {slide.subtitle}
                       </span>
                     </div>
 
-                    {/* Title */}
+                    {/* Title - Responsive font size */}
                     <h1
-                      className="font-black mb-4 leading-tight text-white drop-shadow-2xl transform transition-all duration-1000"
+                      className="font-black mb-2 sm:mb-3 md:mb-4 leading-tight text-white drop-shadow-2xl transform transition-all duration-1000 text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl"
                       style={{
-                        fontSize: 'clamp(2rem, 5vw, 3.5rem)',
                         opacity: isActive ? 1 : 0,
                         transform: isActive ? 'translateY(0)' : 'translateY(3rem)',
                         transitionDelay: '400ms',
@@ -126,7 +124,7 @@ const HeroCarousel = memo(() => {
                         return (
                           <span
                             key={i}
-                            className={`inline-block mr-3 ${isLastWord ? textClass : ''}`}
+                            className={`inline-block mr-1.5 sm:mr-2 md:mr-3 ${isLastWord ? textClass : ''}`}
                           >
                             {word}
                           </span>
@@ -134,12 +132,10 @@ const HeroCarousel = memo(() => {
                       })}
                     </h1>
 
-                    {/* Description */}
+                    {/* Description - Ocultar en móviles muy pequeños */}
                     <p
-                      className="text-white/90 mb-6 leading-relaxed transform transition-all duration-1000"
+                      className="text-white/90 mb-4 sm:mb-5 md:mb-6 leading-relaxed transform transition-all duration-1000 text-xs sm:text-sm md:text-base lg:text-lg max-w-[280px] sm:max-w-md md:max-w-lg line-clamp-2 sm:line-clamp-3 md:line-clamp-none"
                       style={{
-                        fontSize: 'clamp(0.875rem, 2vw, 1.125rem)',
-                        maxWidth: '36rem',
                         opacity: isActive ? 1 : 0,
                         transform: isActive ? 'translateY(0)' : 'translateY(2rem)',
                         transitionDelay: '600ms',
@@ -148,9 +144,9 @@ const HeroCarousel = memo(() => {
                       {slide.description}
                     </p>
 
-                    {/* Call to Actions */}
+                    {/* Call to Actions - Responsive */}
                     <div
-                      className="flex flex-col sm:flex-row gap-4 transform transition-all duration-1000"
+                      className="flex flex-col xs:flex-row gap-2 sm:gap-3 md:gap-4 transform transition-all duration-1000"
                       style={{
                         opacity: isActive ? 1 : 0,
                         transform: isActive ? 'translateY(0)' : 'translateY(2rem)',
@@ -158,11 +154,11 @@ const HeroCarousel = memo(() => {
                       }}
                     >
                       <button
-                        className={`px-6 py-3 text-white font-bold rounded-xl ${gradientClass} hover:scale-105 transform transition-all shadow-lg hover:shadow-2xl`}
+                        className={`px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 text-white text-xs sm:text-sm md:text-base font-bold rounded-lg sm:rounded-xl ${gradientClass} hover:scale-105 active:scale-95 transform transition-all shadow-lg hover:shadow-2xl touch-manipulation`}
                       >
                         {slide.ctaPrimary}
                       </button>
-                      <button className="px-6 py-3 text-white font-bold rounded-xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white hover:text-gray-800 transition-all transform hover:scale-105">
+                      <button className="px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 text-white text-xs sm:text-sm md:text-base font-bold rounded-lg sm:rounded-xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white hover:text-gray-800 transition-all transform hover:scale-105 active:scale-95 touch-manipulation">
                         {slide.ctaSecondary}
                       </button>
                     </div>
@@ -174,16 +170,16 @@ const HeroCarousel = memo(() => {
         })}
       </div>
 
-      {/* Navigation Controls */}
-      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-30">
-        <div className="flex items-center gap-4">
-          {/* Dots */}
-          <div className="flex items-center gap-2">
+      {/* Navigation Controls - Responsive */}
+      <div className="absolute bottom-3 sm:bottom-4 md:bottom-6 left-1/2 transform -translate-x-1/2 z-30">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+          {/* Dots - Tamaño responsive */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {heroSlides.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-all duration-300 touch-manipulation ${
                   index === currentSlide ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/80'
                 }`}
                 type="button"
@@ -194,17 +190,17 @@ const HeroCarousel = memo(() => {
             ))}
           </div>
 
-          {/* Play/Pause */}
+          {/* Play/Pause - Solo desktop */}
           <button
             onClick={toggleAutoPlay}
-            className="ml-4 p-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 text-white hover:bg-white/30 transition-all"
+            className="hidden sm:flex ml-2 sm:ml-4 p-1.5 sm:p-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 text-white hover:bg-white/30 transition-all touch-manipulation"
             type="button"
             aria-label={isAutoPlaying ? 'Pausar carrusel' : 'Reproducir carrusel'}
             aria-pressed={!isAutoPlaying}
           >
             {isAutoPlaying ? (
               <svg
-                className="w-3.5 h-3.5"
+                className="w-3 h-3 sm:w-3.5 sm:h-3.5"
                 fill="currentColor"
                 viewBox="0 0 20 20"
                 aria-hidden="true"
@@ -213,7 +209,7 @@ const HeroCarousel = memo(() => {
               </svg>
             ) : (
               <svg
-                className="w-3.5 h-3.5"
+                className="w-3 h-3 sm:w-3.5 sm:h-3.5"
                 fill="currentColor"
                 viewBox="0 0 20 20"
                 aria-hidden="true"
@@ -225,17 +221,17 @@ const HeroCarousel = memo(() => {
         </div>
       </div>
 
-      {/* Arrow Navigation */}
+      {/* Arrow Navigation - Ocultar en móvil, visible en tablet+ */}
       <button
         onClick={nextSlide}
         onMouseEnter={pauseAutoPlay}
         onMouseLeave={resumeAutoPlay}
-        className="absolute right-4 top-1/2 transform -translate-y-1/2 z-30 p-2.5 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 text-white hover:bg-white/30 transition-all hover:scale-110"
+        className="hidden sm:block absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 z-30 p-2 sm:p-2.5 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 text-white hover:bg-white/30 transition-all hover:scale-110 active:scale-95 touch-manipulation"
         type="button"
         aria-label="Siguiente diapositiva"
       >
         <svg
-          className="w-5 h-5"
+          className="w-4 h-4 sm:w-5 sm:h-5"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -249,12 +245,12 @@ const HeroCarousel = memo(() => {
         onClick={prevSlide}
         onMouseEnter={pauseAutoPlay}
         onMouseLeave={resumeAutoPlay}
-        className="absolute left-4 top-1/2 transform -translate-y-1/2 z-30 p-2.5 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 text-white hover:bg-white/30 transition-all hover:scale-110"
+        className="hidden sm:block absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 z-30 p-2 sm:p-2.5 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 text-white hover:bg-white/30 transition-all hover:scale-110 active:scale-95 touch-manipulation"
         type="button"
         aria-label="Diapositiva anterior"
       >
         <svg
-          className="w-5 h-5"
+          className="w-4 h-4 sm:w-5 sm:h-5"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

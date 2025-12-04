@@ -36,5 +36,31 @@ export default defineConfig({
           }),
         ]
       : [],
+    // FIX: Optimize dependencies to prevent 504 Outdated Optimize Dep errors
+    optimizeDeps: {
+      include: [
+        '@stripe/stripe-js',
+        '@stripe/react-stripe-js',
+        'react',
+        'react-dom',
+        '@nanostores/react',
+        'nanostores',
+        'firebase/app',
+        'firebase/auth',
+        'firebase/firestore',
+        'firebase/storage',
+        'lucide-react',
+      ],
+      exclude: ['astro:content'],
+    },
+    // Improve HMR stability
+    server: {
+      hmr: {
+        overlay: true,
+      },
+      watch: {
+        usePolling: false,
+      },
+    },
   },
 });
