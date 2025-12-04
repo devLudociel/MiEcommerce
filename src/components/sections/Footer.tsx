@@ -54,7 +54,7 @@ const Footer: React.FC = () => {
       title: 'Mi Cuenta',
       links: [
         { name: 'Mis Pedidos', href: '/account/orders' },
-        { name: 'Mis Diseños', href: '/account/design' },
+        { name: 'Mis Diseños', href: '/account/designs' },
         { name: 'Mis Favoritos', href: '/account/wishlist' },
         { name: 'Mis Direcciones', href: '/account/addresses' },
         { name: 'Configuración', href: '/account/settings' },

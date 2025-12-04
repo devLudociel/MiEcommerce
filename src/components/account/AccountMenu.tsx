@@ -91,6 +91,16 @@ export default function AccountMenu() {
           <h3 className="mb-3 text-gray-900 font-bold text-base">Mis Diseños</h3>
           <div className="space-y-2">
             <a
+              href="/account/designs"
+              className={`block px-0 py-2 text-sm transition-colors rounded-lg ${
+                isActive('/account/designs')
+                  ? 'text-cyan-600 font-semibold bg-cyan-50'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              Diseños Guardados
+            </a>
+            <a
               href="/account/files"
               className={`block px-0 py-2 text-sm transition-colors rounded-lg ${
                 isActive('/account/files')

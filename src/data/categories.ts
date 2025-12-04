@@ -14,6 +14,7 @@ export interface MenuSubcategory {
   slug: string;
   description: string;
   icon?: string;
+  href?: string; // optional direct link override
 }
 
 export const categories: MenuCategory[] = [
@@ -238,6 +239,14 @@ export const categories: MenuCategory[] = [
         slug: 'desarrollo-web',
         description: 'Páginas web básicas y funcionales',
         icon: '💻',
+      },
+      {
+        id: '18',
+        name: 'Productos Digitales',
+        slug: 'productos-digitales',
+        description: 'Plantillas y recursos descargables al instante',
+        icon: '🪄',
+        href: '/productos/digitales',
       },
     ],
   },

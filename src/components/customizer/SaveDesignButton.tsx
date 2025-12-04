@@ -43,10 +43,18 @@ export default function SaveDesignButton({
     setIsSaving(true);
 
     try {
+      const token = await user.getIdToken?.();
+      if (!token) {
+        notify.error('Sesión no válida, inicia sesión de nuevo.');
+        setIsSaving(false);
+        return;
+      }
+
       const response = await fetch('/api/designs/save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           name: designName.trim(),
