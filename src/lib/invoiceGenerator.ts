@@ -41,20 +41,22 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
   const taxLabel = (order as any).taxLabel || 'IVA (21%)';
   const total = Number((order as any).total ?? 0);
 
-  try {
-    // Log only in development
-    if (import.meta.env.DEV) {
+  // Log only in development (catch errors silently - debug only)
+  if (import.meta.env.DEV) {
+    try {
       console.log('[invoiceGenerator] data', {
         invoiceNumber,
         items: items.length,
         subtotal,
         shipping: shippingCost,
         total,
-        hasShippingInfo: !!(order as any).shippingInfo,
-        method: (order as any)?.paymentInfo?.method ?? undefined,
+        hasShippingInfo: !!order.shippingInfo,
+        method: order.paymentInfo?.method ?? undefined,
       });
+    } catch (e) {
+      console.debug('[invoiceGenerator] Could not log debug info:', e);
     }
-  } catch {}
+  }
 
   return {
     pageSize: 'A4',

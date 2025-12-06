@@ -195,9 +195,12 @@ const Header: React.FC<HeaderProps> = () => {
         if (user) {
           const { getIdTokenResult } = await import('firebase/auth');
           const token = await getIdTokenResult(user, true);
-          byClaim = !!(token.claims as any)?.admin;
+          byClaim = !!token.claims?.admin;
         }
-      } catch {}
+      } catch (e) {
+        // Non-critical: will fallback to email check
+        console.debug('[Header] Could not get admin claim:', e);
+      }
       if (!cancelled) setIsAdmin(byEmail || byClaim);
     })();
     return () => {

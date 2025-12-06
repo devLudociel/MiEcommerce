@@ -183,13 +183,16 @@ export default function LoginPanel() {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       const isMobile = isMobileDevice();
       logger.info('[LoginPanel] env', {
-        authDomain: (import.meta as any).env.PUBLIC_FIREBASE_AUTH_DOMAIN,
-        projectId: (import.meta as any).env.PUBLIC_FIREBASE_PROJECT_ID,
-        appUrl: (import.meta as any).env.PUBLIC_APP_URL,
+        authDomain: import.meta.env?.PUBLIC_FIREBASE_AUTH_DOMAIN,
+        projectId: import.meta.env?.PUBLIC_FIREBASE_PROJECT_ID,
+        appUrl: import.meta.env?.PUBLIC_APP_URL,
         origin,
         isMobile,
       });
-    } catch {}
+    } catch (e) {
+      // Non-critical: debug logging only
+      logger.debug('[LoginPanel] Could not log env info', e);
+    }
   }, []);
 
   useEffect(() => {

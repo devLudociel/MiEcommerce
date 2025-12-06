@@ -68,12 +68,18 @@ export const auth: Auth = getAuth(app);
 try {
   // Persist session across reloads (incluye resultado de redirect)
   await setPersistence(auth, browserLocalPersistence);
-} catch {}
+} catch (e) {
+  // Non-critical: app works without persistence, just won't remember session
+  console.warn('[Firebase] Could not set auth persistence:', e);
+}
 try {
   // Mostrar emails en español (restablecer contraseña, etc.)
   // Nota: puedes sobreescribir por usuario si lo necesitas
   auth.languageCode = 'es';
-} catch {}
+} catch (e) {
+  // Non-critical: emails will be in default language
+  console.warn('[Firebase] Could not set language code:', e);
+}
 
 // Initialize Analytics (only in browser)
 export const analytics: Analytics | null = typeof window !== 'undefined' ? getAnalytics(app) : null;
@@ -81,7 +87,10 @@ export const analytics: Analytics | null = typeof window !== 'undefined' ? getAn
 // Reduce Firestore console noise
 try {
   setLogLevel('error');
-} catch {}
+} catch (e) {
+  // Non-critical: just more console noise
+  console.warn('[Firebase] Could not set Firestore log level:', e);
+}
 
 export default app;
 

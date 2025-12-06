@@ -49,7 +49,10 @@ export default function ProductDebugPanel({ slug }: ProductDebugPanelProps) {
             if (docSnap.exists()) {
               productData = { id: docSnap.id, ...docSnap.data() } as ProductData;
             }
-          } catch {}
+          } catch (e) {
+            // Fallback search by ID failed - product may not exist
+            console.debug('[ProductDebugPanel] Product not found by ID:', e);
+          }
         }
 
         if (!productData) {

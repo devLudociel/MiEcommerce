@@ -34,6 +34,7 @@ function readWishlist(userId?: string | null): WishlistItem[] {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
+    // Intentional: localStorage may be unavailable or corrupted - return empty wishlist
     return [];
   }
 }

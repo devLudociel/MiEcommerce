@@ -133,7 +133,10 @@ export default function ProductCustomizer({ slug, forceWizard }: Props) {
             if (docSnap.exists()) {
               productData = { id: docSnap.id, ...docSnap.data() } as FirebaseProduct;
             }
-          } catch {}
+          } catch (e) {
+            // Fallback search by ID failed - product may not exist
+            logger.debug('[ProductCustomizer] Product not found by ID either:', e);
+          }
         }
 
         if (!productData) {

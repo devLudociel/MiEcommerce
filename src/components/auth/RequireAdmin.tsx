@@ -30,9 +30,12 @@ export default function RequireAdmin({ children, redirectTo = '/account' }: Prop
         let allowedByClaim = false;
         try {
           const token = await getIdTokenResult(user, true);
-          allowedByClaim = !!(token.claims as any)?.admin;
+          allowedByClaim = !!token.claims?.admin;
           console.log('[RequireAdmin] claims', token.claims);
-        } catch {}
+        } catch (e) {
+          // Token claim check failed - will fallback to email check
+          console.warn('[RequireAdmin] Could not get token claims:', e);
+        }
         if (allowedByEmail || allowedByClaim) {
           setAllowed(true);
         } else {

@@ -139,6 +139,7 @@ export function useAutoSaveDraft<T>(
       try {
         return localStorage.getItem(`${key}_timestamp`);
       } catch {
+        // Intentional: localStorage may be unavailable - return null
         return null;
       }
     },
@@ -151,6 +152,7 @@ export function useAutoSaveDraft<T>(
       try {
         return localStorage.getItem(key) !== null;
       } catch {
+        // Intentional: localStorage may be unavailable - return false
         return false;
       }
     },
