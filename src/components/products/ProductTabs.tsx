@@ -1,4 +1,5 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
+import DOMPurify from 'isomorphic-dompurify';
 import ProductReviews from './ProductReviews';
 import AddReviewForm from './AddReviewForm';
 
@@ -29,6 +30,16 @@ export const ProductTabs = memo(function ProductTabs({
     { id: 'reviews' as const, label: 'Reseñas', icon: 'star' },
   ];
 
+  // Sanitize HTML to prevent XSS attacks
+  const sanitizedDescription = useMemo(() => {
+    if (!longDescription) return '';
+    return DOMPurify.sanitize(longDescription, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'span', 'div'],
+      ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style'],
+      ALLOW_DATA_ATTR: false,
+    });
+  }, [longDescription]);
+
   const hasSpecifications = Object.keys(specifications).length > 0;
 
   return (
@@ -57,8 +68,8 @@ export const ProductTabs = memo(function ProductTabs({
           <div className="prose prose-lg max-w-none animate-fadeIn">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">Descripción del producto</h3>
             <div className="text-gray-700 leading-relaxed space-y-4">
-              {longDescription ? (
-                <div dangerouslySetInnerHTML={{ __html: longDescription }} />
+              {sanitizedDescription ? (
+                <div dangerouslySetInnerHTML={{ __html: sanitizedDescription }} />
               ) : (
                 <p>{description}</p>
               )}
