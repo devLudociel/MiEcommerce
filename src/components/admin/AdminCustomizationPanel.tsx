@@ -11,6 +11,7 @@ import {
   saveCustomizationSchema,
   deleteCustomizationSchema,
 } from '../../lib/customization/schemas';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 interface CategoryWithSchema extends ProductCategory {
   customizationSchema?: CustomizationSchema;
@@ -30,6 +31,9 @@ export default function AdminCustomizationPanel() {
   const [selectedCategory, setSelectedCategory] = useState<CategoryWithSchema | null>(null);
   const [editingSchema, setEditingSchema] = useState(false);
   const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
+
+  // Accessible confirmation dialog
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [newCategoryForm, setNewCategoryForm] = useState<NewCategoryForm>({
     id: '',
     name: '',
@@ -211,9 +215,14 @@ export default function AdminCustomizationPanel() {
   };
 
   const handleRemoveSchema = async (categoryId: string) => {
-    if (!confirm('¿Estás seguro de eliminar la configuración de personalización de Firebase?')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: '¿Eliminar configuración?',
+      message: '¿Estás seguro de eliminar la configuración de personalización de Firebase?',
+      type: 'warning',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+    });
+    if (!confirmed) return;
 
     try {
       // Delete from Firebase
@@ -723,6 +732,9 @@ export default function AdminCustomizationPanel() {
           </div>
         </div>
       )}
+
+      {/* Accessible confirmation dialog */}
+      <ConfirmDialog />
     </div>
   );
 }

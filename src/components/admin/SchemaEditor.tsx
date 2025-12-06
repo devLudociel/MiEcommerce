@@ -16,6 +16,7 @@ import DropdownConfigEditor from './config-editors/DropdownConfigEditor';
 import { storage, auth } from '../../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { logger } from '../../lib/logger';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 interface SchemaEditorProps {
   category: ProductCategory;
@@ -40,6 +41,9 @@ const fieldTypeOptions: Array<{ value: FieldType; label: string; icon: string }>
 export default function SchemaEditor({ category, initialSchema, onSave, onCancel }: SchemaEditorProps) {
   const [fields, setFields] = useState<CustomizationField[]>(initialSchema?.fields || []);
   const [showAddField, setShowAddField] = useState(false);
+
+  // Accessible confirmation dialog
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [expandedConfigs, setExpandedConfigs] = useState<Record<string, boolean>>({});
   const [defaultPreviewImage, setDefaultPreviewImage] = useState<string>(
     initialSchema?.previewImages?.default || ''
@@ -128,8 +132,15 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
     }
   };
 
-  const handleRemoveField = (fieldId: string) => {
-    if (!confirm('¿Eliminar este campo?')) return;
+  const handleRemoveField = async (fieldId: string) => {
+    const confirmed = await confirm({
+      title: '¿Eliminar campo?',
+      message: '¿Estás seguro de que quieres eliminar este campo? Esta acción no se puede deshacer.',
+      type: 'warning',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+    });
+    if (!confirmed) return;
     setFields(fields.filter((f) => f.id !== fieldId));
   };
 
@@ -741,6 +752,9 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
           </button>
         </div>
       </div>
+
+      {/* Accessible confirmation dialog */}
+      <ConfirmDialog />
     </div>
   );
 }

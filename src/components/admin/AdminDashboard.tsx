@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { collection, query, where, getDocs, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '../../lib/firebase';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 interface DashboardStats {
   // Ventas
@@ -35,6 +36,24 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [ordersLimit, setOrdersLimit] = useState(100); // PERFORMANCE: Limitar carga inicial
   const [isLoadingAll, setIsLoadingAll] = useState(false);
+
+  // Accessible confirmation dialog
+  const { confirm, ConfirmDialog } = useConfirmDialog();
+
+  // Handler for loading all orders with confirmation
+  const handleLoadAllOrders = useCallback(async () => {
+    const confirmed = await confirm({
+      title: '¿Cargar todos los pedidos?',
+      message: 'Esto puede cargar miles de pedidos y afectar el rendimiento. ¿Estás seguro?',
+      type: 'warning',
+      confirmText: 'Cargar Todos',
+      cancelText: 'Cancelar',
+    });
+    if (confirmed) {
+      setOrdersLimit(10000);
+      setIsLoadingAll(true);
+    }
+  }, [confirm]);
 
   useEffect(() => {
     // Verificar usuario autenticado
@@ -643,16 +662,7 @@ export default function AdminDashboard() {
 
           {!isLoadingAll && (
             <button
-              onClick={() => {
-                if (
-                  confirm(
-                    '⚠️ Esto puede cargar miles de pedidos y afectar el rendimiento. ¿Estás seguro?'
-                  )
-                ) {
-                  setOrdersLimit(10000);
-                  setIsLoadingAll(true);
-                }
-              }}
+              onClick={handleLoadAllOrders}
               disabled={loading}
               className="px-6 py-3 bg-orange-500 text-white rounded-xl font-semibold hover:bg-orange-600 transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -674,6 +684,9 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {/* Accessible confirmation dialog */}
+      <ConfirmDialog />
     </div>
   );
 }

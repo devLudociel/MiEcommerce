@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { storage } from '../../lib/firebase';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 type ProductType = 'camisetas' | 'cuadros' | 'cajas';
 
@@ -50,6 +51,9 @@ export default function VariantImageManager() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Accessible confirmation dialog
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   // Cargar imágenes existentes al cambiar el tipo
   useEffect(() => {
@@ -123,13 +127,15 @@ export default function VariantImageManager() {
   }
 
   async function handleDelete(variantKey: string) {
-    if (
-      !confirm(
-        `¿Eliminar la imagen de ${VARIANTS[selectedType].find((v) => v.key === variantKey)?.name}?`
-      )
-    ) {
-      return;
-    }
+    const variantName = VARIANTS[selectedType].find((v) => v.key === variantKey)?.name;
+    const confirmed = await confirm({
+      title: '¿Eliminar imagen?',
+      message: `¿Estás seguro de que quieres eliminar la imagen de "${variantName}"?`,
+      type: 'warning',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+    });
+    if (!confirmed) return;
 
     try {
       setError(null);
@@ -511,6 +517,9 @@ export default function VariantImageManager() {
         que se vean bien en el personalizador. Los formatos aceptados son JPG, PNG y WEBP (máximo
         5MB por imagen).
       </div>
+
+      {/* Accessible confirmation dialog */}
+      <ConfirmDialog />
     </div>
   );
 }

@@ -18,6 +18,7 @@ import CustomizationDetails from '../cart/CustomizationDetails';
 import { Trash2, Plus, Minus } from 'lucide-react';
 // Analytics tracking
 import { trackBeginCheckout } from '../../lib/analytics';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 interface ShippingInfo {
   firstName: string;
@@ -126,6 +127,9 @@ export default function Checkout() {
   const isCartSyncing = useStore(cartLoadingStore);
   const { user, loading: authLoading } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Accessible confirmation dialog
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   // Coupon state
   const [couponCode, setCouponCode] = useState('');
@@ -674,6 +678,20 @@ export default function Checkout() {
     setAppliedCoupon(null);
     notify.success('Cupón eliminado');
   }, [appliedCoupon]);
+
+  // Handler for removing cart items with confirmation
+  const handleRemoveCartItem = useCallback(async (item: CartItem) => {
+    const confirmed = await confirm({
+      title: '¿Eliminar del carrito?',
+      message: `¿Estás seguro de que quieres eliminar "${item.name}" del carrito?`,
+      type: 'warning',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+    });
+    if (confirmed) {
+      removeFromCart(item.id, item.variantId);
+    }
+  }, [confirm]);
 
   // PERFORMANCE: Memoize order placement handler
   const handlePlaceOrder = useCallback(async () => {
@@ -1461,11 +1479,7 @@ export default function Checkout() {
                   <div key={`${item.id}-${item.variantId || 'no-variant'}`} className="relative bg-gray-50 rounded-lg p-3 border border-gray-200 hover:border-cyan-300 transition-all">
                     {/* Delete Button */}
                     <button
-                      onClick={() => {
-                        if (window.confirm(`¿Eliminar ${item.name} del carrito?`)) {
-                          removeFromCart(item.id, item.variantId);
-                        }
-                      }}
+                      onClick={() => handleRemoveCartItem(item)}
                       className="absolute top-2 right-2 p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors group"
                       title="Eliminar del carrito"
                     >
@@ -1659,6 +1673,9 @@ export default function Checkout() {
           </div>
         </div>
       </div>
+
+      {/* Accessible confirmation dialog */}
+      <ConfirmDialog />
     </div>
   );
 }

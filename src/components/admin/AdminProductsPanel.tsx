@@ -17,6 +17,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import { Plus, Edit2, Trash2, X, Save, Upload, Image as ImageIcon } from 'lucide-react';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 // ============================================================================
 // TIPOS
@@ -124,6 +125,9 @@ export default function AdminProductsPanelV2() {
   const [slugError, setSlugError] = useState<string | null>(null);
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
 
+  // Accessible confirmation dialog
+  const { confirm, ConfirmDialog } = useConfirmDialog();
+
   // ============================================================================
   // CARGAR DATOS
   // ============================================================================
@@ -199,7 +203,14 @@ export default function AdminProductsPanelV2() {
   };
 
   const handleDelete = async (product: Product) => {
-    if (!confirm(`¿Eliminar producto "${product.name}"?`)) return;
+    const confirmed = await confirm({
+      title: '¿Eliminar producto?',
+      message: `¿Estás seguro de que quieres eliminar "${product.name}"? Esta acción no se puede deshacer.`,
+      type: 'warning',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+    });
+    if (!confirmed) return;
 
     try {
       await deleteDoc(doc(db, 'products', product.id));
@@ -961,6 +972,9 @@ export default function AdminProductsPanelV2() {
           </div>
         </div>
       )}
+
+      {/* Accessible confirmation dialog */}
+      <ConfirmDialog />
     </div>
   );
 }
