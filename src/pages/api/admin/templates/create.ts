@@ -31,24 +31,26 @@ const createTemplateSchema = z.object({
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
-    // Get auth token
+    // SECURITY: Admin authentication required
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      // For development, allow without auth
-      // TODO: Enable auth check in production
-      logger.warn('[admin/templates/create] No auth token provided (dev mode)');
-    } else {
-      const token = authHeader.substring(7);
-      const auth = getAdminAuth();
-      const decodedToken = await auth.verifyIdToken(token);
+      logger.warn('[admin/templates/create] No auth token provided');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Token required' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
-      // Check if user is admin
-      if (!decodedToken.admin && !isAdminEmail(decodedToken.email)) {
-        return new Response(
-          JSON.stringify({ error: 'Unauthorized: Admin access required' }),
-          { status: 403, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
+    const token = authHeader.substring(7);
+    const auth = getAdminAuth();
+    const decodedToken = await auth.verifyIdToken(token);
+
+    // Check if user is admin
+    if (!decodedToken.admin && !isAdminEmail(decodedToken.email)) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Admin access required' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
     const rawData = await request.json();
