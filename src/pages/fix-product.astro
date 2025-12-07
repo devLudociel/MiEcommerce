@@ -58,6 +58,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const results = document.getElementById('results')!;
     const loading = document.getElementById('loading')!;
 
+    // XSS Protection: Escape HTML entities
+    function escapeHtml(text: string | undefined | null): string {
+      if (text == null) return '';
+      const div = document.createElement('div');
+      div.textContent = String(text);
+      return div.innerHTML;
+    }
+
     async function checkProduct() {
       const slug = slugInput.value.trim();
       if (!slug) {
@@ -80,8 +88,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <div class="bg-red-50 border-2 border-red-200 rounded-2xl p-8">
               <div class="text-4xl mb-3">❌</div>
               <h3 class="text-xl font-bold text-red-900 mb-2">Error</h3>
-              <p class="text-red-700">${data.error}</p>
-              ${data.details ? `<p class="text-red-600 text-sm mt-2">${data.details}</p>` : ''}
+              <p class="text-red-700">${escapeHtml(data.error)}</p>
+              ${data.details ? `<p class="text-red-600 text-sm mt-2">${escapeHtml(data.details)}</p>` : ''}
             </div>
           `;
           return;
@@ -98,23 +106,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               <div class="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span class="font-semibold text-gray-600">Nombre:</span>
-                  <p class="text-gray-900">${product.name}</p>
+                  <p class="text-gray-900">${escapeHtml(product.name)}</p>
                 </div>
                 <div>
                   <span class="font-semibold text-gray-600">Slug:</span>
-                  <p class="text-gray-900 font-mono">${product.slug}</p>
+                  <p class="text-gray-900 font-mono">${escapeHtml(product.slug)}</p>
                 </div>
                 <div>
                   <span class="font-semibold text-gray-600">Category ID:</span>
-                  <p class="text-gray-900 font-mono">${product.categoryId || '(vacío)'}</p>
+                  <p class="text-gray-900 font-mono">${escapeHtml(product.categoryId) || '(vacío)'}</p>
                 </div>
                 <div>
                   <span class="font-semibold text-gray-600">Subcategory ID:</span>
-                  <p class="text-gray-900 font-mono">${product.subcategoryId || '(vacío)'}</p>
+                  <p class="text-gray-900 font-mono">${escapeHtml(product.subcategoryId) || '(vacío)'}</p>
                 </div>
                 <div class="col-span-2">
                   <span class="font-semibold text-gray-600">Customization Schema ID:</span>
-                  <p class="text-gray-900 font-mono">${product.customizationSchemaId || '(no configurado)'}</p>
+                  <p class="text-gray-900 font-mono">${escapeHtml(product.customizationSchemaId) || '(no configurado)'}</p>
                 </div>
               </div>
             </div>
@@ -127,8 +135,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
               ${schema.detected ? `
                 <p class="text-gray-800 mb-2">
-                  Schema detectado: <code class="bg-white px-2 py-1 rounded font-mono">${schema.schemaId}</code>
-                  <span class="text-sm text-gray-600">(detectado por: ${schema.detectionMethod})</span>
+                  Schema detectado: <code class="bg-white px-2 py-1 rounded font-mono">${escapeHtml(schema.schemaId)}</code>
+                  <span class="text-sm text-gray-600">(detectado por: ${escapeHtml(schema.detectionMethod)})</span>
                 </p>
               ` : `
                 <p class="text-gray-800 mb-2">❌ No se detectó ningún schema</p>
@@ -179,7 +187,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               <h3 class="text-xl font-bold text-gray-900 mb-4">🛠️ Acciones</h3>
               <div class="flex flex-wrap gap-3">
                 <a
-                  href="/personalizar/${product.slug}"
+                  href="/personalizar/${encodeURIComponent(product.slug)}"
                   target="_blank"
                   class="px-5 py-3 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 transition-colors"
                 >
@@ -204,14 +212,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         `;
 
-      } catch (error: any) {
+      } catch (error: unknown) {
         loading.classList.add('hidden');
         results.classList.remove('hidden');
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
         results.innerHTML = `
           <div class="bg-red-50 border-2 border-red-200 rounded-2xl p-8">
             <div class="text-4xl mb-3">❌</div>
             <h3 class="text-xl font-bold text-red-900 mb-2">Error de Conexión</h3>
-            <p class="text-red-700">${error.message}</p>
+            <p class="text-red-700">${escapeHtml(errorMessage)}</p>
           </div>
         `;
       }
@@ -243,8 +252,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <div class="bg-red-50 border-2 border-red-200 rounded-2xl p-8">
               <div class="text-4xl mb-3">❌</div>
               <h3 class="text-xl font-bold text-red-900 mb-2">Error</h3>
-              <p class="text-red-700">${data.error}</p>
-              ${data.details ? `<p class="text-red-600 text-sm mt-2">${data.details}</p>` : ''}
+              <p class="text-red-700">${escapeHtml(data.error)}</p>
+              ${data.details ? `<p class="text-red-600 text-sm mt-2">${escapeHtml(data.details)}</p>` : ''}
             </div>
           `;
           return;
@@ -256,19 +265,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               <div class="text-5xl mb-3">🎉</div>
               <h3 class="text-2xl font-bold text-green-900 mb-3">¡Producto Arreglado!</h3>
               <p class="text-green-800 mb-4">
-                Se agregó el campo <code class="bg-green-100 px-2 py-1 rounded font-mono">customizationSchemaId: "${data.schema.schemaId}"</code> al producto.
+                Se agregó el campo <code class="bg-green-100 px-2 py-1 rounded font-mono">customizationSchemaId: "${escapeHtml(data.schema.schemaId)}"</code> al producto.
               </p>
               <div class="p-4 bg-green-100 rounded-lg mb-4">
                 <p class="text-green-900 font-semibold mb-2">
                   ${data.schema.exists ?
-                    `✅ El producto ahora debería usar el customizer dinámico con ${data.schema.fieldsCount} campos` :
+                    `✅ El producto ahora debería usar el customizer dinámico con ${Number(data.schema.fieldsCount) || 0} campos` :
                     `⚠️ Schema detectado pero no existe en Firebase. Créalo en /admin/customization`
                   }
                 </p>
               </div>
               <div class="flex gap-3">
                 <a
-                  href="/personalizar/${data.product.slug}"
+                  href="/personalizar/${encodeURIComponent(data.product.slug)}"
                   target="_blank"
                   class="px-5 py-3 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 transition-colors"
                 >
@@ -288,14 +297,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           checkProduct();
         }
 
-      } catch (error: any) {
+      } catch (error: unknown) {
         loading.classList.add('hidden');
         results.classList.remove('hidden');
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
         results.innerHTML = `
           <div class="bg-red-50 border-2 border-red-200 rounded-2xl p-8">
             <div class="text-4xl mb-3">❌</div>
             <h3 class="text-xl font-bold text-red-900 mb-2">Error de Conexión</h3>
-            <p class="text-red-700">${error.message}</p>
+            <p class="text-red-700">${escapeHtml(errorMessage)}</p>
           </div>
         `;
       }
