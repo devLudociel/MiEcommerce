@@ -8,10 +8,10 @@ import { z } from 'zod';
 
 // Simple console logger for API routes (avoids import issues)
 const logger = {
-  info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
-  warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
-  error: (msg: string, error?: any) => console.error(`[ERROR] ${msg}`, error || ''),
-  debug: (msg: string, data?: any) => console.log(`[DEBUG] ${msg}`, data || ''),
+  info: (msg: string, data?: unknown) => console.log(`[INFO] ${msg}`, data ?? ''),
+  warn: (msg: string, data?: unknown) => console.warn(`[WARN] ${msg}`, data ?? ''),
+  error: (msg: string, error?: unknown) => console.error(`[ERROR] ${msg}`, error ?? ''),
+  debug: (msg: string, data?: unknown) => console.log(`[DEBUG] ${msg}`, data ?? ''),
 };
 
 const updateOrderTrackingSchema = z.object({
@@ -85,7 +85,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Build update data
-    const updateData: Record<string, any> = {
+    const updateData: Record<string, unknown> = {
       updatedAt: FieldValue.serverTimestamp(),
     };
 

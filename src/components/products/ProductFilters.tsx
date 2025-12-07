@@ -27,7 +27,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   availableTags,
   priceRange,
 }) => {
-  const updateFilter = (key: keyof FilterState, value: any) => {
+  const updateFilter = (key: keyof FilterState, value: FilterState[keyof FilterState]) => {
     onFiltersChange({ ...filters, [key]: value });
   };
 

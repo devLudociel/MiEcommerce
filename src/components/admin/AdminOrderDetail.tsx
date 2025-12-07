@@ -18,7 +18,7 @@ const statusLabels: Record<string, string> = {
   cancelled: 'Cancelado',
 };
 
-const eur = (v: any) => '€' + Number(v ?? 0).toFixed(2);
+const eur = (v: number | string | null | undefined) => '€' + Number(v ?? 0).toFixed(2);
 
 /**
  * Detecta si las coordenadas coinciden con alguna posición preset

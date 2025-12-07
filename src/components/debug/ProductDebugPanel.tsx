@@ -17,7 +17,7 @@ interface ProductData {
   tags: string[];
   customizerType?: string;
   customizationSchemaId?: string;
-  [key: string]: any;
+  [key: string]: string | string[] | undefined;
 }
 
 export default function ProductDebugPanel({ slug }: ProductDebugPanelProps) {
@@ -127,8 +127,8 @@ export default function ProductDebugPanel({ slug }: ProductDebugPanelProps) {
             console.error('Error loading schema:', e);
           }
         }
-      } catch (e: any) {
-        setError(e?.message || 'Error desconocido');
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : 'Error desconocido');
       } finally {
         setLoading(false);
       }

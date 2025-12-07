@@ -68,9 +68,16 @@ export default function WalletPanel() {
       }
 
       const transactionsData = await transactionsResponse.json();
-      const transactions = (transactionsData.transactions || []).map((t: any) => ({
+      interface TransactionData {
+        id?: string;
+        type?: string;
+        amount?: number;
+        description?: string;
+        createdAt?: string;
+      }
+      const transactions = (transactionsData.transactions || []).map((t: TransactionData) => ({
         ...t,
-        createdAt: new Date(t.createdAt),
+        createdAt: new Date(t.createdAt || ''),
       }));
 
       setWallet({ balance, transactions });

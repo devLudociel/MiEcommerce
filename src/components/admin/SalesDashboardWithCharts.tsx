@@ -3,6 +3,22 @@ import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { DashboardChartSkeleton } from '../ui/Skeleton';
 
+interface OrderItem {
+  productId?: string;
+  id?: string;
+  name?: string;
+  quantity?: number;
+  price?: number | string;
+}
+
+interface OrderDocument {
+  id: string;
+  total?: number | string;
+  status?: string;
+  items?: OrderItem[];
+  createdAt: Date;
+}
+
 // Lazy load the ChartsSection to reduce initial bundle size
 // Recharts (~116 KB gzip) only loads when user scrolls to charts
 const ChartsSection = lazy(() => import('./charts/ChartsSection'));
@@ -75,8 +91,8 @@ export default function SalesDashboardWithCharts() {
       const dailyOrders: { [key: string]: { count: number; revenue: number } } = {};
       const monthlyOrders: { [key: string]: { revenue: number; orders: number } } = {};
 
-      allOrders.forEach((order: any) => {
-        const orderTotal = parseFloat(order.total) || 0;
+      allOrders.forEach((order: OrderDocument) => {
+        const orderTotal = parseFloat(String(order.total)) || 0;
         const orderDate = order.createdAt;
 
         totalRevenue += orderTotal;
@@ -92,11 +108,11 @@ export default function SalesDashboardWithCharts() {
 
         // Productos más vendidos
         if (order.items && Array.isArray(order.items)) {
-          order.items.forEach((item: any) => {
+          order.items.forEach((item: OrderItem) => {
             const productId = item.productId || item.id;
             const productName = item.name || 'Producto sin nombre';
             const quantity = item.quantity || 1;
-            const price = parseFloat(item.price) || 0;
+            const price = parseFloat(String(item.price)) || 0;
 
             if (!productSales[productId]) {
               productSales[productId] = { name: productName, sales: 0, revenue: 0 };
@@ -172,9 +188,9 @@ export default function SalesDashboardWithCharts() {
         revenueByMonth,
         ordersByStatus,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[Dashboard] Error loading data:', error);
-      setError(error?.message || 'Error desconocido');
+      setError(error instanceof Error ? error.message : 'Error desconocido');
     } finally {
       setLoading(false);
     }

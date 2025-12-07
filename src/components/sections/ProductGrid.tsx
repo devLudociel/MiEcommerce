@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { db, batchGetProductReviewStats } from '../../lib/firebase';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
-import { collection, query, where, limit, getDocs } from 'firebase/firestore';
+import { collection, query, where, limit, getDocs, type QueryDocumentSnapshot, type DocumentData } from 'firebase/firestore';
 import { ProductGridSkeleton } from '../ui/SkeletonLoader';
 import ErrorMessage from '../errors/ErrorMessage';
 import { logger } from '../../lib/logger';
@@ -112,7 +112,7 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
         const reviewStatsMap = await batchGetProductReviewStats(productIds);
 
         // Map products with their review stats
-        const list: Product[] = physicalDocs.map((d: any) => {
+        const list: Product[] = physicalDocs.map((d: QueryDocumentSnapshot<DocumentData>) => {
           const data = d.data() || {};
           const reviewStats = reviewStatsMap.get(d.id) || {
             averageRating: 0,
@@ -144,9 +144,9 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
         setProducts(list);
         setFilteredProducts(list);
         logger.info('[ProductGrid] Physical products loaded successfully', { count: list.length });
-      } catch (e: any) {
+      } catch (e: unknown) {
         logger.error('[ProductGrid] Error loading products', e);
-        setError(e?.message || 'Error cargando productos');
+        setError(e instanceof Error ? e.message : 'Error cargando productos');
         setProducts([]);
         setFilteredProducts([]);
       } finally {
@@ -205,7 +205,7 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
               {/* Sort Filter */}
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e) => setSortBy(e.target.value as 'price' | 'name' | 'rating')}
                 className="px-4 py-2 rounded-full border-2 border-gray-200 focus:border-cyan-500 outline-none"
               >
                 <option value="name">Ordenar por Nombre</option>

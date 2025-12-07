@@ -118,9 +118,9 @@ export default function VariantImageManager() {
 
       const variantName = VARIANTS[selectedType].find((v) => v.key === variantKey)?.name;
       setSuccess(`✅ Imagen de "${variantName}" subida correctamente`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error subiendo imagen:', err);
-      setError(`Error: ${err.message}`);
+      setError(`Error: ${err instanceof Error ? err.message : 'Error desconocido'}`);
     } finally {
       setUploadingVariant(null);
     }
@@ -156,9 +156,9 @@ export default function VariantImageManager() {
 
       const variantName = VARIANTS[selectedType].find((v) => v.key === variantKey)?.name;
       setSuccess(`✅ Imagen de "${variantName}" eliminada correctamente`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error eliminando imagen:', err);
-      setError(`Error: ${err.message}`);
+      setError(`Error: ${err instanceof Error ? err.message : 'Error desconocido'}`);
     } finally {
       setLoading(false);
     }

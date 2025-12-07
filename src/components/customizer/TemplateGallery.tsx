@@ -164,7 +164,7 @@ export default function TemplateGallery({
         {/* Sort Dropdown */}
         <select
           value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as any)}
+          onChange={(e) => setSortBy(e.target.value as 'popular' | 'recent' | 'name')}
           className="ml-auto px-4 py-2 rounded-lg border bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
           <option value="popular">Más populares</option>

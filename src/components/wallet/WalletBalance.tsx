@@ -45,9 +45,10 @@ export default function WalletBalance({
     }
   };
 
-  const formatDate = (timestamp: any): string => {
+  const formatDate = (timestamp: unknown): string => {
     if (!timestamp) return 'Fecha desconocida';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const ts = timestamp as { toDate?: () => Date };
+    const date = ts.toDate ? ts.toDate() : new Date(timestamp as string | number);
     return date.toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'short',

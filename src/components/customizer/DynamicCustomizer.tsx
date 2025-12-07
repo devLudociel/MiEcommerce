@@ -34,7 +34,9 @@ interface FirebaseProduct {
   basePrice: number;
   images: string[];
   slug: string;
-  [key: string]: any;
+  subcategoryId?: string;
+  tags?: string[];
+  [key: string]: string | string[] | number | boolean | undefined;
 }
 
 interface DynamicCustomizerProps {
@@ -260,7 +262,14 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   };
 
   // Handler para actualizar transformaciones de imágenes en textiles
-  const handleTextileTransformChange = (side: 'front' | 'back', transform: any) => {
+  interface ImageTransform {
+    x: number;
+    y: number;
+    scale: number;
+    rotation: number;
+  }
+
+  const handleTextileTransformChange = (side: 'front' | 'back', transform: ImageTransform) => {
     // PRIORIDAD 1: Buscar campo específico del lado activo
     let targetField = schema.fields.find(f =>
       f.fieldType === 'image_upload' && (

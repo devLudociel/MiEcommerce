@@ -170,8 +170,8 @@ export default function ProductCustomizer({ slug, forceWizard }: Props) {
           logger.warn('[ProductCustomizer] No schema ID detectado para producto:', productData.id);
           setError('Este producto no tiene configuración de personalización disponible.');
         }
-      } catch (e: any) {
-        setError(e?.message || 'Error cargando producto');
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : 'Error cargando producto');
       } finally {
         setLoading(false);
       }

@@ -153,16 +153,17 @@ export default function OrdersPanel() {
     }
   };
 
-  const formatDate = (timestamp: any) => {
+  const formatDate = (timestamp: unknown) => {
     if (!timestamp) return 'Fecha desconocida';
 
     let date: Date;
-    if (timestamp.toDate) {
-      date = timestamp.toDate();
+    const ts = timestamp as { toDate?: () => Date };
+    if (ts.toDate) {
+      date = ts.toDate();
     } else if (timestamp instanceof Date) {
       date = timestamp;
     } else {
-      date = new Date(timestamp);
+      date = new Date(timestamp as string | number);
     }
 
     return new Intl.DateTimeFormat('es-ES', {

@@ -4,6 +4,22 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '../../lib/firebase';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
+interface OrderItem {
+  productId?: string;
+  id?: string;
+  name?: string;
+  quantity?: number;
+  price?: number | string;
+}
+
+interface OrderDocument {
+  id: string;
+  total?: number | string;
+  status?: string;
+  items?: OrderItem[];
+  createdAt: Date;
+}
+
 interface DashboardStats {
   // Ventas
   totalRevenue: number;
@@ -114,8 +130,8 @@ export default function AdminDashboard() {
       const productSales: { [key: string]: { name: string; sales: number; revenue: number } } = {};
       const dailyOrders: { [key: string]: { count: number; revenue: number } } = {};
 
-      allOrders.forEach((order: any) => {
-        const orderTotal = parseFloat(order.total) || 0;
+      allOrders.forEach((order: OrderDocument) => {
+        const orderTotal = parseFloat(String(order.total)) || 0;
         const orderDate = order.createdAt;
 
         totalRevenue += orderTotal;
@@ -132,11 +148,11 @@ export default function AdminDashboard() {
 
         // Productos más vendidos
         if (order.items && Array.isArray(order.items)) {
-          order.items.forEach((item: any) => {
+          order.items.forEach((item: OrderItem) => {
             const productId = item.productId || item.id;
             const productName = item.name || 'Producto sin nombre';
             const quantity = item.quantity || 1;
-            const price = parseFloat(item.price) || 0;
+            const price = parseFloat(String(item.price)) || 0;
 
             if (!productSales[productId]) {
               productSales[productId] = { name: productName, sales: 0, revenue: 0 };
@@ -190,14 +206,15 @@ export default function AdminDashboard() {
         conversionRate: 0, // Esto requeriría tracking de visitas
         ordersLastWeek,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Log only in development
       if (import.meta.env.DEV) {
         console.error('[Dashboard] Error loading data:', error);
       }
 
-      const errorMessage = error?.message || 'Error desconocido';
-      const errorCode = error?.code || 'unknown';
+      const firebaseError = error as { message?: string; code?: string };
+      const errorMessage = firebaseError.message || 'Error desconocido';
+      const errorCode = firebaseError.code || 'unknown';
       setError(`${errorCode}: ${errorMessage}`);
     } finally {
       setLoading(false);

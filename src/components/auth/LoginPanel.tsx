@@ -155,18 +155,19 @@ export default function LoginPanel() {
             logger.info('[LoginPanel] No redirect result (normal page load)');
           }
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const firebaseError = error as { code?: string; message?: string; stack?: string; name?: string };
         logger.error('[LoginPanel] ❌ Redirect result error', {
-          code: error?.code,
-          message: error?.message,
-          stack: error?.stack,
-          name: error?.name
+          code: firebaseError?.code,
+          message: firebaseError?.message,
+          stack: firebaseError?.stack,
+          name: firebaseError?.name
         });
 
         // Clear the redirect flag on error
         sessionStorage.removeItem('auth_redirect_pending');
 
-        if (error?.code && !error.code.includes('auth/popup-closed-by-user')) {
+        if (firebaseError?.code && !firebaseError.code.includes('auth/popup-closed-by-user')) {
           setError('Error al iniciar sesión con Google. Por favor intenta de nuevo.');
         }
       } finally {
@@ -224,9 +225,10 @@ export default function LoginPanel() {
         logger.info('[LoginPanel] signInWithGoogle via popup: success');
         await redirectAfterLogin();
         return;
-      } catch (e: any) {
-        const code = e?.code || '';
-        logger.warn('[LoginPanel] signInWithGoogle popup error', { code, message: e?.message, isMobile });
+      } catch (e: unknown) {
+        const firebaseErr = e as { code?: string; message?: string };
+        const code = firebaseErr?.code || '';
+        logger.warn('[LoginPanel] signInWithGoogle popup error', { code, message: firebaseErr?.message, isMobile });
 
         // Only show popup-blocked error on desktop
         if (!isMobile) {
@@ -337,8 +339,9 @@ export default function LoginPanel() {
 
       setLoading(true);
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const appUrl = import.meta.env?.PUBLIC_APP_URL as string | undefined;
       const actionCodeSettings = {
-        url: `${(import.meta as any).env.PUBLIC_APP_URL || origin}/login`,
+        url: `${appUrl || origin}/login`,
         handleCodeInApp: false,
       } as const;
 

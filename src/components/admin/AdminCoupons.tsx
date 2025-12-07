@@ -146,11 +146,11 @@ export default function AdminCoupons() {
     }
   };
 
-  const formatDate = (timestamp: any): string => {
+  const formatDate = (timestamp: unknown): string => {
     if (!timestamp) return '-';
     try {
-      const date =
-        typeof timestamp?.toDate === 'function' ? timestamp.toDate() : new Date(timestamp);
+      const ts = timestamp as { toDate?: () => Date };
+      const date = ts.toDate ? ts.toDate() : new Date(timestamp as string | number);
       if (isNaN(date.getTime())) return '-';
       return date.toLocaleDateString('es-ES');
     } catch {
