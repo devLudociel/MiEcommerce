@@ -12,11 +12,29 @@
  * - Custom events
  */
 
+// Types for analytics items
+interface AnalyticsItem {
+  id?: string;
+  productId?: string;
+  name?: string;
+  quantity: number;
+  price?: number;
+}
+
+// Facebook Pixel function type
+type FbqFunction = ((...args: unknown[]) => void) & {
+  callMethod?: (...args: unknown[]) => void;
+  queue?: unknown[];
+  push?: FbqFunction;
+  loaded?: boolean;
+  version?: string;
+};
+
 // Extend Window interface for Facebook Pixel
 declare global {
   interface Window {
-    fbq?: (...args: any[]) => void;
-    _fbq?: (...args: any[]) => void;
+    fbq?: FbqFunction;
+    _fbq?: FbqFunction;
   }
 }
 
@@ -27,11 +45,11 @@ export function initFacebookPixel(pixelId: string) {
   if (typeof window === 'undefined') return;
 
   // Create fbq function
-  const fbq: any = function () {
+  const fbq: FbqFunction = function (...args: unknown[]) {
     if (fbq.callMethod) {
-      fbq.callMethod.apply(fbq, arguments as any);
+      fbq.callMethod.apply(fbq, args);
     } else {
-      fbq.queue.push(arguments);
+      fbq.queue?.push(args);
     }
   };
 
@@ -112,7 +130,7 @@ export function trackFBAddToCart(product: {
 /**
  * Track initiate checkout (InitiateCheckout)
  */
-export function trackFBInitiateCheckout(items: any[], value: number) {
+export function trackFBInitiateCheckout(items: AnalyticsItem[], value: number) {
   if (!window.fbq) return;
 
   window.fbq('track', 'InitiateCheckout', {
@@ -132,7 +150,7 @@ export function trackFBInitiateCheckout(items: any[], value: number) {
 export function trackFBPurchase(order: {
   id: string;
   total: number;
-  items: any[];
+  items: AnalyticsItem[];
 }) {
   if (!window.fbq) return;
 

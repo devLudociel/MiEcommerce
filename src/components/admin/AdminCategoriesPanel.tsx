@@ -24,8 +24,8 @@ interface Category {
   name: string;
   slug: string;
   description?: string;
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: Timestamp | Date;
+  updatedAt?: Timestamp | Date;
 }
 
 export default function AdminCategoriesPanel() {

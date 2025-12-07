@@ -46,8 +46,8 @@ interface Product {
   salePrice?: number;
 
   // Metadata
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: Timestamp | Date;
+  updatedAt?: Timestamp | Date;
 }
 
 interface Category {

@@ -11,11 +11,21 @@
  * - Custom events (design sharing, etc.)
  */
 
+// Types for analytics items
+interface GA4Item {
+  id?: string;
+  productId?: string;
+  name?: string;
+  category?: string;
+  price?: number;
+  quantity: number;
+}
+
 // Extend Window interface for gtag
 declare global {
   interface Window {
-    dataLayer?: any[];
-    gtag?: (...args: any[]) => void;
+    dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
@@ -117,7 +127,7 @@ export function trackAddToCart(product: {
 /**
  * Track begin checkout (begin_checkout)
  */
-export function trackBeginCheckout(items: any[], value: number) {
+export function trackBeginCheckout(items: GA4Item[], value: number) {
   if (!window.gtag) return;
 
   window.gtag('event', 'begin_checkout', {
@@ -144,7 +154,7 @@ export function trackPurchase(order: {
   subtotal: number;
   shipping: number;
   tax?: number;
-  items: any[];
+  items: GA4Item[];
 }) {
   if (!window.gtag) return;
 

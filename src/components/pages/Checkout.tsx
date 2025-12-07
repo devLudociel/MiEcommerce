@@ -518,7 +518,7 @@ export default function Checkout() {
               logger.error('[Checkout] Failed to execute post-payment actions', errorData);
               // Continue anyway - webhook will handle it
               notify.warning('El pedido se completó pero algunas acciones están pendientes');
-              const error: any = new Error('Finalize order failed');
+              const error = new Error('Finalize order failed') as Error & { status?: number };
               error.status = finalizeResponse.status;
               throw error;
             } else {
