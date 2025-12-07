@@ -192,7 +192,10 @@ export default function AdminOrderDetail() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId, type: 'status-update', newStatus }),
-      }).catch(() => {});
+      }).catch((emailError) => {
+        // Non-blocking: log error but don't affect main flow
+        console.warn('[AdminOrderDetail] Email notification failed:', emailError);
+      });
       await loadOrder(orderId);
       showModal(
         'success',
