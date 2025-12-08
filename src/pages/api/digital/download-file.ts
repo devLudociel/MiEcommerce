@@ -4,6 +4,14 @@ import { getStorage } from 'firebase-admin/storage';
 import { FieldValue } from 'firebase-admin/firestore';
 import { logger } from '../../../lib/logger';
 
+/** Digital file structure stored in Firestore */
+interface DigitalFile {
+  id: string;
+  name: string;
+  storagePath: string;
+  fileType?: string;
+}
+
 /**
  * POST /api/digital/download-file
  *
@@ -71,8 +79,8 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Find the file
-    const files = accessData?.files || [];
-    const file = files.find((f: any) => f.id === fileId);
+    const files = (accessData?.files || []) as DigitalFile[];
+    const file = files.find((f) => f.id === fileId);
 
     if (!file) {
       return new Response(
@@ -134,8 +142,9 @@ export const POST: APIRoute = async ({ request }) => {
         'Content-Length': fileBuffer.length.toString(),
       },
     });
-  } catch (error: any) {
-    if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error') {
+  } catch (error: unknown) {
+    const firebaseError = error as { code?: string };
+    if (firebaseError.code === 'auth/id-token-expired' || firebaseError.code === 'auth/argument-error') {
       return new Response(
         JSON.stringify({ error: 'Token inválido o expirado' }),
         { status: 401, headers: { 'Content-Type': 'application/json' } }
