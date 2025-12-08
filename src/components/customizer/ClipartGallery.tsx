@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Image as ImageIcon, Search, X, Sparkles, Filter } from 'lucide-react';
+import { Image as ImageIcon, Search, X, Sparkles } from 'lucide-react';
 import type { Clipart } from '../../types/customization';
 import { logger } from '../../lib/logger';
 

@@ -1,5 +1,5 @@
 // src/hooks/react-query/useProducts.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { collection, query, where, limit as firestoreLimit, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { queryKeys } from '../../lib/react-query/queryClient';
