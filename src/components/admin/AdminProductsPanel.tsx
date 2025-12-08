@@ -71,6 +71,12 @@ interface Subcategory {
   slug: string;
 }
 
+/** Input type for creating/updating products - Product without id and with optional timestamps */
+type ProductInput = Omit<Product, 'id' | 'createdAt'> & {
+  updatedAt: Timestamp;
+  createdAt?: Timestamp;
+};
+
 // ============================================================================
 // CATEGORÍAS Y SUBCATEGORÍAS DEL NAVBAR (hardcodeadas - LA VERDAD DEL SISTEMA)
 // ============================================================================
@@ -340,7 +346,7 @@ export default function AdminProductsPanelV2() {
       const selectedSubcategory = subcategories.find((sub) => sub.id === formData.subcategoryId);
       const subcategorySlug = selectedSubcategory?.slug || '';
 
-      const data: any = {
+      const data: ProductInput = {
         name: formData.name,
         description: formData.description || '',
         categoryId: formData.categoryId || categories[0]?.id || 'otros',
@@ -355,17 +361,10 @@ export default function AdminProductsPanelV2() {
         active: formData.active !== false,
         onSale: !!formData.onSale,
         updatedAt: Timestamp.now(),
+        // Optional fields - only include if they have values
+        ...(formData.customizationSchemaId && { customizationSchemaId: formData.customizationSchemaId }),
+        ...(formData.onSale && formData.salePrice && { salePrice: Number(formData.salePrice) }),
       };
-
-      // Solo agregar customizationSchemaId si tiene valor
-      if (formData.customizationSchemaId) {
-        data.customizationSchemaId = formData.customizationSchemaId;
-      }
-
-      // Solo agregar salePrice si está en oferta y tiene valor
-      if (formData.onSale && formData.salePrice) {
-        data.salePrice = Number(formData.salePrice);
-      }
 
       if (editingProduct) {
         // Actualizar

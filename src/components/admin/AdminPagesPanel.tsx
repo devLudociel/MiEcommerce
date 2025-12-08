@@ -22,6 +22,22 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 type TabType = 'pages' | 'blog' | 'gallery';
 
+/** Input type for creating/updating pages - mirrors Page without id and timestamps */
+interface PageInput {
+  title: string;
+  slug: string;
+  content: string;
+  metaDescription?: string;
+  type: 'page' | 'blog' | 'gallery';
+  status: 'draft' | 'published';
+  featuredImage?: string;
+  author?: string;
+  // Blog-specific fields
+  excerpt?: string;
+  tags?: string[];
+  category?: string;
+}
+
 export default function AdminPagesPanel() {
   const [activeTab, setActiveTab] = useState<TabType>('pages');
   const [pages, setPages] = useState<Page[]>([]);
@@ -213,7 +229,7 @@ export default function AdminPagesPanel() {
         }
       } else {
         // Page or blog
-        const pageData: any = {
+        const pageData: PageInput = {
           title: formData.title,
           slug: formData.slug,
           content: formData.content,
@@ -222,13 +238,13 @@ export default function AdminPagesPanel() {
           status: formData.status,
           featuredImage: formData.featuredImage || undefined,
           author: formData.author || undefined,
+          // Blog-specific fields - conditionally added
+          ...(formData.type === 'blog' && {
+            excerpt: formData.excerpt,
+            tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
+            category: formData.category,
+          }),
         };
-
-        if (formData.type === 'blog') {
-          pageData.excerpt = formData.excerpt;
-          pageData.tags = formData.tags.split(',').map((t) => t.trim()).filter(Boolean);
-          pageData.category = formData.category;
-        }
 
         if (editingPage) {
           await updatePage(editingPage.id, pageData);
