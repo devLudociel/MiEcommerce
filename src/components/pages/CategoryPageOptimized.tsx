@@ -34,36 +34,53 @@ interface FilterState {
   onSale: boolean;
 }
 
-// Datos de categorías
+// Datos de categorías (sincronizado con src/data/categories.ts)
 const categories = [
   { id: '1', name: 'Productos Gráficos', slug: 'graficos-impresos' },
   { id: '2', name: 'Productos Textiles', slug: 'textiles' },
-  { id: '3', name: 'Productos de Papelería', slug: 'papeleria' },
-  { id: '4', name: 'Productos Sublimados', slug: 'sublimados' },
-  { id: '5', name: 'Corte y Grabado Láser', slug: 'corte-grabado' },
-  { id: '6', name: 'Eventos y Celebraciones', slug: 'eventos' },
+  { id: '3', name: 'Papelería', slug: 'papeleria' },
+  { id: '4', name: 'Sublimación', slug: 'sublimados' },
+  { id: '5', name: 'Corte Láser', slug: 'corte-grabado' },
+  { id: '6', name: 'Eventos', slug: 'eventos' },
   { id: '7', name: 'Impresión 3D', slug: 'impresion-3d' },
-  { id: '8', name: 'Servicios Digitales', slug: 'servicios-digitales' },
+  { id: '8', name: 'Packaging Personalizado', slug: 'packaging' },
+  { id: '9', name: 'Servicios Digitales', slug: 'servicios-digitales' },
 ];
 
 const subcategories = [
+  // Productos Gráficos (categoryId: '1')
   { id: '1', categoryId: '1', name: 'Tarjetas de Visita', slug: 'tarjetas-visita' },
   { id: '2', categoryId: '1', name: 'Etiquetas y Pegatinas', slug: 'etiquetas-pegatinas' },
   { id: '3', categoryId: '1', name: 'Carteles para Eventos', slug: 'carteles-eventos' },
+  // Productos Textiles (categoryId: '2')
   { id: '4', categoryId: '2', name: 'Ropa Personalizada', slug: 'ropa-personalizada' },
   { id: '5', categoryId: '2', name: 'Complementos Textiles', slug: 'complementos-textiles' },
+  // Papelería (categoryId: '3')
   { id: '6', categoryId: '3', name: 'Cuadernos y Libretas', slug: 'cuadernos-libretas' },
   { id: '7', categoryId: '3', name: 'Packaging Corporativo', slug: 'packaging-corporativo' },
+  // Sublimación (categoryId: '4')
   { id: '8', categoryId: '4', name: 'Vajilla Personalizada', slug: 'vajilla-personalizada' },
   { id: '9', categoryId: '4', name: 'Decoración Sublimada', slug: 'decoracion-sublimada' },
+  // Corte Láser (categoryId: '5')
   { id: '10', categoryId: '5', name: 'Llaveros Personalizados', slug: 'llaveros' },
   { id: '11', categoryId: '5', name: 'Decoración en Madera', slug: 'decoracion-madera-eventos' },
   { id: '12', categoryId: '5', name: 'Cuadros de Madera', slug: 'cuadros-madera' },
+  // Eventos (categoryId: '6')
   { id: '13', categoryId: '6', name: 'Packaging para Eventos', slug: 'packaging-eventos' },
+  // Impresión 3D (categoryId: '7')
   { id: '14', categoryId: '7', name: 'Impresión en Resina', slug: 'impresion-resina' },
   { id: '15', categoryId: '7', name: 'Impresión en Filamento', slug: 'impresion-filamento' },
-  { id: '16', categoryId: '8', name: 'Diseño Gráfico', slug: 'diseno-grafico' },
-  { id: '17', categoryId: '8', name: 'Desarrollo Web', slug: 'desarrollo-web' },
+  // Packaging Personalizado (categoryId: '8')
+  { id: '18', categoryId: '8', name: 'Cajas Personalizadas', slug: 'cajas-personalizadas' },
+  { id: '19', categoryId: '8', name: 'Bolsas de Papel', slug: 'bolsas-papel' },
+  { id: '20', categoryId: '8', name: 'Bolsas de Tela', slug: 'bolsas-tela' },
+  { id: '21', categoryId: '8', name: 'Packaging para Eventos', slug: 'packaging-eventos' },
+  { id: '22', categoryId: '8', name: 'Etiquetas Adhesivas', slug: 'etiquetas-adhesivas' },
+  { id: '23', categoryId: '8', name: 'Papel de Regalo', slug: 'papel-regalo' },
+  // Servicios Digitales (categoryId: '9')
+  { id: '24', categoryId: '9', name: 'Diseño Gráfico', slug: 'diseno-grafico' },
+  { id: '25', categoryId: '9', name: 'Desarrollo Web', slug: 'desarrollo-web' },
+  { id: '26', categoryId: '9', name: 'Productos Digitales', slug: 'productos-digitales' },
 ];
 
 const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySlug }) => {
