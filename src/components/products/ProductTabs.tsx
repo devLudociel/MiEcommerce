@@ -1,5 +1,4 @@
-import { memo, useMemo } from 'react';
-import DOMPurify from 'isomorphic-dompurify';
+import { memo, useMemo, useState, useEffect } from 'react';
 import ProductReviews from './ProductReviews';
 import AddReviewForm from './AddReviewForm';
 
@@ -30,13 +29,22 @@ export const ProductTabs = memo(function ProductTabs({
     { id: 'reviews' as const, label: 'Reseñas', icon: 'star' },
   ];
 
-  // Sanitize HTML to prevent XSS attacks
-  const sanitizedDescription = useMemo(() => {
-    if (!longDescription) return '';
-    return DOMPurify.sanitize(longDescription, {
-      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'span', 'div'],
-      ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style'],
-      ALLOW_DATA_ATTR: false,
+  // Sanitize HTML to prevent XSS attacks (client-side only)
+  const [sanitizedDescription, setSanitizedDescription] = useState('');
+
+  useEffect(() => {
+    if (!longDescription) {
+      setSanitizedDescription('');
+      return;
+    }
+    // Dynamic import to avoid SSR issues with jsdom
+    import('dompurify').then((DOMPurify) => {
+      const clean = DOMPurify.default.sanitize(longDescription, {
+        ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'span', 'div'],
+        ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style'],
+        ALLOW_DATA_ATTR: false,
+      });
+      setSanitizedDescription(clean);
     });
   }, [longDescription]);
 

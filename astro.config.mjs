@@ -51,12 +51,7 @@ export default defineConfig({
         'firebase/storage',
         'lucide-react',
       ],
-      exclude: ['astro:content', 'jsdom'],
-    },
-    // FIX: Exclude jsdom from SSR bundling to avoid ES module issues
-    ssr: {
-      noExternal: ['isomorphic-dompurify'],
-      external: ['jsdom'],
+      exclude: ['astro:content'],
     },
     // Improve HMR stability
     server: {
