@@ -625,7 +625,7 @@ const Header: React.FC<HeaderProps> = () => {
             </button>
 
             {/* Navegación desktop - NUEVO CON TAILWIND PURO */}
-            <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1 overflow-x-auto scrollbar-hide relative" style={{ overflowY: 'visible' }}>
+            <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1 flex-wrap relative" style={{ overflowY: 'visible' }}>
               {categories.map((category) => (
                 <div
                   key={category.id}
@@ -641,7 +641,7 @@ const Header: React.FC<HeaderProps> = () => {
                   }}
                 >
                   <button
-                    className="px-2 xl:px-3 py-2.5 text-xs xl:text-sm font-medium text-gray-700 hover:text-cyan-600 hover:bg-gray-50 rounded-lg transition-all whitespace-nowrap flex items-center gap-0.5 xl:gap-1"
+                    className="px-1.5 xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-medium text-gray-700 hover:text-cyan-600 hover:bg-gray-50 rounded-lg transition-all whitespace-nowrap flex items-center gap-0.5"
                     onClick={() => (window.location.href = `/categoria/${category.slug}`)}
                   >
                     {category.name}
@@ -735,20 +735,20 @@ const Header: React.FC<HeaderProps> = () => {
               ))}
 
               {/* Enlaces adicionales - TAILWIND PURO */}
-              <div className="flex items-center ml-auto gap-2 xl:gap-4 flex-shrink-0">
+              <div className="flex items-center gap-1 xl:gap-2 flex-shrink-0">
                 <a
                   href="/productos/digitales"
-                  className="flex items-center gap-1 xl:gap-2 px-2 xl:px-4 py-2.5 text-xs xl:text-sm font-medium text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50 rounded-lg transition-all whitespace-nowrap"
+                  className="flex items-center gap-1 px-1.5 xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-medium text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50 rounded-lg transition-all whitespace-nowrap"
                 >
-                  <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
                   </svg>
-                  <span className="hidden xl:inline">Productos Digitales</span>
-                  <span className="xl:hidden">Digitales</span>
+                  <span className="hidden 2xl:inline">Productos Digitales</span>
+                  <span className="2xl:hidden">Digitales</span>
                 </a>
                 <a
                   href="/ofertas"
-                  className="px-2 xl:px-4 py-2.5 text-xs xl:text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all whitespace-nowrap"
+                  className="px-1.5 xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all whitespace-nowrap"
                 >
                   Ofertas
                 </a>
