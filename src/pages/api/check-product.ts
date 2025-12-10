@@ -1,8 +1,20 @@
 import type { APIRoute } from 'astro';
-import { collection, query, where, limit, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, limit, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { loadCustomizationSchema } from '../../lib/customization/schemas';
 import { rateLimitPersistent } from '../../lib/rateLimitPersistent';
+import { logger } from '../../lib/logger';
+
+// Type for product data from Firestore
+interface ProductDocument {
+  id: string;
+  name: string;
+  slug: string;
+  categoryId?: string;
+  subcategoryId?: string;
+  customizationSchemaId?: string;
+  tags?: string[];
+}
 
 export const GET: APIRoute = async ({ request, url }) => {
   // SECURITY: Rate limiting for unauthenticated endpoint
@@ -42,13 +54,22 @@ export const GET: APIRoute = async ({ request, url }) => {
     const q = query(collection(db, 'products'), where('slug', '==', slug), limit(1));
     const snap = await getDocs(q);
 
-    let productData: any = null;
+    let productData: ProductDocument | null = null;
     let productId: string | null = null;
 
     if (!snap.empty) {
       const docSnap = snap.docs[0];
+      const data = docSnap.data();
       productId = docSnap.id;
-      productData = { id: docSnap.id, ...docSnap.data() };
+      productData = {
+        id: docSnap.id,
+        name: data.name ?? '',
+        slug: data.slug ?? '',
+        categoryId: data.categoryId,
+        subcategoryId: data.subcategoryId,
+        customizationSchemaId: data.customizationSchemaId,
+        tags: data.tags,
+      };
     }
 
     if (!productData || !productId) {
@@ -127,7 +148,7 @@ export const GET: APIRoute = async ({ request, url }) => {
           schemaFields = schema.schema.fields.length;
         }
       } catch (e) {
-        console.error('Error loading schema:', e);
+        logger.error('[check-product] Error loading schema:', e);
       }
     }
 
@@ -163,10 +184,11 @@ export const GET: APIRoute = async ({ request, url }) => {
           status: 200,
           headers: { 'Content-Type': 'application/json' }
         });
-      } catch (e: any) {
+      } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : 'Unknown error';
         return new Response(JSON.stringify({
           error: 'Failed to update product',
-          details: e.message
+          details: errorMessage
         }), {
           status: 500,
           headers: { 'Content-Type': 'application/json' }
@@ -205,10 +227,12 @@ export const GET: APIRoute = async ({ request, url }) => {
       headers: { 'Content-Type': 'application/json' }
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('[check-product] Internal server error:', error);
     return new Response(JSON.stringify({
       error: 'Internal server error',
-      details: error.message
+      details: errorMessage
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

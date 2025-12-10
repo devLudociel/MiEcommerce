@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
 import { serverTimestamp } from 'firebase/firestore';
 import { withRetry } from './resilience';
@@ -41,7 +41,7 @@ export interface TaxId {
 export interface UserDataDoc {
   email: string;
   displayName?: string;
-  createdAt?: any;
+  createdAt?: Timestamp | Date;
   profile?: UserProfile;
   addresses?: Address[];
   wishlist?: Array<{ id: string; name: string; price?: number; image?: string }>;

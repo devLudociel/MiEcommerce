@@ -46,11 +46,11 @@ export default function ChartsSection({
 }: ChartsSectionProps) {
   return (
     <>
-      {/* Gráficos principales */}
+      {/* Grï¿½ficos principales */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Gráfico de área - Ingresos últimos 7 días */}
+        {/* Grï¿½fico de ï¿½rea - Ingresos ï¿½ltimos 7 dï¿½as */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Ingresos - Últimos 7 Días</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Ingresos - ï¿½ltimos 7 Dï¿½as</h3>
           {ordersLastWeek.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={ordersLastWeek}>
@@ -71,7 +71,7 @@ export default function ChartsSection({
                 />
                 <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} />
                 <Tooltip
-                  formatter={(value: any) => [`¬${parseFloat(value).toFixed(2)}`, 'Ingresos']}
+                  formatter={(value: number | string) => [`â‚¬${parseFloat(String(value)).toFixed(2)}`, 'Ingresos']}
                   labelFormatter={(label) =>
                     new Date(label).toLocaleDateString('es-ES', {
                       weekday: 'long',
@@ -96,11 +96,11 @@ export default function ChartsSection({
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-gray-500 text-center py-20">No hay datos de la última semana</p>
+            <p className="text-gray-500 text-center py-20">No hay datos de la ï¿½ltima semana</p>
           )}
         </div>
 
-        {/* Gráfico circular - Estados de pedidos */}
+        {/* Grï¿½fico circular - Estados de pedidos */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
           <h3 className="text-xl font-bold text-gray-900 mb-4">Estado de Pedidos</h3>
           {ordersByStatus.length > 0 ? (
@@ -130,9 +130,9 @@ export default function ChartsSection({
         </div>
       </div>
 
-      {/* Gráfico de barras - Ingresos mensuales */}
+      {/* Grï¿½fico de barras - Ingresos mensuales */}
       <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 mb-8">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Ingresos por Mes (Últimos 6 Meses)</h3>
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Ingresos por Mes (ï¿½ltimos 6 Meses)</h3>
         {revenueByMonth.length > 0 ? (
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={revenueByMonth}>
@@ -140,8 +140,8 @@ export default function ChartsSection({
               <XAxis dataKey="month" stroke="#9ca3af" style={{ fontSize: '12px' }} />
               <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} />
               <Tooltip
-                formatter={(value: any, name: string) => {
-                  if (name === 'revenue') return [`¬${parseFloat(value).toFixed(2)}`, 'Ingresos'];
+                formatter={(value: number | string, name: string) => {
+                  if (name === 'revenue') return [`â‚¬${parseFloat(String(value)).toFixed(2)}`, 'Ingresos'];
                   return [value, 'Pedidos'];
                 }}
                 contentStyle={{
@@ -151,7 +151,7 @@ export default function ChartsSection({
                 }}
               />
               <Legend />
-              <Bar dataKey="revenue" name="Ingresos (¬)" fill={COLORS.primary} radius={[8, 8, 0, 0]} />
+              <Bar dataKey="revenue" name="Ingresos (ï¿½)" fill={COLORS.primary} radius={[8, 8, 0, 0]} />
               <Bar
                 dataKey="orders"
                 name="Pedidos"
@@ -167,7 +167,7 @@ export default function ChartsSection({
 
       {/* Top productos */}
       <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 mb-8">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Top 5 Productos Más Vendidos</h3>
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Top 5 Productos Mï¿½s Vendidos</h3>
         {topProducts.length > 0 ? (
           <div className="space-y-3">
             {topProducts.map((product, index) => {
@@ -187,7 +187,7 @@ export default function ChartsSection({
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-green-600">¬{product.revenue.toFixed(2)}</p>
+                      <p className="font-bold text-green-600">ï¿½{product.revenue.toFixed(2)}</p>
                     </div>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
@@ -205,9 +205,9 @@ export default function ChartsSection({
         )}
       </div>
 
-      {/* Gráfico de línea - Pedidos diarios */}
+      {/* Grï¿½fico de lï¿½nea - Pedidos diarios */}
       <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Pedidos Diarios - Últimos 7 Días</h3>
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Pedidos Diarios - ï¿½ltimos 7 Dï¿½as</h3>
         {ordersLastWeek.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={ordersLastWeek}>
@@ -222,7 +222,7 @@ export default function ChartsSection({
               />
               <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} />
               <Tooltip
-                formatter={(value: any) => [value, 'Pedidos']}
+                formatter={(value: number | string) => [value, 'Pedidos']}
                 labelFormatter={(label) =>
                   new Date(label).toLocaleDateString('es-ES', {
                     weekday: 'long',

@@ -3,14 +3,15 @@ import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
+import { verifyAdminAuth } from '../../lib/auth-helpers';
 import { z } from 'zod';
 
 // Simple console logger for API routes (avoids import issues)
 const logger = {
-  info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
-  warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
-  error: (msg: string, error?: any) => console.error(`[ERROR] ${msg}`, error || ''),
-  debug: (msg: string, data?: any) => console.log(`[DEBUG] ${msg}`, data || ''),
+  info: (msg: string, data?: unknown) => console.log(`[INFO] ${msg}`, data ?? ''),
+  warn: (msg: string, data?: unknown) => console.warn(`[WARN] ${msg}`, data ?? ''),
+  error: (msg: string, error?: unknown) => console.error(`[ERROR] ${msg}`, error ?? ''),
+  debug: (msg: string, data?: unknown) => console.log(`[DEBUG] ${msg}`, data ?? ''),
 };
 
 // Valid order statuses
@@ -34,7 +35,7 @@ const updateOrderStatusSchema = z.object({
  *
  * SECURITY:
  * - CSRF protection
- * - Requires authentication (TODO: Add admin role check)
+ * - Requires admin authentication
  * - Validates order exists
  * - Logs all status changes
  */
@@ -44,6 +45,16 @@ export const POST: APIRoute = async ({ request }) => {
   if (!csrfCheck.valid) {
     logger.warn('[update-order-status] CSRF validation failed:', csrfCheck.reason);
     return createCSRFErrorResponse();
+  }
+
+  // SECURITY: Admin authentication check
+  const authResult = await verifyAdminAuth(request);
+  if (!authResult.success) {
+    logger.warn('[update-order-status] Admin auth failed:', authResult.error);
+    return new Response(
+      JSON.stringify({ error: authResult.error }),
+      { status: authResult.isAuthenticated ? 403 : 401, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
@@ -83,7 +94,7 @@ export const POST: APIRoute = async ({ request }) => {
     const previousStatus = currentData.status;
 
     // Update order status
-    const updateData: Record<string, any> = {
+    const updateData: Record<string, unknown> = {
       status,
       updatedAt: FieldValue.serverTimestamp(),
     };

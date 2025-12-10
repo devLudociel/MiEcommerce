@@ -3,14 +3,22 @@ import type { APIRoute } from 'astro';
 import { Resend } from 'resend';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { orderConfirmationTemplate, orderStatusUpdateTemplate, newsletterWelcomeTemplate } from '../../lib/emailTemplates';
+import type { OrderData } from '../../types/firebase';
 
 // Simple console logger for API routes (avoids import issues)
 const logger = {
-  info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
-  warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
-  error: (msg: string, error?: any) => console.error(`[ERROR] ${msg}`, error || ''),
-  debug: (msg: string, data?: any) => console.log(`[DEBUG] ${msg}`, data || ''),
+  info: (msg: string, data?: unknown) => console.log(`[INFO] ${msg}`, data ?? ''),
+  warn: (msg: string, data?: unknown) => console.warn(`[WARN] ${msg}`, data ?? ''),
+  error: (msg: string, error?: unknown) => console.error(`[ERROR] ${msg}`, error ?? ''),
+  debug: (msg: string, data?: unknown) => console.log(`[DEBUG] ${msg}`, data ?? ''),
 };
+
+// Type for Resend API response
+interface ResendResponse {
+  data?: { id: string } | null;
+  id?: string;
+  error?: { message: string; name: string } | null;
+}
 
 const resend = new Resend(import.meta.env.RESEND_API_KEY);
 
@@ -42,7 +50,8 @@ export const POST: APIRoute = async ({ request }) => {
 
       logger.info('📧 Email de newsletter enviado correctamente:', response);
 
-      const emailId = (response as any).data?.id || (response as any).id;
+      const resendResponse = response as ResendResponse;
+      const emailId = resendResponse.data?.id ?? resendResponse.id;
       return new Response(JSON.stringify({ success: true, emailId }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -66,7 +75,11 @@ export const POST: APIRoute = async ({ request }) => {
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    const order: any = { id: orderSnap.id, ...orderSnap.data() };
+    const orderData = orderSnap.data();
+    const order: OrderData = {
+      id: orderSnap.id,
+      ...orderData,
+    } as OrderData;
 
     let subject = '';
     let html = '';
@@ -94,7 +107,8 @@ export const POST: APIRoute = async ({ request }) => {
     });
     logger.info('📧 Email enviado correctamente:', response);
 
-    const emailId = (response as any).data?.id || (response as any).id;
+    const resendResponse = response as ResendResponse;
+    const emailId = resendResponse.data?.id ?? resendResponse.id;
     return new Response(JSON.stringify({ success: true, emailId }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },

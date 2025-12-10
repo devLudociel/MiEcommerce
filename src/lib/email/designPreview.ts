@@ -9,10 +9,40 @@
  * - Selected options (color, size, etc.)
  */
 
+/** Image transform data for positioned images */
+interface ImageTransform {
+  x: number;
+  y: number;
+  scale?: number;
+  rotation?: number;
+}
+
+/** Image field value with URL and optional transform */
+interface ImageFieldValue {
+  url?: string;
+  transform?: ImageTransform;
+}
+
+/** Color field value */
+interface ColorFieldValue {
+  hex?: string;
+  name?: string;
+}
+
+/** Union of all possible customization field values */
+type CustomizationValue =
+  | string
+  | number
+  | boolean
+  | ImageFieldValue
+  | ColorFieldValue
+  | null
+  | undefined;
+
 interface CustomizationField {
   type: string;
   label: string;
-  value: any;
+  value: CustomizationValue;
 }
 
 interface ProductCustomization {

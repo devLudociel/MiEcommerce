@@ -75,10 +75,20 @@ export function trackAddToCart(product: {
   FB.trackFBAddToCart(product);
 }
 
+// Shared analytics item type
+interface AnalyticsItem {
+  id?: string;
+  productId?: string;
+  name?: string;
+  category?: string;
+  price?: number;
+  quantity: number;
+}
+
 /**
  * Track checkout initiation (InitiateCheckout / begin_checkout)
  */
-export function trackBeginCheckout(items: any[], value: number) {
+export function trackBeginCheckout(items: AnalyticsItem[], value: number) {
   GA4.trackBeginCheckout(items, value);
   FB.trackFBInitiateCheckout(items, value);
 }
@@ -92,7 +102,7 @@ export function trackPurchase(order: {
   subtotal: number;
   shipping: number;
   tax?: number;
-  items: any[];
+  items: AnalyticsItem[];
 }) {
   GA4.trackPurchase(order);
   FB.trackFBPurchase(order);

@@ -28,6 +28,15 @@ export enum LogLevel {
   NONE = 4, // Deshabilitar todos los logs
 }
 
+/** Type for log data - accepts structured data or primitive values */
+export type LogData = Record<string, unknown> | Error | string | number | boolean | null | undefined;
+
+/** Extended window interface for dev tools */
+interface WindowWithLogger extends Window {
+  __logger: typeof logger;
+  __setLogLevel: typeof setLogLevel;
+}
+
 interface LoggerConfig {
   level: LogLevel;
   enableTimestamps: boolean;
@@ -100,52 +109,52 @@ export const logger = {
   /**
    * DEBUG: Información detallada para debugging (solo desarrollo)
    */
-  debug(message: string, data?: any): void {
+  debug(message: string, data?: LogData): void {
     if (!shouldLog(LogLevel.DEBUG)) return;
 
     const formattedMessage = formatMessage('DEBUG', message, colors.debug);
 
     if (config.enableColors && typeof window !== 'undefined') {
-      console.log(`%c${formattedMessage}`, `color: ${colors.debug}`, data || '');
+      console.log(`%c${formattedMessage}`, `color: ${colors.debug}`, data ?? '');
     } else {
-      console.log(formattedMessage, data || '');
+      console.log(formattedMessage, data ?? '');
     }
   },
 
   /**
    * INFO: Información general sobre el flujo de la app
    */
-  info(message: string, data?: any): void {
+  info(message: string, data?: LogData): void {
     if (!shouldLog(LogLevel.INFO)) return;
 
     const formattedMessage = formatMessage('INFO', message, colors.info);
 
     if (config.enableColors && typeof window !== 'undefined') {
-      console.log(`%c${formattedMessage}`, `color: ${colors.info}`, data || '');
+      console.log(`%c${formattedMessage}`, `color: ${colors.info}`, data ?? '');
     } else {
-      console.log(formattedMessage, data || '');
+      console.log(formattedMessage, data ?? '');
     }
   },
 
   /**
    * WARN: Advertencias que no rompen la funcionalidad
    */
-  warn(message: string, data?: any): void {
+  warn(message: string, data?: LogData): void {
     if (!shouldLog(LogLevel.WARN)) return;
 
     const formattedMessage = formatMessage('WARN', message, colors.warn);
 
     if (config.enableColors && typeof window !== 'undefined') {
-      console.warn(`%c${formattedMessage}`, `color: ${colors.warn}`, data || '');
+      console.warn(`%c${formattedMessage}`, `color: ${colors.warn}`, data ?? '');
     } else {
-      console.warn(formattedMessage, data || '');
+      console.warn(formattedMessage, data ?? '');
     }
   },
 
   /**
    * ERROR: Errores que requieren atención
    */
-  error(message: string, error?: any): void {
+  error(message: string, error?: unknown): void {
     if (!shouldLog(LogLevel.ERROR)) return;
 
     const formattedMessage = formatMessage('ERROR', message, colors.error);
@@ -170,15 +179,15 @@ export const logger = {
   /**
    * SUCCESS: Operaciones exitosas importantes
    */
-  success(message: string, data?: any): void {
+  success(message: string, data?: LogData): void {
     if (!shouldLog(LogLevel.INFO)) return;
 
     const formattedMessage = formatMessage('SUCCESS', message, colors.success);
 
     if (config.enableColors && typeof window !== 'undefined') {
-      console.log(`%c${formattedMessage}`, `color: ${colors.success}`, data || '');
+      console.log(`%c${formattedMessage}`, `color: ${colors.success}`, data ?? '');
     } else {
-      console.log(formattedMessage, data || '');
+      console.log(formattedMessage, data ?? '');
     }
   },
 
@@ -223,7 +232,7 @@ export const logger = {
   /**
    * Muestra una tabla (útil para arrays de objetos)
    */
-  table(data: any): void {
+  table(data: readonly object[] | Record<string, unknown>): void {
     if (!shouldLog(LogLevel.DEBUG)) return;
     console.table(data);
   },
@@ -262,7 +271,7 @@ export const debug = {
   /**
    * Log solo en desarrollo
    */
-  log(...args: any[]): void {
+  log(...args: unknown[]): void {
     if (isDevelopment) {
       console.log(...args);
     }
@@ -285,8 +294,9 @@ export const debug = {
 
 // Exponer logger en window para debugging (solo dev)
 if (isDevelopment && typeof window !== 'undefined') {
-  (window as any).__logger = logger;
-  (window as any).__setLogLevel = setLogLevel;
+  const windowWithLogger = window as WindowWithLogger;
+  windowWithLogger.__logger = logger;
+  windowWithLogger.__setLogLevel = setLogLevel;
 
   console.log(
     '%c🔍 Logger disponible en window.__logger',

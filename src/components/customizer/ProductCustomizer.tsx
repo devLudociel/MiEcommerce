@@ -133,7 +133,10 @@ export default function ProductCustomizer({ slug, forceWizard }: Props) {
             if (docSnap.exists()) {
               productData = { id: docSnap.id, ...docSnap.data() } as FirebaseProduct;
             }
-          } catch {}
+          } catch (e) {
+            // Fallback search by ID failed - product may not exist
+            logger.debug('[ProductCustomizer] Product not found by ID either:', e);
+          }
         }
 
         if (!productData) {
@@ -167,8 +170,8 @@ export default function ProductCustomizer({ slug, forceWizard }: Props) {
           logger.warn('[ProductCustomizer] No schema ID detectado para producto:', productData.id);
           setError('Este producto no tiene configuración de personalización disponible.');
         }
-      } catch (e: any) {
-        setError(e?.message || 'Error cargando producto');
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : 'Error cargando producto');
       } finally {
         setLoading(false);
       }

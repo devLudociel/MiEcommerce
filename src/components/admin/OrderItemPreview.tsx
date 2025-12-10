@@ -47,8 +47,25 @@ function detectPresetPosition(
   return null;
 }
 
+interface CustomizationValue {
+  fieldLabel?: string;
+  fieldId?: string;
+  value?: string;
+  imageUrl?: string;
+  transform?: ImageTransform;
+}
+
+interface OrderItemCustomization {
+  values?: CustomizationValue[];
+}
+
+interface OrderItemData {
+  customization?: OrderItemCustomization;
+  [key: string]: unknown;
+}
+
 interface OrderItemPreviewProps {
-  item: any; // Order item con customization
+  item: OrderItemData;
 }
 
 export default function OrderItemPreview({ item }: OrderItemPreviewProps) {
@@ -62,14 +79,14 @@ export default function OrderItemPreview({ item }: OrderItemPreviewProps) {
   const values = item.customization.values;
 
   // Buscar color seleccionado
-  const colorField = values.find((v: any) =>
+  const colorField = values.find((v: CustomizationValue) =>
     v.fieldLabel?.toLowerCase().includes('color') ||
     v.fieldId?.toLowerCase().includes('color')
   );
   const selectedColor = colorField?.value?.toLowerCase();
 
   // Buscar imágenes subidas
-  const frontImageField = values.find((v: any) =>
+  const frontImageField = values.find((v: CustomizationValue) =>
     v.imageUrl && (
       v.fieldLabel?.toLowerCase().includes('front') ||
       v.fieldLabel?.toLowerCase().includes('frontal') ||
@@ -77,7 +94,7 @@ export default function OrderItemPreview({ item }: OrderItemPreviewProps) {
     )
   );
 
-  const backImageField = values.find((v: any) =>
+  const backImageField = values.find((v: CustomizationValue) =>
     v.imageUrl && (
       v.fieldLabel?.toLowerCase().includes('back') ||
       v.fieldLabel?.toLowerCase().includes('trasera') ||

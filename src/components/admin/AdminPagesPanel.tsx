@@ -16,8 +16,27 @@ import {
 import { Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../lib/firebase';
+import { notify } from '../../lib/notifications';
+import { logger } from '../../lib/logger';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 type TabType = 'pages' | 'blog' | 'gallery';
+
+/** Input type for creating/updating pages - mirrors Page without id and timestamps */
+interface PageInput {
+  title: string;
+  slug: string;
+  content: string;
+  metaDescription?: string;
+  type: 'page' | 'blog' | 'gallery';
+  status: 'draft' | 'published';
+  featuredImage?: string;
+  author?: string;
+  // Blog-specific fields
+  excerpt?: string;
+  tags?: string[];
+  category?: string;
+}
 
 export default function AdminPagesPanel() {
   const [activeTab, setActiveTab] = useState<TabType>('pages');
@@ -54,6 +73,9 @@ export default function AdminPagesPanel() {
 
   const [uploading, setUploading] = useState(false);
 
+  // Accessible confirmation dialog
+  const { confirm, ConfirmDialog } = useConfirmDialog();
+
   useEffect(() => {
     loadData();
   }, [activeTab]);
@@ -74,17 +96,22 @@ export default function AdminPagesPanel() {
         setPages(filtered);
       }
     } catch (error) {
-      console.error('Error loading data:', error);
-      alert('Error al cargar los datos');
+      logger.error('[AdminPages] Error loading data', error);
+      notify.error('Error al cargar los datos');
     } finally {
       setLoading(false);
     }
   }
 
   async function initializeDefaultPages() {
-    if (!confirm('¿Crear las páginas predeterminadas? Esto creará: Sobre Nosotros, FAQ, Contacto y Privacidad.')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: '¿Crear páginas predeterminadas?',
+      message: 'Esto creará: Sobre Nosotros, FAQ, Contacto y Privacidad.',
+      type: 'info',
+      confirmText: 'Crear',
+      cancelText: 'Cancelar',
+    });
+    if (!confirmed) return;
 
     try {
       for (const pageData of DEFAULT_PAGES) {
@@ -94,11 +121,11 @@ export default function AdminPagesPanel() {
         } as any);
       }
 
-      alert('✅ Páginas predeterminadas creadas exitosamente');
+      notify.success('Páginas predeterminadas creadas exitosamente');
       loadData();
     } catch (error) {
-      console.error('Error creating default pages:', error);
-      alert('Error al crear las páginas predeterminadas');
+      logger.error('[AdminPages] Error creating default pages', error);
+      notify.error('Error al crear las páginas predeterminadas');
     }
   }
 
@@ -133,7 +160,14 @@ export default function AdminPagesPanel() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('¿Estás seguro de eliminar este elemento?')) return;
+    const confirmed = await confirm({
+      title: '¿Eliminar elemento?',
+      message: '¿Estás seguro de eliminar este elemento? Esta acción no se puede deshacer.',
+      type: 'warning',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+    });
+    if (!confirmed) return;
 
     try {
       if (activeTab === 'gallery') {
@@ -141,10 +175,11 @@ export default function AdminPagesPanel() {
       } else {
         await deletePage(id);
       }
+      notify.success('Elemento eliminado');
       loadData();
     } catch (error) {
-      console.error('Error deleting:', error);
-      alert('Error al eliminar');
+      logger.error('[AdminPages] Error deleting', error);
+      notify.error('Error al eliminar');
     }
   }
 
@@ -164,10 +199,10 @@ export default function AdminPagesPanel() {
         setFormData((prev) => ({ ...prev, featuredImage: url }));
       }
 
-      alert('✅ Imagen subida correctamente');
+      notify.success('Imagen subida correctamente');
     } catch (error) {
-      console.error('Error uploading image:', error);
-      alert('Error al subir la imagen');
+      logger.error('[AdminPages] Error uploading image', error);
+      notify.error('Error al subir la imagen');
     } finally {
       setUploading(false);
     }
@@ -194,7 +229,7 @@ export default function AdminPagesPanel() {
         }
       } else {
         // Page or blog
-        const pageData: any = {
+        const pageData: PageInput = {
           title: formData.title,
           slug: formData.slug,
           content: formData.content,
@@ -203,13 +238,13 @@ export default function AdminPagesPanel() {
           status: formData.status,
           featuredImage: formData.featuredImage || undefined,
           author: formData.author || undefined,
+          // Blog-specific fields - conditionally added
+          ...(formData.type === 'blog' && {
+            excerpt: formData.excerpt,
+            tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
+            category: formData.category,
+          }),
         };
-
-        if (formData.type === 'blog') {
-          pageData.excerpt = formData.excerpt;
-          pageData.tags = formData.tags.split(',').map((t) => t.trim()).filter(Boolean);
-          pageData.category = formData.category;
-        }
 
         if (editingPage) {
           await updatePage(editingPage.id, pageData);
@@ -218,15 +253,15 @@ export default function AdminPagesPanel() {
         }
       }
 
-      alert('✅ Guardado correctamente');
+      notify.success('Guardado correctamente');
       setShowForm(false);
       setEditingPage(null);
       setEditingGalleryItem(null);
       resetForm();
       loadData();
     } catch (error) {
-      console.error('Error saving:', error);
-      alert('Error al guardar');
+      logger.error('[AdminPages] Error saving', error);
+      notify.error('Error al guardar');
     }
   }
 
@@ -680,6 +715,9 @@ export default function AdminPagesPanel() {
           )}
         </div>
       )}
+
+      {/* Accessible confirmation dialog */}
+      <ConfirmDialog />
     </div>
   );
 }

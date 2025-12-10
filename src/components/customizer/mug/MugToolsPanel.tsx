@@ -40,7 +40,7 @@ export default function MugToolsPanel({
 
   const [backgroundColorInput, setBackgroundColorInput] = useState('#FFFFFF');
 
-  const tools: Array<{ id: MugTool; icon: any; label: string; color: string }> = [
+  const tools: Array<{ id: MugTool; icon: React.ComponentType<{ className?: string }>; label: string; color: string }> = [
     { id: 'text', icon: Type, label: 'Texto', color: 'bg-blue-100 text-blue-600' },
     { id: 'names', icon: Users, label: 'Nombres', color: 'bg-green-100 text-green-600' },
     { id: 'uploads', icon: Upload, label: 'Archivos subidos', color: 'bg-purple-100 text-purple-600' },
@@ -97,7 +97,7 @@ export default function MugToolsPanel({
     reader.readAsDataURL(file);
   };
 
-  const handleAddClipart = (clipart: any) => {
+  const handleAddClipart = (clipart: { imageUrl: string; name?: string; category?: string }) => {
     const newClipartElement: Partial<MugDesignElement> = {
       type: 'clipart',
       x: 50,

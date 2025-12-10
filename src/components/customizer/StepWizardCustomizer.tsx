@@ -24,6 +24,10 @@ import type {
   DesignTemplate,
   Clipart,
   DesignLayer,
+  ImageTransform,
+  SizeSelectorConfig,
+  DropdownConfig,
+  ImageUploadConfig,
 } from '../../types/customization';
 import ColorSelector from './fields/ColorSelector';
 import SizeSelector from './fields/SizeSelector';
@@ -49,7 +53,9 @@ interface FirebaseProduct {
   basePrice: number;
   images: string[];
   slug: string;
-  [key: string]: any;
+  subcategoryId?: string;
+  tags?: string[];
+  [key: string]: string | number | boolean | string[] | undefined | null | object;
 }
 
 interface StepWizardCustomizerProps {
@@ -92,8 +98,8 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
   const isResinProduct = useCallback((): boolean => {
     const categoryLower = product.categoryId?.toLowerCase() || '';
     const nameLower = product.name?.toLowerCase() || '';
-    const subcategoryLower = (product as any).subcategoryId?.toLowerCase() || '';
-    const tags = (product as any).tags?.map((t: string) => t.toLowerCase()) || [];
+    const subcategoryLower = product.subcategoryId?.toLowerCase() || '';
+    const tags = product.tags?.map((t) => t.toLowerCase()) || [];
 
     return (
       categoryLower.includes('resina') ||
@@ -102,15 +108,15 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
       subcategoryLower.includes('figura') ||
       nameLower.includes('resina') ||
       nameLower.includes('figura') ||
-      tags.some((tag: string) => tag.includes('resina') || tag.includes('figura'))
+      tags.some((tag) => tag.includes('resina') || tag.includes('figura'))
     );
   }, [product]);
 
   const isTextileProduct = useCallback((): boolean => {
     const categoryLower = product.categoryId?.toLowerCase() || '';
     const nameLower = product.name?.toLowerCase() || '';
-    const subcategoryLower = (product as any).subcategoryId?.toLowerCase() || '';
-    const tags = (product as any).tags?.map((t: string) => t.toLowerCase()) || [];
+    const subcategoryLower = product.subcategoryId?.toLowerCase() || '';
+    const tags = product.tags?.map((t) => t.toLowerCase()) || [];
 
     return (
       categoryLower.includes('camiseta') ||
@@ -126,7 +132,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
       nameLower.includes('camiseta') ||
       nameLower.includes('sudadera') ||
       nameLower.includes('polo') ||
-      tags.some((tag: string) =>
+      tags.some((tag) =>
         tag.includes('camiseta') ||
         tag.includes('sudadera') ||
         tag.includes('polo') ||
@@ -321,7 +327,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     setError(null);
   }, [schema.fields]);
 
-  const handleTextileTransformChange = useCallback((side: 'front' | 'back', transform: any) => {
+  const handleTextileTransformChange = useCallback((side: 'front' | 'back', transform: ImageTransform) => {
     let targetField = schema.fields.find(f =>
       f.fieldType === 'image_upload' && (
         side === 'front'
@@ -686,7 +692,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
             fieldId={field.id}
             label={field.label}
             required={field.required}
-            config={field.config as any}
+            config={field.config as ColorSelectorConfig}
             value={value}
             onChange={(val) => handleFieldChange(field.id, val)}
             helpText={field.helpText}
@@ -700,7 +706,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
             fieldId={field.id}
             label={field.label}
             required={field.required}
-            config={field.config as any}
+            config={field.config as SizeSelectorConfig}
             value={value}
             onChange={(val) => handleFieldChange(field.id, val)}
             helpText={field.helpText}
@@ -714,7 +720,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
             fieldId={field.id}
             label={field.label}
             required={field.required}
-            config={field.config as any}
+            config={field.config as DropdownConfig}
             value={value}
             onChange={(val) => handleFieldChange(field.id, val)}
             helpText={field.helpText}
@@ -737,7 +743,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
             fieldId={field.id}
             label={field.label}
             required={field.required}
-            config={field.config as any}
+            config={field.config as ImageUploadConfig}
             value={value}
             onChange={(val) => handleFieldChange(field.id, val)}
             helpText={field.helpText}

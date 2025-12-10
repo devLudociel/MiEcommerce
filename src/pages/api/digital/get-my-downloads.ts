@@ -61,8 +61,9 @@ export const GET: APIRoute = async ({ request }) => {
       JSON.stringify({ downloads }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
-  } catch (error: any) {
-    if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error') {
+  } catch (error: unknown) {
+    const firebaseError = error as { code?: string };
+    if (firebaseError.code === 'auth/id-token-expired' || firebaseError.code === 'auth/argument-error') {
       return new Response(
         JSON.stringify({ error: 'Token inválido o expirado' }),
         { status: 401, headers: { 'Content-Type': 'application/json' } }

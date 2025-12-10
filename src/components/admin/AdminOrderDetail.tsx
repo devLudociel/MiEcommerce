@@ -9,6 +9,39 @@ import OrderItemPreview from './OrderItemPreview';
 import { FRONT_POSITIONS, BACK_POSITIONS, getContainerTransform, type PresetPosition } from '../../constants/textilePositions';
 import JSZip from 'jszip';
 
+// Interfaces for order items and customization
+interface ImageTransform {
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
+}
+
+interface CustomizationField {
+  fieldId?: string;
+  fieldLabel: string;
+  value?: string | number;
+  displayValue?: string;
+  imageUrl?: string;
+  imageTransform?: ImageTransform;
+}
+
+interface ItemCustomization {
+  categoryName?: string;
+  values?: CustomizationField[];
+}
+
+interface OrderItem {
+  name: string;
+  image?: string;
+  variantName?: string;
+  quantity: number;
+  price: number;
+  productionStatus?: 'pending' | 'in_production' | 'ready' | 'shipped';
+  productionNotes?: string;
+  customization?: ItemCustomization;
+}
+
 const statusLabels: Record<string, string> = {
   pending: 'Pendiente',
   paid: 'Pagado',
@@ -18,7 +51,7 @@ const statusLabels: Record<string, string> = {
   cancelled: 'Cancelado',
 };
 
-const eur = (v: any) => '€' + Number(v ?? 0).toFixed(2);
+const eur = (v: number | string | null | undefined) => '€' + Number(v ?? 0).toFixed(2);
 
 /**
  * Detecta si las coordenadas coinciden con alguna posición preset
@@ -192,7 +225,10 @@ export default function AdminOrderDetail() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId, type: 'status-update', newStatus }),
-      }).catch(() => {});
+      }).catch((emailError) => {
+        // Non-blocking: log error but don't affect main flow
+        console.warn('[AdminOrderDetail] Email notification failed:', emailError);
+      });
       await loadOrder(orderId);
       showModal(
         'success',
@@ -624,7 +660,7 @@ export default function AdminOrderDetail() {
                 })()}
 
                 <div className="space-y-4">
-                  {(order.items || []).map((item: any, index: number) => (
+                  {(order.items || []).map((item: OrderItem, index: number) => (
                     <div key={index} className="flex gap-4 p-4 bg-gray-50 rounded-xl">
                       <img
                         src={item.image}
@@ -676,7 +712,7 @@ export default function AdminOrderDetail() {
                             {/* Valores de personalización */}
                             {item.customization.values && (
                               <div className="space-y-2 mt-2">
-                                {item.customization.values.map((field: any, idx: number) => (
+                                {item.customization.values.map((field: CustomizationField, idx: number) => (
                                   <div key={idx} className="text-sm">
                                     <span className="font-semibold text-gray-700">{field.fieldLabel}:</span>
 

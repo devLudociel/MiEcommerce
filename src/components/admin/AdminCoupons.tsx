@@ -9,6 +9,7 @@ import { notify } from '../../lib/notifications';
 import { useSimpleFormValidation } from '../../hooks/useFormValidation';
 import { couponSchema } from '../../lib/validation/schemas';
 import LoadingButton from '../ui/LoadingButton';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 export default function AdminCoupons() {
   const { user } = useAuth();
@@ -19,6 +20,9 @@ export default function AdminCoupons() {
 
   // Validation hook
   const { errors, validate } = useSimpleFormValidation(couponSchema);
+
+  // Accessible confirmation dialog
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   // Form state - aligned with Zod schema
   const [formData, setFormData] = useState({
@@ -122,7 +126,14 @@ export default function AdminCoupons() {
   };
 
   const handleDeactivate = async (couponId: string, code: string) => {
-    if (!confirm(`¿Desactivar el cupón ${code}?`)) return;
+    const confirmed = await confirm({
+      title: '¿Desactivar cupón?',
+      message: `¿Estás seguro de que quieres desactivar el cupón "${code}"?`,
+      type: 'warning',
+      confirmText: 'Desactivar',
+      cancelText: 'Cancelar',
+    });
+    if (!confirmed) return;
 
     try {
       logger.info('[AdminCoupons] Deactivating coupon', { couponId, code });
@@ -135,11 +146,11 @@ export default function AdminCoupons() {
     }
   };
 
-  const formatDate = (timestamp: any): string => {
+  const formatDate = (timestamp: unknown): string => {
     if (!timestamp) return '-';
     try {
-      const date =
-        typeof timestamp?.toDate === 'function' ? timestamp.toDate() : new Date(timestamp);
+      const ts = timestamp as { toDate?: () => Date };
+      const date = ts.toDate ? ts.toDate() : new Date(timestamp as string | number);
       if (isNaN(date.getTime())) return '-';
       return date.toLocaleDateString('es-ES');
     } catch {
@@ -417,6 +428,9 @@ export default function AdminCoupons() {
           ))
         )}
       </div>
+
+      {/* Accessible confirmation dialog */}
+      <ConfirmDialog />
     </div>
   );
 }

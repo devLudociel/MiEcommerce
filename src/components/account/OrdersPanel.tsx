@@ -4,6 +4,7 @@ import { auth, getUserOrdersPaginated } from '../../lib/firebase';
 import type { OrderData } from '../../lib/firebase';
 import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { logger } from '../../lib/logger';
+import { notify } from '../../lib/notifications';
 
 const PAGE_SIZE = 10; // Number of orders per page
 
@@ -152,16 +153,17 @@ export default function OrdersPanel() {
     }
   };
 
-  const formatDate = (timestamp: any) => {
+  const formatDate = (timestamp: unknown) => {
     if (!timestamp) return 'Fecha desconocida';
 
     let date: Date;
-    if (timestamp.toDate) {
-      date = timestamp.toDate();
+    const ts = timestamp as { toDate?: () => Date };
+    if (ts.toDate) {
+      date = ts.toDate();
     } else if (timestamp instanceof Date) {
       date = timestamp;
     } else {
-      date = new Date(timestamp);
+      date = new Date(timestamp as string | number);
     }
 
     return new Intl.DateTimeFormat('es-ES', {
@@ -185,7 +187,7 @@ export default function OrdersPanel() {
 
     if (!firstItem.productId) {
       logger.warn('[OrdersPanel] Product ID not found in order item');
-      alert('No se pudo identificar el producto. Por favor, contacta con soporte.');
+      notify.error('No se pudo identificar el producto. Por favor, contacta con soporte.');
       return;
     }
 

@@ -77,7 +77,7 @@ export const POST: APIRoute = async ({ request }) => {
     let paymentIntent: Stripe.PaymentIntent;
     try {
       paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-    } catch (stripeError: any) {
+    } catch (stripeError: unknown) {
       logger.error('[finalize-order] Error retrieving payment intent', stripeError);
       return new Response(
         JSON.stringify({ error: 'Error verificando el pago' }),
@@ -158,12 +158,12 @@ export const POST: APIRoute = async ({ request }) => {
       });
 
       logger.info('[finalize-order] Post-payment actions completed', { orderId });
-    } catch (finalizeError: any) {
+    } catch (finalizeError: unknown) {
       logger.error('[finalize-order] Error executing finalizeOrder', finalizeError);
       return new Response(
         JSON.stringify({
           error: 'Error ejecutando acciones post-pago',
-          message: finalizeError?.message || 'Error desconocido',
+          message: finalizeError instanceof Error ? finalizeError.message : 'Error desconocido',
         }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );

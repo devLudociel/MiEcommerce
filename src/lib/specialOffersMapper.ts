@@ -21,10 +21,26 @@ export interface SpecialOffer {
   urgencyLevel: 'low' | 'medium' | 'high' | 'critical';
 }
 
+interface FirebaseProduct {
+  id: string;
+  name?: string;
+  description?: string;
+  basePrice?: number | string;
+  salePrice?: number | string;
+  specialOfferDiscount?: number;
+  images?: string[];
+  maxStock?: number | string;
+  specialOfferEndDate?: { toDate?: () => Date } | Date;
+  categoryId?: string;
+  flashSale?: boolean;
+  featured?: boolean;
+  urgencyLevel?: 'low' | 'medium' | 'high' | 'critical';
+}
+
 /**
  * Convierte un producto de Firebase a una oferta especial
  */
-function mapProductToOffer(product: any): SpecialOffer {
+function mapProductToOffer(product: FirebaseProduct): SpecialOffer {
   const basePrice = Number(product.basePrice) || 0;
   const salePrice = Number(product.salePrice) || basePrice;
   const discount =

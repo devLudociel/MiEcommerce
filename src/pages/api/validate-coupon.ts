@@ -1,10 +1,29 @@
 // src/pages/api/validate-coupon.ts
 import type { APIRoute } from 'astro';
+import type { Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { validateCouponCodeSchema } from '../../lib/validation/schemas';
 import { checkRateLimit, createRateLimitResponse, RATE_LIMIT_CONFIGS } from '../../lib/rate-limiter';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
+
+// Type for coupon document from Firestore
+interface CouponDocument {
+  id: string;
+  code: string;
+  description?: string;
+  type: 'percentage' | 'fixed' | 'free_shipping';
+  value: number;
+  minPurchase?: number;
+  maxDiscount?: number;
+  maxUses?: number;
+  maxUsesPerUser?: number;
+  currentUses: number;
+  startDate?: Timestamp | Date | string;
+  endDate?: Timestamp | Date | string;
+  active: boolean;
+  userSpecific?: string[];
+}
 
 const logger = createScopedLogger('validate-coupon');
 
@@ -83,7 +102,23 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const couponDoc = couponQuery.docs[0];
-    const coupon = { id: couponDoc.id, ...couponDoc.data() } as any;
+    const couponData = couponDoc.data();
+    const coupon: CouponDocument = {
+      id: couponDoc.id,
+      code: couponData.code ?? '',
+      description: couponData.description,
+      type: couponData.type ?? 'percentage',
+      value: couponData.value ?? 0,
+      minPurchase: couponData.minPurchase,
+      maxDiscount: couponData.maxDiscount,
+      maxUses: couponData.maxUses,
+      maxUsesPerUser: couponData.maxUsesPerUser,
+      currentUses: couponData.currentUses ?? 0,
+      startDate: couponData.startDate,
+      endDate: couponData.endDate,
+      active: couponData.active ?? false,
+      userSpecific: couponData.userSpecific,
+    };
 
     logger.info('[validate-coupon] Coupon found', {
       code: coupon.code,

@@ -5,6 +5,20 @@ interface CustomizationDetailsProps {
   customization: CartItem['customization'];
 }
 
+interface CustomizationFieldValue {
+  fieldId?: string;
+  fieldLabel?: string;
+  value?: string | number | string[];
+  displayValue?: string | string[];
+  imageUrl?: string;
+  imageTransform?: {
+    x?: number;
+    y?: number;
+    scale?: number;
+    rotation?: number;
+  };
+}
+
 export default function CustomizationDetails({ customization }: CustomizationDetailsProps) {
   if (!customization || Object.keys(customization).length === 0) {
     return null;
@@ -15,7 +29,7 @@ export default function CustomizationDetails({ customization }: CustomizationDet
 
   // Process DynamicCustomizer format (has 'values' array)
   if (customization.values && Array.isArray(customization.values)) {
-    customization.values.forEach((field: any, index: number) => {
+    customization.values.forEach((field: CustomizationFieldValue, index: number) => {
       // Skip if no value
       if (field.value === undefined || field.value === null || field.value === '') {
         return;

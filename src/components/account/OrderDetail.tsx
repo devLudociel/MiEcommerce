@@ -5,6 +5,19 @@ import type { OrderData } from '../../lib/firebase';
 import { logger } from '../../lib/logger';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import ShipmentTracking from './ShipmentTracking';
+import type { Timestamp } from 'firebase/firestore';
+
+// Extended order type with optional Firestore fields
+interface ExtendedOrder extends OrderData {
+  couponDiscount?: number;
+  couponCode?: string;
+  shippingCost?: number;
+  iva?: number;
+  walletDiscount?: number;
+}
+
+// Type for Firestore timestamp or Date
+type TimestampLike = Timestamp | Date | { toDate: () => Date } | string | number;
 
 interface OrderDetailProps {
   orderId?: string;
@@ -116,7 +129,7 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
     }
   };
 
-  const formatDate = (timestamp: any) => {
+  const formatDate = (timestamp: TimestampLike | null | undefined): string => {
     if (!timestamp) return 'Fecha desconocida';
 
     let date: Date;
@@ -412,35 +425,44 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
             <span className="font-semibold">€{order.subtotal.toFixed(2)}</span>
           </div>
 
-          {(order as any).couponDiscount && (order as any).couponDiscount > 0 && (
-            <div className="flex justify-between text-green-600">
-              <span>Descuento {(order as any).couponCode && `(${(order as any).couponCode})`}</span>
-              <span className="font-semibold">-€{(order as any).couponDiscount.toFixed(2)}</span>
-            </div>
-          )}
+          {(() => {
+            const extOrder = order as ExtendedOrder;
+            return extOrder.couponDiscount && extOrder.couponDiscount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Descuento {extOrder.couponCode && `(${extOrder.couponCode})`}</span>
+                <span className="font-semibold">-€{extOrder.couponDiscount.toFixed(2)}</span>
+              </div>
+            );
+          })()}
 
           <div className="flex justify-between text-gray-700">
             <span>Envío</span>
             <span className="font-semibold">
-              {((order as any).shippingCost || order.shipping || 0) === 0
+              {(((order as ExtendedOrder).shippingCost || order.shipping || 0) === 0)
                 ? 'GRATIS'
-                : `€${((order as any).shippingCost || order.shipping || 0).toFixed(2)}`}
+                : `€${((order as ExtendedOrder).shippingCost || order.shipping || 0).toFixed(2)}`}
             </span>
           </div>
 
-          {(order as any).iva && (order as any).iva > 0 && (
-            <div className="flex justify-between text-gray-700">
-              <span>IVA (21%)</span>
-              <span className="font-semibold">€{(order as any).iva.toFixed(2)}</span>
-            </div>
-          )}
+          {(() => {
+            const extOrder = order as ExtendedOrder;
+            return extOrder.iva && extOrder.iva > 0 && (
+              <div className="flex justify-between text-gray-700">
+                <span>IVA (21%)</span>
+                <span className="font-semibold">€{extOrder.iva.toFixed(2)}</span>
+              </div>
+            );
+          })()}
 
-          {(order as any).walletDiscount && (order as any).walletDiscount > 0 && (
-            <div className="flex justify-between text-green-600">
-              <span>Saldo del monedero</span>
-              <span className="font-semibold">-€{(order as any).walletDiscount.toFixed(2)}</span>
-            </div>
-          )}
+          {(() => {
+            const extOrder = order as ExtendedOrder;
+            return extOrder.walletDiscount && extOrder.walletDiscount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Saldo del monedero</span>
+                <span className="font-semibold">-€{extOrder.walletDiscount.toFixed(2)}</span>
+              </div>
+            );
+          })()}
 
           <div className="flex justify-between text-xl font-bold text-gray-900 pt-3 border-t-2 border-gray-200">
             <span>Total</span>

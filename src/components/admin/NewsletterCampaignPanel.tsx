@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 type CampaignType = 'coupon' | 'product';
 
@@ -24,6 +25,9 @@ type CampaignData = CouponCampaignData | ProductCampaignData;
 export default function NewsletterCampaignPanel() {
   const [campaignType, setCampaignType] = useState<CampaignType>('coupon');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Accessible confirmation dialog
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [showPreview, setShowPreview] = useState(false);
   const [result, setResult] = useState<{
     success: boolean;
@@ -73,9 +77,14 @@ export default function NewsletterCampaignPanel() {
         ? `¿Estás seguro de enviar la campaña del cupón "${couponCode}" a todos los suscriptores?`
         : `¿Estás seguro de enviar la campaña del producto "${productName}" a todos los suscriptores?`;
 
-    if (!confirm(confirmMessage)) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: '¿Enviar campaña?',
+      message: confirmMessage,
+      type: 'warning',
+      confirmText: 'Enviar',
+      cancelText: 'Cancelar',
+    });
+    if (!confirmed) return;
 
     setIsLoading(true);
 
@@ -403,6 +412,9 @@ export default function NewsletterCampaignPanel() {
           de tu newsletter. Asegúrate de revisar bien todos los datos antes de enviar.
         </p>
       </div>
+
+      {/* Accessible confirmation dialog */}
+      <ConfirmDialog />
     </div>
   );
 }

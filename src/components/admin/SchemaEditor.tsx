@@ -4,9 +4,17 @@ import type {
   CustomizationField,
   ProductCategory,
   FieldType,
+  FieldConfig,
   ColorSelectorConfig,
   SizeSelectorConfig,
   DropdownConfig,
+  TextInputConfig,
+  ImageUploadConfig,
+  CardSelectorConfig,
+  CheckboxConfig,
+  RadioGroupConfig,
+  NumberInputConfig,
+  DimensionsInputConfig,
 } from '../../types/customization';
 import { Plus, Trash2, GripVertical, Save, X, ChevronDown, ChevronUp, Upload, Loader } from 'lucide-react';
 import { notify } from '../../lib/notifications';
@@ -16,6 +24,7 @@ import DropdownConfigEditor from './config-editors/DropdownConfigEditor';
 import { storage, auth } from '../../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { logger } from '../../lib/logger';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 interface SchemaEditorProps {
   category: ProductCategory;
@@ -40,6 +49,9 @@ const fieldTypeOptions: Array<{ value: FieldType; label: string; icon: string }>
 export default function SchemaEditor({ category, initialSchema, onSave, onCancel }: SchemaEditorProps) {
   const [fields, setFields] = useState<CustomizationField[]>(initialSchema?.fields || []);
   const [showAddField, setShowAddField] = useState(false);
+
+  // Accessible confirmation dialog
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [expandedConfigs, setExpandedConfigs] = useState<Record<string, boolean>>({});
   const [defaultPreviewImage, setDefaultPreviewImage] = useState<string>(
     initialSchema?.previewImages?.default || ''
@@ -72,49 +84,49 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
     setShowAddField(false);
   };
 
-  const initializeFieldConfig = (fieldType: FieldType): any => {
+  const initializeFieldConfig = (fieldType: FieldType): FieldConfig => {
     switch (fieldType) {
       case 'color_selector':
         return {
           displayStyle: 'color_blocks',
           availableColors: [],
-        } as ColorSelectorConfig;
+        } satisfies ColorSelectorConfig;
       case 'size_selector':
         return {
           displayStyle: 'buttons',
           availableSizes: [],
-        } as SizeSelectorConfig;
+        } satisfies SizeSelectorConfig;
       case 'dropdown':
         return {
           options: [],
-        } as DropdownConfig;
+        } satisfies DropdownConfig;
       case 'image_upload':
         return {
           maxSizeMB: 5,
           allowedFormats: ['jpg', 'jpeg', 'png'],
           showPreview: true,
           showPositionControls: true,
-        };
+        } satisfies ImageUploadConfig;
       case 'card_selector':
         return {
-          displayStyle: 'grid',
+          displayStyle: 'visual_cards',
           options: [],
-        };
+        } satisfies CardSelectorConfig;
       case 'radio_group':
         return {
           options: [],
-        };
+        } satisfies RadioGroupConfig;
       case 'text_input':
         return {
           placeholder: '',
           maxLength: 100,
-        };
+        } satisfies TextInputConfig;
       case 'number_input':
         return {
           min: 0,
           max: 999,
           step: 1,
-        };
+        } satisfies NumberInputConfig;
       case 'dimensions_input':
         return {
           minWidth: 10,
@@ -122,14 +134,21 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
           minHeight: 10,
           maxHeight: 200,
           unit: 'cm',
-        };
-      default:
-        return {};
+        } satisfies DimensionsInputConfig;
+      case 'checkbox':
+        return {} satisfies CheckboxConfig;
     }
   };
 
-  const handleRemoveField = (fieldId: string) => {
-    if (!confirm('¿Eliminar este campo?')) return;
+  const handleRemoveField = async (fieldId: string) => {
+    const confirmed = await confirm({
+      title: '¿Eliminar campo?',
+      message: '¿Estás seguro de que quieres eliminar este campo? Esta acción no se puede deshacer.',
+      type: 'warning',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+    });
+    if (!confirmed) return;
     setFields(fields.filter((f) => f.id !== fieldId));
   };
 
@@ -741,6 +760,9 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
           </button>
         </div>
       </div>
+
+      {/* Accessible confirmation dialog */}
+      <ConfirmDialog />
     </div>
   );
 }

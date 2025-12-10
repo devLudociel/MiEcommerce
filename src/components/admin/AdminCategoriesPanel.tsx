@@ -17,14 +17,15 @@ import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import { Plus, Edit2, Trash2, X, Save, Download } from 'lucide-react';
 import { categories as navbarCategories } from '../../data/categories';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 interface Category {
   id: string;
   name: string;
   slug: string;
   description?: string;
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: Timestamp | Date;
+  updatedAt?: Timestamp | Date;
 }
 
 export default function AdminCategoriesPanel() {
@@ -37,6 +38,9 @@ export default function AdminCategoriesPanel() {
     slug: '',
     description: '',
   });
+
+  // Accessible confirmation dialog
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   useEffect(() => {
     const unsubCategories = onSnapshot(
@@ -80,7 +84,14 @@ export default function AdminCategoriesPanel() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Seguro que quieres eliminar esta categoría?')) return;
+    const confirmed = await confirm({
+      title: '¿Eliminar categoría?',
+      message: '¿Seguro que quieres eliminar esta categoría? Esta acción no se puede deshacer.',
+      type: 'warning',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+    });
+    if (!confirmed) return;
 
     try {
       await deleteDoc(doc(db, 'categories', id));
@@ -143,9 +154,14 @@ export default function AdminCategoriesPanel() {
   };
 
   const importNavbarCategories = async () => {
-    if (!confirm('¿Importar todas las categorías del navbar? Esto creará las categorías que no existan.')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: '¿Importar categorías?',
+      message: '¿Importar todas las categorías del navbar? Esto creará las categorías que no existan.',
+      type: 'info',
+      confirmText: 'Importar',
+      cancelText: 'Cancelar',
+    });
+    if (!confirmed) return;
 
     try {
       const batch = writeBatch(db);
@@ -396,6 +412,9 @@ export default function AdminCategoriesPanel() {
           </div>
         </div>
       )}
+
+      {/* Accessible confirmation dialog */}
+      <ConfirmDialog />
     </div>
   );
 }

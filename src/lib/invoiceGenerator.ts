@@ -1,6 +1,22 @@
 // src/lib/invoiceGenerator.ts
 import type { TDocumentDefinitions } from 'pdfmake/interfaces';
-import type { OrderData } from './firebase';
+import type { OrderData, OrderItem, ShippingInfo, BillingInfo } from '../types/firebase';
+import type { Timestamp } from 'firebase/firestore';
+
+// Extended order type for invoice generation (includes optional Firestore fields)
+interface ExtendedOrderData extends Partial<OrderData> {
+  items?: OrderItem[];
+  shippingInfo?: ShippingInfo;
+  billingInfo?: BillingInfo;
+  paymentInfo?: { method?: string };
+  subtotal?: number;
+  shippingCost?: number;
+  tax?: number;
+  taxType?: string;
+  taxLabel?: string;
+  total?: number;
+  createdAt?: Timestamp | { toDate: () => Date };
+}
 
 export interface InvoiceData {
   invoiceNumber: string;
@@ -31,30 +47,35 @@ const methodText = (method?: string) => {
 export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitions {
   const { invoiceNumber, invoiceDate, order, companyInfo } = data;
 
-  const items: any[] = Array.isArray((order as any).items) ? (order as any).items : [];
-  const shipping: any = (order as any).shippingInfo || {};
-  const billing: any = (order as any).billingInfo || {};
-  const subtotal = Number((order as any).subtotal ?? 0);
-  const shippingCost = Number((order as any).shippingCost ?? 0);
-  const tax = Number((order as any).tax ?? 0);
-  const taxType = (order as any).taxType || 'IVA';
-  const taxLabel = (order as any).taxLabel || 'IVA (21%)';
-  const total = Number((order as any).total ?? 0);
+  // Cast to extended type for safe property access
+  const extOrder = order as ExtendedOrderData;
 
-  try {
-    // Log only in development
-    if (import.meta.env.DEV) {
+  const items: OrderItem[] = Array.isArray(extOrder.items) ? extOrder.items : [];
+  const shipping: Partial<ShippingInfo> = extOrder.shippingInfo || {};
+  const billing: Partial<BillingInfo> = extOrder.billingInfo || {};
+  const subtotal = Number(extOrder.subtotal ?? 0);
+  const shippingCost = Number(extOrder.shippingCost ?? 0);
+  const tax = Number(extOrder.tax ?? 0);
+  const taxType = extOrder.taxType || 'IVA';
+  const taxLabel = extOrder.taxLabel || 'IVA (21%)';
+  const total = Number(extOrder.total ?? 0);
+
+  // Log only in development (catch errors silently - debug only)
+  if (import.meta.env.DEV) {
+    try {
       console.log('[invoiceGenerator] data', {
         invoiceNumber,
         items: items.length,
         subtotal,
         shipping: shippingCost,
         total,
-        hasShippingInfo: !!(order as any).shippingInfo,
-        method: (order as any)?.paymentInfo?.method ?? undefined,
+        hasShippingInfo: !!order.shippingInfo,
+        method: order.paymentInfo?.method ?? undefined,
       });
+    } catch (e) {
+      console.debug('[invoiceGenerator] Could not log debug info:', e);
     }
-  } catch {}
+  }
 
   return {
     pageSize: 'A4',
@@ -108,8 +129,8 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
             stack: [
               { text: 'Fecha de pedido:', style: 'label' },
               {
-                text: (order as any).createdAt?.toDate
-                  ? (order as any).createdAt.toDate().toLocaleDateString('es-ES', {
+                text: extOrder.createdAt && 'toDate' in extOrder.createdAt
+                  ? extOrder.createdAt.toDate().toLocaleDateString('es-ES', {
                       day: '2-digit',
                       month: 'long',
                       year: 'numeric',
@@ -168,17 +189,17 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
               { text: 'Precio Unit.', style: 'tableHeader', alignment: 'right' },
               { text: 'Total', style: 'tableHeader', alignment: 'right' },
             ],
-            ...items.map((raw: any) => {
-              const name = raw?.name || 'Producto';
-              const variantName = raw?.variantName;
-              const price = Number(raw?.price || 0);
-              const qty = Number(raw?.quantity || 0);
+            ...items.map((item: OrderItem) => {
+              const name = item.productName || 'Producto';
+              const variantName = item.variantName;
+              const price = Number(item.unitPrice || 0);
+              const qty = Number(item.quantity || 0);
               return [
                 {
                   stack: [
                     { text: name, style: 'itemName' },
                     variantName ? { text: `Variante: ${variantName}`, style: 'itemVariant' } : {},
-                    raw?.customization ? { text: 'Personalizado', style: 'itemCustom' } : {},
+                    item.customization ? { text: 'Personalizado', style: 'itemCustom' } : {},
                   ],
                 },
                 { text: String(qty), alignment: 'center' },
@@ -251,7 +272,7 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
       {
         stack: [
           { text: 'MÉTODO DE PAGO', style: 'sectionHeader' },
-          { text: methodText((order as any)?.paymentInfo?.method), style: 'paymentMethod' },
+          { text: methodText(extOrder.paymentInfo?.method), style: 'paymentMethod' },
         ],
       },
 

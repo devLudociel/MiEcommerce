@@ -135,7 +135,7 @@ export default function SecureCardPayment({
 
           if (!paymentIntentResponse.ok) {
             logger.error('[SecureCardPayment] Error creating PaymentIntent', data);
-            const error: any = new Error(data.error || 'Error al iniciar el pago');
+            const error = new Error(data.error || 'Error al iniciar el pago') as Error & { status?: number };
             error.status = paymentIntentResponse.status;
             throw error;
           }

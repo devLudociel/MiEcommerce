@@ -45,6 +45,9 @@ const orderItemSchema = z.object({
   customization: z.record(z.any()).optional(),
 });
 
+/** Inferred type from orderItemSchema */
+type OrderItem = z.infer<typeof orderItemSchema>;
+
 const orderDataSchema = z.object({
   idempotencyKey: z.string().min(10).max(255),
   items: z.array(orderItemSchema).min(1).max(100),
@@ -138,7 +141,7 @@ export const POST: APIRoute = async ({ request }) => {
     let adminDb;
     try {
       adminDb = getAdminDb();
-    } catch (adminInitError: any) {
+    } catch (adminInitError: unknown) {
       logger.error('API save-order: Error inicializando Firebase Admin:', adminInitError);
       return new Response(
         JSON.stringify({
@@ -175,7 +178,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const sanitizedItems = Array.isArray(orderData.items)
-      ? orderData.items.map((i: any) => ({
+      ? orderData.items.map((i: OrderItem) => ({
           ...i,
           price: Number(i?.price) || 0,
           quantity: Number(i?.quantity) || 0,
