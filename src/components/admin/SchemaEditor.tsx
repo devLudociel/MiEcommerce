@@ -21,6 +21,7 @@ import { notify } from '../../lib/notifications';
 import ColorSelectorConfigEditor from './config-editors/ColorSelectorConfigEditor';
 import SizeSelectorConfigEditor from './config-editors/SizeSelectorConfigEditor';
 import DropdownConfigEditor from './config-editors/DropdownConfigEditor';
+import CardSelectorConfigEditor from './config-editors/CardSelectorConfigEditor';
 import { storage, auth } from '../../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { logger } from '../../lib/logger';
@@ -623,7 +624,8 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
                       {/* Advanced Configuration */}
                       {(field.fieldType === 'color_selector' ||
                         field.fieldType === 'size_selector' ||
-                        field.fieldType === 'dropdown') && (
+                        field.fieldType === 'dropdown' ||
+                        field.fieldType === 'card_selector') && (
                         <div className="border-t border-gray-200 pt-3">
                           <button
                             type="button"
@@ -682,6 +684,20 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
                                     handleUpdateField(field.id, {
                                       config: {
                                         ...(field.config as DropdownConfig),
+                                        options: options,
+                                      },
+                                    })
+                                  }
+                                />
+                              )}
+
+                              {field.fieldType === 'card_selector' && (
+                                <CardSelectorConfigEditor
+                                  options={(field.config as CardSelectorConfig).options || []}
+                                  onChange={(options) =>
+                                    handleUpdateField(field.id, {
+                                      config: {
+                                        ...(field.config as CardSelectorConfig),
                                         options: options,
                                       },
                                     })
