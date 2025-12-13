@@ -6,6 +6,10 @@ import type {
   CustomizationValue,
   CustomizationPricing,
   ColorSelectorConfig,
+  CardSelectorConfig,
+  TextInputConfig,
+  CheckboxConfig,
+  NumberInputConfig,
   DesignTemplate,
   Clipart,
   DesignLayer,
@@ -583,6 +587,253 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
             productType={product.categoryId}
             categoryId={product.categoryId}
           />
+        );
+      }
+
+      case 'card_selector': {
+        const cardConfig = field.config as CardSelectorConfig;
+        return (
+          <div key={field.id} className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              {field.label}
+              {field.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {field.helpText && (
+              <p className="text-sm text-gray-500 mb-3">{field.helpText}</p>
+            )}
+            <div className={`grid gap-3 ${
+              cardConfig.layout === 'horizontal'
+                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                : cardConfig.layout === 'vertical'
+                ? 'grid-cols-1'
+                : 'grid-cols-1 sm:grid-cols-2'
+            }`}>
+              {cardConfig.options.map((option) => {
+                const isSelected = value?.value === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleFieldChange(field.id, {
+                      fieldId: field.id,
+                      value: option.value,
+                      displayValue: option.label,
+                      priceModifier: option.priceModifier || field.priceModifier || 0,
+                    })}
+                    className={`relative p-4 rounded-xl border-2 transition-all text-left ${
+                      isSelected
+                        ? 'border-purple-500 bg-purple-50 shadow-lg'
+                        : 'border-gray-200 bg-white hover:border-purple-300 hover:shadow-md'
+                    }`}
+                  >
+                    {option.badge && (
+                      <span className="absolute -top-2 -right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                        {option.badge}
+                      </span>
+                    )}
+                    {option.imageUrl && (
+                      <img
+                        src={option.imageUrl}
+                        alt={option.label}
+                        className="w-full h-32 object-cover rounded-lg mb-3"
+                      />
+                    )}
+                    {option.icon && !option.imageUrl && (
+                      <span className="text-3xl mb-2 block">{option.icon}</span>
+                    )}
+                    <h4 className={`font-bold ${isSelected ? 'text-purple-700' : 'text-gray-800'}`}>
+                      {option.label}
+                    </h4>
+                    {option.subtitle && (
+                      <p className="text-sm text-gray-500 mt-1">{option.subtitle}</p>
+                    )}
+                    {option.description && (
+                      <p className="text-sm text-gray-600 mt-2">{option.description}</p>
+                    )}
+                    {option.features && option.features.length > 0 && (
+                      <ul className="mt-2 space-y-1">
+                        {option.features.map((feature, idx) => (
+                          <li key={idx} className="text-xs text-gray-500 flex items-center gap-1">
+                            <span className="text-green-500">✓</span> {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {option.priceModifier && option.priceModifier > 0 && (
+                      <p className="text-sm font-semibold text-purple-600 mt-2">
+                        +€{option.priceModifier.toFixed(2)}
+                      </p>
+                    )}
+                    {isSelected && (
+                      <div className="absolute top-2 left-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      }
+
+      case 'text_input': {
+        const textConfig = field.config as TextInputConfig;
+        const textValue = (value?.value as string) || '';
+        return (
+          <div key={field.id} className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {field.label}
+              {field.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {field.helpText && (
+              <p className="text-sm text-gray-500 mb-2">{field.helpText}</p>
+            )}
+            <input
+              type="text"
+              value={textValue}
+              onChange={(e) => handleFieldChange(field.id, {
+                fieldId: field.id,
+                value: e.target.value,
+                displayValue: e.target.value,
+                priceModifier: field.priceModifier || 0,
+              })}
+              placeholder={textConfig.placeholder || ''}
+              maxLength={textConfig.maxLength}
+              minLength={textConfig.minLength}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
+            />
+            {textConfig.showCharCounter && textConfig.maxLength && (
+              <p className="text-xs text-gray-400 mt-1 text-right">
+                {textValue.length}/{textConfig.maxLength}
+              </p>
+            )}
+          </div>
+        );
+      }
+
+      case 'checkbox': {
+        const checkboxConfig = field.config as CheckboxConfig;
+        const isChecked = value?.value === true;
+        return (
+          <div key={field.id} className="mb-6">
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={isChecked}
+                onChange={(e) => handleFieldChange(field.id, {
+                  fieldId: field.id,
+                  value: e.target.checked,
+                  displayValue: e.target.checked ? 'Sí' : 'No',
+                  priceModifier: e.target.checked ? (field.priceModifier || 0) : 0,
+                })}
+                className="mt-1 w-5 h-5 rounded border-2 border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+              />
+              <div>
+                <span className="font-semibold text-gray-700 group-hover:text-purple-600 transition-colors">
+                  {checkboxConfig.icon && <span className="mr-2">{checkboxConfig.icon}</span>}
+                  {field.label}
+                  {field.required && <span className="text-red-500 ml-1">*</span>}
+                </span>
+                {checkboxConfig.description && (
+                  <p className="text-sm text-gray-500 mt-1">{checkboxConfig.description}</p>
+                )}
+                {field.priceModifier && field.priceModifier > 0 && (
+                  <p className="text-sm text-purple-600 font-medium mt-1">
+                    +€{field.priceModifier.toFixed(2)}
+                  </p>
+                )}
+              </div>
+            </label>
+            {field.helpText && (
+              <p className="text-sm text-gray-400 mt-2 ml-8">{field.helpText}</p>
+            )}
+          </div>
+        );
+      }
+
+      case 'number_input': {
+        const numberConfig = field.config as NumberInputConfig;
+        const numberValue = (value?.value as number) || numberConfig.min || 0;
+        return (
+          <div key={field.id} className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {field.label}
+              {field.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {field.helpText && (
+              <p className="text-sm text-gray-500 mb-2">{field.helpText}</p>
+            )}
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={numberValue}
+                onChange={(e) => handleFieldChange(field.id, {
+                  fieldId: field.id,
+                  value: parseFloat(e.target.value) || 0,
+                  displayValue: `${e.target.value}${numberConfig.unit ? ` ${numberConfig.unit}` : ''}`,
+                  priceModifier: field.priceModifier || 0,
+                })}
+                min={numberConfig.min}
+                max={numberConfig.max}
+                step={numberConfig.step || 1}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
+              />
+              {numberConfig.unit && (
+                <span className="text-gray-500 font-medium">{numberConfig.unit}</span>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      case 'radio_group': {
+        const radioConfig = field.config as any; // RadioGroupConfig
+        return (
+          <div key={field.id} className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              {field.label}
+              {field.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {field.helpText && (
+              <p className="text-sm text-gray-500 mb-3">{field.helpText}</p>
+            )}
+            <div className={`space-y-2 ${radioConfig.layout === 'horizontal' ? 'flex flex-wrap gap-4' : ''}`}>
+              {radioConfig.options?.map((option: any) => {
+                const isSelected = value?.value === option.value;
+                return (
+                  <label
+                    key={option.value}
+                    className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                      isSelected
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-gray-200 hover:border-purple-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name={field.id}
+                      value={option.value}
+                      checked={isSelected}
+                      onChange={() => handleFieldChange(field.id, {
+                        fieldId: field.id,
+                        value: option.value,
+                        displayValue: option.label,
+                        priceModifier: option.priceModifier || field.priceModifier || 0,
+                      })}
+                      className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+                    />
+                    <span className="font-medium text-gray-700">{option.label}</span>
+                    {option.priceModifier && option.priceModifier > 0 && (
+                      <span className="text-sm text-purple-600">+€{option.priceModifier.toFixed(2)}</span>
+                    )}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
         );
       }
 
