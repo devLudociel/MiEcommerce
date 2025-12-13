@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Loader, RotateCcw, Save } from 'lucide-react';
+import { ShoppingCart, Loader, RotateCcw, Save, Palette, X } from 'lucide-react';
 import type {
   CustomizationSchema,
   CustomizationField,
@@ -50,8 +50,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   const [values, setValues] = useState<Record<string, CustomizationValue>>({});
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showTemplates, setShowTemplates] = useState(false);
-  const [showCliparts, setShowCliparts] = useState(false);
+  const [showThemes, setShowThemes] = useState(false);
   const [layers, setLayers] = useState<DesignLayer[]>([]);
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
   const [showDraftNotification, setShowDraftNotification] = useState(false);
@@ -354,7 +353,6 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     });
 
     setValues(newValues);
-    setShowTemplates(false);
     notify.success(`Plantilla "${template.name}" cargada correctamente`);
   };
 
@@ -379,7 +377,6 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     };
 
     setLayers((prev) => [...prev, newLayer]);
-    setShowCliparts(false);
     notify.success(`Clipart "${clipart.name}" añadido`);
   };
 
@@ -846,6 +843,38 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     }
   };
 
+  // Get card_selector field if exists (for theme gallery)
+  const getCardSelectorField = (): CustomizationField | null => {
+    return schema.fields.find(f => f.fieldType === 'card_selector') || null;
+  };
+
+  const cardSelectorField = getCardSelectorField();
+  const cardSelectorConfig = cardSelectorField?.config as CardSelectorConfig | undefined;
+  const hasThemes = cardSelectorConfig?.options && cardSelectorConfig.options.length > 0;
+
+  // Handle theme selection from modal
+  const handleSelectTheme = (option: { value: string; label: string; priceModifier?: number }) => {
+    if (!cardSelectorField) return;
+
+    handleFieldChange(cardSelectorField.id, {
+      fieldId: cardSelectorField.id,
+      value: option.value,
+      displayValue: option.label,
+      priceModifier: option.priceModifier || cardSelectorField.priceModifier || 0,
+    });
+
+    setShowThemes(false);
+    notify.success(`Temática "${option.label}" seleccionada`);
+  };
+
+  // Get currently selected theme
+  const getSelectedTheme = () => {
+    if (!cardSelectorField) return null;
+    const cardValue = values[cardSelectorField.id];
+    if (!cardValue) return null;
+    return cardSelectorConfig?.options?.find(o => o.value === cardValue.value) || null;
+  };
+
   // Sort fields by order
   const sortedFields = [...schema.fields].sort((a, b) => {
     const orderA = a.order ?? 999;
@@ -1273,6 +1302,29 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column: Preview */}
           <div className="order-2 lg:order-1">
+            {/* Theme/Design Selection Button */}
+            {hasThemes && (
+              <div className="mb-4">
+                <button
+                  onClick={() => setShowThemes(true)}
+                  className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold hover:shadow-xl transition-all"
+                >
+                  <Palette className="w-6 h-6" />
+                  <span>Elegir Temática / Diseño</span>
+                  {getSelectedTheme() && (
+                    <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
+                      {getSelectedTheme()?.label}
+                    </span>
+                  )}
+                </button>
+                {getSelectedTheme()?.previewImage && (
+                  <p className="text-center text-sm text-gray-500 mt-2">
+                    Temática actual: <span className="font-semibold text-purple-600">{getSelectedTheme()?.label}</span>
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Usar SplitProductPreview para productos de resina (imagen es solo referencia) */}
             {isResinProduct() ? (
               <SplitProductPreview
@@ -1418,6 +1470,120 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
             </p>
           </div>
         </div>
+
+        {/* Theme Selection Modal */}
+        {showThemes && hasThemes && cardSelectorConfig && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Palette className="w-6 h-6 text-white" />
+                  <h3 className="text-xl font-bold text-white">
+                    Elige una Temática
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowThemes(false)}
+                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6 text-white" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                <p className="text-gray-600 mb-6">
+                  Selecciona una temática para tu producto. La imagen de vista previa se actualizará automáticamente.
+                </p>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {cardSelectorConfig.options.map((option) => {
+                    const isSelected = getSelectedTheme()?.value === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        onClick={() => handleSelectTheme(option)}
+                        className={`relative rounded-xl overflow-hidden border-3 transition-all hover:shadow-lg ${
+                          isSelected
+                            ? 'border-purple-500 ring-4 ring-purple-200 shadow-lg'
+                            : 'border-gray-200 hover:border-purple-300'
+                        }`}
+                      >
+                        {/* Theme Image */}
+                        <div className="aspect-square bg-gray-100 relative">
+                          {option.imageUrl ? (
+                            <img
+                              src={option.imageUrl}
+                              alt={option.label}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : option.previewImage ? (
+                            <img
+                              src={option.previewImage}
+                              alt={option.label}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400">
+                              <Palette className="w-12 h-12" />
+                            </div>
+                          )}
+
+                          {/* Badge */}
+                          {option.badge && (
+                            <span className="absolute top-2 right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                              {option.badge}
+                            </span>
+                          )}
+
+                          {/* Selected indicator */}
+                          {isSelected && (
+                            <div className="absolute top-2 left-2 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Theme Info */}
+                        <div className={`p-3 ${isSelected ? 'bg-purple-50' : 'bg-white'}`}>
+                          <h4 className={`font-bold text-sm ${isSelected ? 'text-purple-700' : 'text-gray-800'}`}>
+                            {option.label}
+                          </h4>
+                          {option.description && (
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                              {option.description}
+                            </p>
+                          )}
+                          {option.priceModifier && option.priceModifier > 0 && (
+                            <p className="text-sm font-semibold text-purple-600 mt-1">
+                              +€{option.priceModifier.toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-center">
+                <p className="text-sm text-gray-500">
+                  {cardSelectorConfig.options.length} temáticas disponibles
+                </p>
+                <button
+                  onClick={() => setShowThemes(false)}
+                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
