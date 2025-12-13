@@ -92,7 +92,8 @@ export interface CardOption {
   value: string;
   label: string;
   subtitle?: string;
-  imageUrl?: string;
+  imageUrl?: string;       // Thumbnail pequeño en el selector de cards
+  previewImage?: string;   // Imagen grande para el preview del producto (como color en camisetas)
   icon?: string;
   features?: string[];
   badge?: string;  // 'Más vendido', 'Recomendado', etc.

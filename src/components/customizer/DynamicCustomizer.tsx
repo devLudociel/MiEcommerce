@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Loader, Sparkles, Image as ImageIcon, RotateCcw, Save } from 'lucide-react';
+import { ShoppingCart, Loader, RotateCcw, Save } from 'lucide-react';
 import type {
   CustomizationSchema,
   CustomizationField,
@@ -21,8 +21,6 @@ import ImageUploadField from './fields/ImageUploadField';
 import ProductPreview from './ProductPreview';
 import SplitProductPreview from './SplitProductPreview';
 import TextileProductPreview from './TextileProductPreview';
-import TemplateGallery from './TemplateGallery';
-import ClipartGallery from './ClipartGallery';
 import ShareDesignButton from './ShareDesignButton';
 import SaveDesignButton from './SaveDesignButton';
 import { addToCart } from '../../store/cartStore';
@@ -855,61 +853,49 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     return orderA - orderB;
   });
 
-  // Get base image for preview based on selected color
+  // Get base image for preview based on selected color OR card_selector (temática)
   const getBaseImage = (): string => {
-    // Find color selector field
+    // PRIORIDAD 1: Buscar card_selector con previewImage (temáticas)
+    const cardField = schema.fields.find(f => f.fieldType === 'card_selector');
+    if (cardField) {
+      const cardValue = values[cardField.id];
+      if (cardValue) {
+        const cardConfig = cardField.config as CardSelectorConfig;
+        const selectedCard = cardConfig.options?.find(c => c.value === cardValue.value);
+
+        if (selectedCard?.previewImage) {
+          console.log('[getBaseImage] ✅ Using card_selector previewImage:', selectedCard.previewImage);
+          return selectedCard.previewImage;
+        }
+      }
+    }
+
+    // PRIORIDAD 2: Buscar color_selector con previewImage
     const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
-    if (!colorField) {
-      // No color selector, use default image from schema
-      console.log('[getBaseImage] No color field found, using default');
-      return schema.previewImages?.default || product.images[0] || '';
+    if (colorField) {
+      const colorValue = values[colorField.id];
+      if (colorValue) {
+        const colorConfig = colorField.config as ColorSelectorConfig;
+        const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
+
+        // Soportar múltiples formatos de imagen
+        if (selectedColor?.previewImages?.default) {
+          console.log('[getBaseImage] ✅ Using color previewImages.default');
+          return selectedColor.previewImages.default;
+        }
+        if (selectedColor?.previewImages?.front) {
+          console.log('[getBaseImage] ✅ Using color previewImages.front');
+          return selectedColor.previewImages.front;
+        }
+        if (selectedColor?.previewImage) {
+          console.log('[getBaseImage] ✅ Using color previewImage (legacy)');
+          return selectedColor.previewImage;
+        }
+      }
     }
 
-    const colorValue = values[colorField.id];
-    console.log('[getBaseImage] Color value:', colorValue);
-
-    if (!colorValue) {
-      // No color selected yet, use default
-      console.log('[getBaseImage] No color selected, using default');
-      return schema.previewImages?.default || product.images[0] || '';
-    }
-
-    // Get the selected color's preview image
-    const colorConfig = colorField.config as ColorSelectorConfig;
-    const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
-
-    console.log('[getBaseImage] Selected color:', selectedColor);
-    console.log('[getBaseImage] previewImages object:', selectedColor?.previewImages);
-    console.log('[getBaseImage] previewImages keys:', selectedColor?.previewImages ? Object.keys(selectedColor.previewImages) : 'N/A');
-
-    // NUEVO: Soportar múltiples formatos de imagen
-    let previewImage: string | undefined;
-
-    // Formato 1: previewImages.default (preferido para productos simples)
-    if (selectedColor?.previewImages?.default) {
-      previewImage = selectedColor.previewImages.default;
-      console.log('[getBaseImage] ✅ Using previewImages.default:', previewImage);
-    }
-    // Formato 2: previewImages.front (para productos con frente/espalda o cuadros)
-    else if (selectedColor?.previewImages?.front) {
-      previewImage = selectedColor.previewImages.front;
-      console.log('[getBaseImage] ✅ Using previewImages.front:', previewImage);
-    }
-    // Formato 3: previewImage (string directo, legacy)
-    else if (selectedColor?.previewImage) {
-      previewImage = selectedColor.previewImage;
-      console.log('[getBaseImage] ✅ Using previewImage (legacy):', previewImage);
-    }
-    else {
-      console.log('[getBaseImage] ❌ No valid preview image found in color config');
-    }
-
-    if (previewImage) {
-      return previewImage;
-    }
-
-    // Fallback to default
-    console.log('[getBaseImage] No preview image in color, using fallback');
+    // PRIORIDAD 3: Fallback a imagen por defecto
+    console.log('[getBaseImage] Using fallback default image');
     return schema.previewImages?.default || product.images[0] || '';
   };
 
@@ -1283,31 +1269,6 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
           </div>
         )}
 
-        {/* Template Gallery Modal */}
-        {showTemplates && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-            <div className="max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-              <TemplateGallery
-                categoryId={product.categoryId}
-                onSelectTemplate={handleLoadTemplate}
-                onClose={() => setShowTemplates(false)}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Clipart Gallery Modal */}
-        {showCliparts && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-            <div className="max-w-6xl w-full">
-              <ClipartGallery
-                onSelectClipart={handleSelectClipart}
-                onClose={() => setShowCliparts(false)}
-              />
-            </div>
-          </div>
-        )}
-
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column: Preview */}
@@ -1360,25 +1321,6 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
           {/* Right Column: Fields */}
           <div className="order-1 lg:order-2">
-            {/* Template & Clipart Buttons */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-              <button
-                onClick={() => setShowTemplates(true)}
-                className="bg-gradient-to-r from-pink-500 to-purple-500 text-white py-3 px-6 rounded-xl font-bold text-base hover:shadow-xl transition-all flex items-center justify-center gap-3 group"
-              >
-                <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
-                Plantillas
-              </button>
-
-              <button
-                onClick={() => setShowCliparts(true)}
-                className="bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 px-6 rounded-xl font-bold text-base hover:shadow-xl transition-all flex items-center justify-center gap-3 group"
-              >
-                <ImageIcon className="w-5 h-5 group-hover:animate-pulse" />
-                Cliparts
-              </button>
-            </div>
-
             <div className="space-y-6 mb-8">
               {sortedFields.map((field) => renderField(field))}
             </div>
