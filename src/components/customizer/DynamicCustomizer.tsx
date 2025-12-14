@@ -10,6 +10,7 @@ import type {
   TextInputConfig,
   CheckboxConfig,
   NumberInputConfig,
+  DropdownConfig,
   DesignTemplate,
   Clipart,
   DesignLayer,
@@ -316,23 +317,47 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     return 1;
   };
 
+  // Helper function to get tiered unit price from quantity field
+  const getTieredUnitPrice = (
+    quantityField: CustomizationField | undefined,
+    selectedValue: CustomizationValue | undefined
+  ): number | null => {
+    if (!quantityField || !selectedValue) return null;
+
+    // Check if it's a dropdown with unitPriceOverride
+    if (quantityField.fieldType === 'dropdown') {
+      const dropdownConfig = quantityField.config as DropdownConfig;
+      const selectedOption = dropdownConfig.options?.find(
+        opt => opt.value === selectedValue.value
+      );
+      if (selectedOption?.unitPriceOverride !== undefined) {
+        return selectedOption.unitPriceOverride;
+      }
+    }
+
+    return null;
+  };
+
   // Find quantity field and get the selected quantity
   const quantityField = schema.fields.find(f => isQuantityField(f));
-  const selectedQuantity = quantityField
-    ? extractQuantity(values[quantityField.id])
-    : 1;
+  const quantityValue = quantityField ? values[quantityField.id] : undefined;
+  const selectedQuantity = extractQuantity(quantityValue);
 
-  // Calculate pricing with quantity multiplication
+  // Get tiered unit price if available, otherwise use product base price
+  const tieredUnitPrice = getTieredUnitPrice(quantityField, quantityValue);
+  const effectiveBasePrice = tieredUnitPrice ?? product.basePrice;
+
+  // Calculate pricing with quantity multiplication and tiered pricing
   const customizationPrice = Object.values(values).reduce(
     (sum, val) => sum + (val.priceModifier || 0),
     0
   );
 
-  const unitPrice = product.basePrice + customizationPrice;
+  const unitPrice = effectiveBasePrice + customizationPrice;
   const totalPrice = unitPrice * selectedQuantity;
 
   const pricing: CustomizationPricing = {
-    basePrice: product.basePrice,
+    basePrice: effectiveBasePrice, // Use tiered price if available
     customizationPrice,
     totalPrice,
     quantity: selectedQuantity,

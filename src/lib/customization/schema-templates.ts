@@ -122,14 +122,15 @@ export const SCHEMA_CAJAS_PERSONALIZADAS: CustomizationSchema = {
       fieldType: 'dropdown',
       label: 'Cantidad',
       required: true,
+      isQuantityMultiplier: true,
       config: {
         placeholder: 'Selecciona cantidad',
         options: [
-          { value: '50', label: '50 unidades', priceModifier: 0, description: '€2.50/unidad' },
-          { value: '100', label: '100 unidades', priceModifier: 0, description: '€2.00/unidad' },
-          { value: '250', label: '250 unidades', priceModifier: 0, description: '€1.50/unidad' },
-          { value: '500', label: '500 unidades', priceModifier: 0, description: '€1.20/unidad' },
-          { value: '1000', label: '1000+ unidades', priceModifier: 0, description: 'Precio especial' }
+          { value: '50', label: '50 unidades', unitPriceOverride: 2.50, description: '€2.50/unidad' },
+          { value: '100', label: '100 unidades', unitPriceOverride: 2.00, description: '€2.00/unidad' },
+          { value: '250', label: '250 unidades', unitPriceOverride: 1.50, description: '€1.50/unidad' },
+          { value: '500', label: '500 unidades', unitPriceOverride: 1.20, description: '€1.20/unidad' },
+          { value: '1000', label: '1000+ unidades', unitPriceOverride: 1.00, description: '€1.00/unidad' }
         ]
       },
       priceModifier: 0,
@@ -258,12 +259,13 @@ export const SCHEMA_BOLSAS_PAPEL: CustomizationSchema = {
       fieldType: 'dropdown',
       label: 'Cantidad',
       required: true,
+      isQuantityMultiplier: true,
       config: {
         options: [
-          { value: '100', label: '100 unidades', description: '€0.80/unidad' },
-          { value: '250', label: '250 unidades', description: '€0.60/unidad' },
-          { value: '500', label: '500 unidades', description: '€0.45/unidad' },
-          { value: '1000', label: '1000 unidades', description: '€0.35/unidad' }
+          { value: '100', label: '100 unidades', unitPriceOverride: 0.80, description: '€0.80/unidad' },
+          { value: '250', label: '250 unidades', unitPriceOverride: 0.60, description: '€0.60/unidad' },
+          { value: '500', label: '500 unidades', unitPriceOverride: 0.45, description: '€0.45/unidad' },
+          { value: '1000', label: '1000 unidades', unitPriceOverride: 0.35, description: '€0.35/unidad' }
         ]
       },
       priceModifier: 0,
@@ -351,12 +353,13 @@ export const SCHEMA_ETIQUETAS_ADHESIVAS: CustomizationSchema = {
       fieldType: 'dropdown',
       label: 'Cantidad',
       required: true,
+      isQuantityMultiplier: true,
       config: {
         options: [
-          { value: '100', label: '100 etiquetas', description: '€0.15/unidad' },
-          { value: '250', label: '250 etiquetas', description: '€0.10/unidad' },
-          { value: '500', label: '500 etiquetas', description: '€0.07/unidad' },
-          { value: '1000', label: '1000 etiquetas', description: '€0.05/unidad' }
+          { value: '100', label: '100 etiquetas', unitPriceOverride: 0.15, description: '€0.15/unidad' },
+          { value: '250', label: '250 etiquetas', unitPriceOverride: 0.10, description: '€0.10/unidad' },
+          { value: '500', label: '500 etiquetas', unitPriceOverride: 0.07, description: '€0.07/unidad' },
+          { value: '1000', label: '1000 etiquetas', unitPriceOverride: 0.05, description: '€0.05/unidad' }
         ]
       },
       priceModifier: 0,

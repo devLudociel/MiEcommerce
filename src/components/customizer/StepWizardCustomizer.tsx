@@ -329,21 +329,44 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     return 1;
   }, []);
 
-  // Calculate pricing with quantity multiplication
+  // Helper function to get tiered unit price from quantity field
+  const getTieredUnitPrice = useCallback((
+    quantityField: CustomizationField | undefined,
+    selectedValue: CustomizationValue | undefined
+  ): number | null => {
+    if (!quantityField || !selectedValue) return null;
+
+    // Check if it's a dropdown with unitPriceOverride
+    if (quantityField.fieldType === 'dropdown') {
+      const dropdownConfig = quantityField.config as DropdownConfig;
+      const selectedOption = dropdownConfig.options?.find(
+        opt => opt.value === selectedValue.value
+      );
+      if (selectedOption?.unitPriceOverride !== undefined) {
+        return selectedOption.unitPriceOverride;
+      }
+    }
+
+    return null;
+  }, []);
+
+  // Calculate pricing with quantity multiplication and tiered pricing
   const pricing: CustomizationPricing = useMemo(() => {
-    const basePrice = product.basePrice;
+    // Find quantity field and get the selected quantity
+    const quantityField = schema.fields.find(f => isQuantityField(f));
+    const quantityValue = quantityField ? values[quantityField.id] : undefined;
+    const quantity = extractQuantity(quantityValue);
+
+    // Get tiered unit price if available, otherwise use product base price
+    const tieredUnitPrice = getTieredUnitPrice(quantityField, quantityValue);
+    const effectiveBasePrice = tieredUnitPrice ?? product.basePrice;
+
     const customizationPrice = Object.values(values).reduce(
       (sum, val) => sum + (val.priceModifier || 0),
       0
     );
 
-    // Find quantity field and get the selected quantity
-    const quantityField = schema.fields.find(f => isQuantityField(f));
-    const quantity = quantityField
-      ? extractQuantity(values[quantityField.id])
-      : 1;
-
-    const unitPrice = basePrice + customizationPrice;
+    const unitPrice = effectiveBasePrice + customizationPrice;
     const totalPrice = unitPrice * quantity;
 
     const breakdown = Object.entries(values)
@@ -356,8 +379,8 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
         };
       });
 
-    return { basePrice, customizationPrice, totalPrice, quantity, unitPrice, breakdown };
-  }, [product.basePrice, values, schema.fields, isQuantityField, extractQuantity]);
+    return { basePrice: effectiveBasePrice, customizationPrice, totalPrice, quantity, unitPrice, breakdown };
+  }, [product.basePrice, values, schema.fields, isQuantityField, extractQuantity, getTieredUnitPrice]);
 
   const handleFieldChange = useCallback((fieldId: string, value: CustomizationValue) => {
     const field = schema.fields.find((f) => f.id === fieldId);

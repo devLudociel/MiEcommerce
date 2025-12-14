@@ -64,6 +64,8 @@ export interface DropdownOption {
   label: string;
   priceModifier?: number;
   description?: string;
+  // Precio escalonado - sobrescribe el precio base del producto para esta cantidad
+  unitPriceOverride?: number;  // ej: 50 uds = €2.50/ud, 100 uds = €2.00/ud
 }
 
 export interface DropdownConfig {
