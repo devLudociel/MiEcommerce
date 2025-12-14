@@ -184,9 +184,25 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
         // Try loading themes for both categoryId and subcategoryId
         const categoryIds = [product.categoryId, product.subcategoryId].filter(Boolean) as string[];
 
+        // DEBUG: Log what IDs we're searching for
+        console.log('[DynamicCustomizer] 🔍 Product info:', {
+          name: product.name,
+          categoryId: product.categoryId,
+          subcategoryId: product.subcategoryId,
+          searchingFor: categoryIds,
+        });
+
         let themes: Theme[] = [];
         for (const catId of categoryIds) {
           const catThemes = await getThemesForCategory(catId);
+          console.log(`[DynamicCustomizer] 🎨 Themes found for categoryId "${catId}":`, catThemes.length);
+          catThemes.forEach(t => {
+            console.log(`  - Theme "${t.name}" has categoryImages:`, t.categoryImages?.map(ci => ({
+              categoryId: ci.categoryId,
+              categoryName: ci.categoryName,
+              variantsCount: ci.variants?.length || 0,
+            })));
+          });
           themes = [...themes, ...catThemes];
         }
 
@@ -197,8 +213,10 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
         setCentralizedThemes(uniqueThemes);
         logger.info('[DynamicCustomizer] Centralized themes loaded:', uniqueThemes.length);
+        console.log('[DynamicCustomizer] ✅ Total themes loaded:', uniqueThemes.length);
       } catch (error) {
         logger.error('[DynamicCustomizer] Error loading centralized themes:', error);
+        console.error('[DynamicCustomizer] ❌ Error:', error);
       } finally {
         setLoadingThemes(false);
       }

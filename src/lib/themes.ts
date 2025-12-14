@@ -146,10 +146,20 @@ export async function getThemesForCategory(categoryId: string): Promise<Theme[]>
   // Primero obtenemos todas las temáticas activas
   const themes = await getActiveThemes();
 
+  // DEBUG: Log all themes and their category images
+  console.log(`[getThemesForCategory] 🔍 Looking for categoryId: "${categoryId}"`);
+  console.log(`[getThemesForCategory] All active themes (${themes.length}):`);
+  themes.forEach(t => {
+    console.log(`  - "${t.name}" has categoryImages with IDs:`, t.categoryImages?.map(ci => ci.categoryId));
+  });
+
   // Filtramos las que tienen imagen para esta categoría
-  return themes.filter(theme =>
+  const filtered = themes.filter(theme =>
     theme.categoryImages?.some(ci => ci.categoryId === categoryId)
   );
+
+  console.log(`[getThemesForCategory] ✅ Filtered themes for "${categoryId}":`, filtered.length);
+  return filtered;
 }
 
 /**
