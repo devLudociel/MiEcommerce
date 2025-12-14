@@ -77,7 +77,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
         </p>
 
         {/* Atributos destacados - Ocultos en móvil muy pequeño */}
-        {product.attributes.length > 0 && (
+        {product.attributes && product.attributes.length > 0 && (
           <div className="hidden sm:block mb-2 sm:mb-3">
             <div className="flex flex-wrap gap-1">
               {product.attributes.slice(0, 3).map((attr, index) => (
@@ -98,7 +98,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
         )}
 
         {/* Tags - Solo en desktop */}
-        {product.tags.length > 0 && (
+        {product.tags && product.tags.length > 0 && (
           <div className="hidden md:block mb-3">
             <div className="flex flex-wrap gap-1">
               {product.tags.slice(0, 2).map((tag) => (
