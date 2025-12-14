@@ -241,6 +241,24 @@ service firebase.storage {
     }
 
     // ==========================================================================
+    // THEMES: Centralized theme images for product customization
+    // ==========================================================================
+    match /themes/{userId}/{themeId}/{fileName} {
+      // Authenticated users can upload to their own folder
+      allow create, update: if isAuthenticated() &&
+                              request.auth.uid == userId &&
+                              isValidSize() &&
+                              isImage();
+
+      // Anyone can read (public theme images)
+      allow read: if true;
+
+      // Only file owner or admin can delete
+      allow delete: if isAuthenticated() &&
+                      (request.auth.uid == userId || isAdmin());
+    }
+
+    // ==========================================================================
     // DENY ALL OTHER PATHS
     // ==========================================================================
     match /{allPaths=**} {

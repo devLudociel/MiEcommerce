@@ -14,6 +14,8 @@ import type {
   Clipart,
   DesignLayer,
 } from '../../types/customization';
+import type { Theme, ThemeCategoryImage } from '../../lib/themes';
+import { getThemesForCategory } from '../../lib/themes';
 import ColorSelector from './fields/ColorSelector';
 import SizeSelector from './fields/SizeSelector';
 import DropdownField from './fields/DropdownField';
@@ -54,6 +56,11 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   const [layers, setLayers] = useState<DesignLayer[]>([]);
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
   const [showDraftNotification, setShowDraftNotification] = useState(false);
+
+  // Centralized themes state
+  const [centralizedThemes, setCentralizedThemes] = useState<Theme[]>([]);
+  const [selectedCentralizedTheme, setSelectedCentralizedTheme] = useState<Theme | null>(null);
+  const [loadingThemes, setLoadingThemes] = useState(true);
 
   // Auto-save draft functionality
   const draftKey = `draft_${product.id}`;
@@ -167,6 +174,37 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
       window.history.replaceState({}, '', newUrl);
     }
   }, [product.id]);
+
+  // Load centralized themes for this product's category
+  useEffect(() => {
+    const loadCentralizedThemes = async () => {
+      setLoadingThemes(true);
+      try {
+        // Try loading themes for both categoryId and subcategoryId
+        const categoryIds = [product.categoryId, product.subcategoryId].filter(Boolean) as string[];
+
+        let themes: Theme[] = [];
+        for (const catId of categoryIds) {
+          const catThemes = await getThemesForCategory(catId);
+          themes = [...themes, ...catThemes];
+        }
+
+        // Remove duplicates (same theme might match both category and subcategory)
+        const uniqueThemes = themes.filter(
+          (theme, index, self) => index === self.findIndex(t => t.id === theme.id)
+        );
+
+        setCentralizedThemes(uniqueThemes);
+        logger.info('[DynamicCustomizer] Centralized themes loaded:', uniqueThemes.length);
+      } catch (error) {
+        logger.error('[DynamicCustomizer] Error loading centralized themes:', error);
+      } finally {
+        setLoadingThemes(false);
+      }
+    };
+
+    loadCentralizedThemes();
+  }, [product.categoryId, product.subcategoryId]);
 
   // Check for existing draft on mount (only if not reordering)
   useEffect(() => {
@@ -843,37 +881,86 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     }
   };
 
-  // Get card_selector field if exists (for theme gallery)
+  // Get card_selector field if exists (for legacy theme gallery)
   const getCardSelectorField = (): CustomizationField | null => {
     return schema.fields.find(f => f.fieldType === 'card_selector') || null;
   };
 
   const cardSelectorField = getCardSelectorField();
   const cardSelectorConfig = cardSelectorField?.config as CardSelectorConfig | undefined;
-  const hasThemes = cardSelectorConfig?.options && cardSelectorConfig.options.length > 0;
 
-  // Handle theme selection from modal
+  // Check if there are themes available (centralized OR from card_selector)
+  const hasCentralizedThemes = centralizedThemes.length > 0;
+  const hasLegacyThemes = cardSelectorConfig?.options && cardSelectorConfig.options.length > 0;
+  const hasThemes = hasCentralizedThemes || hasLegacyThemes;
+
+  // Get category image from centralized theme for current product category
+  const getThemeCategoryImage = (theme: Theme): ThemeCategoryImage | null => {
+    const categoryIds = [product.categoryId, product.subcategoryId].filter(Boolean);
+    for (const catId of categoryIds) {
+      const catImage = theme.categoryImages?.find(ci => ci.categoryId === catId);
+      if (catImage) return catImage;
+    }
+    return null;
+  };
+
+  // Handle theme selection from modal (supports both centralized and legacy)
   const handleSelectTheme = (option: { value: string; label: string; priceModifier?: number }) => {
-    if (!cardSelectorField) return;
+    // Check if it's a centralized theme
+    const centralizedTheme = centralizedThemes.find(t => t.id === option.value);
+    if (centralizedTheme) {
+      setSelectedCentralizedTheme(centralizedTheme);
+      setShowThemes(false);
+      notify.success(`Temática "${option.label}" seleccionada`);
+      return;
+    }
 
-    handleFieldChange(cardSelectorField.id, {
-      fieldId: cardSelectorField.id,
-      value: option.value,
-      displayValue: option.label,
-      priceModifier: option.priceModifier || cardSelectorField.priceModifier || 0,
-    });
+    // Legacy card_selector support
+    if (cardSelectorField) {
+      handleFieldChange(cardSelectorField.id, {
+        fieldId: cardSelectorField.id,
+        value: option.value,
+        displayValue: option.label,
+        priceModifier: option.priceModifier || cardSelectorField.priceModifier || 0,
+      });
+    }
 
     setShowThemes(false);
     notify.success(`Temática "${option.label}" seleccionada`);
   };
 
-  // Get currently selected theme
-  const getSelectedTheme = () => {
-    if (!cardSelectorField) return null;
-    const cardValue = values[cardSelectorField.id];
-    if (!cardValue) return null;
-    return cardSelectorConfig?.options?.find(o => o.value === cardValue.value) || null;
+  // Get currently selected theme info (supports both centralized and legacy)
+  const getSelectedThemeInfo = (): { value: string; label: string; previewImage?: string } | null => {
+    // Priority 1: Centralized theme
+    if (selectedCentralizedTheme) {
+      const catImage = getThemeCategoryImage(selectedCentralizedTheme);
+      return {
+        value: selectedCentralizedTheme.id,
+        label: selectedCentralizedTheme.name,
+        previewImage: catImage?.previewImage,
+      };
+    }
+
+    // Priority 2: Legacy card_selector
+    if (cardSelectorField) {
+      const cardValue = values[cardSelectorField.id];
+      if (cardValue) {
+        const selectedOption = cardSelectorConfig?.options?.find(o => o.value === cardValue.value);
+        if (selectedOption) {
+          return {
+            value: selectedOption.value,
+            label: selectedOption.label,
+            previewImage: selectedOption.previewImage,
+          };
+        }
+      }
+    }
+
+    return null;
   };
+
+  // Alias for backwards compatibility
+  const getSelectedTheme = getSelectedThemeInfo;
 
   // Sort fields by order
   const sortedFields = [...schema.fields].sort((a, b) => {
@@ -882,9 +969,18 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     return orderA - orderB;
   });
 
-  // Get base image for preview based on selected color OR card_selector (temática)
+  // Get base image for preview based on selected theme, color, or default
   const getBaseImage = (): string => {
-    // PRIORIDAD 1: Buscar card_selector con previewImage (temáticas)
+    // PRIORIDAD 1: Temática centralizada seleccionada
+    if (selectedCentralizedTheme) {
+      const catImage = getThemeCategoryImage(selectedCentralizedTheme);
+      if (catImage?.previewImage) {
+        console.log('[getBaseImage] ✅ Using centralized theme previewImage:', catImage.previewImage);
+        return catImage.previewImage;
+      }
+    }
+
+    // PRIORIDAD 2: Buscar card_selector con previewImage (temáticas legacy)
     const cardField = schema.fields.find(f => f.fieldType === 'card_selector');
     if (cardField) {
       const cardValue = values[cardField.id];
@@ -899,7 +995,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
       }
     }
 
-    // PRIORIDAD 2: Buscar color_selector con previewImage
+    // PRIORIDAD 3: Buscar color_selector con previewImage
     const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
     if (colorField) {
       const colorValue = values[colorField.id];
@@ -923,7 +1019,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
       }
     }
 
-    // PRIORIDAD 3: Fallback a imagen por defecto
+    // PRIORIDAD 4: Fallback a imagen por defecto
     console.log('[getBaseImage] Using fallback default image');
     return schema.previewImages?.default || product.images[0] || '';
   };
@@ -1472,7 +1568,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
         </div>
 
         {/* Theme Selection Modal */}
-        {showThemes && hasThemes && cardSelectorConfig && (
+        {showThemes && hasThemes && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
               {/* Modal Header */}
@@ -1498,7 +1594,79 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                 </p>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {cardSelectorConfig.options.map((option) => {
+                  {/* Centralized Themes (Priority) */}
+                  {centralizedThemes.map((theme) => {
+                    const catImage = getThemeCategoryImage(theme);
+                    const isSelected = selectedCentralizedTheme?.id === theme.id;
+                    return (
+                      <button
+                        key={theme.id}
+                        onClick={() => handleSelectTheme({ value: theme.id, label: theme.name, priceModifier: theme.priceModifier })}
+                        className={`relative rounded-xl overflow-hidden border-3 transition-all hover:shadow-lg ${
+                          isSelected
+                            ? 'border-purple-500 ring-4 ring-purple-200 shadow-lg'
+                            : 'border-gray-200 hover:border-purple-300'
+                        }`}
+                      >
+                        {/* Theme Image */}
+                        <div className="aspect-square bg-gray-100 relative">
+                          {catImage?.imageUrl ? (
+                            <img
+                              src={catImage.imageUrl}
+                              alt={theme.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : catImage?.previewImage ? (
+                            <img
+                              src={catImage.previewImage}
+                              alt={theme.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400">
+                              <Palette className="w-12 h-12" />
+                            </div>
+                          )}
+
+                          {/* Badge */}
+                          {theme.badge && (
+                            <span className="absolute top-2 right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                              {theme.badge}
+                            </span>
+                          )}
+
+                          {/* Selected indicator */}
+                          {isSelected && (
+                            <div className="absolute top-2 left-2 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Theme Info */}
+                        <div className={`p-3 ${isSelected ? 'bg-purple-50' : 'bg-white'}`}>
+                          <h4 className={`font-bold text-sm ${isSelected ? 'text-purple-700' : 'text-gray-800'}`}>
+                            {theme.name}
+                          </h4>
+                          {theme.description && (
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                              {theme.description}
+                            </p>
+                          )}
+                          {theme.priceModifier && theme.priceModifier > 0 && (
+                            <p className="text-sm font-semibold text-purple-600 mt-1">
+                              +€{theme.priceModifier.toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+
+                  {/* Legacy Card Selector Options (if no centralized themes) */}
+                  {!hasCentralizedThemes && cardSelectorConfig?.options?.map((option) => {
                     const isSelected = getSelectedTheme()?.value === option.value;
                     return (
                       <button
@@ -1572,7 +1740,10 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
               {/* Modal Footer */}
               <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-center">
                 <p className="text-sm text-gray-500">
-                  {cardSelectorConfig.options.length} temáticas disponibles
+                  {hasCentralizedThemes
+                    ? `${centralizedThemes.length} temáticas disponibles`
+                    : `${cardSelectorConfig?.options?.length || 0} temáticas disponibles`
+                  }
                 </p>
                 <button
                   onClick={() => setShowThemes(false)}
