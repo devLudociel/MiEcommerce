@@ -176,7 +176,7 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
     );
 
     return () => unsubscribe();
-  }, [currentCategory?.id, currentSubcategory?.id]);
+  }, [categorySlug, subcategorySlug]);
 
   // Extraer tags únicos de los productos (dinámicamente)
   const availableTags = useMemo(() => {
