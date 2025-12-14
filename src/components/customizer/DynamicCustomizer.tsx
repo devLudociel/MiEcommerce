@@ -14,8 +14,8 @@ import type {
   Clipart,
   DesignLayer,
 } from '../../types/customization';
-import type { Theme, ThemeCategoryImage } from '../../lib/themes';
-import { getThemesForCategory } from '../../lib/themes';
+import type { Theme, ThemeCategoryImage, ThemeVariant } from '../../lib/themes';
+import { getThemesForCategory, getThemeVariantsForCategory } from '../../lib/themes';
 import ColorSelector from './fields/ColorSelector';
 import SizeSelector from './fields/SizeSelector';
 import DropdownField from './fields/DropdownField';
@@ -60,6 +60,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   // Centralized themes state
   const [centralizedThemes, setCentralizedThemes] = useState<Theme[]>([]);
   const [selectedCentralizedTheme, setSelectedCentralizedTheme] = useState<Theme | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<ThemeVariant | null>(null);
   const [loadingThemes, setLoadingThemes] = useState(true);
 
   // Auto-save draft functionality
@@ -904,12 +905,31 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     return null;
   };
 
+  // Handle theme/variant selection from modal
+  const handleSelectVariant = (theme: Theme, variant: ThemeVariant) => {
+    setSelectedCentralizedTheme(theme);
+    setSelectedVariant(variant);
+    setShowThemes(false);
+    notify.success(`"${variant.name}" de ${theme.name} seleccionado`);
+  };
+
   // Handle theme selection from modal (supports both centralized and legacy)
   const handleSelectTheme = (option: { value: string; label: string; priceModifier?: number }) => {
     // Check if it's a centralized theme
     const centralizedTheme = centralizedThemes.find(t => t.id === option.value);
     if (centralizedTheme) {
+      // Get first variant if available
+      const categoryIds = [product.categoryId, product.subcategoryId].filter(Boolean) as string[];
+      let firstVariant: ThemeVariant | null = null;
+      for (const catId of categoryIds) {
+        const variants = getThemeVariantsForCategory(centralizedTheme, catId);
+        if (variants.length > 0) {
+          firstVariant = variants[0];
+          break;
+        }
+      }
       setSelectedCentralizedTheme(centralizedTheme);
+      setSelectedVariant(firstVariant);
       setShowThemes(false);
       notify.success(`Temática "${option.label}" seleccionada`);
       return;
@@ -931,8 +951,17 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
   // Get currently selected theme info (supports both centralized and legacy)
   const getSelectedThemeInfo = (): { value: string; label: string; previewImage?: string } | null => {
-    // Priority 1: Centralized theme
+    // Priority 1: Centralized theme with selected variant
     if (selectedCentralizedTheme) {
+      // Use selected variant's preview if available
+      if (selectedVariant) {
+        return {
+          value: `${selectedCentralizedTheme.id}_${selectedVariant.id}`,
+          label: `${selectedCentralizedTheme.name} - ${selectedVariant.name}`,
+          previewImage: selectedVariant.previewImage,
+        };
+      }
+      // Fallback to theme's category image (legacy format)
       const catImage = getThemeCategoryImage(selectedCentralizedTheme);
       return {
         value: selectedCentralizedTheme.id,
@@ -971,7 +1000,13 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
   // Get base image for preview based on selected theme, color, or default
   const getBaseImage = (): string => {
-    // PRIORIDAD 1: Temática centralizada seleccionada
+    // PRIORIDAD 1: Variante seleccionada de temática centralizada
+    if (selectedVariant?.previewImage) {
+      console.log('[getBaseImage] ✅ Using selected variant previewImage:', selectedVariant.previewImage);
+      return selectedVariant.previewImage;
+    }
+
+    // PRIORIDAD 2: Temática centralizada seleccionada (formato legacy)
     if (selectedCentralizedTheme) {
       const catImage = getThemeCategoryImage(selectedCentralizedTheme);
       if (catImage?.previewImage) {
@@ -1590,159 +1625,195 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
               {/* Modal Content */}
               <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
                 <p className="text-gray-600 mb-6">
-                  Selecciona una temática para tu producto. La imagen de vista previa se actualizará automáticamente.
+                  Selecciona un diseño para tu producto. La imagen de vista previa se actualizará automáticamente.
                 </p>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {/* Centralized Themes (Priority) */}
-                  {centralizedThemes.map((theme) => {
-                    const catImage = getThemeCategoryImage(theme);
-                    const isSelected = selectedCentralizedTheme?.id === theme.id;
-                    return (
-                      <button
-                        key={theme.id}
-                        onClick={() => handleSelectTheme({ value: theme.id, label: theme.name, priceModifier: theme.priceModifier })}
-                        className={`relative rounded-xl overflow-hidden border-3 transition-all hover:shadow-lg ${
-                          isSelected
-                            ? 'border-purple-500 ring-4 ring-purple-200 shadow-lg'
-                            : 'border-gray-200 hover:border-purple-300'
-                        }`}
-                      >
-                        {/* Theme Image */}
-                        <div className="aspect-square bg-gray-100 relative">
-                          {catImage?.imageUrl ? (
-                            <img
-                              src={catImage.imageUrl}
-                              alt={theme.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : catImage?.previewImage ? (
-                            <img
-                              src={catImage.previewImage}
-                              alt={theme.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400">
-                              <Palette className="w-12 h-12" />
+                {/* Centralized Themes with Variants */}
+                {hasCentralizedThemes && (
+                  <div className="space-y-6">
+                    {centralizedThemes.map((theme) => {
+                      // Get all variants for this theme in the current product category
+                      const categoryIds = [product.categoryId, product.subcategoryId].filter(Boolean) as string[];
+                      let variants: ThemeVariant[] = [];
+                      for (const catId of categoryIds) {
+                        const catVariants = getThemeVariantsForCategory(theme, catId);
+                        if (catVariants.length > 0) {
+                          variants = catVariants;
+                          break;
+                        }
+                      }
+
+                      if (variants.length === 0) return null;
+
+                      return (
+                        <div key={theme.id} className="bg-gray-50 rounded-xl p-4">
+                          {/* Theme Header */}
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                              <Palette className="w-5 h-5 text-white" />
                             </div>
-                          )}
-
-                          {/* Badge */}
-                          {theme.badge && (
-                            <span className="absolute top-2 right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-                              {theme.badge}
-                            </span>
-                          )}
-
-                          {/* Selected indicator */}
-                          {isSelected && (
-                            <div className="absolute top-2 left-2 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
+                            <div>
+                              <h4 className="font-bold text-gray-900">{theme.name}</h4>
+                              {theme.description && (
+                                <p className="text-xs text-gray-500">{theme.description}</p>
+                              )}
                             </div>
-                          )}
-                        </div>
+                            {theme.badge && (
+                              <span className="ml-auto bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                                {theme.badge}
+                              </span>
+                            )}
+                          </div>
 
-                        {/* Theme Info */}
-                        <div className={`p-3 ${isSelected ? 'bg-purple-50' : 'bg-white'}`}>
-                          <h4 className={`font-bold text-sm ${isSelected ? 'text-purple-700' : 'text-gray-800'}`}>
-                            {theme.name}
-                          </h4>
-                          {theme.description && (
-                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                              {theme.description}
-                            </p>
-                          )}
+                          {/* Variants Grid */}
+                          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                            {variants.map((variant) => {
+                              const isSelected = selectedVariant?.id === variant.id && selectedCentralizedTheme?.id === theme.id;
+                              return (
+                                <button
+                                  key={variant.id}
+                                  onClick={() => handleSelectVariant(theme, variant)}
+                                  className={`relative rounded-lg overflow-hidden border-2 transition-all hover:shadow-md ${
+                                    isSelected
+                                      ? 'border-purple-500 ring-2 ring-purple-200 shadow-md'
+                                      : 'border-gray-200 hover:border-purple-300'
+                                  }`}
+                                >
+                                  {/* Variant Image */}
+                                  <div className="aspect-square bg-white relative">
+                                    <img
+                                      src={variant.imageUrl}
+                                      alt={variant.name}
+                                      className="w-full h-full object-cover"
+                                    />
+
+                                    {/* Selected indicator */}
+                                    {isSelected && (
+                                      <div className="absolute top-1 left-1 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center shadow">
+                                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                        </svg>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Variant Name */}
+                                  <div className={`px-2 py-1.5 ${isSelected ? 'bg-purple-50' : 'bg-white'}`}>
+                                    <p className={`text-xs font-medium text-center truncate ${isSelected ? 'text-purple-700' : 'text-gray-700'}`}>
+                                      {variant.name}
+                                    </p>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Theme Price */}
                           {theme.priceModifier && theme.priceModifier > 0 && (
-                            <p className="text-sm font-semibold text-purple-600 mt-1">
-                              +€{theme.priceModifier.toFixed(2)}
+                            <p className="text-sm text-purple-600 font-medium mt-3 text-right">
+                              +€{theme.priceModifier.toFixed(2)} por esta temática
                             </p>
                           )}
                         </div>
-                      </button>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+                )}
 
-                  {/* Legacy Card Selector Options (if no centralized themes) */}
-                  {!hasCentralizedThemes && cardSelectorConfig?.options?.map((option) => {
-                    const isSelected = getSelectedTheme()?.value === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        onClick={() => handleSelectTheme(option)}
-                        className={`relative rounded-xl overflow-hidden border-3 transition-all hover:shadow-lg ${
-                          isSelected
-                            ? 'border-purple-500 ring-4 ring-purple-200 shadow-lg'
-                            : 'border-gray-200 hover:border-purple-300'
-                        }`}
-                      >
-                        {/* Theme Image */}
-                        <div className="aspect-square bg-gray-100 relative">
-                          {option.imageUrl ? (
-                            <img
-                              src={option.imageUrl}
-                              alt={option.label}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : option.previewImage ? (
-                            <img
-                              src={option.previewImage}
-                              alt={option.label}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400">
-                              <Palette className="w-12 h-12" />
-                            </div>
-                          )}
+                {/* Legacy Card Selector Options (if no centralized themes) */}
+                {!hasCentralizedThemes && cardSelectorConfig?.options && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {cardSelectorConfig.options.map((option) => {
+                      const isSelected = getSelectedTheme()?.value === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          onClick={() => handleSelectTheme(option)}
+                          className={`relative rounded-xl overflow-hidden border-3 transition-all hover:shadow-lg ${
+                            isSelected
+                              ? 'border-purple-500 ring-4 ring-purple-200 shadow-lg'
+                              : 'border-gray-200 hover:border-purple-300'
+                          }`}
+                        >
+                          {/* Theme Image */}
+                          <div className="aspect-square bg-gray-100 relative">
+                            {option.imageUrl ? (
+                              <img
+                                src={option.imageUrl}
+                                alt={option.label}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : option.previewImage ? (
+                              <img
+                                src={option.previewImage}
+                                alt={option.label}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                <Palette className="w-12 h-12" />
+                              </div>
+                            )}
 
-                          {/* Badge */}
-                          {option.badge && (
-                            <span className="absolute top-2 right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-                              {option.badge}
-                            </span>
-                          )}
+                            {/* Badge */}
+                            {option.badge && (
+                              <span className="absolute top-2 right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                                {option.badge}
+                              </span>
+                            )}
 
-                          {/* Selected indicator */}
-                          {isSelected && (
-                            <div className="absolute top-2 left-2 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
+                            {/* Selected indicator */}
+                            {isSelected && (
+                              <div className="absolute top-2 left-2 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
 
-                        {/* Theme Info */}
-                        <div className={`p-3 ${isSelected ? 'bg-purple-50' : 'bg-white'}`}>
-                          <h4 className={`font-bold text-sm ${isSelected ? 'text-purple-700' : 'text-gray-800'}`}>
-                            {option.label}
-                          </h4>
-                          {option.description && (
-                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                              {option.description}
-                            </p>
-                          )}
-                          {option.priceModifier && option.priceModifier > 0 && (
-                            <p className="text-sm font-semibold text-purple-600 mt-1">
-                              +€{option.priceModifier.toFixed(2)}
-                            </p>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                          {/* Theme Info */}
+                          <div className={`p-3 ${isSelected ? 'bg-purple-50' : 'bg-white'}`}>
+                            <h4 className={`font-bold text-sm ${isSelected ? 'text-purple-700' : 'text-gray-800'}`}>
+                              {option.label}
+                            </h4>
+                            {option.description && (
+                              <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                {option.description}
+                              </p>
+                            )}
+                            {option.priceModifier && option.priceModifier > 0 && (
+                              <p className="text-sm font-semibold text-purple-600 mt-1">
+                                +€{option.priceModifier.toFixed(2)}
+                              </p>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Modal Footer */}
               <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-center">
                 <p className="text-sm text-gray-500">
                   {hasCentralizedThemes
-                    ? `${centralizedThemes.length} temáticas disponibles`
-                    : `${cardSelectorConfig?.options?.length || 0} temáticas disponibles`
+                    ? (() => {
+                        const categoryIds = [product.categoryId, product.subcategoryId].filter(Boolean) as string[];
+                        let totalVariants = 0;
+                        centralizedThemes.forEach(theme => {
+                          for (const catId of categoryIds) {
+                            const variants = getThemeVariantsForCategory(theme, catId);
+                            if (variants.length > 0) {
+                              totalVariants += variants.length;
+                              break;
+                            }
+                          }
+                        });
+                        return `${centralizedThemes.length} temáticas, ${totalVariants} diseños disponibles`;
+                      })()
+                    : `${cardSelectorConfig?.options?.length || 0} diseños disponibles`
                   }
                 </p>
                 <button

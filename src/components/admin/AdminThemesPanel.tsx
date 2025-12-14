@@ -17,14 +17,16 @@ import {
   ChevronUp,
   GripVertical,
 } from 'lucide-react';
-import type { Theme, ThemeCategoryImage, CreateThemeInput } from '../../lib/themes';
+import type { Theme, ThemeCategoryImage, ThemeVariant, CreateThemeInput } from '../../lib/themes';
 import {
   getAllThemes,
   createTheme,
   updateTheme,
   deleteTheme,
-  setThemeCategoryImage,
+  addThemeVariant,
+  removeThemeVariant,
   removeThemeCategoryImage,
+  getThemeVariantsForCategory,
 } from '../../lib/themes';
 import { categories } from '../../data/categories';
 import { storage, auth } from '../../lib/firebase';
@@ -505,7 +507,7 @@ function ThemeCard({
 }
 
 // ============================================================================
-// CATEGORY IMAGES EDITOR
+// CATEGORY IMAGES EDITOR (con soporte para múltiples variantes)
 // ============================================================================
 
 interface CategoryImagesEditorProps {
@@ -515,8 +517,10 @@ interface CategoryImagesEditorProps {
 
 function CategoryImagesEditor({ theme, onRefresh }: CategoryImagesEditorProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [variantName, setVariantName] = useState<string>('');
   const [uploading, setUploading] = useState<'thumbnail' | 'preview' | null>(null);
-  const [newImage, setNewImage] = useState<Partial<ThemeCategoryImage>>({});
+  const [newVariant, setNewVariant] = useState<Partial<ThemeVariant>>({});
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const previewInputRef = useRef<HTMLInputElement>(null);
@@ -550,7 +554,7 @@ function CategoryImagesEditor({ theme, onRefresh }: CategoryImagesEditorProps) {
       const snapshot = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
 
-      setNewImage({ ...newImage, [type]: downloadURL });
+      setNewVariant({ ...newVariant, [type]: downloadURL });
       notify.success(type === 'imageUrl' ? 'Miniatura subida' : 'Preview subido');
     } catch (error) {
       logger.error('[CategoryImagesEditor] Error uploading:', error);
@@ -560,13 +564,18 @@ function CategoryImagesEditor({ theme, onRefresh }: CategoryImagesEditorProps) {
     }
   };
 
-  const handleSaveCategoryImage = async () => {
+  const handleSaveVariant = async () => {
     if (!selectedCategory) {
       notify.error('Selecciona una categoría');
       return;
     }
 
-    if (!newImage.imageUrl || !newImage.previewImage) {
+    if (!variantName.trim()) {
+      notify.error('Escribe un nombre para la variante (ej: Mickey, Frozen, etc.)');
+      return;
+    }
+
+    if (!newVariant.imageUrl || !newVariant.previewImage) {
       notify.error('Debes subir ambas imágenes (miniatura y preview)');
       return;
     }
@@ -575,234 +584,345 @@ function CategoryImagesEditor({ theme, onRefresh }: CategoryImagesEditorProps) {
     if (!category) return;
 
     try {
-      await setThemeCategoryImage(theme.id, {
-        categoryId: selectedCategory,
-        categoryName: category.name,
-        imageUrl: newImage.imageUrl,
-        previewImage: newImage.previewImage,
+      await addThemeVariant(theme.id, selectedCategory, category.name, {
+        name: variantName.trim(),
+        imageUrl: newVariant.imageUrl,
+        previewImage: newVariant.previewImage,
       });
 
-      setSelectedCategory('');
-      setNewImage({});
+      // Reset form but keep category selected for adding more variants
+      setVariantName('');
+      setNewVariant({});
       onRefresh();
-      notify.success(`Imagen añadida para "${category.name}"`);
+      notify.success(`Variante "${variantName}" añadida a "${category.name}"`);
     } catch (error) {
-      logger.error('[CategoryImagesEditor] Error saving category image:', error);
-      notify.error('Error al guardar la imagen');
+      logger.error('[CategoryImagesEditor] Error saving variant:', error);
+      notify.error('Error al guardar la variante');
     }
   };
 
-  const handleRemoveCategoryImage = async (categoryId: string) => {
+  const handleRemoveVariant = async (categoryId: string, variantId: string) => {
+    try {
+      await removeThemeVariant(theme.id, categoryId, variantId);
+      onRefresh();
+      notify.success('Variante eliminada');
+    } catch (error) {
+      logger.error('[CategoryImagesEditor] Error removing variant:', error);
+      notify.error('Error al eliminar la variante');
+    }
+  };
+
+  const handleRemoveCategory = async (categoryId: string) => {
     try {
       await removeThemeCategoryImage(theme.id, categoryId);
       onRefresh();
-      notify.success('Imagen eliminada');
+      notify.success('Categoría y todas sus variantes eliminadas');
     } catch (error) {
-      logger.error('[CategoryImagesEditor] Error removing category image:', error);
-      notify.error('Error al eliminar la imagen');
+      logger.error('[CategoryImagesEditor] Error removing category:', error);
+      notify.error('Error al eliminar la categoría');
     }
   };
 
-  // Categories that already have images for this theme
-  const existingCategoryIds = theme.categoryImages?.map(ci => ci.categoryId) || [];
-  const availableCategories = flatCategories.filter(c => !existingCategoryIds.includes(c.id));
+  const toggleCategoryExpanded = (categoryId: string) => {
+    setExpandedCategories({
+      ...expandedCategories,
+      [categoryId]: !expandedCategories[categoryId],
+    });
+  };
+
+  // Get variants count for display
+  const getTotalVariants = (ci: ThemeCategoryImage) => {
+    if (ci.variants && ci.variants.length > 0) {
+      return ci.variants.length;
+    }
+    // Legacy format
+    if (ci.imageUrl && ci.previewImage) {
+      return 1;
+    }
+    return 0;
+  };
 
   return (
     <div className="space-y-4">
-      {/* Existing Category Images */}
+      {/* Existing Categories with Variants */}
       {theme.categoryImages && theme.categoryImages.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {theme.categoryImages.map((ci) => (
-            <div
-              key={ci.categoryId}
-              className="bg-white rounded-lg border border-gray-200 p-3"
-            >
-              <div className="flex items-start gap-3">
-                <img
-                  src={ci.imageUrl}
-                  alt={ci.categoryName}
-                  className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <h5 className="font-medium text-gray-900 text-sm truncate">
-                    {ci.categoryName}
-                  </h5>
-                  <div className="flex gap-2 mt-2">
-                    <a
-                      href={ci.previewImage}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-500 hover:underline"
-                    >
-                      Ver Preview
-                    </a>
-                    <button
-                      onClick={() => handleRemoveCategoryImage(ci.categoryId)}
-                      className="text-xs text-red-500 hover:underline"
-                    >
-                      Eliminar
-                    </button>
+        <div className="space-y-3 mb-6">
+          {theme.categoryImages.map((ci) => {
+            const variants = getThemeVariantsForCategory(theme, ci.categoryId);
+            const isExpanded = expandedCategories[ci.categoryId];
+
+            return (
+              <div
+                key={ci.categoryId}
+                className="bg-white rounded-lg border border-gray-200 overflow-hidden"
+              >
+                {/* Category Header */}
+                <div
+                  className="flex items-center gap-3 p-3 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => toggleCategoryExpanded(ci.categoryId)}
+                >
+                  <button className="p-1">
+                    {isExpanded ? (
+                      <ChevronUp className="w-4 h-4 text-gray-500" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-gray-500" />
+                    )}
+                  </button>
+
+                  {/* Show first variant thumbnail as category preview */}
+                  {variants[0]?.imageUrl && (
+                    <img
+                      src={variants[0].imageUrl}
+                      alt={ci.categoryName}
+                      className="w-10 h-10 rounded object-cover flex-shrink-0"
+                    />
+                  )}
+
+                  <div className="flex-1">
+                    <h5 className="font-medium text-gray-900 text-sm">
+                      {ci.categoryName}
+                    </h5>
+                    <p className="text-xs text-gray-500">
+                      {getTotalVariants(ci)} variante{getTotalVariants(ci) !== 1 ? 's' : ''}
+                    </p>
                   </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveCategory(ci.categoryId);
+                    }}
+                    className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors"
+                    title="Eliminar categoría completa"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
+
+                {/* Variants List (expanded) */}
+                {isExpanded && (
+                  <div className="p-3 border-t border-gray-200">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {variants.map((variant) => (
+                        <div
+                          key={variant.id}
+                          className="bg-gray-50 rounded-lg p-2 relative group"
+                        >
+                          <img
+                            src={variant.imageUrl}
+                            alt={variant.name}
+                            className="w-full aspect-square rounded object-cover mb-2"
+                          />
+                          <p className="text-xs font-medium text-gray-700 text-center truncate">
+                            {variant.name}
+                          </p>
+                          <div className="flex justify-center gap-2 mt-1">
+                            <a
+                              href={variant.previewImage}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-500 hover:underline"
+                            >
+                              Preview
+                            </a>
+                            <button
+                              onClick={() => handleRemoveVariant(ci.categoryId, variant.id)}
+                              className="text-xs text-red-500 hover:underline"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Quick add button inside category */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCategory(ci.categoryId);
+                          setExpandedCategories({ ...expandedCategories, [ci.categoryId]: true });
+                        }}
+                        className="bg-purple-50 border-2 border-dashed border-purple-300 rounded-lg p-2 flex flex-col items-center justify-center aspect-square hover:bg-purple-100 transition-colors"
+                      >
+                        <Plus className="w-6 h-6 text-purple-500 mb-1" />
+                        <span className="text-xs text-purple-600 font-medium">Añadir</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* Add New Category Image */}
-      {availableCategories.length > 0 ? (
-        <div className="bg-white rounded-lg border-2 border-dashed border-purple-300 p-4">
-          <h5 className="font-semibold text-purple-900 mb-3">Agregar imagen para categoría</h5>
+      {/* Add New Variant Form */}
+      <div className="bg-white rounded-lg border-2 border-dashed border-purple-300 p-4">
+        <h5 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
+          <Plus className="w-5 h-5" />
+          Añadir Nueva Variante
+        </h5>
+        <p className="text-sm text-gray-500 mb-4">
+          Añade variantes a cualquier categoría. Por ejemplo: Mickey, Minnie, Frozen dentro de Disney &gt; Cajas.
+        </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            {/* Category Select */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Categoría de Producto
-              </label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              >
-                <option value="">Seleccionar categoría...</option>
-                {availableCategories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          {/* Category Select */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Categoría de Producto
+            </label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            >
+              <option value="">Seleccionar categoría...</option>
+              {flatCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {selectedCategory && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Thumbnail Upload */}
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                  <Image className="w-4 h-4" />
-                  Miniatura (para el selector)
-                </label>
-                {newImage.imageUrl ? (
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={newImage.imageUrl}
-                      alt="Miniatura"
-                      className="w-16 h-16 rounded-lg object-cover"
-                    />
-                    <button
-                      onClick={() => setNewImage({ ...newImage, imageUrl: undefined })}
-                      className="text-xs text-red-500 hover:underline"
-                    >
-                      Cambiar
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <input
-                      type="file"
-                      ref={thumbnailInputRef}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleUploadImage(file, 'imageUrl');
-                      }}
-                      accept="image/*"
-                      className="hidden"
-                    />
-                    <button
-                      onClick={() => thumbnailInputRef.current?.click()}
-                      disabled={uploading === 'thumbnail'}
-                      className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {uploading === 'thumbnail' ? (
-                        <>
-                          <Loader className="w-4 h-4 animate-spin" />
-                          Subiendo...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-4 h-4" />
-                          Subir Miniatura
-                        </>
-                      )}
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {/* Preview Upload */}
-              <div className="bg-green-50 p-3 rounded-lg">
-                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                  <Eye className="w-4 h-4" />
-                  Preview (imagen del producto)
-                </label>
-                {newImage.previewImage ? (
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={newImage.previewImage}
-                      alt="Preview"
-                      className="w-16 h-16 rounded-lg object-cover"
-                    />
-                    <button
-                      onClick={() => setNewImage({ ...newImage, previewImage: undefined })}
-                      className="text-xs text-red-500 hover:underline"
-                    >
-                      Cambiar
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <input
-                      type="file"
-                      ref={previewInputRef}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleUploadImage(file, 'previewImage');
-                      }}
-                      accept="image/*"
-                      className="hidden"
-                    />
-                    <button
-                      onClick={() => previewInputRef.current?.click()}
-                      disabled={uploading === 'preview'}
-                      className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {uploading === 'preview' ? (
-                        <>
-                          <Loader className="w-4 h-4 animate-spin" />
-                          Subiendo...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-4 h-4" />
-                          Subir Preview
-                        </>
-                      )}
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {selectedCategory && newImage.imageUrl && newImage.previewImage && (
-            <div className="mt-4">
-              <button
-                onClick={handleSaveCategoryImage}
-                className="w-full px-4 py-2 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 transition-colors flex items-center justify-center gap-2"
-              >
-                <Save className="w-4 h-4" />
-                Guardar Imagen de Categoría
-              </button>
-            </div>
-          )}
+          {/* Variant Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre de la Variante
+            </label>
+            <input
+              type="text"
+              value={variantName}
+              onChange={(e) => setVariantName(e.target.value)}
+              placeholder="Ej: Mickey, Frozen, Moana..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
         </div>
-      ) : (
-        <div className="text-center py-4 text-gray-500 text-sm">
-          Esta temática ya tiene imágenes para todas las categorías disponibles.
-        </div>
-      )}
+
+        {selectedCategory && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Thumbnail Upload */}
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                <Image className="w-4 h-4" />
+                Miniatura (para el selector)
+              </label>
+              {newVariant.imageUrl ? (
+                <div className="flex items-center gap-2">
+                  <img
+                    src={newVariant.imageUrl}
+                    alt="Miniatura"
+                    className="w-16 h-16 rounded-lg object-cover"
+                  />
+                  <button
+                    onClick={() => setNewVariant({ ...newVariant, imageUrl: undefined })}
+                    className="text-xs text-red-500 hover:underline"
+                  >
+                    Cambiar
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="file"
+                    ref={thumbnailInputRef}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUploadImage(file, 'imageUrl');
+                    }}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => thumbnailInputRef.current?.click()}
+                    disabled={uploading === 'thumbnail'}
+                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {uploading === 'thumbnail' ? (
+                      <>
+                        <Loader className="w-4 h-4 animate-spin" />
+                        Subiendo...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        Subir Miniatura
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Preview Upload */}
+            <div className="bg-green-50 p-3 rounded-lg">
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                <Eye className="w-4 h-4" />
+                Preview (imagen del producto)
+              </label>
+              {newVariant.previewImage ? (
+                <div className="flex items-center gap-2">
+                  <img
+                    src={newVariant.previewImage}
+                    alt="Preview"
+                    className="w-16 h-16 rounded-lg object-cover"
+                  />
+                  <button
+                    onClick={() => setNewVariant({ ...newVariant, previewImage: undefined })}
+                    className="text-xs text-red-500 hover:underline"
+                  >
+                    Cambiar
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="file"
+                    ref={previewInputRef}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUploadImage(file, 'previewImage');
+                    }}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => previewInputRef.current?.click()}
+                    disabled={uploading === 'preview'}
+                    className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {uploading === 'preview' ? (
+                      <>
+                        <Loader className="w-4 h-4 animate-spin" />
+                        Subiendo...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        Subir Preview
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {selectedCategory && variantName && newVariant.imageUrl && newVariant.previewImage && (
+          <div className="mt-4">
+            <button
+              onClick={handleSaveVariant}
+              className="w-full px-4 py-2 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 transition-colors flex items-center justify-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              Guardar Variante "{variantName}"
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

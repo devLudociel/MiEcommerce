@@ -22,13 +22,28 @@ import { logger } from './logger';
 // ============================================================================
 
 /**
- * Imagen de una temática para una categoría de producto específica
+ * Una variante/diseño específico dentro de una temática para una categoría
+ * Ej: "Mickey", "Minnie", "Frozen" dentro de Disney > Cajas
+ */
+export interface ThemeVariant {
+  id: string;              // ID único de la variante
+  name: string;            // Nombre de la variante (ej: "Mickey", "Minnie")
+  imageUrl: string;        // Miniatura para mostrar en el selector
+  previewImage: string;    // Imagen grande del producto con el diseño aplicado
+  order?: number;          // Orden de visualización
+}
+
+/**
+ * Imágenes de una temática para una categoría de producto específica
+ * Ahora soporta MÚLTIPLES variantes por categoría
  */
 export interface ThemeCategoryImage {
   categoryId: string;      // ID de la categoría de producto (ej: "tazas", "cajas")
   categoryName: string;    // Nombre legible (ej: "Tazas", "Cajas de Chuches")
-  imageUrl: string;        // Miniatura para mostrar en el selector
-  previewImage: string;    // Imagen grande del producto con el diseño aplicado
+  variants: ThemeVariant[]; // Múltiples variantes para esta categoría
+  // Campos legacy para compatibilidad (se usan si variants está vacío)
+  imageUrl?: string;       // Miniatura para mostrar en el selector
+  previewImage?: string;   // Imagen grande del producto con el diseño aplicado
 }
 
 /**
@@ -152,7 +167,7 @@ export async function updateTheme(id: string, updates: UpdateThemeInput): Promis
 }
 
 /**
- * Agregar o actualizar imagen de una categoría en una temática
+ * Agregar o actualizar imagen de una categoría en una temática (legacy - una imagen por categoría)
  */
 export async function setThemeCategoryImage(
   themeId: string,
@@ -184,7 +199,138 @@ export async function setThemeCategoryImage(
 }
 
 /**
- * Eliminar imagen de una categoría en una temática
+ * Agregar una nueva variante a una categoría en una temática
+ */
+export async function addThemeVariant(
+  themeId: string,
+  categoryId: string,
+  categoryName: string,
+  variant: Omit<ThemeVariant, 'id' | 'order'>
+): Promise<ThemeVariant> {
+  const theme = await getThemeById(themeId);
+  if (!theme) {
+    throw new Error(`Theme not found: ${themeId}`);
+  }
+
+  // Buscar si ya existe la categoría
+  const existingIndex = theme.categoryImages?.findIndex(
+    ci => ci.categoryId === categoryId
+  ) ?? -1;
+
+  const newVariant: ThemeVariant = {
+    id: `${categoryId}_${Date.now()}`,
+    name: variant.name,
+    imageUrl: variant.imageUrl,
+    previewImage: variant.previewImage,
+    order: 0,
+  };
+
+  let updatedImages: ThemeCategoryImage[];
+
+  if (existingIndex >= 0) {
+    // Añadir variante a categoría existente
+    updatedImages = [...theme.categoryImages];
+    const existingCategory = updatedImages[existingIndex];
+    const variants = existingCategory.variants || [];
+    newVariant.order = variants.length;
+    updatedImages[existingIndex] = {
+      ...existingCategory,
+      variants: [...variants, newVariant],
+    };
+  } else {
+    // Crear nueva categoría con la variante
+    updatedImages = [...(theme.categoryImages || []), {
+      categoryId,
+      categoryName,
+      variants: [newVariant],
+    }];
+  }
+
+  await updateTheme(themeId, { categoryImages: updatedImages });
+  logger.info('[Themes] Variant added to theme:', themeId, categoryId, newVariant.name);
+  return newVariant;
+}
+
+/**
+ * Actualizar una variante específica
+ */
+export async function updateThemeVariant(
+  themeId: string,
+  categoryId: string,
+  variantId: string,
+  updates: Partial<Omit<ThemeVariant, 'id'>>
+): Promise<void> {
+  const theme = await getThemeById(themeId);
+  if (!theme) {
+    throw new Error(`Theme not found: ${themeId}`);
+  }
+
+  const categoryIndex = theme.categoryImages?.findIndex(
+    ci => ci.categoryId === categoryId
+  ) ?? -1;
+
+  if (categoryIndex < 0) {
+    throw new Error(`Category not found: ${categoryId}`);
+  }
+
+  const updatedImages = [...theme.categoryImages];
+  const category = updatedImages[categoryIndex];
+  const variantIndex = category.variants?.findIndex(v => v.id === variantId) ?? -1;
+
+  if (variantIndex < 0) {
+    throw new Error(`Variant not found: ${variantId}`);
+  }
+
+  category.variants[variantIndex] = {
+    ...category.variants[variantIndex],
+    ...updates,
+  };
+
+  await updateTheme(themeId, { categoryImages: updatedImages });
+  logger.info('[Themes] Variant updated:', themeId, categoryId, variantId);
+}
+
+/**
+ * Eliminar una variante específica
+ */
+export async function removeThemeVariant(
+  themeId: string,
+  categoryId: string,
+  variantId: string
+): Promise<void> {
+  const theme = await getThemeById(themeId);
+  if (!theme) {
+    throw new Error(`Theme not found: ${themeId}`);
+  }
+
+  const categoryIndex = theme.categoryImages?.findIndex(
+    ci => ci.categoryId === categoryId
+  ) ?? -1;
+
+  if (categoryIndex < 0) {
+    throw new Error(`Category not found: ${categoryId}`);
+  }
+
+  const updatedImages = [...theme.categoryImages];
+  const category = updatedImages[categoryIndex];
+  const newVariants = category.variants?.filter(v => v.id !== variantId) || [];
+
+  if (newVariants.length === 0) {
+    // Si no quedan variantes, eliminar la categoría completa
+    updatedImages.splice(categoryIndex, 1);
+  } else {
+    updatedImages[categoryIndex] = {
+      ...category,
+      variants: newVariants,
+    };
+  }
+
+  await updateTheme(themeId, { categoryImages: updatedImages });
+  logger.info('[Themes] Variant removed:', themeId, categoryId, variantId);
+}
+
+/**
+ * Eliminar imagen de una categoría en una temática (elimina todas las variantes)
  */
 export async function removeThemeCategoryImage(
   themeId: string,
@@ -201,6 +347,34 @@ export async function removeThemeCategoryImage(
 
   await updateTheme(themeId, { categoryImages: updatedImages });
   logger.info('[Themes] Category image removed from theme:', themeId, categoryId);
+}
+
+/**
+ * Obtener todas las variantes de una temática para una categoría específica
+ */
+export function getThemeVariantsForCategory(
+  theme: Theme,
+  categoryId: string
+): ThemeVariant[] {
+  const categoryImage = theme.categoryImages?.find(ci => ci.categoryId === categoryId);
+  if (!categoryImage) return [];
+
+  // Si tiene variantes, devolverlas
+  if (categoryImage.variants && categoryImage.variants.length > 0) {
+    return categoryImage.variants;
+  }
+
+  // Compatibilidad legacy: si tiene imageUrl/previewImage sin variants
+  if (categoryImage.imageUrl && categoryImage.previewImage) {
+    return [{
+      id: `${categoryId}_legacy`,
+      name: theme.name,
+      imageUrl: categoryImage.imageUrl,
+      previewImage: categoryImage.previewImage,
+    }];
+  }
+
+  return [];
 }
 
 /**
