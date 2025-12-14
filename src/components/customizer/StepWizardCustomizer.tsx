@@ -294,14 +294,57 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     }
   }, [schema]);
 
-  // Calculate pricing
+  // Helper function to detect if a field is a quantity multiplier
+  const isQuantityField = useCallback((field: CustomizationField): boolean => {
+    // Explicit configuration takes priority
+    if (field.isQuantityMultiplier === true) return true;
+
+    // Auto-detect by field id or label (common patterns)
+    const idLower = field.id.toLowerCase();
+    const labelLower = field.label.toLowerCase();
+    const quantityKeywords = ['quantity', 'cantidad', 'unidades', 'units', 'qty'];
+
+    return quantityKeywords.some(keyword =>
+      idLower.includes(keyword) || labelLower.includes(keyword)
+    );
+  }, []);
+
+  // Helper function to extract numeric quantity from a field value
+  const extractQuantity = useCallback((value: CustomizationValue | undefined): number => {
+    if (!value || value.value === undefined || value.value === null) return 1;
+
+    const rawValue = value.value;
+
+    // If it's already a number, use it directly
+    if (typeof rawValue === 'number') return Math.max(1, rawValue);
+
+    // If it's a string, extract the first number from it
+    if (typeof rawValue === 'string') {
+      const match = rawValue.match(/\d+/);
+      if (match) {
+        return Math.max(1, parseInt(match[0], 10));
+      }
+    }
+
+    return 1;
+  }, []);
+
+  // Calculate pricing with quantity multiplication
   const pricing: CustomizationPricing = useMemo(() => {
     const basePrice = product.basePrice;
     const customizationPrice = Object.values(values).reduce(
       (sum, val) => sum + (val.priceModifier || 0),
       0
     );
-    const totalPrice = basePrice + customizationPrice;
+
+    // Find quantity field and get the selected quantity
+    const quantityField = schema.fields.find(f => isQuantityField(f));
+    const quantity = quantityField
+      ? extractQuantity(values[quantityField.id])
+      : 1;
+
+    const unitPrice = basePrice + customizationPrice;
+    const totalPrice = unitPrice * quantity;
 
     const breakdown = Object.entries(values)
       .filter(([_, val]) => val.priceModifier && val.priceModifier > 0)
@@ -313,8 +356,8 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
         };
       });
 
-    return { basePrice, customizationPrice, totalPrice, breakdown };
-  }, [product.basePrice, values, schema.fields]);
+    return { basePrice, customizationPrice, totalPrice, quantity, unitPrice, breakdown };
+  }, [product.basePrice, values, schema.fields, isQuantityField, extractQuantity]);
 
   const handleFieldChange = useCallback((fieldId: string, value: CustomizationValue) => {
     const field = schema.fields.find((f) => f.id === fieldId);
@@ -506,11 +549,12 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
         totalPriceModifier: pricing.customizationPrice,
       };
 
+      // Add to cart - use unit price and selected quantity
       addToCart({
         id: product.id,
         name: product.name,
-        price: pricing.totalPrice,
-        quantity: 1,
+        price: pricing.unitPrice, // Price per unit
+        quantity: pricing.quantity, // Selected quantity (e.g., 50 units)
         image: product.images[0] || '',
         customization: customizationData,
       });
@@ -899,22 +943,39 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
               <h4 className="font-bold text-gray-800 mb-3">Resumen de precio:</h4>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Precio base:</span>
-                  <span className="font-medium">{pricing.basePrice.toFixed(2)}</span>
+                  <span className="text-gray-600">Precio por unidad:</span>
+                  <span className="font-medium">€{pricing.basePrice.toFixed(2)}</span>
                 </div>
                 {pricing.breakdown.map((item, idx) => (
                   <div key={idx} className="flex justify-between text-sm">
                     <span className="text-gray-600">{item.fieldLabel}:</span>
-                    <span className="font-medium text-purple-600">+{item.price.toFixed(2)}</span>
+                    <span className="font-medium text-purple-600">+€{item.price.toFixed(2)}</span>
                   </div>
                 ))}
+                {pricing.customizationPrice > 0 && (
+                  <div className="flex justify-between text-sm text-gray-500">
+                    <span>Precio unitario total:</span>
+                    <span className="font-medium">€{pricing.unitPrice.toFixed(2)}</span>
+                  </div>
+                )}
+                {pricing.quantity > 1 && (
+                  <div className="flex justify-between text-sm bg-purple-100 -mx-2 px-2 py-1 rounded">
+                    <span className="text-gray-700">Cantidad:</span>
+                    <span className="font-bold text-purple-700">{pricing.quantity} unidades</span>
+                  </div>
+                )}
                 <div className="border-t border-gray-200 pt-2 mt-2">
                   <div className="flex justify-between">
                     <span className="font-bold text-gray-900">Total:</span>
                     <span className="text-xl font-bold text-purple-600">
-                      {pricing.totalPrice.toFixed(2)}
+                      €{pricing.totalPrice.toFixed(2)}
                     </span>
                   </div>
+                  {pricing.quantity > 1 && (
+                    <p className="text-xs text-gray-500 text-right mt-1">
+                      (€{pricing.unitPrice.toFixed(2)} × {pricing.quantity} unidades)
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1160,9 +1221,11 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
 
                 {/* Price indicator */}
                 <div className="text-center">
-                  <div className="text-xs text-gray-500">Total</div>
+                  <div className="text-xs text-gray-500">
+                    {pricing.quantity > 1 ? `Total (${pricing.quantity} uds)` : 'Total'}
+                  </div>
                   <div className="text-lg sm:text-xl font-bold text-purple-600">
-                    {pricing.totalPrice.toFixed(2)}
+                    €{pricing.totalPrice.toFixed(2)}
                   </div>
                 </div>
 

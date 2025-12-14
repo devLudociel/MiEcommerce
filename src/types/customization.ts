@@ -169,6 +169,9 @@ export interface CustomizationField {
 
   // Orden de visualización
   order?: number;
+
+  // Multiplicador de cantidad - si es true, el valor de este campo multiplica el precio base
+  isQuantityMultiplier?: boolean;
 }
 
 // ============================================================================
@@ -264,6 +267,8 @@ export interface CustomizationPricing {
   basePrice: number;
   customizationPrice: number;
   totalPrice: number;
+  quantity: number;              // Cantidad seleccionada (multiplicador)
+  unitPrice: number;             // Precio por unidad (basePrice + customizationPrice por unidad)
   breakdown: Array<{
     fieldLabel: string;
     price: number;

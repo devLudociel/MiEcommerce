@@ -281,17 +281,64 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     }
   }, [schema]);
 
-  // Calculate pricing
+  // Helper function to detect if a field is a quantity multiplier
+  const isQuantityField = (field: CustomizationField): boolean => {
+    // Explicit configuration takes priority
+    if (field.isQuantityMultiplier === true) return true;
+
+    // Auto-detect by field id or label (common patterns)
+    const idLower = field.id.toLowerCase();
+    const labelLower = field.label.toLowerCase();
+    const quantityKeywords = ['quantity', 'cantidad', 'unidades', 'units', 'qty'];
+
+    return quantityKeywords.some(keyword =>
+      idLower.includes(keyword) || labelLower.includes(keyword)
+    );
+  };
+
+  // Helper function to extract numeric quantity from a field value
+  const extractQuantity = (value: CustomizationValue | undefined): number => {
+    if (!value || value.value === undefined || value.value === null) return 1;
+
+    const rawValue = value.value;
+
+    // If it's already a number, use it directly
+    if (typeof rawValue === 'number') return Math.max(1, rawValue);
+
+    // If it's a string, extract the first number from it
+    if (typeof rawValue === 'string') {
+      const match = rawValue.match(/\d+/);
+      if (match) {
+        return Math.max(1, parseInt(match[0], 10));
+      }
+    }
+
+    return 1;
+  };
+
+  // Find quantity field and get the selected quantity
+  const quantityField = schema.fields.find(f => isQuantityField(f));
+  const selectedQuantity = quantityField
+    ? extractQuantity(values[quantityField.id])
+    : 1;
+
+  // Calculate pricing with quantity multiplication
+  const customizationPrice = Object.values(values).reduce(
+    (sum, val) => sum + (val.priceModifier || 0),
+    0
+  );
+
+  const unitPrice = product.basePrice + customizationPrice;
+  const totalPrice = unitPrice * selectedQuantity;
+
   const pricing: CustomizationPricing = {
     basePrice: product.basePrice,
-    customizationPrice: Object.values(values).reduce(
-      (sum, val) => sum + (val.priceModifier || 0),
-      0
-    ),
-    totalPrice: 0,
+    customizationPrice,
+    totalPrice,
+    quantity: selectedQuantity,
+    unitPrice,
     breakdown: [],
   };
-  pricing.totalPrice = pricing.basePrice + pricing.customizationPrice;
 
   // Build breakdown
   pricing.breakdown = Object.entries(values)
@@ -502,12 +549,12 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
         totalPriceModifier: pricing.customizationPrice,
       };
 
-      // Add to cart
+      // Add to cart - use unit price and selected quantity
       addToCart({
         id: product.id,
         name: product.name,
-        price: pricing.totalPrice,
-        quantity: 1,
+        price: pricing.unitPrice, // Price per unit
+        quantity: pricing.quantity, // Selected quantity (e.g., 50 units)
         image: product.images[0] || '',
         customization: customizationData,
       });
@@ -1532,7 +1579,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
               <div className="space-y-2">
                 <div className="flex justify-between text-gray-700">
-                  <span>Precio base:</span>
+                  <span>Precio por unidad:</span>
                   <span className="font-medium">€{pricing.basePrice.toFixed(2)}</span>
                 </div>
 
@@ -1543,6 +1590,20 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                   </div>
                 ))}
 
+                {pricing.customizationPrice > 0 && (
+                  <div className="flex justify-between text-gray-600 text-sm">
+                    <span>Precio unitario total:</span>
+                    <span className="font-medium">€{pricing.unitPrice.toFixed(2)}</span>
+                  </div>
+                )}
+
+                {pricing.quantity > 1 && (
+                  <div className="flex justify-between text-gray-700 bg-purple-100 -mx-2 px-2 py-1 rounded">
+                    <span>Cantidad:</span>
+                    <span className="font-bold text-purple-700">{pricing.quantity} unidades</span>
+                  </div>
+                )}
+
                 <div className="border-t-2 border-gray-300 pt-2 mt-2">
                   <div className="flex justify-between items-center">
                     <span className="text-xl font-bold text-gray-900">Total:</span>
@@ -1550,6 +1611,11 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                       €{pricing.totalPrice.toFixed(2)}
                     </span>
                   </div>
+                  {pricing.quantity > 1 && (
+                    <p className="text-xs text-gray-500 text-right mt-1">
+                      (€{pricing.unitPrice.toFixed(2)} × {pricing.quantity} unidades)
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
