@@ -18,6 +18,7 @@ import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import { Plus, Edit2, Trash2, X, Save, Upload, Image as ImageIcon } from 'lucide-react';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { categories as navbarCategoriesData } from '../../data/categories';
 
 // ============================================================================
 // TIPOS
@@ -78,40 +79,25 @@ type ProductInput = Omit<Product, 'id' | 'createdAt'> & {
 };
 
 // ============================================================================
-// CATEGORÍAS Y SUBCATEGORÍAS DEL NAVBAR (hardcodeadas - LA VERDAD DEL SISTEMA)
+// CATEGORÍAS Y SUBCATEGORÍAS DEL NAVBAR (importadas de categories.ts)
 // ============================================================================
 
-// Estas son las categorías REALES del navbar - NO usar categorías de Firebase
-const navbarCategories = [
-  { id: '1', name: 'Productos Gráficos', slug: 'graficos-impresos' },
-  { id: '2', name: 'Productos Textiles', slug: 'textiles' },
-  { id: '3', name: 'Productos de Papelería', slug: 'papeleria' },
-  { id: '4', name: 'Productos Sublimados', slug: 'sublimados' },
-  { id: '5', name: 'Corte y Grabado Láser', slug: 'corte-grabado' },
-  { id: '6', name: 'Eventos y Celebraciones', slug: 'eventos' },
-  { id: '7', name: 'Impresión 3D', slug: 'impresion-3d' },
-  { id: '8', name: 'Servicios Digitales', slug: 'servicios-digitales' },
-];
+// Estas son las categorías REALES del navbar - sincronizadas con categories.ts
+const navbarCategories = navbarCategoriesData.map(cat => ({
+  id: cat.id,
+  name: cat.name,
+  slug: cat.slug,
+}));
 
-const subcategories: Subcategory[] = [
-  { id: '1', categoryId: '1', name: 'Tarjetas de Visita', slug: 'tarjetas-visita' },
-  { id: '2', categoryId: '1', name: 'Etiquetas y Pegatinas', slug: 'etiquetas-pegatinas' },
-  { id: '3', categoryId: '1', name: 'Carteles para Eventos', slug: 'carteles-eventos' },
-  { id: '4', categoryId: '2', name: 'Ropa Personalizada', slug: 'ropa-personalizada' },
-  { id: '5', categoryId: '2', name: 'Complementos Textiles', slug: 'complementos-textiles' },
-  { id: '6', categoryId: '3', name: 'Cuadernos y Libretas', slug: 'cuadernos-libretas' },
-  { id: '7', categoryId: '3', name: 'Packaging Corporativo', slug: 'packaging-corporativo' },
-  { id: '8', categoryId: '4', name: 'Vajilla Personalizada', slug: 'vajilla-personalizada' },
-  { id: '9', categoryId: '4', name: 'Decoración Sublimada', slug: 'decoracion-sublimada' },
-  { id: '10', categoryId: '5', name: 'Llaveros Personalizados', slug: 'llaveros' },
-  { id: '11', categoryId: '5', name: 'Decoración en Madera', slug: 'decoracion-madera-eventos' },
-  { id: '12', categoryId: '5', name: 'Cuadros de Madera', slug: 'cuadros-madera' },
-  { id: '13', categoryId: '6', name: 'Packaging para Eventos', slug: 'packaging-eventos' },
-  { id: '14', categoryId: '7', name: 'Impresión en Resina', slug: 'impresion-resina' },
-  { id: '15', categoryId: '7', name: 'Impresión en Filamento', slug: 'impresion-filamento' },
-  { id: '16', categoryId: '8', name: 'Diseño Gráfico', slug: 'diseno-grafico' },
-  { id: '17', categoryId: '8', name: 'Desarrollo Web', slug: 'desarrollo-web' },
-];
+// Subcategorías extraídas del mismo archivo
+const subcategories: Subcategory[] = navbarCategoriesData.flatMap(cat =>
+  cat.subcategories.map(sub => ({
+    id: sub.id,
+    categoryId: cat.id,
+    name: sub.name,
+    slug: sub.slug,
+  }))
+);
 
 // ============================================================================
 // COMPONENTE PRINCIPAL
