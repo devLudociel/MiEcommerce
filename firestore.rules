@@ -131,6 +131,12 @@ service cloud.firestore {
       allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
     }
 
+    // Themes (temáticas centralizadas para personalización)
+    match /themes/{themeId} {
+      allow read: if true; // Cualquiera puede leer para ver temáticas en el customizer
+      allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar temáticas
+    }
+
     // Tracking events (admin para gestión de pedidos)
     match /tracking_events/{eventId} {
       allow read: if isAdmin();
