@@ -1,0 +1,13 @@
+---
+// src/pages/admin/descuentos-paquete.astro
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import RequireAdmin from '../../components/auth/RequireAdmin';
+import AdminBundleDiscounts from '../../components/admin/AdminBundleDiscounts';
+---
+
+<BaseLayout title="Descuentos por Paquete - Admin">
+  <RequireAdmin client:only="react">
+    <!-- PERFORMANCE: Load bundle discounts panel when browser is idle -->
+    <AdminBundleDiscounts client:idle />
+  </RequireAdmin>
+</BaseLayout>

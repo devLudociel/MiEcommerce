@@ -388,6 +388,16 @@ export default function AdminDashboard() {
           <div className="text-sm font-semibold text-gray-900">Cupones</div>
         </a>
         <a
+          href="/admin/descuentos-paquete"
+          className="p-4 bg-gradient-to-br from-amber-500 to-orange-500 border-2 border-amber-400 rounded-xl hover:shadow-xl transition-all text-center group relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 bg-yellow-400 text-xs font-bold px-2 py-0.5 rounded-bl-lg text-gray-900">
+            NUEVO
+          </div>
+          <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🎁</div>
+          <div className="text-sm font-semibold text-white">3x2 y Packs</div>
+        </a>
+        <a
           href="/admin/newsletter"
           className="p-4 bg-white border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-lg transition-all text-center group"
         >

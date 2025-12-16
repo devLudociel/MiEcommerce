@@ -212,6 +212,70 @@ export interface CouponUsage {
   usedAt: Timestamp;
 }
 
+// ============================================================================
+// BUNDLE DISCOUNTS: Quantity-based promotions (3x2, 2nd at 50%, etc.)
+// ============================================================================
+
+/**
+ * Bundle discount rule types
+ */
+export type BundleDiscountType =
+  | 'buy_x_get_y_free' // Compra X, lleva Y gratis (3x2, 4x3)
+  | 'buy_x_get_y_percent' // Compra X, el Y tiene X% descuento (2do al 50%)
+  | 'buy_x_fixed_price' // Compra X unidades por precio fijo (3 por €10)
+  | 'quantity_percent'; // Descuento % por cantidad (5+ unidades = 10% off)
+
+/**
+ * Bundle discount configuration
+ */
+export interface BundleDiscount {
+  id?: string;
+  name: string; // "3x2 en Camisetas", "2do al 50%"
+  description: string; // Descripción para mostrar al cliente
+  type: BundleDiscountType;
+
+  // Configuración según tipo
+  buyQuantity: number; // Cantidad que debe comprar (ej: 3 en 3x2)
+  getQuantity?: number; // Cantidad gratis o con descuento (ej: 1 en 3x2)
+  discountPercent?: number; // Porcentaje de descuento (ej: 50 para 2do al 50%)
+  fixedPrice?: number; // Precio fijo para el paquete (ej: €10 para "3 por €10")
+
+  // Aplicabilidad
+  applyTo: 'all' | 'categories' | 'products' | 'tags';
+  categoryIds?: string[]; // IDs de categorías donde aplica
+  productIds?: string[]; // IDs de productos donde aplica
+  tagIds?: string[]; // Tags donde aplica
+
+  // Restricciones
+  minPurchase?: number; // Compra mínima para activar
+  maxDiscount?: number; // Descuento máximo por orden
+  maxUsesPerOrder?: number; // Máximo de veces que se puede aplicar por orden
+
+  // Vigencia
+  startDate: Timestamp;
+  endDate: Timestamp;
+  active: boolean;
+
+  // Metadata
+  priority: number; // Prioridad (mayor = se aplica primero)
+  stackable: boolean; // Si se puede combinar con otros descuentos
+  createdBy: string;
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+/**
+ * Applied bundle discount in cart/order
+ */
+export interface AppliedBundleDiscount {
+  bundleId: string;
+  bundleName: string;
+  productIds: string[]; // Productos a los que se aplicó
+  originalPrice: number; // Precio original
+  discountedPrice: number; // Precio con descuento
+  savedAmount: number; // Cantidad ahorrada
+}
+
 // TRACKING: Event tracking for order shipments
 export interface TrackingEvent {
   status:
