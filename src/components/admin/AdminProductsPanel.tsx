@@ -46,6 +46,12 @@ interface Product {
   onSale: boolean;
   salePrice?: number;
 
+  // Control de Stock/Inventario
+  trackInventory: boolean; // Si true, se controla el stock
+  stock: number; // Cantidad disponible
+  lowStockThreshold: number; // Umbral para alerta de bajo stock (default: 5)
+  allowBackorder: boolean; // Si true, permite comprar sin stock (bajo pedido)
+
   // Metadata
   createdAt?: Timestamp | Date;
   updatedAt?: Timestamp | Date;
@@ -182,6 +188,11 @@ export default function AdminProductsPanelV2() {
       active: true,
       customizationSchemaId: '',
       onSale: false,
+      // Control de Stock - valores por defecto
+      trackInventory: false,
+      stock: 0,
+      lowStockThreshold: 5,
+      allowBackorder: false,
     });
     setSlugError(null);
     setShowModal(true);
@@ -509,6 +520,24 @@ export default function AdminProductsPanelV2() {
                           Destacado
                         </span>
                       )}
+                      {/* Stock indicator */}
+                      {product.trackInventory && (
+                        <span
+                          className={`px-2 py-1 rounded-lg text-xs font-medium w-fit ${
+                            product.stock === 0
+                              ? 'bg-red-100 text-red-700'
+                              : product.stock <= (product.lowStockThreshold || 5)
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-blue-100 text-blue-700'
+                          }`}
+                        >
+                          {product.stock === 0
+                            ? '❌ Sin stock'
+                            : product.stock <= (product.lowStockThreshold || 5)
+                            ? `⚠️ ${product.stock} uds`
+                            : `📦 ${product.stock} uds`}
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -773,6 +802,131 @@ export default function AdminProductsPanelV2() {
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Control de Stock */}
+              <div className="bg-amber-50 rounded-xl p-4 space-y-4">
+                <h4 className="font-semibold text-gray-800 flex items-center gap-2">
+                  <span className="text-lg">📦</span>
+                  Control de Stock
+                </h4>
+
+                {/* Toggle de seguimiento de inventario */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">
+                      Controlar inventario
+                    </label>
+                    <p className="text-xs text-gray-500">
+                      Activa para limitar ventas según stock disponible
+                    </p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.trackInventory || false}
+                      onChange={(e) =>
+                        setFormData({ ...formData, trackInventory: e.target.checked })
+                      }
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                  </label>
+                </div>
+
+                {/* Campos de stock - solo visibles si trackInventory está activo */}
+                {formData.trackInventory && (
+                  <div className="space-y-4 pt-2 border-t border-amber-200">
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Stock actual */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Stock disponible *
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={formData.stock ?? 0}
+                          onChange={(e) =>
+                            setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })
+                          }
+                          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent ${
+                            (formData.stock ?? 0) <= (formData.lowStockThreshold ?? 5)
+                              ? 'border-red-300 bg-red-50'
+                              : 'border-gray-300'
+                          }`}
+                          placeholder="100"
+                        />
+                        {(formData.stock ?? 0) <= (formData.lowStockThreshold ?? 5) && (
+                          <p className="mt-1 text-xs text-red-600 font-medium">
+                            ⚠️ Stock bajo
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Umbral de bajo stock */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Alerta bajo stock
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={formData.lowStockThreshold ?? 5}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              lowStockThreshold: parseInt(e.target.value) || 5,
+                            })
+                          }
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                          placeholder="5"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                          Alertar cuando queden menos de X unidades
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Permitir pedidos sin stock */}
+                    <div className="flex items-center justify-between bg-amber-100 rounded-lg p-3">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">
+                          Permitir pedidos sin stock
+                        </label>
+                        <p className="text-xs text-gray-500">
+                          Clientes pueden comprar bajo pedido (backorder)
+                        </p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.allowBackorder || false}
+                          onChange={(e) =>
+                            setFormData({ ...formData, allowBackorder: e.target.checked })
+                          }
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                      </label>
+                    </div>
+
+                    {/* Indicador visual del estado */}
+                    <div className={`text-center py-2 rounded-lg text-sm font-medium ${
+                      (formData.stock ?? 0) === 0
+                        ? 'bg-red-100 text-red-700'
+                        : (formData.stock ?? 0) <= (formData.lowStockThreshold ?? 5)
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-green-100 text-green-700'
+                    }`}>
+                      {(formData.stock ?? 0) === 0
+                        ? `❌ Sin stock${formData.allowBackorder ? ' (bajo pedido activo)' : ''}`
+                        : (formData.stock ?? 0) <= (formData.lowStockThreshold ?? 5)
+                        ? `⚠️ Stock bajo: ${formData.stock} unidades`
+                        : `✅ Stock disponible: ${formData.stock} unidades`}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Personalización */}

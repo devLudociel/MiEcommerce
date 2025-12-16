@@ -14,6 +14,11 @@ interface Product {
   tags: string[];
   featured: boolean;
   slug: string;
+  // Stock management
+  trackInventory?: boolean;
+  stock?: number;
+  lowStockThreshold?: number;
+  allowBackorder?: boolean;
 }
 
 interface ProductCardProps {
@@ -59,11 +64,34 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
           onError={handleImageError}
         />
 
-        {product.featured && (
-          <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-cyan-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded text-[10px] sm:text-xs font-medium shadow-md">
-            Destacado
-          </div>
-        )}
+        {/* Badges container */}
+        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 flex flex-col gap-1 items-end">
+          {product.featured && (
+            <div className="bg-cyan-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded text-[10px] sm:text-xs font-medium shadow-md">
+              Destacado
+            </div>
+          )}
+
+          {/* Stock status badge */}
+          {product.trackInventory && product.stock === 0 && (
+            <div className={`px-2 py-1 sm:px-3 sm:py-1 rounded text-[10px] sm:text-xs font-medium shadow-md ${
+              product.allowBackorder
+                ? 'bg-amber-500 text-white'
+                : 'bg-red-600 text-white'
+            }`}>
+              {product.allowBackorder ? 'Bajo pedido' : 'Agotado'}
+            </div>
+          )}
+
+          {product.trackInventory &&
+           product.stock !== undefined &&
+           product.stock > 0 &&
+           product.stock <= (product.lowStockThreshold || 5) && (
+            <div className="bg-amber-500 text-white px-2 py-1 sm:px-3 sm:py-1 rounded text-[10px] sm:text-xs font-medium shadow-md">
+              ¡Últimas {product.stock}!
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Contenido del producto - Padding responsive */}

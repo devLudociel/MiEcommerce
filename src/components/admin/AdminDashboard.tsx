@@ -3,6 +3,7 @@ import { collection, query, where, getDocs, orderBy, limit, Timestamp } from 'fi
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '../../lib/firebase';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import LowStockAlerts from './LowStockAlerts';
 
 interface OrderItem {
   productId?: string;
@@ -546,6 +547,11 @@ export default function AdminDashboard() {
           </div>
           <p className="text-2xl font-bold text-gray-900">{stats.totalProducts}</p>
         </div>
+      </div>
+
+      {/* Alertas de Stock Bajo */}
+      <div className="mb-8">
+        <LowStockAlerts />
       </div>
 
       {/* Estados de pedidos */}

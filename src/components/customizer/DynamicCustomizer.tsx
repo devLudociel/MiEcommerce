@@ -41,6 +41,11 @@ interface FirebaseProduct {
   slug: string;
   subcategoryId?: string;
   tags?: string[];
+  // Stock management
+  trackInventory?: boolean;
+  stock?: number;
+  lowStockThreshold?: number;
+  allowBackorder?: boolean;
   [key: string]: string | string[] | number | boolean | undefined;
 }
 
@@ -558,9 +563,35 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   const handleAddToCart = async () => {
     setError(null);
 
-    // Validate
+    // Validate required fields
     if (!validateFields()) {
       return;
+    }
+
+    // Stock validation
+    if (product.trackInventory) {
+      const currentStock = product.stock ?? 0;
+      const requestedQuantity = pricing.quantity;
+
+      // Check if out of stock and backorder not allowed
+      if (currentStock === 0 && !product.allowBackorder) {
+        setError('Este producto está agotado y no admite pedidos bajo demanda.');
+        return;
+      }
+
+      // Check if requested quantity exceeds stock (and backorder not allowed)
+      if (currentStock > 0 && requestedQuantity > currentStock && !product.allowBackorder) {
+        setError(`Solo hay ${currentStock} unidades disponibles. Por favor, reduce la cantidad.`);
+        return;
+      }
+
+      // Warn if ordering more than available but backorder is allowed
+      if (requestedQuantity > currentStock && product.allowBackorder) {
+        const backordered = requestedQuantity - currentStock;
+        notify.info(
+          `${currentStock > 0 ? `${currentStock} unidades en stock. ` : ''}${backordered} unidades serán bajo pedido.`
+        );
+      }
     }
 
     setIsAddingToCart(true);

@@ -18,6 +18,11 @@ export interface FirebaseProduct {
   // Digital product fields
   isDigital?: boolean; // Si es producto digital
   digitalFiles?: DigitalFile[]; // Archivos descargables
+  // Stock/Inventory management
+  trackInventory?: boolean; // Si true, se controla el stock
+  stock?: number; // Cantidad disponible
+  lowStockThreshold?: number; // Umbral para alerta de bajo stock (default: 5)
+  allowBackorder?: boolean; // Si true, permite comprar sin stock (bajo pedido)
 }
 
 export interface CustomizationOption {
