@@ -23,6 +23,9 @@ export interface FirebaseProduct {
   stock?: number; // Cantidad disponible
   lowStockThreshold?: number; // Umbral para alerta de bajo stock (default: 5)
   allowBackorder?: boolean; // Si true, permite comprar sin stock (bajo pedido)
+  // SEO fields
+  metaTitle?: string; // Título para buscadores (máx 60 caracteres)
+  metaDescription?: string; // Descripción para buscadores (máx 160 caracteres)
 }
 
 export interface CustomizationOption {

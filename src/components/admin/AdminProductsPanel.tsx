@@ -52,6 +52,10 @@ interface Product {
   lowStockThreshold: number; // Umbral para alerta de bajo stock (default: 5)
   allowBackorder: boolean; // Si true, permite comprar sin stock (bajo pedido)
 
+  // SEO
+  metaTitle: string; // Título para buscadores (máx 60 caracteres)
+  metaDescription: string; // Descripción para buscadores (máx 160 caracteres)
+
   // Metadata
   createdAt?: Timestamp | Date;
   updatedAt?: Timestamp | Date;
@@ -193,6 +197,9 @@ export default function AdminProductsPanelV2() {
       stock: 0,
       lowStockThreshold: 5,
       allowBackorder: false,
+      // SEO - valores por defecto
+      metaTitle: '',
+      metaDescription: '',
     });
     setSlugError(null);
     setShowModal(true);
@@ -927,6 +934,113 @@ export default function AdminProductsPanelV2() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* SEO */}
+              <div className="bg-blue-50 rounded-xl p-4 space-y-4">
+                <h4 className="font-semibold text-gray-800 flex items-center gap-2">
+                  <span className="text-lg">🔍</span>
+                  SEO (Posicionamiento en Google)
+                </h4>
+
+                <div className="space-y-4">
+                  {/* Meta Title */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Título SEO
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.metaTitle || ''}
+                      onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
+                      maxLength={70}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        (formData.metaTitle?.length || 0) > 60 ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder={formData.name || 'Título que aparecerá en Google'}
+                    />
+                    <div className="flex justify-between mt-1">
+                      <p className="text-xs text-gray-500">
+                        Deja vacío para usar el nombre del producto
+                      </p>
+                      <span className={`text-xs font-medium ${
+                        (formData.metaTitle?.length || 0) === 0
+                          ? 'text-gray-400'
+                          : (formData.metaTitle?.length || 0) <= 50
+                          ? 'text-green-600'
+                          : (formData.metaTitle?.length || 0) <= 60
+                          ? 'text-amber-600'
+                          : 'text-red-600'
+                      }`}>
+                        {formData.metaTitle?.length || 0}/60
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Meta Description */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Descripción SEO
+                    </label>
+                    <textarea
+                      value={formData.metaDescription || ''}
+                      onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
+                      maxLength={170}
+                      rows={3}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
+                        (formData.metaDescription?.length || 0) > 160 ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder={formData.description || 'Descripción que aparecerá en Google'}
+                    />
+                    <div className="flex justify-between mt-1">
+                      <p className="text-xs text-gray-500">
+                        Deja vacío para usar la descripción del producto
+                      </p>
+                      <span className={`text-xs font-medium ${
+                        (formData.metaDescription?.length || 0) === 0
+                          ? 'text-gray-400'
+                          : (formData.metaDescription?.length || 0) <= 140
+                          ? 'text-green-600'
+                          : (formData.metaDescription?.length || 0) <= 160
+                          ? 'text-amber-600'
+                          : 'text-red-600'
+                      }`}>
+                        {formData.metaDescription?.length || 0}/160
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Google Preview */}
+                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                    <p className="text-xs text-blue-700 font-semibold mb-3">
+                      👁️ Vista previa en Google:
+                    </p>
+                    <div className="font-sans">
+                      {/* Title */}
+                      <p className="text-[#1a0dab] text-lg leading-tight hover:underline cursor-pointer truncate">
+                        {formData.metaTitle || formData.name || 'Título del producto'}
+                      </p>
+                      {/* URL */}
+                      <p className="text-[#006621] text-sm truncate">
+                        tutienda.com › producto › {formData.slug || 'slug-producto'}
+                      </p>
+                      {/* Description */}
+                      <p className="text-[#545454] text-sm line-clamp-2">
+                        {formData.metaDescription || formData.description || 'Descripción del producto que aparecerá en los resultados de búsqueda de Google...'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Tips */}
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <p>💡 <strong>Tips SEO:</strong></p>
+                    <ul className="list-disc list-inside space-y-0.5 ml-4">
+                      <li>Incluye palabras clave relevantes al inicio del título</li>
+                      <li>La descripción debe ser atractiva y describir el producto</li>
+                      <li>Evita duplicar títulos entre productos</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
               {/* Personalización */}
