@@ -16,7 +16,7 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
-import { Plus, Edit2, Trash2, X, Save, Upload, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, Upload, Image as ImageIcon, Copy } from 'lucide-react';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { categories as navbarCategoriesData } from '../../data/categories';
 
@@ -239,6 +239,83 @@ export default function AdminProductsPanelV2() {
     } catch (error) {
       logger.error('[AdminProducts] Error deleting product', error);
       notify.error('Error al eliminar producto');
+    }
+  };
+
+  const handleDuplicate = async (product: Product) => {
+    const confirmed = await confirm({
+      title: '¿Duplicar producto?',
+      message: `Se creará una copia de "${product.name}" con un nuevo slug. ¿Continuar?`,
+      type: 'info',
+      confirmText: 'Duplicar',
+      cancelText: 'Cancelar',
+    });
+    if (!confirmed) return;
+
+    try {
+      // Generate new slug with suffix
+      const baseSlug = product.slug.replace(/-copia(-\d+)?$/, '');
+      const existingSlugs = products
+        .map((p) => p.slug)
+        .filter((s) => s.startsWith(baseSlug));
+
+      let newSlug = `${baseSlug}-copia`;
+      let counter = 1;
+      while (existingSlugs.includes(newSlug)) {
+        newSlug = `${baseSlug}-copia-${counter}`;
+        counter++;
+      }
+
+      // Create duplicated product data
+      const duplicatedProduct: ProductInput = {
+        name: `${product.name} (Copia)`,
+        description: product.description,
+        categoryId: product.categoryId,
+        category: product.category,
+        subcategoryId: product.subcategoryId,
+        subcategory: product.subcategory,
+        basePrice: product.basePrice,
+        images: [...product.images], // Copy images array
+        tags: [...product.tags],
+        featured: false, // Don't copy featured status
+        slug: newSlug,
+        active: false, // Start as inactive
+        customizationSchemaId: product.customizationSchemaId,
+        onSale: false, // Don't copy sale status
+        salePrice: undefined,
+        // Stock - reset to defaults
+        trackInventory: product.trackInventory,
+        stock: product.stock,
+        lowStockThreshold: product.lowStockThreshold,
+        allowBackorder: product.allowBackorder,
+        // SEO - copy but mark as needing update
+        metaTitle: product.metaTitle ? `${product.metaTitle} (Copia)` : '',
+        metaDescription: product.metaDescription || '',
+        updatedAt: Timestamp.now(),
+        createdAt: Timestamp.now(),
+      };
+
+      const docRef = await addDoc(collection(db, 'products'), duplicatedProduct);
+
+      notify.success(`Producto duplicado: ${duplicatedProduct.name}`);
+      logger.info('[AdminProducts] Product duplicated', {
+        originalId: product.id,
+        newId: docRef.id,
+        newSlug
+      });
+
+      // Open the duplicated product for editing
+      const newProduct: Product = {
+        ...duplicatedProduct,
+        id: docRef.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      handleEdit(newProduct);
+
+    } catch (error) {
+      logger.error('[AdminProducts] Error duplicating product', error);
+      notify.error('Error al duplicar producto');
     }
   };
 
@@ -555,6 +632,13 @@ export default function AdminProductsPanelV2() {
                         title="Editar"
                       >
                         <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDuplicate(product)}
+                        className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                        title="Duplicar"
+                      >
+                        <Copy className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(product)}
