@@ -1,0 +1,13 @@
+---
+// src/pages/admin/etiquetas.astro
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import RequireAdmin from '../../components/auth/RequireAdmin';
+import AdminTagsPanel from '../../components/admin/AdminTagsPanel';
+---
+
+<BaseLayout title="Etiquetas de Productos - Admin">
+  <RequireAdmin client:only="react">
+    <!-- PERFORMANCE: Load tags panel when browser is idle -->
+    <AdminTagsPanel client:idle />
+  </RequireAdmin>
+</BaseLayout>

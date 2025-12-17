@@ -276,6 +276,51 @@ export interface AppliedBundleDiscount {
   savedAmount: number; // Cantidad ahorrada
 }
 
+// ============================================================================
+// PRODUCT TAGS: Customizable tags with colors
+// ============================================================================
+
+/**
+ * Special tag types with predefined behavior
+ */
+export type SpecialTagType = 'nuevo' | 'oferta' | 'destacado' | 'agotado' | 'exclusivo' | 'limitado' | 'custom';
+
+/**
+ * Product tag with customizable appearance
+ */
+export interface ProductTag {
+  id?: string;
+  name: string; // Display name (e.g., "Nuevo", "Oferta")
+  slug: string; // URL-friendly identifier
+  color: string; // Background color (hex)
+  textColor: string; // Text color (hex)
+  icon?: string; // Optional emoji or icon
+  type: SpecialTagType; // Tag type for special behavior
+  description?: string; // Optional description
+  priority: number; // Display order (higher = first)
+  active: boolean;
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+/**
+ * Preset colors for tags
+ */
+export const TAG_COLOR_PRESETS = [
+  { name: 'Rojo', bg: '#EF4444', text: '#FFFFFF' },
+  { name: 'Naranja', bg: '#F97316', text: '#FFFFFF' },
+  { name: 'Ámbar', bg: '#F59E0B', text: '#000000' },
+  { name: 'Amarillo', bg: '#EAB308', text: '#000000' },
+  { name: 'Verde', bg: '#22C55E', text: '#FFFFFF' },
+  { name: 'Esmeralda', bg: '#10B981', text: '#FFFFFF' },
+  { name: 'Cyan', bg: '#06B6D4', text: '#FFFFFF' },
+  { name: 'Azul', bg: '#3B82F6', text: '#FFFFFF' },
+  { name: 'Índigo', bg: '#6366F1', text: '#FFFFFF' },
+  { name: 'Púrpura', bg: '#A855F7', text: '#FFFFFF' },
+  { name: 'Rosa', bg: '#EC4899', text: '#FFFFFF' },
+  { name: 'Gris', bg: '#6B7280', text: '#FFFFFF' },
+] as const;
+
 // TRACKING: Event tracking for order shipments
 export interface TrackingEvent {
   status:
