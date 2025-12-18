@@ -430,3 +430,36 @@ export interface DownloadLog {
   ipAddress?: string;
   userAgent?: string;
 }
+
+// ============================================================================
+// STOCK NOTIFICATIONS: "Notify me when available" feature
+// ============================================================================
+
+/**
+ * Stock notification request
+ * Created when a user wants to be notified when a product is back in stock
+ */
+export interface StockNotification {
+  id?: string;
+  productId: string;
+  productName: string;
+  productSlug: string;
+  productImage?: string;
+  email: string;
+  userId?: string; // Optional - if user is logged in
+  status: 'pending' | 'notified' | 'cancelled';
+  createdAt: Timestamp;
+  notifiedAt?: Timestamp; // When notification was sent
+  cancelledAt?: Timestamp; // When user cancelled subscription
+}
+
+/**
+ * Notification settings for a product
+ * Tracks how many people are waiting for this product
+ */
+export interface ProductNotificationStats {
+  productId: string;
+  pendingCount: number; // Number of people waiting
+  totalRequests: number; // All-time requests
+  lastNotificationSent?: Timestamp;
+}

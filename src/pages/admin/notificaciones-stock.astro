@@ -1,0 +1,13 @@
+---
+// src/pages/admin/notificaciones-stock.astro
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import RequireAdmin from '../../components/auth/RequireAdmin';
+import AdminStockNotifications from '../../components/admin/AdminStockNotifications';
+---
+
+<BaseLayout title="Notificaciones de Stock - Admin">
+  <RequireAdmin client:only="react">
+    <!-- PERFORMANCE: Load panel when browser is idle -->
+    <AdminStockNotifications client:idle />
+  </RequireAdmin>
+</BaseLayout>

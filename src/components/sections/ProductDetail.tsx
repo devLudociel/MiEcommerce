@@ -11,6 +11,7 @@ import { ProductGallery } from '../products/ProductGallery';
 import { ProductInfo } from '../products/ProductInfo';
 import { ProductTabs } from '../products/ProductTabs';
 import { RelatedProducts } from '../products/RelatedProducts';
+import NotifyWhenAvailable from '../products/NotifyWhenAvailable';
 // Analytics tracking
 import { trackProductView, trackAddToCart as trackAnalyticsAddToCart, trackCustomizeProduct } from '../../lib/analytics';
 // React Query hooks
@@ -724,6 +725,16 @@ export default function ProductDetail({ id, slug }: Props) {
                       </>
                     )}
                   </button>
+
+                  {/* Notify When Available - Solo visible cuando está agotado */}
+                  {currentVariant.stock === 0 && uiProduct && (
+                    <NotifyWhenAvailable
+                      productId={uiProduct.id}
+                      productName={uiProduct.name}
+                      productSlug={product.slug}
+                      productImage={product.images[0]?.url}
+                    />
+                  )}
 
                   <div className="grid grid-cols-2 gap-4">
                     <button
