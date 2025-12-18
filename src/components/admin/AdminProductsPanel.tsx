@@ -16,9 +16,11 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
-import { Plus, Edit2, Trash2, X, Save, Upload, Image as ImageIcon, Copy } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, Upload, Image as ImageIcon, Copy, Download, FileUp, AlertCircle, CheckCircle } from 'lucide-react';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { categories as navbarCategoriesData } from '../../data/categories';
+import { exportProductsToCsv, parseProductsCsv, generateCsvTemplate, validateUniqueSlugs } from '../../lib/productsCsv';
+import type { FirebaseProduct } from '../../types/firebase';
 
 // ============================================================================
 // TIPOS
@@ -126,6 +128,15 @@ export default function AdminProductsPanelV2() {
   const [uploadingImages, setUploadingImages] = useState(false);
   const [slugError, setSlugError] = useState<string | null>(null);
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
+
+  // Import/Export state
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importPreview, setImportPreview] = useState<{
+    products: Partial<FirebaseProduct>[];
+    errors: { row: number; message: string; data?: string }[];
+  } | null>(null);
+  const [importing, setImporting] = useState(false);
 
   // Accessible confirmation dialog
   const { confirm, ConfirmDialog } = useConfirmDialog();
@@ -485,6 +496,190 @@ export default function AdminProductsPanelV2() {
   };
 
   // ============================================================================
+  // IMPORT/EXPORT HANDLERS
+  // ============================================================================
+
+  const handleExportCsv = () => {
+    try {
+      // Convert products to FirebaseProduct format
+      const firebaseProducts: FirebaseProduct[] = products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        category: p.category as any,
+        basePrice: p.basePrice,
+        images: p.images,
+        customizable: !!p.customizationSchemaId,
+        tags: p.tags,
+        featured: p.featured,
+        slug: p.slug,
+        active: p.active,
+        isDigital: false,
+        trackInventory: p.trackInventory,
+        stock: p.stock,
+        lowStockThreshold: p.lowStockThreshold,
+        allowBackorder: p.allowBackorder,
+        metaTitle: p.metaTitle,
+        metaDescription: p.metaDescription,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      }));
+
+      const csv = exportProductsToCsv(firebaseProducts);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `productos_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      notify.success(`${products.length} productos exportados a CSV`);
+      logger.info('[AdminProducts] Products exported', { count: products.length });
+    } catch (error) {
+      logger.error('[AdminProducts] Error exporting CSV', error);
+      notify.error('Error al exportar productos');
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    try {
+      const csv = generateCsvTemplate();
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'plantilla_productos.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      notify.success('Plantilla descargada');
+    } catch (error) {
+      logger.error('[AdminProducts] Error downloading template', error);
+      notify.error('Error al descargar plantilla');
+    }
+  };
+
+  const handleImportFileChange = async (file: File | null) => {
+    if (!file) {
+      setImportFile(null);
+      setImportPreview(null);
+      return;
+    }
+
+    setImportFile(file);
+
+    try {
+      const text = await file.text();
+      const result = parseProductsCsv(text);
+
+      // Validate unique slugs against existing products
+      const existingSlugs = new Set(products.map((p) => p.slug));
+      const slugErrors = validateUniqueSlugs(result.products, existingSlugs);
+
+      setImportPreview({
+        products: result.products,
+        errors: [...result.errors, ...slugErrors],
+      });
+    } catch (error) {
+      logger.error('[AdminProducts] Error parsing CSV', error);
+      notify.error('Error al leer el archivo CSV');
+      setImportPreview({
+        products: [],
+        errors: [{ row: 0, message: 'Error al leer el archivo' }],
+      });
+    }
+  };
+
+  const handleImportProducts = async () => {
+    if (!importPreview || importPreview.products.length === 0) {
+      notify.error('No hay productos para importar');
+      return;
+    }
+
+    setImporting(true);
+
+    try {
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const product of importPreview.products) {
+        try {
+          // Check if product has an ID (update existing)
+          if (product.id) {
+            const existingProduct = products.find((p) => p.id === product.id);
+            if (existingProduct) {
+              // Update existing product
+              await updateDoc(doc(db, 'products', product.id), {
+                ...product,
+                id: undefined, // Remove id from data
+                updatedAt: Timestamp.now(),
+              });
+              successCount++;
+              continue;
+            }
+          }
+
+          // Create new product
+          const category = categories.find((c) => c.slug === product.category);
+          const newProduct = {
+            name: product.name,
+            description: product.description || '',
+            categoryId: category?.id || categories[0]?.id || '',
+            category: product.category || 'otros',
+            subcategoryId: '',
+            subcategory: '',
+            basePrice: product.basePrice || 0,
+            images: product.images || [],
+            tags: product.tags || [],
+            featured: product.featured || false,
+            slug: product.slug,
+            active: product.active ?? true,
+            onSale: false,
+            trackInventory: product.trackInventory || false,
+            stock: product.stock || 0,
+            lowStockThreshold: product.lowStockThreshold || 5,
+            allowBackorder: product.allowBackorder || false,
+            metaTitle: product.metaTitle || '',
+            metaDescription: product.metaDescription || '',
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+          };
+
+          await addDoc(collection(db, 'products'), newProduct);
+          successCount++;
+        } catch (error) {
+          errorCount++;
+          logger.error('[AdminProducts] Error importing product', { product, error });
+        }
+      }
+
+      notify.success(`${successCount} productos importados correctamente`);
+      if (errorCount > 0) {
+        notify.error(`${errorCount} productos con errores`);
+      }
+
+      logger.info('[AdminProducts] Import completed', { successCount, errorCount });
+
+      // Close modal and reset
+      setShowImportModal(false);
+      setImportFile(null);
+      setImportPreview(null);
+    } catch (error) {
+      logger.error('[AdminProducts] Error importing products', error);
+      notify.error('Error al importar productos');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  // ============================================================================
   // RENDER
   // ============================================================================
 
@@ -506,13 +701,35 @@ export default function AdminProductsPanelV2() {
             {products.length} producto(s) • {schemas.length} schema(s) de personalización
           </p>
         </div>
-        <button
-          onClick={handleCreate}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg hover:shadow-lg transition-all font-semibold"
-        >
-          <Plus className="w-5 h-5" />
-          Nuevo Producto
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Import/Export buttons */}
+          <div className="flex items-center gap-2 border-r border-gray-200 pr-3">
+            <button
+              onClick={handleExportCsv}
+              disabled={products.length === 0}
+              className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Exportar todos los productos a CSV"
+            >
+              <Download className="w-4 h-4" />
+              Exportar
+            </button>
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+              title="Importar productos desde CSV"
+            >
+              <FileUp className="w-4 h-4" />
+              Importar
+            </button>
+          </div>
+          <button
+            onClick={handleCreate}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg hover:shadow-lg transition-all font-semibold"
+          >
+            <Plus className="w-5 h-5" />
+            Nuevo Producto
+          </button>
+        </div>
       </div>
 
       {/* Tabla de productos */}
@@ -1312,6 +1529,186 @@ export default function AdminProductsPanelV2() {
 
       {/* Accessible confirmation dialog */}
       <ConfirmDialog />
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <FileUp className="w-6 h-6 text-purple-500" />
+                Importar Productos
+              </h3>
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportFile(null);
+                  setImportPreview(null);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* Instructions */}
+              <div className="bg-blue-50 rounded-xl p-4">
+                <h4 className="font-semibold text-blue-800 mb-2">Instrucciones</h4>
+                <ul className="text-sm text-blue-700 space-y-1">
+                  <li>• Formato aceptado: CSV (valores separados por comas)</li>
+                  <li>• Primera fila debe contener los encabezados</li>
+                  <li>• Campos obligatorios: name, category, basePrice, slug</li>
+                  <li>• Las imágenes y tags se separan con <code className="bg-blue-100 px-1 rounded">|</code></li>
+                  <li>• Si incluyes un ID existente, el producto se actualizará</li>
+                </ul>
+                <button
+                  onClick={handleDownloadTemplate}
+                  className="mt-3 flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  Descargar plantilla CSV
+                </button>
+              </div>
+
+              {/* File Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Seleccionar archivo CSV
+                </label>
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-purple-400 transition-colors">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <FileUp className="w-8 h-8 text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-600">
+                      {importFile ? importFile.name : 'Click para seleccionar archivo CSV'}
+                    </p>
+                    {importFile && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {(importFile.size / 1024).toFixed(1)} KB
+                      </p>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => handleImportFileChange(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {/* Preview */}
+              {importPreview && (
+                <div className="space-y-4">
+                  {/* Summary */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span className="text-sm font-medium text-green-700">
+                        {importPreview.products.length} productos válidos
+                      </span>
+                    </div>
+                    {importPreview.errors.length > 0 && (
+                      <div className="flex items-center gap-2 px-3 py-2 bg-red-50 rounded-lg">
+                        <AlertCircle className="w-5 h-5 text-red-500" />
+                        <span className="text-sm font-medium text-red-700">
+                          {importPreview.errors.length} errores
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Errors list */}
+                  {importPreview.errors.length > 0 && (
+                    <div className="bg-red-50 rounded-xl p-4">
+                      <h4 className="font-semibold text-red-800 mb-2">Errores encontrados</h4>
+                      <div className="max-h-40 overflow-y-auto space-y-2">
+                        {importPreview.errors.map((error, idx) => (
+                          <div key={idx} className="text-sm text-red-700">
+                            <span className="font-medium">Fila {error.row}:</span> {error.message}
+                            {error.data && (
+                              <div className="text-xs text-red-500 truncate">
+                                {error.data}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Products preview */}
+                  {importPreview.products.length > 0 && (
+                    <div className="bg-gray-50 rounded-xl p-4">
+                      <h4 className="font-semibold text-gray-800 mb-2">
+                        Vista previa ({Math.min(5, importPreview.products.length)} de {importPreview.products.length})
+                      </h4>
+                      <div className="space-y-2">
+                        {importPreview.products.slice(0, 5).map((product, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200"
+                          >
+                            <div>
+                              <div className="font-medium text-gray-800">{product.name}</div>
+                              <div className="text-sm text-gray-500">
+                                {product.category} • €{product.basePrice?.toFixed(2)} • /{product.slug}
+                              </div>
+                            </div>
+                            <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                              product.id ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+                            }`}>
+                              {product.id ? 'Actualizar' : 'Crear'}
+                            </span>
+                          </div>
+                        ))}
+                        {importPreview.products.length > 5 && (
+                          <p className="text-sm text-gray-500 text-center">
+                            ... y {importPreview.products.length - 5} productos más
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportFile(null);
+                  setImportPreview(null);
+                }}
+                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleImportProducts}
+                disabled={!importPreview || importPreview.products.length === 0 || importing}
+                className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {importing ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Importando...
+                  </>
+                ) : (
+                  <>
+                    <FileUp className="w-5 h-5" />
+                    Importar {importPreview?.products.length || 0} productos
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
