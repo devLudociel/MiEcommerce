@@ -1,0 +1,13 @@
+---
+// src/pages/admin/usuarios.astro
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import RequireAdmin from '../../components/auth/RequireAdmin';
+import AdminUsersPanel from '../../components/admin/AdminUsersPanel';
+---
+
+<BaseLayout title="Gestión de Usuarios - Admin">
+  <RequireAdmin client:only="react">
+    <!-- PERFORMANCE: Load users panel when browser is idle -->
+    <AdminUsersPanel client:idle />
+  </RequireAdmin>
+</BaseLayout>

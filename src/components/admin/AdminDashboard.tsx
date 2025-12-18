@@ -371,6 +371,16 @@ export default function AdminDashboard() {
           <div className="text-sm font-semibold text-gray-900">Pedidos</div>
         </a>
         <a
+          href="/admin/usuarios"
+          className="p-4 bg-gradient-to-br from-indigo-500 to-purple-600 border-2 border-indigo-400 rounded-xl hover:shadow-xl transition-all text-center group relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 bg-yellow-400 text-xs font-bold px-2 py-0.5 rounded-bl-lg text-gray-900">
+            NUEVO
+          </div>
+          <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">👥</div>
+          <div className="text-sm font-semibold text-white">Usuarios</div>
+        </a>
+        <a
           href="/admin/dashboard-ventas"
           className="p-4 bg-gradient-to-br from-cyan-500 to-purple-600 border-2 border-cyan-400 rounded-xl hover:shadow-xl transition-all text-center group relative overflow-hidden"
         >
