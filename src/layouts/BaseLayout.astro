@@ -4,6 +4,7 @@ import { Toaster } from '../lib/notifications';
 import { toasterConfig } from '../lib/notifications';
 import Analytics from '../components/analytics/Analytics.tsx';
 import CompareBar from '../components/products/CompareBar';
+import ChatWidget from '../components/support/ChatWidget';
 import '../styles/global.css';
 
 interface Props {
@@ -116,6 +117,8 @@ const {
     <Toaster {...toasterConfig} client:load />
     <!-- Product Comparison Bar -->
     <CompareBar client:load />
+    <!-- Chat Support Widget -->
+    <ChatWidget client:idle />
     <!-- Analytics Tracking -->
     <Analytics client:load />
   </body>

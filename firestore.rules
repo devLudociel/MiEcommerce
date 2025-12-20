@@ -213,6 +213,14 @@ service cloud.firestore {
       allow write: if false; // Solo vía Admin SDK
     }
 
+    // Support Messages (mensajes del chat de soporte)
+    match /support_messages/{messageId} {
+      // Admins pueden leer y gestionar todos los mensajes
+      allow read, update, delete: if isAdmin();
+      // Cualquier usuario autenticado puede crear mensajes
+      allow create: if isAuth();
+    }
+
     // Denegar por defecto
     match /{document=**} {
       allow read, write: if false;

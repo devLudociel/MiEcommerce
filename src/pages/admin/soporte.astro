@@ -1,0 +1,18 @@
+---
+// src/pages/admin/soporte.astro
+// Admin page for managing support messages
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import RequireAdmin from '../../components/auth/RequireAdmin';
+import AdminSupportPanel from '../../components/admin/AdminSupportPanel';
+---
+
+<BaseLayout title="Mensajes de Soporte - Admin">
+  <div class="min-h-screen bg-gray-50">
+    <RequireAdmin client:only="react">
+      <div class="container mx-auto px-4 py-8">
+        <AdminSupportPanel client:idle />
+      </div>
+    </RequireAdmin>
+  </div>
+</BaseLayout>
