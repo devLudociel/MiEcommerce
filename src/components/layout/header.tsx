@@ -656,8 +656,8 @@ const Header: React.FC<HeaderProps> = () => {
                   onMouseEnter={() => setActiveMenu(category.id)}
                   onMouseLeave={(e) => {
                     // Solo cerrar si el mouse realmente salió del área
-                    const relatedTarget = e.relatedTarget as HTMLElement;
-                    if (!relatedTarget || !relatedTarget.closest('[data-mega-menu]')) {
+                    const relatedTarget = e.relatedTarget as HTMLElement | null;
+                    if (!relatedTarget || typeof relatedTarget.closest !== 'function' || !relatedTarget.closest('[data-mega-menu]')) {
                       setActiveMenu(null);
                     }
                   }}

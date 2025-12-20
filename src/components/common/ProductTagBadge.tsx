@@ -40,19 +40,26 @@ function initTagsCache() {
 
   if (typeof window === 'undefined') return;
 
-  onSnapshot(collection(db, 'productTags'), (snapshot) => {
-    const newCache: TagsCache = {};
-    snapshot.docs.forEach((doc) => {
-      const data = doc.data() as ProductTag;
-      if (data.active) {
-        newCache[data.slug] = { ...data, id: doc.id };
-        // Also index by name for backwards compatibility
-        newCache[data.name.toLowerCase()] = { ...data, id: doc.id };
-      }
-    });
-    tagsCache = newCache;
-    subscribers.forEach((cb) => cb(newCache));
-  });
+  onSnapshot(
+    collection(db, 'productTags'),
+    (snapshot) => {
+      const newCache: TagsCache = {};
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data() as ProductTag;
+        if (data.active) {
+          newCache[data.slug] = { ...data, id: doc.id };
+          // Also index by name for backwards compatibility
+          newCache[data.name.toLowerCase()] = { ...data, id: doc.id };
+        }
+      });
+      tagsCache = newCache;
+      subscribers.forEach((cb) => cb(newCache));
+    },
+    (error) => {
+      // Silently handle permission errors - tags will use fallback colors
+      console.debug('[ProductTagBadge] Could not load custom tags:', error.code);
+    }
+  );
 }
 
 function useTagsCache(): TagsCache {
