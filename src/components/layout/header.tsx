@@ -182,6 +182,7 @@ const Header: React.FC<HeaderProps> = () => {
   const { user, email, displayName, isAuthenticated, logout } = useAuth();
 
   // Check if user is admin (allowlist OR custom claim)
+  // Automatically set admin claim if user is admin by email but doesn't have claim
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -193,9 +194,30 @@ const Header: React.FC<HeaderProps> = () => {
       let byClaim = false;
       try {
         if (user) {
-          const { getIdTokenResult } = await import('firebase/auth');
+          const { getIdTokenResult, getIdToken } = await import('firebase/auth');
           const token = await getIdTokenResult(user, true);
           byClaim = !!token.claims?.admin;
+
+          // If admin by email but missing claim, set it automatically
+          if (byEmail && !byClaim) {
+            try {
+              const idToken = await getIdToken(user);
+              const response = await fetch('/api/admin/set-admin-claim', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${idToken}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+              if (response.ok) {
+                // Refresh the token to get the new claim
+                await getIdTokenResult(user, true);
+                console.log('[Header] Admin claim set successfully');
+              }
+            } catch (claimError) {
+              console.debug('[Header] Could not set admin claim:', claimError);
+            }
+          }
         }
       } catch (e) {
         // Non-critical: will fallback to email check
