@@ -72,19 +72,28 @@ export default function AdminTagsPanel() {
   // ============================================================================
 
   useEffect(() => {
-    const unsubTags = onSnapshot(collection(db, 'productTags'), (snapshot) => {
-      const items = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          createdAt: data.createdAt?.toDate(),
-          updatedAt: data.updatedAt?.toDate(),
-        } as LocalTag;
-      });
-      setTags(items.sort((a, b) => (b.priority || 0) - (a.priority || 0)));
-      setLoading(false);
-    });
+    const unsubTags = onSnapshot(
+      collection(db, 'productTags'),
+      (snapshot) => {
+        const items = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt?.toDate(),
+            updatedAt: data.updatedAt?.toDate(),
+          } as LocalTag;
+        });
+        setTags(items.sort((a, b) => (b.priority || 0) - (a.priority || 0)));
+        setLoading(false);
+      },
+      (error) => {
+        console.error('[AdminTagsPanel] Firestore error:', error.code, error.message);
+        logger.error('[AdminTagsPanel] Error loading tags', error);
+        setLoading(false);
+        notify.error('Error cargando etiquetas: ' + error.message);
+      }
+    );
 
     return () => unsubTags();
   }, []);

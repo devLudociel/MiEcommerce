@@ -104,21 +104,30 @@ export default function AdminBundleDiscounts() {
 
   useEffect(() => {
     // Cargar descuentos
-    const unsubDiscounts = onSnapshot(collection(db, 'bundleDiscounts'), (snapshot) => {
-      const items = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          startDate: data.startDate?.toDate() || new Date(),
-          endDate: data.endDate?.toDate() || new Date(),
-          createdAt: data.createdAt?.toDate(),
-          updatedAt: data.updatedAt?.toDate(),
-        } as LocalBundleDiscount;
-      });
-      setDiscounts(items.sort((a, b) => b.priority - a.priority));
-      setLoading(false);
-    });
+    const unsubDiscounts = onSnapshot(
+      collection(db, 'bundleDiscounts'),
+      (snapshot) => {
+        const items = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            startDate: data.startDate?.toDate() || new Date(),
+            endDate: data.endDate?.toDate() || new Date(),
+            createdAt: data.createdAt?.toDate(),
+            updatedAt: data.updatedAt?.toDate(),
+          } as LocalBundleDiscount;
+        });
+        setDiscounts(items.sort((a, b) => b.priority - a.priority));
+        setLoading(false);
+      },
+      (error) => {
+        console.error('[AdminBundleDiscounts] Firestore error:', error.code, error.message);
+        logger.error('[AdminBundleDiscounts] Error loading discounts', error);
+        setLoading(false);
+        notify.error('Error cargando descuentos: ' + error.message);
+      }
+    );
 
     // Cargar productos para selección
     loadProducts();
