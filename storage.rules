@@ -241,6 +241,22 @@ service firebase.storage {
     }
 
     // ==========================================================================
+    // VARIANTS: Product variant preview images (colors, sizes, etc.)
+    // ==========================================================================
+    match /variants/{variantType}/{variantKey}/{fileName} {
+      // Authenticated users (admins) can upload
+      allow create, update: if isAuthenticated() &&
+                              isValidSize() &&
+                              isImage();
+
+      // Anyone can read (public variant images)
+      allow read: if true;
+
+      // Only authenticated users (admins) can delete
+      allow delete: if isAuthenticated();
+    }
+
+    // ==========================================================================
     // THEMES: Centralized theme images for product customization
     // ==========================================================================
     match /themes/{userId}/{themeId}/{fileName} {
