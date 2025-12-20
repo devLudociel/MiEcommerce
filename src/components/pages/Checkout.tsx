@@ -19,6 +19,9 @@ import { Trash2, Plus, Minus } from 'lucide-react';
 // Analytics tracking
 import { trackBeginCheckout } from '../../lib/analytics';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+// Shipping system
+import ShippingSelector from '../checkout/ShippingSelector';
+import { isCanaryIslandsPostalCode, type ShippingQuote } from '../../lib/shipping';
 
 interface ShippingInfo {
   firstName: string;
@@ -30,7 +33,6 @@ interface ShippingInfo {
   state: string;
   zipCode: string;
   country: string;
-  shippingMethod?: 'standard' | 'express' | 'urgent';
   notes?: string;
 }
 
@@ -60,66 +62,10 @@ interface AppliedCoupon {
   freeShipping: boolean;
 }
 
-const SHIPPING_COSTS = {
-  standard: 0, // Gratis
-  express: 4.95, // Express 24-48h
-  urgent: 9.95, // Urgente 24h
-};
-const FREE_SHIPPING_THRESHOLD = 50;
-
-// Spanish provinces for dropdown
-const SPANISH_PROVINCES = [
-  'Álava',
-  'Albacete',
-  'Alicante',
-  'Almería',
-  'Asturias',
-  'Ávila',
-  'Badajoz',
-  'Barcelona',
-  'Burgos',
-  'Cáceres',
-  'Cádiz',
-  'Cantabria',
-  'Castellón',
-  'Ceuta',
-  'Ciudad Real',
-  'Córdoba',
-  'Cuenca',
-  'Girona',
-  'Granada',
-  'Guadalajara',
-  'Guipúzcoa',
-  'Huelva',
-  'Huesca',
-  'Illes Balears',
-  'Jaén',
-  'La Rioja',
+// Canary Islands only - shipping is currently restricted to these provinces
+const CANARY_PROVINCES = [
   'Las Palmas',
-  'León',
-  'Lleida',
-  'Lugo',
-  'Madrid',
-  'Málaga',
-  'Melilla',
-  'Murcia',
-  'Navarra',
-  'Ourense',
-  'Palencia',
-  'Pontevedra',
-  'Salamanca',
   'Santa Cruz de Tenerife',
-  'Segovia',
-  'Sevilla',
-  'Soria',
-  'Tarragona',
-  'Teruel',
-  'Toledo',
-  'Valencia',
-  'Valladolid',
-  'Vizcaya',
-  'Zamora',
-  'Zaragoza',
 ];
 
 export default function Checkout() {
@@ -144,6 +90,9 @@ export default function Checkout() {
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
   const [showAddressSelector, setShowAddressSelector] = useState(false);
 
+  // Dynamic shipping from Firestore
+  const [selectedShippingQuote, setSelectedShippingQuote] = useState<ShippingQuote | null>(null);
+
   // Address autocomplete state
   const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
   const [zipLoading, setZipLoading] = useState(false);
@@ -159,7 +108,6 @@ export default function Checkout() {
     state: '',
     zipCode: '',
     country: 'España',
-    shippingMethod: 'standard',
     notes: '',
   });
 
@@ -400,13 +348,13 @@ export default function Checkout() {
 
   // PERFORMANCE: Memoize shipping cost calculation
   const shippingCost = useMemo(() => {
-    // Free shipping from coupon or cart threshold
-    if (appliedCoupon?.freeShipping || subtotal >= FREE_SHIPPING_THRESHOLD) {
+    // Free shipping from coupon overrides everything
+    if (appliedCoupon?.freeShipping) {
       return 0;
     }
-    // Return cost based on selected method
-    return SHIPPING_COSTS[shippingInfo.shippingMethod || 'standard'];
-  }, [appliedCoupon?.freeShipping, subtotal, shippingInfo.shippingMethod]);
+    // Use the selected shipping quote price (already handles free shipping threshold)
+    return selectedShippingQuote?.price ?? 0;
+  }, [appliedCoupon?.freeShipping, selectedShippingQuote?.price]);
 
   // PERFORMANCE: Memoize tax calculation
   const taxInfo = useMemo(() => {
@@ -700,6 +648,19 @@ export default function Checkout() {
       return;
     }
 
+    // Validate Canary Islands postal code
+    if (!isCanaryIslandsPostalCode(shippingInfo.zipCode)) {
+      notify.error('Lo sentimos, actualmente solo realizamos envíos a las Islas Canarias (códigos postales 35000-35999 y 38000-38999)');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // Validate shipping method selected
+    if (!selectedShippingQuote) {
+      notify.error('Selecciona un método de envío');
+      return;
+    }
+
     // Validate shipping info
     logger.debug('[Checkout] Validating shipping info', shippingInfo);
     const result = await shippingValidation.validate(shippingInfo);
@@ -751,7 +712,12 @@ export default function Checkout() {
           zipCode: shippingInfo.zipCode,
           country: 'España',
           phone: shippingInfo.phone,
-          shippingMethod: shippingInfo.shippingMethod || 'standard',
+          // Dynamic shipping method from Firestore
+          shippingMethodId: selectedShippingQuote?.methodId,
+          shippingMethodName: selectedShippingQuote?.methodName,
+          shippingZoneId: selectedShippingQuote?.zoneId,
+          shippingZoneName: selectedShippingQuote?.zoneName,
+          estimatedDays: selectedShippingQuote?.estimatedDays,
         },
         billingInfo: useSameAddress
           ? {
@@ -879,6 +845,7 @@ export default function Checkout() {
     shippingCost,
     tax,
     taxInfo,
+    selectedShippingQuote,
     clearCartAndStorage,
     shippingValidation,
     securePayment,
@@ -1126,12 +1093,15 @@ export default function Checkout() {
                     required
                   >
                     <option value="">Selecciona una provincia</option>
-                    {SPANISH_PROVINCES.map((province) => (
+                    {CANARY_PROVINCES.map((province) => (
                       <option key={province} value={province}>
                         {province}
                       </option>
                     ))}
                   </select>
+                  <p className="text-xs text-amber-600 mt-1">
+                    Actualmente solo realizamos envíos a las Islas Canarias
+                  </p>
                 </div>
 
                 <div>
@@ -1250,7 +1220,7 @@ export default function Checkout() {
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     >
                       <option value="">Selecciona una provincia</option>
-                      {SPANISH_PROVINCES.map((province) => (
+                      {CANARY_PROVINCES.map((province) => (
                         <option key={province} value={province}>
                           {province}
                         </option>
@@ -1286,84 +1256,16 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* Shipping Method */}
+            {/* Shipping Method - Dynamic from Firestore */}
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Método de Envío</h2>
-              <div className="space-y-3">
-                <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-cyan-500 transition-all">
-                  <input
-                    type="radio"
-                    name="shippingMethod"
-                    value="standard"
-                    checked={shippingInfo.shippingMethod === 'standard'}
-                    onChange={(e) =>
-                      setShippingInfo({
-                        ...shippingInfo,
-                        shippingMethod: e.target.value as 'standard' | 'express' | 'urgent',
-                      })
-                    }
-                    className="w-5 h-5 text-cyan-600 focus:ring-2 focus:ring-cyan-500"
-                  />
-                  <div className="ml-3 flex-1">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-900">Estándar (3-5 días)</span>
-                      <span className="font-bold text-gray-900">
-                        {subtotal >= FREE_SHIPPING_THRESHOLD || appliedCoupon?.freeShipping
-                          ? 'GRATIS'
-                          : '0,00 €'}
-                      </span>
-                    </div>
-                  </div>
-                </label>
-
-                <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-cyan-500 transition-all">
-                  <input
-                    type="radio"
-                    name="shippingMethod"
-                    value="express"
-                    checked={shippingInfo.shippingMethod === 'express'}
-                    onChange={(e) =>
-                      setShippingInfo({
-                        ...shippingInfo,
-                        shippingMethod: e.target.value as 'standard' | 'express' | 'urgent',
-                      })
-                    }
-                    className="w-5 h-5 text-cyan-600 focus:ring-2 focus:ring-cyan-500"
-                  />
-                  <div className="ml-3 flex-1">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-900">Express (24-48h)</span>
-                      <span className="font-bold text-gray-900">
-                        {appliedCoupon?.freeShipping ? 'GRATIS' : '4,95 €'}
-                      </span>
-                    </div>
-                  </div>
-                </label>
-
-                <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-cyan-500 transition-all">
-                  <input
-                    type="radio"
-                    name="shippingMethod"
-                    value="urgent"
-                    checked={shippingInfo.shippingMethod === 'urgent'}
-                    onChange={(e) =>
-                      setShippingInfo({
-                        ...shippingInfo,
-                        shippingMethod: e.target.value as 'standard' | 'express' | 'urgent',
-                      })
-                    }
-                    className="w-5 h-5 text-cyan-600 focus:ring-2 focus:ring-cyan-500"
-                  />
-                  <div className="ml-3 flex-1">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-900">Urgente (24h)</span>
-                      <span className="font-bold text-gray-900">
-                        {appliedCoupon?.freeShipping ? 'GRATIS' : '9,95 €'}
-                      </span>
-                    </div>
-                  </div>
-                </label>
-              </div>
+              <ShippingSelector
+                postalCode={shippingInfo.zipCode}
+                province={shippingInfo.state}
+                cartTotal={subtotal}
+                selectedMethodId={selectedShippingQuote?.methodId}
+                onSelectMethod={setSelectedShippingQuote}
+              />
             </div>
 
             {/* Payment Method */}
@@ -1617,7 +1519,9 @@ export default function Checkout() {
                 )}
 
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Envío:</span>
+                  <span className="text-gray-600">
+                    Envío{selectedShippingQuote ? ` (${selectedShippingQuote.methodName})` : ''}:
+                  </span>
                   <span className="font-medium text-gray-900">
                     {shippingCost === 0 ? (
                       <span className="text-green-600 font-bold">GRATIS</span>
@@ -1652,21 +1556,11 @@ export default function Checkout() {
               </div>
 
               {/* Free Shipping Progress */}
-              {subtotal < FREE_SHIPPING_THRESHOLD && !appliedCoupon?.freeShipping && (
+              {selectedShippingQuote && !selectedShippingQuote.isFree && selectedShippingQuote.originalPrice > 0 && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <p className="text-xs text-blue-800 font-medium">
-                    ¡Solo te faltan{' '}
-                    <span className="font-bold">
-                      {(FREE_SHIPPING_THRESHOLD - subtotal).toFixed(2)} €
-                    </span>{' '}
-                    para envío gratis!
+                    Consulta los métodos de envío disponibles para tu código postal
                   </p>
-                  <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all"
-                      style={{ width: `${(subtotal / FREE_SHIPPING_THRESHOLD) * 100}%` }}
-                    ></div>
-                  </div>
                 </div>
               )}
             </div>
