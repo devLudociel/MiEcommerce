@@ -1,5 +1,6 @@
 // src/components/products/ProductCard.tsx
 import React, { useCallback } from 'react';
+import CompareButton from './CompareButton';
 
 // Placeholder de imagen - ajusta según tu ubicación real
 const FALLBACK_IMG_400x300 = '/placeholder-product.jpg';
@@ -91,6 +92,23 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
               ¡Últimas {product.stock}!
             </div>
           )}
+        </div>
+
+        {/* Compare button */}
+        <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
+          <CompareButton
+            product={{
+              id: product.id,
+              name: product.name,
+              slug: product.slug,
+              price: product.basePrice,
+              image: product.images[0],
+              description: product.description,
+              tags: product.tags,
+            }}
+            variant="icon"
+            size="sm"
+          />
         </div>
       </div>
 

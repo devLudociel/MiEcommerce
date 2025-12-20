@@ -1,0 +1,11 @@
+---
+// src/pages/comparar.astro
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductComparison from '../components/products/ProductComparison';
+---
+
+<BaseLayout title="Comparar Productos">
+  <div class="min-h-screen bg-gradient-to-b from-gray-50 to-white pt-24 pb-12">
+    <ProductComparison client:load />
+  </div>
+</BaseLayout>
