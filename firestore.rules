@@ -221,6 +221,18 @@ service cloud.firestore {
       allow create: if isAuth();
     }
 
+    // Shipping Zones (zonas de envío)
+    match /shipping_zones/{zoneId} {
+      allow read: if true; // Cualquiera puede leer para calcular envío
+      allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
+    }
+
+    // Shipping Methods (métodos de envío)
+    match /shipping_methods/{methodId} {
+      allow read: if true; // Cualquiera puede leer para calcular envío
+      allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
+    }
+
     // Denegar por defecto
     match /{document=**} {
       allow read, write: if false;
