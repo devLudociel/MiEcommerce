@@ -2,7 +2,7 @@
 // Sistema de cálculo de envíos por zonas
 
 import { db } from './firebase';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 
 // ============================================================================
 // TYPES
@@ -138,19 +138,22 @@ export function isPostalCodeInRange(postalCode: string, ranges: string[]): boole
 
 /**
  * Obtiene las zonas de envío activas
+ * Nota: Ordenamos en JS para evitar índices compuestos en Firestore
  */
 export async function getShippingZones(): Promise<ShippingZone[]> {
   try {
     const q = query(
       collection(db, 'shipping_zones'),
-      where('active', '==', true),
-      orderBy('priority', 'desc')
+      where('active', '==', true)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
+    const zones = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     })) as ShippingZone[];
+
+    // Ordenar por prioridad (mayor primero) en JS
+    return zones.sort((a, b) => (b.priority || 0) - (a.priority || 0));
   } catch (error) {
     console.error('[Shipping] Error loading zones:', error);
     return [];
@@ -159,20 +162,26 @@ export async function getShippingZones(): Promise<ShippingZone[]> {
 
 /**
  * Obtiene los métodos de envío para una zona
+ * Nota: Ordenamos en JS para evitar índices compuestos en Firestore
  */
 export async function getShippingMethods(zoneId: string): Promise<ShippingMethod[]> {
   try {
+    // Query simple por zoneId, luego filtramos active en JS
     const q = query(
       collection(db, 'shipping_methods'),
-      where('zoneId', '==', zoneId),
-      where('active', '==', true),
-      orderBy('priority', 'desc')
+      where('zoneId', '==', zoneId)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as ShippingMethod[];
+    const methods = snapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as ShippingMethod[];
+
+    // Filtrar activos y ordenar por prioridad en JS
+    return methods
+      .filter(m => m.active)
+      .sort((a, b) => (b.priority || 0) - (a.priority || 0));
   } catch (error) {
     console.error('[Shipping] Error loading methods:', error);
     return [];
