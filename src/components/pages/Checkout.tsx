@@ -15,13 +15,15 @@ import { useSecureCardPayment } from '../checkout/SecureCardPayment';
 import { getUserData } from '../../lib/userProfile';
 import type { Address } from '../../lib/userProfile';
 import CustomizationDetails from '../cart/CustomizationDetails';
-import { Trash2, Plus, Minus } from 'lucide-react';
+import { Trash2, Plus, Minus, Gift } from 'lucide-react';
 // Analytics tracking
 import { trackBeginCheckout } from '../../lib/analytics';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 // Shipping system
 import ShippingSelector from '../checkout/ShippingSelector';
 import { isCanaryIslandsPostalCode, type ShippingQuote } from '../../lib/shipping';
+// Bundle discounts
+import { useBundleDiscounts } from '../../lib/bundleDiscounts';
 
 interface ShippingInfo {
   firstName: string;
@@ -92,6 +94,9 @@ export default function Checkout() {
 
   // Dynamic shipping from Firestore
   const [selectedShippingQuote, setSelectedShippingQuote] = useState<ShippingQuote | null>(null);
+
+  // Bundle discounts calculation
+  const bundleDiscounts = useBundleDiscounts(cart.items);
 
   // Address autocomplete state
   const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
@@ -345,6 +350,7 @@ export default function Checkout() {
 
   const subtotal = cart.total;
   const couponDiscount = appliedCoupon?.discountAmount || 0;
+  const bundleDiscount = bundleDiscounts.totalDiscount || 0;
 
   // PERFORMANCE: Memoize shipping cost calculation
   const shippingCost = useMemo(() => {
@@ -373,14 +379,17 @@ export default function Checkout() {
     // Rest of Spain: IVA 21%
     return { rate: 0.21, name: 'IVA', label: 'IVA (21%)' };
   }, [shippingInfo.state]);
-  const subtotalAfterDiscount = subtotal - couponDiscount;
+
+  // Apply bundle discount first, then coupon discount
+  const subtotalAfterBundle = subtotal - bundleDiscount;
+  const subtotalAfterDiscount = subtotalAfterBundle - couponDiscount;
   const tax = subtotalAfterDiscount * taxInfo.rate;
 
   // Calculate wallet discount
   const totalBeforeWallet = subtotalAfterDiscount + shippingCost + tax;
   const walletDiscount = useWallet ? Math.min(walletBalance, totalBeforeWallet) : 0;
 
-  // Total includes: subtotal - coupon discount + shipping + tax - wallet discount
+  // Total includes: subtotal - bundle discount - coupon discount + shipping + tax - wallet discount
   const total = totalBeforeWallet - walletDiscount;
 
   const clearCartAndStorage = useCallback(async () => {
@@ -740,6 +749,12 @@ export default function Checkout() {
             },
         paymentMethod: paymentInfo.method,
         subtotal,
+        bundleDiscount,
+        bundleDiscountDetails: bundleDiscounts.appliedDiscounts.map(d => ({
+          bundleId: d.bundleId,
+          bundleName: d.bundleName,
+          savedAmount: d.savedAmount,
+        })),
         couponDiscount,
         couponCode: appliedCoupon?.code,
         couponId: appliedCoupon?.id,
@@ -842,6 +857,8 @@ export default function Checkout() {
     walletDiscount,
     paymentInfo,
     subtotal,
+    bundleDiscount,
+    bundleDiscounts.appliedDiscounts,
     shippingCost,
     tax,
     taxInfo,
@@ -1502,12 +1519,36 @@ export default function Checkout() {
                 </div>
               )}
 
+              {/* Bundle Discount Banner */}
+              {bundleDiscounts.appliedDiscounts.length > 0 && (
+                <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-green-700 mb-1">
+                    <Gift className="w-4 h-4" />
+                    <span className="font-semibold text-sm">¡Descuento por paquete aplicado!</span>
+                  </div>
+                  {bundleDiscounts.appliedDiscounts.map((discount, idx) => (
+                    <div key={idx} className="text-xs text-green-600 ml-6">
+                      {discount.bundleName}: Ahorras {discount.savedAmount.toFixed(2)} €
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Price Breakdown */}
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Subtotal:</span>
                   <span className="font-medium text-gray-900">{subtotal.toFixed(2)} €</span>
                 </div>
+
+                {bundleDiscount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Descuento pack:</span>
+                    <span className="font-medium text-green-600">
+                      -{bundleDiscount.toFixed(2)} €
+                    </span>
+                  </div>
+                )}
 
                 {couponDiscount > 0 && (
                   <div className="flex justify-between text-sm">

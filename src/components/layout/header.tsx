@@ -1,4 +1,4 @@
-﻿// Header.tsx - Versión actualizada con búsqueda integrada
+// Header.tsx - Versión actualizada con búsqueda integrada
 import { useState, useEffect, useRef, memo, useCallback } from 'react';
 import SearchDropdown from '../navigation/SearchDropdown';
 import Icon from '../ui/Icon';
@@ -12,6 +12,7 @@ import {
 } from '../../store/cartStore';
 import { categories, type MenuCategory, type MenuSubcategory } from '../../data/categories';
 import CustomizationDetails from '../cart/CustomizationDetails';
+import { useBundleDiscounts } from '../../lib/bundleDiscounts';
 
 // ✅ DESPUÉS (sin error de hidratación)
 function CartBadge() {
@@ -52,6 +53,9 @@ function CartBadge() {
 // PERFORMANCE: Memoize CartDropdown to prevent re-renders when header state changes
 const CartDropdown = memo(function CartDropdown({ onClose }: { onClose: () => void }) {
   const cart = useStore(cartStore);
+
+  // Calculate bundle discounts
+  const bundleDiscounts = useBundleDiscounts(cart.items);
 
   // PERFORMANCE: Memoize handlers to prevent recreating on every render
   const handleDecrease = useCallback((id: string, variantId: number | undefined, currentQty: number) => {
@@ -131,18 +135,51 @@ const CartDropdown = memo(function CartDropdown({ onClose }: { onClose: () => vo
           </div>
         )}
       </div>
-      <div className="border-t p-3 flex items-center justify-between">
-        <div className="text-sm">
-          <span className="text-gray-600 mr-2">Subtotal:</span>
-          <span className="font-semibold text-cyan-700">€{cart.total.toFixed(2)}</span>
+
+      {/* Bundle Discount Banner */}
+      {bundleDiscounts.appliedDiscounts.length > 0 && (
+        <div className="mx-4 mb-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center gap-2 text-green-700">
+            <span className="text-lg">🎁</span>
+            <div className="flex-1">
+              {bundleDiscounts.appliedDiscounts.map((discount, idx) => (
+                <div key={idx} className="text-xs font-medium">
+                  {discount.bundleName}: <span className="text-green-600">-€{discount.savedAmount.toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+      )}
+
+      <div className="border-t p-3">
+        {/* Price breakdown with bundle discount */}
+        <div className="space-y-1 mb-2">
+          {bundleDiscounts.totalDiscount > 0 && (
+            <>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Subtotal:</span>
+                <span className="text-gray-500 line-through">€{bundleDiscounts.originalTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-green-600">Descuento pack:</span>
+                <span className="font-semibold text-green-600">-€{bundleDiscounts.totalDiscount.toFixed(2)}</span>
+              </div>
+            </>
+          )}
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Total:</span>
+            <span className="font-bold text-cyan-700">€{bundleDiscounts.finalTotal.toFixed(2)}</span>
+          </div>
+        </div>
+
         <div className="flex gap-2">
-          <a href="/cart" className="px-3 py-2 text-sm rounded border hover:bg-gray-50">
+          <a href="/cart" className="flex-1 px-3 py-2 text-sm text-center rounded border hover:bg-gray-50">
             Ver carrito
           </a>
           <a
             href="/checkout"
-            className="px-3 py-2 text-sm rounded bg-cyan-600 text-white hover:bg-cyan-700"
+            className="flex-1 px-3 py-2 text-sm text-center rounded bg-cyan-600 text-white hover:bg-cyan-700"
           >
             Finalizar
           </a>

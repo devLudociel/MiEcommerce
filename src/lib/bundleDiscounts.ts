@@ -339,18 +339,42 @@ export async function getProductInfoForCart(
   try {
     const productIds = [...new Set(items.map((i) => i.id))];
 
-    // Por ahora, crear info básica desde los items
-    // En producción, se podría hacer query a Firestore para obtener categoryId y tags
-    for (const item of items) {
-      if (!productInfoMap.has(item.id)) {
-        productInfoMap.set(item.id, {
-          id: item.id,
-          // categoryId y tags se obtendrían de Firestore si es necesario
-          categoryId: (item.customization as any)?.categoryId || undefined,
-          tags: [],
-        });
+    // Fetch actual product data from Firestore
+    const { doc, getDoc } = await import('firebase/firestore');
+
+    const fetchPromises = productIds.map(async (productId) => {
+      try {
+        const productRef = doc(db, 'products', productId);
+        const productSnap = await getDoc(productRef);
+
+        if (productSnap.exists()) {
+          const data = productSnap.data();
+          return {
+            id: productId,
+            categoryId: data.categoryId || data.category || undefined,
+            tags: data.tags || [],
+          };
+        }
+        return { id: productId, categoryId: undefined, tags: [] };
+      } catch (err) {
+        logger.warn('[BundleDiscounts] Error fetching product', { productId, error: err });
+        return { id: productId, categoryId: undefined, tags: [] };
       }
+    });
+
+    const results = await Promise.all(fetchPromises);
+
+    for (const info of results) {
+      productInfoMap.set(info.id, info);
     }
+
+    logger.debug('[BundleDiscounts] Product info loaded', {
+      count: productInfoMap.size,
+      products: Array.from(productInfoMap.entries()).map(([id, info]) => ({
+        id,
+        categoryId: info.categoryId
+      }))
+    });
   } catch (error) {
     logger.error('[BundleDiscounts] Error getting product info', error);
   }
@@ -365,4 +389,83 @@ export async function getProductInfoForCart(
 export function invalidateBundleDiscountsCache(): void {
   cachedDiscounts = null;
   cacheTimestamp = 0;
+}
+
+// ============================================================================
+// REACT HOOK PARA CALCULAR DESCUENTOS DE BUNDLE
+// ============================================================================
+
+import { useState, useEffect, useCallback } from 'react';
+
+interface UseBundleDiscountsOptions {
+  enabled?: boolean;
+}
+
+export function useBundleDiscounts(
+  items: CartItem[],
+  options: UseBundleDiscountsOptions = {}
+) {
+  const { enabled = true } = options;
+  const [result, setResult] = useState<BundleDiscountResult>({
+    appliedDiscounts: [],
+    totalDiscount: 0,
+    originalTotal: 0,
+    finalTotal: 0,
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const calculateDiscounts = useCallback(async () => {
+    if (!enabled || items.length === 0) {
+      setResult({
+        appliedDiscounts: [],
+        totalDiscount: 0,
+        originalTotal: items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+        finalTotal: items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+      });
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Get product info (categoryId, tags) for each item
+      const productInfoMap = await getProductInfoForCart(items);
+
+      // Calculate bundle discounts
+      const discountResult = await calculateBundleDiscounts(items, productInfoMap);
+
+      logger.debug('[useBundleDiscounts] Calculation complete', {
+        itemCount: items.length,
+        appliedDiscounts: discountResult.appliedDiscounts.length,
+        totalDiscount: discountResult.totalDiscount,
+      });
+
+      setResult(discountResult);
+    } catch (err) {
+      logger.error('[useBundleDiscounts] Error calculating discounts', err);
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+      // Fallback to no discounts
+      setResult({
+        appliedDiscounts: [],
+        totalDiscount: 0,
+        originalTotal: items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+        finalTotal: items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [items, enabled]);
+
+  useEffect(() => {
+    calculateDiscounts();
+  }, [calculateDiscounts]);
+
+  return {
+    ...result,
+    loading,
+    error,
+    refresh: calculateDiscounts,
+  };
 }
