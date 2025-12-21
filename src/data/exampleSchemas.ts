@@ -6,6 +6,10 @@ import {
   SCHEMA_BOLSAS_PAPEL,
   SCHEMA_ETIQUETAS_ADHESIVAS,
 } from '../lib/customization/schema-templates';
+import {
+  CANDY_BOX_SCHEMA,
+  EVENT_INVITATION_SCHEMA,
+} from '../lib/customization/schemaTemplates';
 
 /**
  * Schemas de ejemplo para diferentes tipos de productos
@@ -557,6 +561,9 @@ export const exampleSchemas = {
   cajasPersonalizadas: SCHEMA_CAJAS_PERSONALIZADAS,
   bolsasPapel: SCHEMA_BOLSAS_PAPEL,
   etiquetasAdhesivas: SCHEMA_ETIQUETAS_ADHESIVAS,
+  // Eventos infantiles
+  cajasChuches: CANDY_BOX_SCHEMA,
+  invitacionesEventos: EVENT_INVITATION_SCHEMA,
 };
 
 // Schema names for dropdown selection
@@ -572,5 +579,8 @@ export const schemaOptions = [
   { value: 'cajasPersonalizadas', label: '📦 Cajas Personalizadas' },
   { value: 'bolsasPapel', label: '🛍️ Bolsas de Papel' },
   { value: 'etiquetasAdhesivas', label: '🏷️ Etiquetas Adhesivas' },
+  // Eventos infantiles
+  { value: 'cajasChuches', label: '🍬 Cajas de Chuches / Cumpleaños' },
+  { value: 'invitacionesEventos', label: '💌 Invitaciones de Eventos' },
   { value: 'custom', label: 'Personalizado (crear desde cero)' },
 ];
