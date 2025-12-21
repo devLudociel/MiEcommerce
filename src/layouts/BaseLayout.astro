@@ -5,6 +5,7 @@ import { toasterConfig } from '../lib/notifications';
 import Analytics from '../components/analytics/Analytics.tsx';
 import CompareBar from '../components/products/CompareBar';
 import ChatWidget from '../components/support/ChatWidget';
+import PromoPopupDisplay from '../components/promo/PromoPopupDisplay';
 import '../styles/global.css';
 
 interface Props {
@@ -119,6 +120,8 @@ const {
     <CompareBar client:load />
     <!-- Chat Support Widget -->
     <ChatWidget client:idle />
+    <!-- Promotional Popups -->
+    <PromoPopupDisplay client:idle />
     <!-- Analytics Tracking -->
     <Analytics client:load />
   </body>

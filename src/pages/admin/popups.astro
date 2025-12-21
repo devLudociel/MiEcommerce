@@ -1,0 +1,18 @@
+---
+// src/pages/admin/popups.astro
+// Admin page for managing promotional popups
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import RequireAdmin from '../../components/auth/RequireAdmin';
+import AdminPromoPopupsPanel from '../../components/admin/AdminPromoPopupsPanel';
+---
+
+<BaseLayout title="Popups Promocionales - Admin">
+  <div class="min-h-screen bg-gray-50">
+    <RequireAdmin client:only="react">
+      <div class="container mx-auto px-4 py-8">
+        <AdminPromoPopupsPanel client:load />
+      </div>
+    </RequireAdmin>
+  </div>
+</BaseLayout>

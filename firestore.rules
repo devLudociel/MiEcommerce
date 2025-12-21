@@ -233,6 +233,12 @@ service cloud.firestore {
       allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
     }
 
+    // Promo Popups (popups promocionales)
+    match /promo_popups/{popupId} {
+      allow read: if true; // Cualquiera puede leer para mostrar popups
+      allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
+    }
+
     // Denegar por defecto
     match /{document=**} {
       allow read, write: if false;
