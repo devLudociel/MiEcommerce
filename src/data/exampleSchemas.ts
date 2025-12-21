@@ -9,6 +9,7 @@ import {
 import {
   CANDY_BOX_SCHEMA,
   EVENT_INVITATION_SCHEMA,
+  MUG_CUSTOMIZATION_SCHEMA,
 } from '../lib/customization/schemaTemplates';
 
 /**
@@ -564,6 +565,8 @@ export const exampleSchemas = {
   // Eventos infantiles
   cajasChuches: CANDY_BOX_SCHEMA,
   invitacionesEventos: EVENT_INVITATION_SCHEMA,
+  // Sublimación avanzada
+  tazasPersonalizadas: MUG_CUSTOMIZATION_SCHEMA,
 };
 
 // Schema names for dropdown selection
@@ -582,5 +585,7 @@ export const schemaOptions = [
   // Eventos infantiles
   { value: 'cajasChuches', label: '🍬 Cajas de Chuches / Cumpleaños' },
   { value: 'invitacionesEventos', label: '💌 Invitaciones de Eventos' },
+  // Sublimación avanzada
+  { value: 'tazasPersonalizadas', label: '☕ Tazas Personalizadas (completo)' },
   { value: 'custom', label: 'Personalizado (crear desde cero)' },
 ];
