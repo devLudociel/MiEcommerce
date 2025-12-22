@@ -177,7 +177,7 @@ export default function ChatWidget() {
     return (
       <button
         onClick={handleOpenWidget}
-        className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-cyan-500 to-blue-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 group"
+        className="fixed bottom-24 right-6 z-50 bg-gradient-to-r from-cyan-500 to-blue-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 group"
         aria-label="Abrir chat de soporte"
       >
         <MessageCircle className="w-6 h-6" />
@@ -196,7 +196,7 @@ export default function ChatWidget() {
   return (
     <div
       ref={widgetRef}
-      className="fixed bottom-6 right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden animate-in slide-in-from-bottom-5 duration-300"
+      className="fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden animate-in slide-in-from-bottom-5 duration-300"
     >
       {/* Header */}
       <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white p-4">
