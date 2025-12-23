@@ -239,6 +239,12 @@ service cloud.firestore {
       allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
     }
 
+    // Hero Banners (banners del carrusel principal)
+    match /hero_banners/{bannerId} {
+      allow read: if true; // Cualquiera puede leer para mostrar el carrusel
+      allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
+    }
+
     // Denegar por defecto
     match /{document=**} {
       allow read, write: if false;

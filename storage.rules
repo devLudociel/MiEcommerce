@@ -275,6 +275,22 @@ service firebase.storage {
     }
 
     // ==========================================================================
+    // HERO BANNERS: Banner images for the main carousel
+    // ==========================================================================
+    match /banners/{fileName} {
+      // Only admins/authenticated users can upload banner images
+      allow create, update: if isAuthenticated() &&
+                              isValidSize() &&
+                              isImage();
+
+      // Anyone can read (public banner images)
+      allow read: if true;
+
+      // Only authenticated users (admins) can delete
+      allow delete: if isAuthenticated();
+    }
+
+    // ==========================================================================
     // DENY ALL OTHER PATHS
     // ==========================================================================
     match /{allPaths=**} {

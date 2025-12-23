@@ -531,6 +531,13 @@ const Header: React.FC<HeaderProps> = () => {
                             >
                               📧 Newsletter Campaigns
                             </a>
+                            <a
+                              href="/admin/banners"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              🖼️ Banners del Carrusel
+                            </a>
                           </div>
                         )}
 

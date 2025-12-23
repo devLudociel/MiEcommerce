@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminBannersPanel from '../../components/admin/AdminBannersPanel.tsx';
+import RequireAdmin from '../../components/auth/RequireAdmin.tsx';
+---
+
+<BaseLayout title="Admin | Banners del Carrusel">
+  <!-- PERFORMANCE: Auth check needs immediate load -->
+  <RequireAdmin client:load />
+  <!-- PERFORMANCE: Panel can wait until browser is idle -->
+  <AdminBannersPanel client:idle />
+</BaseLayout>

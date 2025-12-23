@@ -1,29 +1,107 @@
 import { useState, useEffect, memo, useCallback } from 'react';
-import { heroSlides } from '../../data/heroSlides';
+import { heroSlides, type HeroSlide } from '../../data/heroSlides';
+import { getActiveBanners, type HeroBanner } from '../../lib/heroBanners';
+
+// Interface for unified slide data (works with both static and dynamic banners)
+interface SlideData {
+  id: string | number;
+  title: string;
+  subtitle: string;
+  description: string;
+  ctaPrimary: string;
+  ctaPrimaryUrl: string;
+  ctaSecondary: string;
+  ctaSecondaryUrl: string;
+  backgroundImage: string;
+  accentColor: string;
+}
+
+// Convert Firebase banner to slide data
+function bannerToSlide(banner: HeroBanner): SlideData {
+  return {
+    id: banner.id,
+    title: banner.title,
+    subtitle: banner.subtitle,
+    description: banner.description,
+    ctaPrimary: banner.ctaPrimaryText,
+    ctaPrimaryUrl: banner.ctaPrimaryUrl,
+    ctaSecondary: banner.ctaSecondaryText,
+    ctaSecondaryUrl: banner.ctaSecondaryUrl,
+    backgroundImage: banner.backgroundImage,
+    accentColor: banner.accentColor,
+  };
+}
+
+// Convert static slide to unified format
+function staticToSlide(slide: HeroSlide): SlideData {
+  return {
+    id: slide.id,
+    title: slide.title,
+    subtitle: slide.subtitle,
+    description: slide.description,
+    ctaPrimary: slide.ctaPrimary,
+    ctaPrimaryUrl: '/productos',
+    ctaSecondary: slide.ctaSecondary,
+    ctaSecondaryUrl: '/productos',
+    backgroundImage: slide.backgroundImage,
+    accentColor: slide.accentColor,
+  };
+}
 
 // PERFORMANCE: Memoize component to prevent unnecessary re-renders
 const HeroCarousel = memo(() => {
+  const [slides, setSlides] = useState<SlideData[]>(() =>
+    heroSlides.map(staticToSlide)
+  );
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load banners from Firebase
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadBanners() {
+      try {
+        const banners = await getActiveBanners();
+        if (mounted && banners.length > 0) {
+          setSlides(banners.map(bannerToSlide));
+        }
+      } catch (error) {
+        console.error('Error loading banners, using defaults:', error);
+        // Keep using static slides on error
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadBanners();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // PERFORMANCE: Wrap event handlers in useCallback
   const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-  }, []);
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  }, [slides.length]);
 
   const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
-  }, []);
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  }, [slides.length]);
 
   const goToSlide = useCallback((index: number) => {
     setCurrentSlide(index);
   }, []);
 
   useEffect(() => {
-    if (!isAutoPlaying) return;
+    if (!isAutoPlaying || slides.length === 0) return;
     const interval = setInterval(nextSlide, 5000);
     return () => clearInterval(interval);
-  }, [isAutoPlaying, currentSlide, nextSlide]);
+  }, [isAutoPlaying, currentSlide, nextSlide, slides.length]);
 
   // PERFORMANCE: Wrap toggle handler in useCallback
   const toggleAutoPlay = useCallback(() => {
@@ -58,13 +136,24 @@ const HeroCarousel = memo(() => {
     return textColors[color as keyof typeof textColors] || textColors.cyan;
   }, []);
 
+  // Handle CTA click with URL navigation
+  const handleCtaClick = useCallback((url: string) => {
+    if (url) {
+      window.location.href = url;
+    }
+  }, []);
+
+  if (slides.length === 0) {
+    return null;
+  }
+
   return (
     <section
       className="relative overflow-hidden h-[50vh] sm:h-[55vh] md:h-[60vh] lg:h-[65vh] min-h-[320px] sm:min-h-[400px] md:min-h-[450px] lg:min-h-[500px] max-h-[600px] lg:max-h-[700px]"
     >
       {/* Slides Container */}
       <div className="relative h-full">
-        {heroSlides.map((slide, index) => {
+        {slides.map((slide, index) => {
           const isActive = index === currentSlide;
           const gradientClass = getGradientClass(slide.accentColor);
           const textClass = getTextClass(slide.accentColor);
@@ -153,14 +242,22 @@ const HeroCarousel = memo(() => {
                         transitionDelay: '800ms',
                       }}
                     >
-                      <button
-                        className={`px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 text-white text-xs sm:text-sm md:text-base font-bold rounded-lg sm:rounded-xl ${gradientClass} hover:scale-105 active:scale-95 transform transition-all shadow-lg hover:shadow-2xl touch-manipulation`}
-                      >
-                        {slide.ctaPrimary}
-                      </button>
-                      <button className="px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 text-white text-xs sm:text-sm md:text-base font-bold rounded-lg sm:rounded-xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white hover:text-gray-800 transition-all transform hover:scale-105 active:scale-95 touch-manipulation">
-                        {slide.ctaSecondary}
-                      </button>
+                      {slide.ctaPrimary && (
+                        <button
+                          onClick={() => handleCtaClick(slide.ctaPrimaryUrl)}
+                          className={`px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 text-white text-xs sm:text-sm md:text-base font-bold rounded-lg sm:rounded-xl ${gradientClass} hover:scale-105 active:scale-95 transform transition-all shadow-lg hover:shadow-2xl touch-manipulation`}
+                        >
+                          {slide.ctaPrimary}
+                        </button>
+                      )}
+                      {slide.ctaSecondary && (
+                        <button
+                          onClick={() => handleCtaClick(slide.ctaSecondaryUrl)}
+                          className="px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 text-white text-xs sm:text-sm md:text-base font-bold rounded-lg sm:rounded-xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white hover:text-gray-800 transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+                        >
+                          {slide.ctaSecondary}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -175,7 +272,7 @@ const HeroCarousel = memo(() => {
         <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
           {/* Dots - Tamaño responsive */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {heroSlides.map((_, index) => (
+            {slides.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
