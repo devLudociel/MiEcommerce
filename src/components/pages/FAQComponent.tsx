@@ -1,163 +1,79 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getActiveFAQs, getAllCategories, type FAQ, type FAQCategory } from '../../lib/faqs';
 
-interface FAQ {
-  question: string;
-  answer: string;
-  category: string;
-}
+// Default FAQs for fallback
+const defaultFAQs: Omit<FAQ, 'id' | 'createdAt' | 'updatedAt'>[] = [
+  {
+    category: 'pedidos',
+    question: '¿Cómo puedo personalizar un producto?',
+    answer: 'Es muy sencillo: Selecciona el producto que te guste, haz clic en "Personalizar", sube tu logo o imagen, añade texto si lo deseas, y previsualiza el resultado en tiempo real.',
+    order: 0,
+    active: true,
+  },
+  {
+    category: 'envios',
+    question: '¿Cuánto tarda la producción y el envío?',
+    answer: 'La producción tarda entre 3-5 días hábiles. El envío estándar tarda 2-3 días adicionales.',
+    order: 1,
+    active: true,
+  },
+  {
+    category: 'pagos',
+    question: '¿Qué métodos de pago aceptan?',
+    answer: 'Aceptamos tarjetas de crédito y débito, PayPal, transferencia bancaria y pago contra reembolso.',
+    order: 2,
+    active: true,
+  },
+];
+
+const defaultCategories: Omit<FAQCategory, 'id'>[] = [
+  { name: 'Pedidos', icon: '📦', order: 0 },
+  { name: 'Envíos', icon: '🚚', order: 1 },
+  { name: 'Pagos', icon: '💳', order: 2 },
+  { name: 'Productos', icon: '✨', order: 3 },
+  { name: 'Devoluciones', icon: '↩️', order: 4 },
+  { name: 'Diseño', icon: '🎨', order: 5 },
+];
 
 export default function FAQComponent() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [faqs, setFaqs] = useState<Omit<FAQ, 'id' | 'createdAt' | 'updatedAt'>[]>(defaultFAQs);
+  const [categories, setCategories] = useState<Omit<FAQCategory, 'id'>[]>(defaultCategories);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const faqs: FAQ[] = [
-    // Pedidos y Personalización
-    {
-      category: 'pedidos',
-      question: '¿Cómo puedo personalizar un producto?',
-      answer:
-        'Es muy sencillo: Selecciona el producto que te guste, haz clic en "Personalizar", sube tu logo o imagen, añade texto si lo deseas, y previsualiza el resultado en tiempo real. Una vez satisfecho con el diseño, agrégalo al carrito y procede con la compra. Nuestro equipo revisará tu diseño antes de producirlo.',
-    },
-    {
-      category: 'pedidos',
-      question: '¿Puedo ver el diseño antes de la producción?',
-      answer:
-        'Sí, absolutamente. Una vez que hagas tu pedido, te enviaremos una prueba digital para tu aprobación en un plazo de 24 horas. No comenzaremos la producción hasta que apruebes el diseño final. Puedes solicitar cambios sin costo adicional.',
-    },
-    {
-      category: 'pedidos',
-      question: '¿Qué formatos de archivo aceptan?',
-      answer:
-        'Aceptamos PNG, JPG, PDF, AI, SVG, EPS y PSD. Para mejores resultados, recomendamos archivos en alta resolución (mínimo 300 DPI) con fondo transparente. Si tu archivo no cumple los requisitos, nuestro equipo de diseño puede ayudarte a optimizarlo.',
-    },
-    {
-      category: 'pedidos',
-      question: '¿Puedo hacer cambios después de confirmar mi pedido?',
-      answer:
-        'Sí, puedes hacer cambios antes de que aprobemos la prueba digital y comencemos la producción. Una vez iniciada la fabricación, no será posible realizar modificaciones. Te recomendamos revisar cuidadosamente tu pedido antes de la aprobación final.',
-    },
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [loadedFAQs, loadedCategories] = await Promise.all([
+          getActiveFAQs(),
+          getAllCategories()
+        ]);
 
-    // Envíos y Entregas
-    {
-      category: 'envios',
-      question: '¿Cuánto tarda la producción y el envío?',
-      answer:
-        'La producción tarda entre 3-5 días hábiles dependiendo del producto y la técnica de personalización. El envío estándar tarda 2-3 días adicionales. Ofrecemos opciones de envío express (24-48h) y urgente (24h) por un coste adicional.',
-    },
-    {
-      category: 'envios',
-      question: '¿Hacen envíos a toda España?',
-      answer:
-        'Sí, enviamos a toda España peninsular y Baleares. Para envíos a Canarias, Ceuta y Melilla, consulta las condiciones especiales en nuestra página de envíos. También realizamos envíos internacionales a la Unión Europea.',
-    },
-    {
-      category: 'envios',
-      question: '¿El envío es gratuito?',
-      answer:
-        'El envío estándar es gratuito en pedidos superiores a 50€. Para pedidos inferiores, el coste de envío es de 5.99€. Los envíos express y urgentes tienen un coste adicional independientemente del importe del pedido.',
-    },
-    {
-      category: 'envios',
-      question: '¿Puedo hacer seguimiento de mi pedido?',
-      answer:
-        'Sí, una vez que tu pedido sea enviado, recibirás un email con el número de seguimiento. Podrás consultar el estado de tu envío en tiempo real desde tu cuenta en la sección "Mis Pedidos" o directamente con la empresa de transporte.',
-    },
+        if (loadedFAQs.length > 0) {
+          setFaqs(loadedFAQs);
+        }
+        if (loadedCategories.length > 0) {
+          setCategories(loadedCategories);
+        }
+      } catch (error) {
+        console.error('Error loading FAQs:', error);
+        // Keep using defaults on error
+      } finally {
+        setIsLoading(false);
+      }
+    }
 
-    // Pagos y Facturación
-    {
-      category: 'pagos',
-      question: '¿Qué métodos de pago aceptan?',
-      answer:
-        'Aceptamos tarjetas de crédito y débito (Visa, Mastercard, American Express), PayPal, transferencia bancaria y pago contra reembolso. Todos los pagos con tarjeta están protegidos con tecnología de encriptación SSL.',
-    },
-    {
-      category: 'pagos',
-      question: '¿Emiten factura?',
-      answer:
-        'Sí, emitimos factura para todos los pedidos. Si necesitas factura con tus datos fiscales (NIF/CIF), asegúrate de incluir esta información durante el proceso de compra. La factura se enviará por email una vez completado el pedido.',
-    },
-    {
-      category: 'pagos',
-      question: '¿Puedo solicitar un presupuesto para pedidos grandes?',
-      answer:
-        'Por supuesto. Para pedidos corporativos o de gran volumen (más de 50 unidades), contáctanos a través del formulario de contacto o llámanos al 645 341 452. Te prepararemos un presupuesto personalizado con descuentos por cantidad.',
-    },
+    loadData();
+  }, []);
 
-    // Productos y Técnicas
-    {
-      category: 'productos',
-      question: '¿Qué técnicas de personalización utilizan?',
-      answer:
-        'Utilizamos diversas técnicas según el producto: impresión DTF y vinilo para textiles, sublimación para tazas y vajilla, UV DTF para superficies rígidas, corte y grabado láser para madera y metal, impresión offset y digital para papelería, e impresión 3D en resina y filamento.',
-    },
-    {
-      category: 'productos',
-      question: '¿Cuál es la calidad de los materiales?',
-      answer:
-        'Trabajamos únicamente con materiales de primera calidad certificados. Todos nuestros productos textiles son 100% algodón o mezclas premium, nuestros vinilos son de larga duración, y utilizamos tintas ecológicas y resistentes al lavado. Ofrecemos garantía de calidad en todos nuestros productos.',
-    },
-    {
-      category: 'productos',
-      question: '¿Puedo pedir una muestra antes de hacer un pedido grande?',
-      answer:
-        'Sí, para pedidos corporativos o de gran volumen, podemos preparar una muestra previa. El coste de la muestra se descontará del pedido final si este supera las 25 unidades. Contáctanos para más información.',
-    },
-    {
-      category: 'productos',
-      question: '¿Los colores se ven igual que en pantalla?',
-      answer:
-        'Hacemos todo lo posible para que los colores sean fieles, pero pueden existir ligeras variaciones debido a las calibraciones de pantalla y las técnicas de impresión. Si el color es crítico para tu proyecto, te recomendamos solicitar una muestra previa.',
-    },
-
-    // Devoluciones y Garantía
-    {
-      category: 'devoluciones',
-      question: '¿Puedo devolver un producto personalizado?',
-      answer:
-        'Los productos personalizados no admiten devolución salvo que presenten defectos de fabricación o no se correspondan con el diseño aprobado. En estos casos, reemplazaremos el producto sin coste adicional. Los productos estándar sin personalizar tienen 30 días de devolución.',
-    },
-    {
-      category: 'devoluciones',
-      question: '¿Qué garantía tienen los productos?',
-      answer:
-        'Todos nuestros productos tienen garantía de calidad de 12 meses contra defectos de fabricación. Si un producto personalizado presenta problemas de impresión, decoloración prematura o defectos en el material, lo reemplazaremos sin coste.',
-    },
-    {
-      category: 'devoluciones',
-      question: '¿Qué hago si recibo un producto defectuoso?',
-      answer:
-        'Contacta con nosotros inmediatamente a través del email info@imprimarte.com o por teléfono al 645 341 452. Envíanos fotos del producto y una descripción del problema. Resolveremos tu caso en menos de 48 horas, reemplazando el producto o reembolsando el importe.',
-    },
-
-    // Diseño y Ayuda
-    {
-      category: 'diseno',
-      question: '¿Ofrecen servicios de diseño gráfico?',
-      answer:
-        'Sí, tenemos un equipo de diseñadores gráficos que pueden crear o adaptar tu diseño. Este servicio tiene un coste adicional que varía según la complejidad. Consulta nuestros precios en la sección de Servicios Digitales o contáctanos para un presupuesto.',
-    },
-    {
-      category: 'diseno',
-      question: '¿Puedo usar imágenes de internet?',
-      answer:
-        'Solo puedes usar imágenes que sean de tu propiedad o que tengas licencia para usar comercialmente. No podemos imprimir diseños con copyright de terceros (logos de marcas, personajes, etc.) sin autorización. Te recomendamos usar tus propias fotos o imágenes de bancos gratuitos como Unsplash o Pixabay.',
-    },
-    {
-      category: 'diseno',
-      question: '¿Necesito conocimientos de diseño para personalizar?',
-      answer:
-        'No, nuestro sistema de personalización es muy intuitivo. Simplemente arrastra y suelta tu imagen, añade texto, ajusta el tamaño y la posición. Si necesitas ayuda, nuestro equipo está disponible por WhatsApp, email o teléfono para guiarte en el proceso.',
-    },
-  ];
-
-  const categories = [
+  const allCategories = [
     { id: 'all', name: 'Todas', icon: '📋' },
-    { id: 'pedidos', name: 'Pedidos', icon: '📦' },
-    { id: 'envios', name: 'Envíos', icon: '🚚' },
-    { id: 'pagos', name: 'Pagos', icon: '💳' },
-    { id: 'productos', name: 'Productos', icon: '✨' },
-    { id: 'devoluciones', name: 'Devoluciones', icon: '↩️' },
-    { id: 'diseno', name: 'Diseño', icon: '🎨' },
+    ...categories.map(c => ({
+      id: c.name.toLowerCase(),
+      name: c.name,
+      icon: c.icon
+    }))
   ];
 
   const filteredFAQs =
@@ -185,7 +101,7 @@ export default function FAQComponent() {
 
         {/* Categories Filter */}
         <div className="flex flex-wrap justify-center gap-3 mb-12">
-          {categories.map((category) => (
+          {allCategories.map((category) => (
             <button
               key={category.id}
               onClick={() => setActiveCategory(category.id)}
@@ -203,46 +119,53 @@ export default function FAQComponent() {
 
         {/* FAQ Accordion */}
         <div className="max-w-4xl mx-auto">
-          <div className="space-y-4">
-            {filteredFAQs.map((faq, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden transition-all duration-300 hover:border-cyan-500"
-              >
-                <button
-                  onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                  className="w-full px-6 py-5 text-left flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors"
-                >
-                  <span className="font-bold text-gray-800 text-lg">{faq.question}</span>
-                  <svg
-                    className={`w-6 h-6 text-cyan-500 flex-shrink-0 transition-transform duration-300 ${
-                      openIndex === index ? 'rotate-180' : ''
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Cargando preguntas...</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredFAQs.map((faq, index) => (
                 <div
-                  className={`overflow-hidden transition-all duration-300 ${
-                    openIndex === index ? 'max-h-96' : 'max-h-0'
-                  }`}
+                  key={index}
+                  className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden transition-all duration-300 hover:border-cyan-500"
                 >
-                  <div className="px-6 pb-5 text-gray-600 leading-relaxed border-t border-gray-100 pt-4">
-                    {faq.answer}
+                  <button
+                    onClick={() => setOpenIndex(openIndex === index ? null : index)}
+                    className="w-full px-6 py-5 text-left flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="font-bold text-gray-800 text-lg">{faq.question}</span>
+                    <svg
+                      className={`w-6 h-6 text-cyan-500 flex-shrink-0 transition-transform duration-300 ${
+                        openIndex === index ? 'rotate-180' : ''
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ${
+                      openIndex === index ? 'max-h-96' : 'max-h-0'
+                    }`}
+                  >
+                    <div className="px-6 pb-5 text-gray-600 leading-relaxed border-t border-gray-100 pt-4">
+                      {faq.answer}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Contact CTA */}

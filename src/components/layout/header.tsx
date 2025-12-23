@@ -538,6 +538,20 @@ const Header: React.FC<HeaderProps> = () => {
                             >
                               🖼️ Banners del Carrusel
                             </a>
+                            <a
+                              href="/admin/faqs"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              ❓ Preguntas Frecuentes
+                            </a>
+                            <a
+                              href="/admin/testimonios"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              ⭐ Testimonios y Estadísticas
+                            </a>
                           </div>
                         )}
 

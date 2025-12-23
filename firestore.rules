@@ -245,6 +245,30 @@ service cloud.firestore {
       allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
     }
 
+    // FAQs (Preguntas Frecuentes)
+    match /faqs/{faqId} {
+      allow read: if true; // Cualquiera puede leer las FAQs
+      allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
+    }
+
+    // FAQ Categories
+    match /faq_categories/{categoryId} {
+      allow read: if true; // Cualquiera puede leer las categorías
+      allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
+    }
+
+    // Testimonials (Testimonios de clientes)
+    match /testimonials/{testimonialId} {
+      allow read: if true; // Cualquiera puede leer los testimonios
+      allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
+    }
+
+    // Social Stats (Estadísticas de prueba social)
+    match /social_stats/{statId} {
+      allow read: if true; // Cualquiera puede leer las estadísticas
+      allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
+    }
+
     // Denegar por defecto
     match /{document=**} {
       allow read, write: if false;

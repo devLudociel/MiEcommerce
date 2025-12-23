@@ -291,6 +291,22 @@ service firebase.storage {
     }
 
     // ==========================================================================
+    // TESTIMONIALS: Avatar images for testimonials
+    // ==========================================================================
+    match /testimonials/{fileName} {
+      // Only admins/authenticated users can upload testimonial images
+      allow create, update: if isAuthenticated() &&
+                              isValidSize() &&
+                              isImage();
+
+      // Anyone can read (public testimonial avatars)
+      allow read: if true;
+
+      // Only authenticated users (admins) can delete
+      allow delete: if isAuthenticated();
+    }
+
+    // ==========================================================================
     // DENY ALL OTHER PATHS
     // ==========================================================================
     match /{allPaths=**} {

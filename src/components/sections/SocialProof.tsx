@@ -1,53 +1,89 @@
 // src/components/sections/SocialProof.tsx
 import { useState, useEffect } from 'react';
+import {
+  getActiveTestimonials,
+  getActiveStats,
+  type Testimonial,
+  type SocialStat
+} from '../../lib/testimonials';
+
+// Default data for fallback
+const defaultTestimonials = [
+  {
+    id: '1',
+    name: 'María González',
+    role: 'Cliente verificada',
+    image: '👩',
+    rating: 5,
+    text: '¡Increíble calidad! Pedí camisetas personalizadas para mi equipo y quedaron perfectas. El servicio de atención fue excepcional.',
+    date: 'Hace 2 semanas',
+  },
+  {
+    id: '2',
+    name: 'Carlos Rodríguez',
+    role: 'Compra verificada',
+    image: '👨',
+    rating: 5,
+    text: 'La impresión 3D de mi proyecto superó mis expectativas. Detalles perfectos y entrega rápida. ¡Totalmente recomendado!',
+    date: 'Hace 1 mes',
+  },
+  {
+    id: '3',
+    name: 'Ana Martínez',
+    role: 'Cliente frecuente',
+    image: '👩‍🦰',
+    rating: 5,
+    text: 'Llevo años comprando aquí. Nunca me han fallado. Calidad premium, precios justos y un trato siempre amable.',
+    date: 'Hace 3 días',
+  },
+];
+
+const defaultStats = [
+  { value: '1,500+', label: 'Clientes Satisfechos', icon: '😊' },
+  { value: '5,000+', label: 'Productos Entregados', icon: '📦' },
+  { value: '4.8/5', label: 'Valoración Media', icon: '⭐' },
+  { value: '98%', label: 'Tasa de Satisfacción', icon: '💯' },
+];
 
 export default function SocialProof() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [testimonials, setTestimonials] = useState(defaultTestimonials);
+  const [stats, setStats] = useState(defaultStats);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const testimonials = [
-    {
-      id: 1,
-      name: 'María González',
-      role: 'Cliente verificada',
-      image: '👩',
-      rating: 5,
-      text: '¡Increíble calidad! Pedí camisetas personalizadas para mi equipo y quedaron perfectas. El servicio de atención fue excepcional.',
-      date: 'Hace 2 semanas',
-    },
-    {
-      id: 2,
-      name: 'Carlos Rodríguez',
-      role: 'Compra verificada',
-      image: '👨',
-      rating: 5,
-      text: 'La impresión 3D de mi proyecto superó mis expectativas. Detalles perfectos y entrega rápida. ¡Totalmente recomendado!',
-      date: 'Hace 1 mes',
-    },
-    {
-      id: 3,
-      name: 'Ana Martínez',
-      role: 'Cliente frecuente',
-      image: '👩‍🦰',
-      rating: 5,
-      text: 'Llevo años comprando aquí. Nunca me han fallado. Calidad premium, precios justos y un trato siempre amable.',
-      date: 'Hace 3 días',
-    },
-  ];
+  // Load data from Firebase
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [loadedTestimonials, loadedStats] = await Promise.all([
+          getActiveTestimonials(),
+          getActiveStats()
+        ]);
 
-  const stats = [
-    { value: '1,500+', label: 'Clientes Satisfechos', icon: '😊' },
-    { value: '5,000+', label: 'Productos Entregados', icon: '📦' },
-    { value: '4.8/5', label: 'Valoración Media', icon: '⭐' },
-    { value: '98%', label: 'Tasa de Satisfacción', icon: '💯' },
-  ];
+        if (loadedTestimonials.length > 0) {
+          setTestimonials(loadedTestimonials);
+        }
+        if (loadedStats.length > 0) {
+          setStats(loadedStats);
+        }
+      } catch (error) {
+        console.error('Error loading social proof data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
 
   // Auto-rotate testimonials
   useEffect(() => {
+    if (testimonials.length === 0) return;
     const interval = setInterval(() => {
       setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [testimonials.length]);
 
   return (
     <section className="py-20 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
@@ -112,7 +148,17 @@ export default function SocialProof() {
 
                   {/* Author */}
                   <div className="flex flex-col items-center">
-                    <div className="text-6xl mb-4">{testimonial.image}</div>
+                    <div className="text-6xl mb-4">
+                      {testimonial.image.startsWith('http') ? (
+                        <img
+                          src={testimonial.image}
+                          alt={testimonial.name}
+                          className="w-16 h-16 rounded-full object-cover"
+                        />
+                      ) : (
+                        testimonial.image
+                      )}
+                    </div>
                     <div className="text-center">
                       <div className="font-bold text-gray-800 text-lg">
                         {testimonial.name}
