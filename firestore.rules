@@ -161,6 +161,12 @@ service cloud.firestore {
       allow write: if false; // Solo vía Admin SDK
     }
 
+    // Settings (configuración global del sitio)
+    match /settings/{document} {
+      allow read: if true; // Cualquiera puede leer configuración pública
+      allow write: if isAdmin(); // Solo admins pueden modificar
+    }
+
     // Pages (páginas informativas, blog)
     match /pages/{pageId} {
       allow read: if true; // Cualquiera puede leer páginas publicadas

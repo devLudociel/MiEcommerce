@@ -1,5 +1,12 @@
 import { logger } from '../../lib/logger';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import {
+  getContactInfoWithDefaults,
+  getWhatsAppUrl,
+  getSocialLinkUrl,
+  getShortAddress,
+  type ContactInfoInput
+} from '../../lib/contactInfo';
 
 interface FooterLink {
   name: string;
@@ -15,6 +22,20 @@ const Footer: React.FC = () => {
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSubscribing, setIsSubscribing] = useState(false);
+  const [contactInfo, setContactInfo] = useState<ContactInfoInput | null>(null);
+
+  // Load contact info from Firebase
+  useEffect(() => {
+    async function loadContactInfo() {
+      try {
+        const info = await getContactInfoWithDefaults();
+        setContactInfo(info);
+      } catch (error) {
+        console.error('Error loading contact info:', error);
+      }
+    }
+    loadContactInfo();
+  }, []);
 
   const footerSections: FooterSection[] = [
     {
@@ -210,22 +231,21 @@ const Footer: React.FC = () => {
               </a>
 
               <p className="text-gray-400 mb-6 leading-relaxed text-sm">
-                Especialistas en impresión y personalización. Damos vida a tus ideas con la más alta
-                calidad y tecnología.
+                {contactInfo?.companyDescription || 'Especialistas en impresión y personalización. Damos vida a tus ideas con la más alta calidad y tecnología.'}
               </p>
 
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-sm text-gray-400">
                   <span className="text-cyan-400">📞</span>
-                  <span>645 341 452</span>
+                  <span>{contactInfo?.phoneDisplay || '645 341 452'}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-400">
                   <span className="text-cyan-400">📧</span>
-                  <span>info@imprimarte.com</span>
+                  <span>{contactInfo?.email || 'info@imprimarte.com'}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-400">
                   <span className="text-cyan-400">📍</span>
-                  <span>Santa Cruz de Tenerife, España</span>
+                  <span>{contactInfo ? getShortAddress(contactInfo) : 'Santa Cruz de Tenerife, España'}</span>
                 </div>
               </div>
             </div>
@@ -300,57 +320,23 @@ const Footer: React.FC = () => {
             </h4>
 
             <div className="flex justify-center gap-4">
-              {[
-                {
-                  name: 'Instagram',
-                  icon: '📷',
-                  href: 'https://instagram.com/imprimarte',
-                  color: '#E1306C',
-                },
-                {
-                  name: 'Facebook',
-                  icon: '👍',
-                  href: 'https://facebook.com/imprimarte',
-                  color: '#1877F2',
-                },
-                {
-                  name: 'TikTok',
-                  icon: '🎵',
-                  href: 'https://tiktok.com/@imprimarte',
-                  color: '#000000',
-                },
-                {
-                  name: 'WhatsApp',
-                  icon: '💬',
-                  href: 'https://wa.me/34645341452',
-                  color: '#25D366',
-                },
-                {
-                  name: 'YouTube',
-                  icon: '📺',
-                  href: 'https://youtube.com/@imprimarte',
-                  color: '#FF0000',
-                },
-                {
-                  name: 'Pinterest',
-                  icon: '📌',
-                  href: 'https://pinterest.com/imprimarte',
-                  color: '#BD081C',
-                },
-              ].map((social) => (
+              {(contactInfo?.socialLinks || [])
+                .filter(link => link.active)
+                .sort((a, b) => a.order - b.order)
+                .map((social) => (
                 <a
-                  key={social.name}
-                  href={social.href}
+                  key={social.id}
+                  href={contactInfo ? getSocialLinkUrl(social, contactInfo) : '#'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group relative"
-                  aria-label={social.name}
+                  aria-label={social.platform}
                 >
                   <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1 group-hover:bg-white/10">
                     {social.icon}
                   </div>
                   <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    {social.name}
+                    {social.platform}
                   </span>
                 </a>
               ))}

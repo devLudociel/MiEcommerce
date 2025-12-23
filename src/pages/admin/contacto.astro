@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminContactInfoPanel from '../../components/admin/AdminContactInfoPanel.tsx';
+import RequireAdmin from '../../components/auth/RequireAdmin.tsx';
+---
+
+<BaseLayout title="Admin | Información de Contacto">
+  <RequireAdmin client:load />
+  <AdminContactInfoPanel client:idle />
+</BaseLayout>

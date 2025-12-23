@@ -1,4 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import {
+  getContactInfoWithDefaults,
+  getWhatsAppUrl,
+  getPhoneUrl,
+  getEmailUrl,
+  getSocialLinkUrl,
+  getShortAddress,
+  type ContactInfoInput
+} from '../../lib/contactInfo';
 
 interface FormData {
   nombre: string;
@@ -7,6 +16,44 @@ interface FormData {
   asunto: string;
   mensaje: string;
 }
+
+// Default contact info for fallback
+const defaultContactCards = [
+  {
+    icon: '📞',
+    title: 'Teléfono',
+    content: '+34 645 341 452',
+    action: 'tel:+34645341452',
+    color: 'from-cyan-500 to-cyan-600',
+  },
+  {
+    icon: '📧',
+    title: 'Email',
+    content: 'info@imprimarte.com',
+    action: 'mailto:info@imprimarte.com',
+    color: 'from-magenta-500 to-magenta-600',
+  },
+  {
+    icon: '💬',
+    title: 'WhatsApp',
+    content: 'Chatea con nosotros',
+    action: 'https://wa.me/34645341452',
+    color: 'from-green-500 to-green-600',
+  },
+  {
+    icon: '📍',
+    title: 'Dirección',
+    content: 'Santa Cruz de Tenerife, Canarias',
+    action: null,
+    color: 'from-purple-500 to-purple-600',
+  },
+];
+
+const defaultSchedule = [
+  { day: 'Lunes - Viernes', hours: '9:00 - 20:00' },
+  { day: 'Sábados', hours: '10:00 - 14:00' },
+  { day: 'Domingos', hours: 'Cerrado' },
+];
 
 export default function ContactoComponent() {
   const [formData, setFormData] = useState<FormData>({
@@ -19,6 +66,82 @@ export default function ContactoComponent() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [contactData, setContactData] = useState<ContactInfoInput | null>(null);
+
+  // Load contact info from Firebase
+  useEffect(() => {
+    async function loadContactInfo() {
+      try {
+        const info = await getContactInfoWithDefaults();
+        setContactData(info);
+      } catch (error) {
+        console.error('Error loading contact info:', error);
+      }
+    }
+    loadContactInfo();
+  }, []);
+
+  // Build dynamic contact cards
+  const contactInfo = contactData ? [
+    {
+      icon: '📞',
+      title: 'Teléfono',
+      content: contactData.phoneDisplay ? `+34 ${contactData.phoneDisplay}` : '+34 645 341 452',
+      action: getPhoneUrl(contactData.phone),
+      color: 'from-cyan-500 to-cyan-600',
+    },
+    {
+      icon: '📧',
+      title: 'Email',
+      content: contactData.email,
+      action: getEmailUrl(contactData.email),
+      color: 'from-magenta-500 to-magenta-600',
+    },
+    {
+      icon: '💬',
+      title: 'WhatsApp',
+      content: 'Chatea con nosotros',
+      action: getWhatsAppUrl(contactData.whatsapp, contactData.whatsappMessage),
+      color: 'from-green-500 to-green-600',
+    },
+    {
+      icon: '📍',
+      title: 'Dirección',
+      content: getShortAddress(contactData),
+      action: null,
+      color: 'from-purple-500 to-purple-600',
+    },
+  ] : defaultContactCards;
+
+  // Build dynamic schedule
+  const schedule = contactData?.schedule?.length > 0
+    ? contactData.schedule.sort((a, b) => a.order - b.order).map(s => ({ day: s.day, hours: s.hours }))
+    : defaultSchedule;
+
+  // Build dynamic social links
+  const socialLinks = contactData?.socialLinks
+    ? contactData.socialLinks
+        .filter(link => link.active)
+        .sort((a, b) => a.order - b.order)
+        .map(link => ({
+          icon: link.icon,
+          name: link.platform,
+          url: getSocialLinkUrl(link, contactData),
+          color: link.platform === 'Facebook' ? 'hover:bg-blue-500' :
+                 link.platform === 'Instagram' ? 'hover:bg-pink-500' :
+                 link.platform === 'Twitter' ? 'hover:bg-sky-500' :
+                 link.platform === 'LinkedIn' ? 'hover:bg-blue-700' :
+                 link.platform === 'WhatsApp' ? 'hover:bg-green-500' :
+                 link.platform === 'TikTok' ? 'hover:bg-black' :
+                 link.platform === 'YouTube' ? 'hover:bg-red-500' :
+                 'hover:bg-gray-500'
+        }))
+    : [
+        { icon: '📘', name: 'Facebook', url: '#', color: 'hover:bg-blue-500' },
+        { icon: '📸', name: 'Instagram', url: '#', color: 'hover:bg-pink-500' },
+        { icon: '🐦', name: 'Twitter', url: '#', color: 'hover:bg-sky-500' },
+        { icon: '💼', name: 'LinkedIn', url: '#', color: 'hover:bg-blue-700' },
+      ];
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -42,50 +165,6 @@ export default function ContactoComponent() {
       setTimeout(() => setSubmitStatus('idle'), 5000);
     }, 1500);
   };
-
-  const contactInfo = [
-    {
-      icon: '📞',
-      title: 'Teléfono',
-      content: '+34 645 341 452',
-      action: 'tel:+34645341452',
-      color: 'from-cyan-500 to-cyan-600',
-    },
-    {
-      icon: '📧',
-      title: 'Email',
-      content: 'info@imprimarte.com',
-      action: 'mailto:info@imprimarte.com',
-      color: 'from-magenta-500 to-magenta-600',
-    },
-    {
-      icon: '💬',
-      title: 'WhatsApp',
-      content: 'Chatea con nosotros',
-      action: 'https://wa.me/34645341452',
-      color: 'from-green-500 to-green-600',
-    },
-    {
-      icon: '📍',
-      title: 'Dirección',
-      content: 'Santa Cruz de Tenerife, Canarias',
-      action: null,
-      color: 'from-purple-500 to-purple-600',
-    },
-  ];
-
-  const schedule = [
-    { day: 'Lunes - Viernes', hours: '9:00 - 20:00' },
-    { day: 'Sábados', hours: '10:00 - 14:00' },
-    { day: 'Domingos', hours: 'Cerrado' },
-  ];
-
-  const socialLinks = [
-    { icon: '📘', name: 'Facebook', url: '#', color: 'hover:bg-blue-500' },
-    { icon: '📸', name: 'Instagram', url: '#', color: 'hover:bg-pink-500' },
-    { icon: '🐦', name: 'Twitter', url: '#', color: 'hover:bg-sky-500' },
-    { icon: '💼', name: 'LinkedIn', url: '#', color: 'hover:bg-blue-700' },
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-16 mt-32">
@@ -275,7 +354,7 @@ export default function ContactoComponent() {
             style={{ height: '400px' }}
           >
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d111551.9926778267!2d-16.402524!3d28.463888!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xc41ccfda44fc0fd%3A0x10340f3be4bc8c0!2sSanta%20Cruz%20de%20Tenerife!5e0!3m2!1ses!2ses!4v1234567890"
+              src={contactData?.googleMapsEmbed || "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d111551.9926778267!2d-16.402524!3d28.463888!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xc41ccfda44fc0fd%3A0x10340f3be4bc8c0!2sSanta%20Cruz%20de%20Tenerife!5e0!3m2!1ses!2ses!4v1234567890"}
               width="100%"
               height="100%"
               style={{ border: 0 }}
@@ -298,7 +377,7 @@ export default function ContactoComponent() {
 
           <div className="flex flex-wrap justify-center gap-4">
             <a
-              href="https://wa.me/34645341452"
+              href={contactData ? getWhatsAppUrl(contactData.whatsapp, contactData.whatsappMessage) : "https://wa.me/34645341452"}
               target="_blank"
               rel="noopener noreferrer"
               className="px-8 py-4 bg-green-500 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
@@ -306,7 +385,7 @@ export default function ContactoComponent() {
               💬 Abrir WhatsApp
             </a>
             <a
-              href="tel:+34645341452"
+              href={contactData ? getPhoneUrl(contactData.phone) : "tel:+34645341452"}
               className="px-8 py-4 bg-gradient-primary text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
             >
               📞 Llamar Ahora
