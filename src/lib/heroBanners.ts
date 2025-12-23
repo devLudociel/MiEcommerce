@@ -9,9 +9,6 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-  query,
-  where,
-  orderBy,
   Timestamp,
   onSnapshot,
   type Unsubscribe
@@ -69,13 +66,15 @@ const COLLECTION_NAME = 'hero_banners';
 export async function getAllBanners(): Promise<HeroBanner[]> {
   try {
     const bannersRef = collection(db, COLLECTION_NAME);
-    const q = query(bannersRef, orderBy('order', 'asc'));
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocs(bannersRef);
 
-    return snapshot.docs.map(doc => ({
+    const banners = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     } as HeroBanner));
+
+    // Ordenar en el cliente para evitar problemas de índices
+    return banners.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   } catch (error) {
     console.error('Error fetching banners:', error);
     return [];
@@ -84,21 +83,22 @@ export async function getAllBanners(): Promise<HeroBanner[]> {
 
 /**
  * Obtener solo los banners activos (para el frontend)
+ * Nota: Filtramos y ordenamos en el cliente para evitar necesitar índices en Firestore
  */
 export async function getActiveBanners(): Promise<HeroBanner[]> {
   try {
     const bannersRef = collection(db, COLLECTION_NAME);
-    const q = query(
-      bannersRef,
-      where('active', '==', true),
-      orderBy('order', 'asc')
-    );
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocs(bannersRef);
 
-    return snapshot.docs.map(doc => ({
+    const allBanners = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     } as HeroBanner));
+
+    // Filtrar activos y ordenar en el cliente
+    return allBanners
+      .filter(banner => banner.active === true)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   } catch (error) {
     console.error('Error fetching active banners:', error);
     return [];
@@ -112,13 +112,14 @@ export function subscribeToBanners(
   callback: (banners: HeroBanner[]) => void
 ): Unsubscribe {
   const bannersRef = collection(db, COLLECTION_NAME);
-  const q = query(bannersRef, orderBy('order', 'asc'));
 
-  return onSnapshot(q, (snapshot) => {
+  return onSnapshot(bannersRef, (snapshot) => {
     const banners = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     } as HeroBanner));
+    // Ordenar en el cliente
+    banners.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     callback(banners);
   }, (error) => {
     console.error('Error in banners subscription:', error);
