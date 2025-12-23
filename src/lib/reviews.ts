@@ -103,14 +103,30 @@ const COLLECTION_NAME = 'customer_reviews';
 export async function submitReview(review: CustomerReviewInput): Promise<string> {
   try {
     const reviewsRef = collection(db, COLLECTION_NAME);
-    const docRef = await addDoc(reviewsRef, {
-      ...review,
+
+    // Build review data, excluding undefined fields
+    const reviewData: Record<string, unknown> = {
+      customerId: review.customerId,
+      customerName: review.customerName,
+      customerEmail: review.customerEmail,
+      rating: review.rating,
+      title: review.title,
+      text: review.text,
       status: 'pending',
       featured: false,
       displayOrder: 0,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now()
-    });
+    };
+
+    // Only add optional fields if they have values
+    if (review.customerAvatar) reviewData.customerAvatar = review.customerAvatar;
+    if (review.orderId) reviewData.orderId = review.orderId;
+    if (review.orderDate) reviewData.orderDate = review.orderDate;
+    if (review.productIds && review.productIds.length > 0) reviewData.productIds = review.productIds;
+    if (review.images && review.images.length > 0) reviewData.images = review.images;
+
+    const docRef = await addDoc(reviewsRef, reviewData);
     return docRef.id;
   } catch (error) {
     console.error('Error submitting review:', error);
