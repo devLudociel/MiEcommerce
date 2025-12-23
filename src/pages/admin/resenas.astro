@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminReviewsPanel from '../../components/admin/AdminReviewsPanel.tsx';
+import RequireAdmin from '../../components/auth/RequireAdmin.tsx';
+---
+
+<BaseLayout title="Admin | Reseñas de Clientes">
+  <RequireAdmin client:load />
+  <AdminReviewsPanel client:idle />
+</BaseLayout>

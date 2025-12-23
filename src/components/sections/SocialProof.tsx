@@ -6,6 +6,12 @@ import {
   type Testimonial,
   type SocialStat
 } from '../../lib/testimonials';
+import {
+  getApprovedReviews,
+  getTimeAgo,
+  getInitials,
+  type CustomerReview
+} from '../../lib/reviews';
 
 // Default data for fallback
 const defaultTestimonials = [
@@ -45,6 +51,19 @@ const defaultStats = [
   { value: '98%', label: 'Tasa de Satisfacción', icon: '💯' },
 ];
 
+// Convert customer review to testimonial format
+function reviewToTestimonial(review: CustomerReview): typeof defaultTestimonials[0] {
+  return {
+    id: `review-${review.id}`,
+    name: review.customerName,
+    role: 'Cliente verificado',
+    image: review.customerAvatar || getInitials(review.customerName),
+    rating: review.rating,
+    text: review.text,
+    date: getTimeAgo(review.createdAt),
+  };
+}
+
 export default function SocialProof() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [testimonials, setTestimonials] = useState(defaultTestimonials);
@@ -55,13 +74,20 @@ export default function SocialProof() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [loadedTestimonials, loadedStats] = await Promise.all([
+        const [loadedTestimonials, loadedStats, customerReviews] = await Promise.all([
           getActiveTestimonials(),
-          getActiveStats()
+          getActiveStats(),
+          getApprovedReviews(10) // Get up to 10 approved reviews
         ]);
 
-        if (loadedTestimonials.length > 0) {
-          setTestimonials(loadedTestimonials);
+        // Combine admin testimonials with customer reviews
+        const allTestimonials = [
+          ...loadedTestimonials,
+          ...customerReviews.map(reviewToTestimonial)
+        ];
+
+        if (allTestimonials.length > 0) {
+          setTestimonials(allTestimonials);
         }
         if (loadedStats.length > 0) {
           setStats(loadedStats);
@@ -190,6 +216,17 @@ export default function SocialProof() {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* CTA to leave review */}
+        <div className="mt-12 text-center">
+          <a
+            href="/dejar-resena"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+          >
+            <span>⭐</span>
+            ¿Has comprado? ¡Déjanos tu opinión!
+          </a>
         </div>
 
         {/* Trust Badges */}

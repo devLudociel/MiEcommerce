@@ -1,0 +1,43 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ReviewSubmissionForm from '../components/reviews/ReviewSubmissionForm.tsx';
+---
+
+<BaseLayout title="Dejar una Reseña | ImprimeArte">
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-white py-16 mt-32">
+    <div class="container mx-auto px-4 max-w-2xl">
+      <!-- Header -->
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-sm rounded-full mb-4">
+          <span>⭐</span>
+          <span>Tu Opinión</span>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-black text-gray-800 mb-3">
+          ¡Cuéntanos tu experiencia!
+        </h1>
+        <p class="text-gray-600 text-lg">
+          Tu opinión nos ayuda a mejorar y ayuda a otros clientes
+        </p>
+      </div>
+
+      <!-- Form -->
+      <ReviewSubmissionForm client:load />
+
+      <!-- Trust indicators -->
+      <div class="mt-8 flex flex-wrap justify-center gap-6 text-sm text-gray-500">
+        <div class="flex items-center gap-2">
+          <span class="text-green-500">✓</span>
+          Reseñas verificadas
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-green-500">✓</span>
+          100% anónimo
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-green-500">✓</span>
+          Sin spam
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

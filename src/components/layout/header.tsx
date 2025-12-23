@@ -559,6 +559,13 @@ const Header: React.FC<HeaderProps> = () => {
                             >
                               📞 Info de Contacto
                             </a>
+                            <a
+                              href="/admin/resenas"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              💬 Reseñas de Clientes
+                            </a>
                           </div>
                         )}
 

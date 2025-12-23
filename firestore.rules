@@ -275,6 +275,16 @@ service cloud.firestore {
       allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
     }
 
+    // Customer Reviews (Reseñas de clientes con moderación)
+    match /customer_reviews/{reviewId} {
+      // Cualquiera puede leer reseñas (filtrado por status en cliente)
+      allow read: if true;
+      // Usuarios autenticados pueden crear reseñas (van a cola de moderación)
+      allow create: if isAuth() && request.resource.data.customerId == request.auth.uid;
+      // Solo admins pueden actualizar (aprobar/rechazar) o eliminar
+      allow update, delete: if isAdmin();
+    }
+
     // Denegar por defecto
     match /{document=**} {
       allow read, write: if false;
