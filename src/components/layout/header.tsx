@@ -72,7 +72,7 @@ const CartDropdown = memo(function CartDropdown({ onClose }: { onClose: () => vo
 
   return (
     <div
-      className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-50"
+      className="cart-dropdown absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-50"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="p-4 max-h-96 overflow-auto">
@@ -858,7 +858,7 @@ const Header: React.FC<HeaderProps> = () => {
       >
         <div className="container">
           <div
-            className="flex items-center justify-center text-sm"
+            className="flex flex-wrap items-center justify-center text-sm text-center"
             style={{ gap: 'var(--spacing-3)' }}
           >
             <button className="hover:text-white" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>

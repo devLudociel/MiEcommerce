@@ -100,6 +100,42 @@ const {
         }
       }
     </style>
+    <script is:inline>
+      (() => {
+        let initialized = false;
+
+        const setHeaderHeight = () => {
+          const header = document.querySelector('header');
+          if (!header) return;
+          const height = Math.ceil(header.getBoundingClientRect().height);
+          document.documentElement.style.setProperty('--header-height', `${height}px`);
+        };
+
+        const init = () => {
+          if (initialized) return;
+          const header = document.querySelector('header');
+          if (!header) {
+            requestAnimationFrame(init);
+            return;
+          }
+          initialized = true;
+          setHeaderHeight();
+
+          if (typeof ResizeObserver !== 'undefined') {
+            const observer = new ResizeObserver(setHeaderHeight);
+            observer.observe(header);
+          } else {
+            window.addEventListener('resize', setHeaderHeight);
+          }
+        };
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', init, { once: true });
+        } else {
+          init();
+        }
+      })();
+    </script>
   </head>
   <body class="bg-white min-h-screen">
     <a class="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
