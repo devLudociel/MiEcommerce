@@ -11,7 +11,10 @@ interface CardSelectorConfigEditorProps {
   onChange: (options: CardOption[]) => void;
 }
 
-export default function CardSelectorConfigEditor({ options, onChange }: CardSelectorConfigEditorProps) {
+export default function CardSelectorConfigEditor({
+  options,
+  onChange,
+}: CardSelectorConfigEditorProps) {
   const [showAddCard, setShowAddCard] = useState(false);
   const [newCard, setNewCard] = useState<CardOption>({
     value: '',
@@ -74,14 +77,18 @@ export default function CardSelectorConfigEditor({ options, onChange }: CardSele
           ? {
               ...c,
               ...updates,
-              value: updates.label ? updates.label.toLowerCase().replace(/\s+/g, '_') : c.value
+              value: updates.label ? updates.label.toLowerCase().replace(/\s+/g, '_') : c.value,
             }
           : c
       )
     );
   };
 
-  const handleUploadImage = async (cardValue: string, file: File, type: 'imageUrl' | 'previewImage') => {
+  const handleUploadImage = async (
+    cardValue: string,
+    file: File,
+    type: 'imageUrl' | 'previewImage'
+  ) => {
     const user = auth.currentUser;
     if (!user) {
       notify.error('Debes iniciar sesión para subir imágenes');
@@ -119,7 +126,11 @@ export default function CardSelectorConfigEditor({ options, onChange }: CardSele
       logger.info(`[CardSelectorConfigEditor] ${type} uploaded:`, downloadURL);
 
       handleUpdateCard(cardValue, { [type]: downloadURL });
-      notify.success(type === 'imageUrl' ? 'Miniatura subida correctamente' : 'Imagen de preview subida correctamente');
+      notify.success(
+        type === 'imageUrl'
+          ? 'Miniatura subida correctamente'
+          : 'Imagen de preview subida correctamente'
+      );
     } catch (error) {
       logger.error(`[CardSelectorConfigEditor] Error uploading ${type}:`, error);
       notify.error('Error al subir la imagen');
@@ -168,7 +179,11 @@ export default function CardSelectorConfigEditor({ options, onChange }: CardSele
       logger.info(`[CardSelectorConfigEditor] New card ${type} uploaded:`, downloadURL);
 
       setNewCard({ ...newCard, [type]: downloadURL });
-      notify.success(type === 'imageUrl' ? 'Miniatura subida correctamente' : 'Imagen de preview subida correctamente');
+      notify.success(
+        type === 'imageUrl'
+          ? 'Miniatura subida correctamente'
+          : 'Imagen de preview subida correctamente'
+      );
     } catch (error) {
       logger.error(`[CardSelectorConfigEditor] Error uploading new card ${type}:`, error);
       notify.error('Error al subir la imagen');
@@ -198,8 +213,9 @@ export default function CardSelectorConfigEditor({ options, onChange }: CardSele
       </div>
 
       <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
-        <strong>💡 Tip:</strong> La <strong>miniatura</strong> es la imagen pequeña que aparece en el selector de cards.
-        La <strong>imagen de preview</strong> es la imagen grande que se muestra en la vista previa del producto cuando el cliente selecciona esta opción.
+        <strong>💡 Tip:</strong> La <strong>miniatura</strong> es la imagen pequeña que aparece en
+        el selector de cards. La <strong>imagen de preview</strong> es la imagen grande que se
+        muestra en la vista previa del producto cuando el cliente selecciona esta opción.
       </div>
 
       {/* Options Grid */}
@@ -213,7 +229,11 @@ export default function CardSelectorConfigEditor({ options, onChange }: CardSele
               {/* Card Thumbnail Preview */}
               <div className="w-20 h-20 rounded-lg border-2 border-gray-300 bg-gray-100 flex-shrink-0 overflow-hidden">
                 {card.imageUrl ? (
-                  <img src={card.imageUrl} alt={card.label} className="w-full h-full object-cover" />
+                  <img
+                    src={card.imageUrl}
+                    alt={card.label}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
                     <Image className="w-8 h-8" />
@@ -243,7 +263,11 @@ export default function CardSelectorConfigEditor({ options, onChange }: CardSele
                     <input
                       type="number"
                       value={card.priceModifier || 0}
-                      onChange={(e) => handleUpdateCard(card.value, { priceModifier: parseFloat(e.target.value) || 0 })}
+                      onChange={(e) =>
+                        handleUpdateCard(card.value, {
+                          priceModifier: parseFloat(e.target.value) || 0,
+                        })
+                      }
                       className="w-16 px-2 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       min="0"
                       step="0.01"
@@ -414,7 +438,9 @@ export default function CardSelectorConfigEditor({ options, onChange }: CardSele
                 <input
                   type="number"
                   value={newCard.priceModifier || 0}
-                  onChange={(e) => setNewCard({ ...newCard, priceModifier: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setNewCard({ ...newCard, priceModifier: parseFloat(e.target.value) || 0 })
+                  }
                   min="0"
                   step="0.01"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -513,7 +539,8 @@ export default function CardSelectorConfigEditor({ options, onChange }: CardSele
                 </button>
               </div>
               <p className="mt-1 text-xs text-green-700">
-                💡 Esta imagen se mostrará en la vista previa del producto cuando el cliente seleccione esta opción
+                💡 Esta imagen se mostrará en la vista previa del producto cuando el cliente
+                seleccione esta opción
               </p>
             </div>
 
@@ -536,7 +563,11 @@ export default function CardSelectorConfigEditor({ options, onChange }: CardSele
               <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
                 <div className="w-16 h-16 rounded-lg border-2 border-gray-300 bg-gray-100 overflow-hidden">
                   {newCard.imageUrl ? (
-                    <img src={newCard.imageUrl} alt={newCard.label} className="w-full h-full object-cover" />
+                    <img
+                      src={newCard.imageUrl}
+                      alt={newCard.label}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">
                       <Image className="w-6 h-6" />

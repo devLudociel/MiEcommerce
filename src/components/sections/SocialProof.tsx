@@ -4,13 +4,13 @@ import {
   getActiveTestimonials,
   getActiveStats,
   type Testimonial,
-  type SocialStat
+  type SocialStat,
 } from '../../lib/testimonials';
 import {
   getApprovedReviews,
   getTimeAgo,
   getInitials,
-  type CustomerReview
+  type CustomerReview,
 } from '../../lib/reviews';
 
 // Default data for fallback
@@ -52,7 +52,7 @@ const defaultStats = [
 ];
 
 // Convert customer review to testimonial format
-function reviewToTestimonial(review: CustomerReview): typeof defaultTestimonials[0] {
+function reviewToTestimonial(review: CustomerReview): (typeof defaultTestimonials)[0] {
   return {
     id: `review-${review.id}`,
     name: review.customerName,
@@ -77,13 +77,13 @@ export default function SocialProof() {
         const [loadedTestimonials, loadedStats, customerReviews] = await Promise.all([
           getActiveTestimonials(),
           getActiveStats(),
-          getApprovedReviews(10) // Get up to 10 approved reviews
+          getApprovedReviews(10), // Get up to 10 approved reviews
         ]);
 
         // Combine admin testimonials with customer reviews
         const allTestimonials = [
           ...loadedTestimonials,
-          ...customerReviews.map(reviewToTestimonial)
+          ...customerReviews.map(reviewToTestimonial),
         ];
 
         if (allTestimonials.length > 0) {
@@ -163,7 +163,9 @@ export default function SocialProof() {
                   {/* Stars */}
                   <div className="flex justify-center mb-6">
                     {[...Array(testimonial.rating)].map((_, i) => (
-                      <span key={i} className="text-yellow-400 text-3xl">⭐</span>
+                      <span key={i} className="text-yellow-400 text-3xl">
+                        ⭐
+                      </span>
                     ))}
                   </div>
 
@@ -186,9 +188,7 @@ export default function SocialProof() {
                       )}
                     </div>
                     <div className="text-center">
-                      <div className="font-bold text-gray-800 text-lg">
-                        {testimonial.name}
-                      </div>
+                      <div className="font-bold text-gray-800 text-lg">{testimonial.name}</div>
                       <div className="text-cyan-600 text-sm flex items-center justify-center gap-2">
                         <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
                         {testimonial.role}

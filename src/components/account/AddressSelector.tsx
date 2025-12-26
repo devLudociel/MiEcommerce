@@ -48,7 +48,7 @@ export default function AddressSelector({ onChange, title = 'Direcciones' }: Pro
 
   useEffect(() => {
     onChange?.({ shipping, billing });
-  }, [shipping, billing]);
+  }, [shipping, billing, onChange]);
 
   if (!uid) return <div className="card p-6">Inicia sesión para seleccionar direcciones.</div>;
 
@@ -63,8 +63,14 @@ export default function AddressSelector({ onChange, title = 'Direcciones' }: Pro
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Dirección de envío</label>
+          <label
+            className="block text-sm font-medium text-gray-700 mb-2"
+            htmlFor="address-selector-shipping"
+          >
+            Dirección de envío
+          </label>
           <select
+            id="address-selector-shipping"
             className="input"
             value={shippingId}
             onChange={(e) => setShippingId(e.target.value)}
@@ -80,7 +86,10 @@ export default function AddressSelector({ onChange, title = 'Direcciones' }: Pro
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            className="block text-sm font-medium text-gray-700 mb-2"
+            htmlFor="address-selector-billing"
+          >
             Dirección de facturación
           </label>
           <label className="flex items-center gap-2 mb-3 text-sm text-gray-600">
@@ -93,6 +102,7 @@ export default function AddressSelector({ onChange, title = 'Direcciones' }: Pro
             Igual que dirección de envío
           </label>
           <select
+            id="address-selector-billing"
             className="input"
             value={sameAsShipping ? shippingId || 'none' : billingId}
             onChange={(e) => setBillingId(e.target.value)}

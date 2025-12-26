@@ -28,8 +28,7 @@ export const heroSlides: HeroSlide[] = [
     id: 2,
     title: 'Estilo Único',
     subtitle: 'Edición Limitada',
-    description:
-      'Productos exclusivos que combinan elegancia, funcionalidad y diseño vanguardista',
+    description: 'Productos exclusivos que combinan elegancia, funcionalidad y diseño vanguardista',
     ctaPrimary: 'Comprar Ya',
     ctaSecondary: 'Más Info',
     backgroundImage:
@@ -40,8 +39,7 @@ export const heroSlides: HeroSlide[] = [
     id: 3,
     title: 'Ofertas Increíbles',
     subtitle: 'Hasta 70% de Descuento',
-    description:
-      'No te pierdas nuestras ofertas especiales en los mejores productos seleccionados',
+    description: 'No te pierdas nuestras ofertas especiales en los mejores productos seleccionados',
     ctaPrimary: 'Ver Ofertas',
     ctaSecondary: 'Suscribirse',
     backgroundImage:

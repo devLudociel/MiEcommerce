@@ -43,10 +43,10 @@ export const POST: APIRoute = async ({ request }) => {
     // Check if clipart exists
     const clipartSnap = await clipartRef.get();
     if (!clipartSnap.exists) {
-      return new Response(
-        JSON.stringify({ error: 'Clipart not found' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Clipart not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Increment usage counter
@@ -56,10 +56,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     logger.info('[cliparts/increment-usage] Successfully incremented usage');
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     logger.error('[cliparts/increment-usage] Error:', error);
     return new Response(

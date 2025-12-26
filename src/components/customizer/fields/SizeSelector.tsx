@@ -205,7 +205,9 @@ export default function SizeSelector({
 
             <div className="mt-4 p-3 bg-blue-50 rounded-lg text-xs text-blue-800">
               <p className="font-medium mb-1">💡 Consejo:</p>
-              <p>Para obtener las medidas correctas, mide tu pecho y cintura con una cinta métrica.</p>
+              <p>
+                Para obtener las medidas correctas, mide tu pecho y cintura con una cinta métrica.
+              </p>
             </div>
 
             <button

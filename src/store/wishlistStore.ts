@@ -61,7 +61,10 @@ function writeWishlist(
 }
 
 // Save wishlist to Firestore for authenticated users (internal function)
-const saveWishlistToFirestoreImmediate = async (userId: string, items: WishlistItem[]): Promise<void> => {
+const saveWishlistToFirestoreImmediate = async (
+  userId: string,
+  items: WishlistItem[]
+): Promise<void> => {
   try {
     const userRef = doc(db, 'users', userId);
     await setDoc(

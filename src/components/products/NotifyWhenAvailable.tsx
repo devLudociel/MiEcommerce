@@ -100,7 +100,6 @@ export default function NotifyWhenAvailable({
       setIsSubscribed(true);
       notify.success('Te avisaremos cuando el producto esté disponible');
       logger.info('[NotifyWhenAvailable] Subscription created', { productId, email });
-
     } catch (error) {
       logger.error('[NotifyWhenAvailable] Error creating subscription', error);
       setError('Error al procesar tu solicitud. Inténtalo de nuevo.');
@@ -125,7 +124,8 @@ export default function NotifyWhenAvailable({
           <div>
             <h4 className="font-semibold text-green-800">¡Te avisaremos!</h4>
             <p className="text-sm text-green-700">
-              Recibirás un email en <span className="font-medium">{email}</span> cuando este producto vuelva a estar disponible.
+              Recibirás un email en <span className="font-medium">{email}</span> cuando este
+              producto vuelva a estar disponible.
             </p>
           </div>
         </div>
@@ -185,9 +185,7 @@ export default function NotifyWhenAvailable({
               disabled={isSubmitting}
             />
           </div>
-          {error && (
-            <p className="mt-1 text-sm text-red-600">{error}</p>
-          )}
+          {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
         </div>
 
         <div className="flex gap-2">
@@ -218,7 +216,8 @@ export default function NotifyWhenAvailable({
         </div>
 
         <p className="text-xs text-gray-500 text-center">
-          Solo usaremos tu email para notificarte sobre este producto. Puedes cancelar en cualquier momento.
+          Solo usaremos tu email para notificarte sobre este producto. Puedes cancelar en cualquier
+          momento.
         </p>
       </form>
     </div>

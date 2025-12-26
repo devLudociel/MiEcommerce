@@ -123,7 +123,7 @@ export default function OrderConfirmation() {
         subtotal: order.subtotal,
         shipping: order.shipping,
         tax: order.tax,
-        items: order.items.map(item => ({
+        items: order.items.map((item) => ({
           id: item.productId,
           name: item.name,
           price: item.price,
@@ -300,8 +300,8 @@ export default function OrderConfirmation() {
                 <div>
                   <h3 className="font-bold text-lg mb-1">Accede a tu biblioteca de descargas</h3>
                   <p className="text-cyan-50 text-sm">
-                    Todos tus archivos digitales están disponibles en tu cuenta. Puedes descargarlos cuantas
-                    veces quieras, sin límite de tiempo.
+                    Todos tus archivos digitales están disponibles en tu cuenta. Puedes descargarlos
+                    cuantas veces quieras, sin límite de tiempo.
                   </p>
                 </div>
               </div>

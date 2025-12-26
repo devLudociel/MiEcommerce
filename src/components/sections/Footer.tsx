@@ -5,7 +5,7 @@ import {
   getWhatsAppUrl,
   getSocialLinkUrl,
   getShortAddress,
-  type ContactInfoInput
+  type ContactInfoInput,
 } from '../../lib/contactInfo';
 
 interface FooterLink {
@@ -119,7 +119,7 @@ const Footer: React.FC = () => {
 
       logger.info('[Newsletter] API response received', {
         status: response.status,
-        ok: response.ok
+        ok: response.ok,
       });
 
       const data = await response.json();
@@ -138,10 +138,13 @@ const Footer: React.FC = () => {
       setTimeout(() => {
         setIsSubscribed(false);
       }, 5000);
-
     } catch (error) {
       logger.error('[Newsletter] Subscription error:', error);
-      alert(error instanceof Error ? error.message : 'Error al suscribirse. Por favor, intenta de nuevo.');
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Error al suscribirse. Por favor, intenta de nuevo.'
+      );
     } finally {
       setIsSubscribing(false);
     }
@@ -231,7 +234,8 @@ const Footer: React.FC = () => {
               </a>
 
               <p className="text-gray-400 mb-6 leading-relaxed text-sm">
-                {contactInfo?.companyDescription || 'Especialistas en impresión y personalización. Damos vida a tus ideas con la más alta calidad y tecnología.'}
+                {contactInfo?.companyDescription ||
+                  'Especialistas en impresión y personalización. Damos vida a tus ideas con la más alta calidad y tecnología.'}
               </p>
 
               <div className="space-y-3">
@@ -245,7 +249,9 @@ const Footer: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-400">
                   <span className="text-cyan-400">📍</span>
-                  <span>{contactInfo ? getShortAddress(contactInfo) : 'Santa Cruz de Tenerife, España'}</span>
+                  <span>
+                    {contactInfo ? getShortAddress(contactInfo) : 'Santa Cruz de Tenerife, España'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -321,25 +327,25 @@ const Footer: React.FC = () => {
 
             <div className="flex justify-center gap-4">
               {(contactInfo?.socialLinks || [])
-                .filter(link => link.active)
+                .filter((link) => link.active)
                 .sort((a, b) => a.order - b.order)
                 .map((social) => (
-                <a
-                  key={social.id}
-                  href={contactInfo ? getSocialLinkUrl(social, contactInfo) : '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group relative"
-                  aria-label={social.platform}
-                >
-                  <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1 group-hover:bg-white/10">
-                    {social.icon}
-                  </div>
-                  <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    {social.platform}
-                  </span>
-                </a>
-              ))}
+                  <a
+                    key={social.id}
+                    href={contactInfo ? getSocialLinkUrl(social, contactInfo) : '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative"
+                    aria-label={social.platform}
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1 group-hover:bg-white/10">
+                      {social.icon}
+                    </div>
+                    <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      {social.platform}
+                    </span>
+                  </a>
+                ))}
             </div>
           </div>
         </div>

@@ -160,11 +160,15 @@ export default function ProductCustomizer({ slug, forceWizard }: Props) {
               });
             } else {
               logger.warn('[ProductCustomizer] No se encontró schema dinámico para:', schemaId);
-              setError(`Este producto no tiene configuración de personalización. Schema ID: ${schemaId} no encontrado.`);
+              setError(
+                `Este producto no tiene configuración de personalización. Schema ID: ${schemaId} no encontrado.`
+              );
             }
           } catch (schemaError) {
             logger.error('[ProductCustomizer] Error cargando schema dinámico', schemaError);
-            setError('Error al cargar la configuración de personalización. Intenta nuevamente más tarde.');
+            setError(
+              'Error al cargar la configuración de personalización. Intenta nuevamente más tarde.'
+            );
           }
         } else {
           logger.warn('[ProductCustomizer] No schema ID detectado para producto:', productData.id);
@@ -215,14 +219,13 @@ export default function ProductCustomizer({ slug, forceWizard }: Props) {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
         <div className="text-center max-w-md mx-auto p-8">
           <div className="text-6xl mb-4">⚙️</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            Personalización no configurada
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Personalización no configurada</h2>
           <p className="text-gray-600 mb-4">
             Este producto aún no tiene un schema de personalización configurado.
           </p>
           <p className="text-sm text-gray-500 mb-6">
-            Si eres administrador, ve a la sección de administración para configurar el schema de este producto.
+            Si eres administrador, ve a la sección de administración para configurar el schema de
+            este producto.
           </p>
           <a
             href={`/producto/${product?.slug || product?.id}`}
@@ -240,7 +243,11 @@ export default function ProductCustomizer({ slug, forceWizard }: Props) {
     productName: product.name,
     basePrice: product.basePrice,
     schemaFieldsCount: dynamicSchema.fields.length,
-    schemaFields: dynamicSchema.fields.map(f => ({ id: f.id, label: f.label, type: f.fieldType }))
+    schemaFields: dynamicSchema.fields.map((f) => ({
+      id: f.id,
+      label: f.label,
+      type: f.fieldType,
+    })),
   });
 
   // Detectar si es un producto de tazas para usar MugCustomizer
@@ -259,7 +266,11 @@ export default function ProductCustomizer({ slug, forceWizard }: Props) {
     isMobile,
     forceWizard,
     useWizard,
-    customizer: isMugProduct ? 'SimpleMugCustomizer' : useWizard ? 'StepWizardCustomizer' : 'DynamicCustomizer',
+    customizer: isMugProduct
+      ? 'SimpleMugCustomizer'
+      : useWizard
+        ? 'StepWizardCustomizer'
+        : 'DynamicCustomizer',
   });
 
   return (

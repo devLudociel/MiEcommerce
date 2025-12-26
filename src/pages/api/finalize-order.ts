@@ -79,10 +79,10 @@ export const POST: APIRoute = async ({ request }) => {
       paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     } catch (stripeError: unknown) {
       logger.error('[finalize-order] Error retrieving payment intent', stripeError);
-      return new Response(
-        JSON.stringify({ error: 'Error verificando el pago' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Error verificando el pago' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // SECURITY: Verify payment was successful
@@ -92,10 +92,10 @@ export const POST: APIRoute = async ({ request }) => {
         paymentIntentId,
         status: paymentIntent.status,
       });
-      return new Response(
-        JSON.stringify({ error: 'El pago no se completó exitosamente' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'El pago no se completó exitosamente' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // SECURITY: Verify payment is for this order
@@ -105,10 +105,10 @@ export const POST: APIRoute = async ({ request }) => {
         requestedOrderId: orderId,
         paymentOrderId,
       });
-      return new Response(
-        JSON.stringify({ error: 'El pago no corresponde a este pedido' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'El pago no corresponde a este pedido' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Get order data from Firestore
@@ -118,10 +118,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!orderSnap.exists) {
       logger.error('[finalize-order] Order not found', { orderId });
-      return new Response(
-        JSON.stringify({ error: 'Pedido no encontrado' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Pedido no encontrado' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const orderData = orderSnap.data() || {};

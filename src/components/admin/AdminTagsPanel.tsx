@@ -11,19 +11,7 @@ import {
 } from 'firebase/firestore';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
-import {
-  Plus,
-  Edit2,
-  Trash2,
-  X,
-  Save,
-  Tag,
-  Sparkles,
-  Star,
-  Zap,
-  Clock,
-  Gift,
-} from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, Tag, Sparkles, Star, Zap, Clock, Gift } from 'lucide-react';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import type { ProductTag, SpecialTagType } from '../../types/firebase';
 import { TAG_COLOR_PRESETS } from '../../types/firebase';
@@ -42,13 +30,43 @@ interface LocalTag extends Omit<ProductTag, 'createdAt' | 'updatedAt'> {
 // CONSTANTES
 // ============================================================================
 
-const SPECIAL_TAG_TYPES: { value: SpecialTagType; label: string; icon: React.ReactNode; defaultColor: string }[] = [
-  { value: 'nuevo', label: 'Nuevo', icon: <Sparkles className="w-4 h-4" />, defaultColor: '#22C55E' },
+const SPECIAL_TAG_TYPES: {
+  value: SpecialTagType;
+  label: string;
+  icon: React.ReactNode;
+  defaultColor: string;
+}[] = [
+  {
+    value: 'nuevo',
+    label: 'Nuevo',
+    icon: <Sparkles className="w-4 h-4" />,
+    defaultColor: '#22C55E',
+  },
   { value: 'oferta', label: 'Oferta', icon: <Zap className="w-4 h-4" />, defaultColor: '#EF4444' },
-  { value: 'destacado', label: 'Destacado', icon: <Star className="w-4 h-4" />, defaultColor: '#F59E0B' },
-  { value: 'exclusivo', label: 'Exclusivo', icon: <Gift className="w-4 h-4" />, defaultColor: '#A855F7' },
-  { value: 'limitado', label: 'Limitado', icon: <Clock className="w-4 h-4" />, defaultColor: '#EC4899' },
-  { value: 'custom', label: 'Personalizado', icon: <Tag className="w-4 h-4" />, defaultColor: '#6B7280' },
+  {
+    value: 'destacado',
+    label: 'Destacado',
+    icon: <Star className="w-4 h-4" />,
+    defaultColor: '#F59E0B',
+  },
+  {
+    value: 'exclusivo',
+    label: 'Exclusivo',
+    icon: <Gift className="w-4 h-4" />,
+    defaultColor: '#A855F7',
+  },
+  {
+    value: 'limitado',
+    label: 'Limitado',
+    icon: <Clock className="w-4 h-4" />,
+    defaultColor: '#EC4899',
+  },
+  {
+    value: 'custom',
+    label: 'Personalizado',
+    icon: <Tag className="w-4 h-4" />,
+    defaultColor: '#6B7280',
+  },
 ];
 
 const EMOJI_OPTIONS = ['✨', '🔥', '⭐', '💎', '🎁', '🏷️', '💯', '🆕', '💥', '🎉', '❤️', '👑'];
@@ -152,15 +170,18 @@ export default function AdminTagsPanel() {
     }
 
     // Generate slug if empty
-    const slug = formData.slug || formData.name.toLowerCase()
-      .replace(/[áàäâã]/g, 'a')
-      .replace(/[éèëê]/g, 'e')
-      .replace(/[íìïî]/g, 'i')
-      .replace(/[óòöôõ]/g, 'o')
-      .replace(/[úùüû]/g, 'u')
-      .replace(/ñ/g, 'n')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
+    const slug =
+      formData.slug ||
+      formData.name
+        .toLowerCase()
+        .replace(/[áàäâã]/g, 'a')
+        .replace(/[éèëê]/g, 'e')
+        .replace(/[íìïî]/g, 'i')
+        .replace(/[óòöôõ]/g, 'o')
+        .replace(/[úùüû]/g, 'u')
+        .replace(/ñ/g, 'n')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
 
     try {
       const tagData = {
@@ -211,18 +232,66 @@ export default function AdminTagsPanel() {
 
   const createDefaultTags = async () => {
     const defaultTags = [
-      { name: 'Nuevo', slug: 'nuevo', color: '#22C55E', textColor: '#FFFFFF', icon: '✨', type: 'nuevo' as SpecialTagType, priority: 100 },
-      { name: 'Oferta', slug: 'oferta', color: '#EF4444', textColor: '#FFFFFF', icon: '🔥', type: 'oferta' as SpecialTagType, priority: 90 },
-      { name: 'Destacado', slug: 'destacado', color: '#F59E0B', textColor: '#000000', icon: '⭐', type: 'destacado' as SpecialTagType, priority: 80 },
-      { name: 'Exclusivo', slug: 'exclusivo', color: '#A855F7', textColor: '#FFFFFF', icon: '💎', type: 'exclusivo' as SpecialTagType, priority: 70 },
-      { name: 'Últimas Unidades', slug: 'ultimas-unidades', color: '#EC4899', textColor: '#FFFFFF', icon: '⏰', type: 'limitado' as SpecialTagType, priority: 60 },
-      { name: 'Best Seller', slug: 'best-seller', color: '#3B82F6', textColor: '#FFFFFF', icon: '👑', type: 'custom' as SpecialTagType, priority: 50 },
+      {
+        name: 'Nuevo',
+        slug: 'nuevo',
+        color: '#22C55E',
+        textColor: '#FFFFFF',
+        icon: '✨',
+        type: 'nuevo' as SpecialTagType,
+        priority: 100,
+      },
+      {
+        name: 'Oferta',
+        slug: 'oferta',
+        color: '#EF4444',
+        textColor: '#FFFFFF',
+        icon: '🔥',
+        type: 'oferta' as SpecialTagType,
+        priority: 90,
+      },
+      {
+        name: 'Destacado',
+        slug: 'destacado',
+        color: '#F59E0B',
+        textColor: '#000000',
+        icon: '⭐',
+        type: 'destacado' as SpecialTagType,
+        priority: 80,
+      },
+      {
+        name: 'Exclusivo',
+        slug: 'exclusivo',
+        color: '#A855F7',
+        textColor: '#FFFFFF',
+        icon: '💎',
+        type: 'exclusivo' as SpecialTagType,
+        priority: 70,
+      },
+      {
+        name: 'Últimas Unidades',
+        slug: 'ultimas-unidades',
+        color: '#EC4899',
+        textColor: '#FFFFFF',
+        icon: '⏰',
+        type: 'limitado' as SpecialTagType,
+        priority: 60,
+      },
+      {
+        name: 'Best Seller',
+        slug: 'best-seller',
+        color: '#3B82F6',
+        textColor: '#FFFFFF',
+        icon: '👑',
+        type: 'custom' as SpecialTagType,
+        priority: 50,
+      },
     ];
 
     try {
       for (const tag of defaultTags) {
         // Check if already exists
-        const exists = tags.some(t => t.slug === tag.slug);
+        const exists = tags.some((t) => t.slug === tag.slug);
         if (!exists) {
           await addDoc(collection(db, 'productTags'), {
             ...tag,
@@ -244,9 +313,7 @@ export default function AdminTagsPanel() {
   // FILTRADO
   // ============================================================================
 
-  const filteredTags = filter === 'all'
-    ? tags
-    : tags.filter(tag => tag.type === filter);
+  const filteredTags = filter === 'all' ? tags : tags.filter((tag) => tag.type === filter);
 
   // ============================================================================
   // RENDER
@@ -303,7 +370,7 @@ export default function AdminTagsPanel() {
           Todas ({tags.length})
         </button>
         {SPECIAL_TAG_TYPES.map((type) => {
-          const count = tags.filter(t => t.type === type.value).length;
+          const count = tags.filter((t) => t.type === type.value).length;
           return (
             <button
               key={type.value}
@@ -375,11 +442,15 @@ export default function AdminTagsPanel() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Slug:</span>
-                  <code className="text-purple-600 bg-purple-50 px-2 py-0.5 rounded">{tag.slug}</code>
+                  <code className="text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
+                    {tag.slug}
+                  </code>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Tipo:</span>
-                  <span className="text-gray-700">{SPECIAL_TAG_TYPES.find(t => t.value === tag.type)?.label}</span>
+                  <span className="text-gray-700">
+                    {SPECIAL_TAG_TYPES.find((t) => t.value === tag.type)?.label}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Prioridad:</span>
@@ -389,9 +460,7 @@ export default function AdminTagsPanel() {
 
               {/* Toggle */}
               <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-sm text-gray-600">
-                  {tag.active ? 'Activa' : 'Inactiva'}
-                </span>
+                <span className="text-sm text-gray-600">{tag.active ? 'Activa' : 'Inactiva'}</span>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
@@ -454,13 +523,16 @@ export default function AdminTagsPanel() {
 
               {/* Slug */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Slug (URL)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Slug (URL)</label>
                 <input
                   type="text"
                   value={formData.slug || ''}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+                    })
+                  }
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   placeholder="Se genera automáticamente"
                 />
@@ -476,12 +548,17 @@ export default function AdminTagsPanel() {
                     <button
                       key={type.value}
                       type="button"
-                      onClick={() => setFormData({
-                        ...formData,
-                        type: type.value,
-                        color: type.defaultColor,
-                        textColor: type.defaultColor === '#F59E0B' || type.defaultColor === '#EAB308' ? '#000000' : '#FFFFFF'
-                      })}
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          type: type.value,
+                          color: type.defaultColor,
+                          textColor:
+                            type.defaultColor === '#F59E0B' || type.defaultColor === '#EAB308'
+                              ? '#000000'
+                              : '#FFFFFF',
+                        })
+                      }
                       className={`flex items-center gap-2 p-2 rounded-lg border-2 text-sm transition-all ${
                         formData.type === type.value
                           ? 'border-purple-500 bg-purple-50'
@@ -539,7 +616,9 @@ export default function AdminTagsPanel() {
                     <button
                       key={preset.bg}
                       type="button"
-                      onClick={() => setFormData({ ...formData, color: preset.bg, textColor: preset.text })}
+                      onClick={() =>
+                        setFormData({ ...formData, color: preset.bg, textColor: preset.text })
+                      }
                       className={`w-8 h-8 rounded-full border-2 transition-all ${
                         formData.color === preset.bg
                           ? 'border-gray-800 scale-110'
@@ -580,7 +659,9 @@ export default function AdminTagsPanel() {
                 <input
                   type="number"
                   value={formData.priority || 10}
-                  onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 10 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, priority: parseInt(e.target.value) || 10 })
+                  }
                   min="0"
                   max="100"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"

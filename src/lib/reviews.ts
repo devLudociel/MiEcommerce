@@ -16,7 +16,7 @@ import {
   limit,
   Timestamp,
   onSnapshot,
-  type Unsubscribe
+  type Unsubscribe,
 } from 'firebase/firestore';
 
 // ============================================================================
@@ -29,33 +29,33 @@ export interface CustomerReview {
   id: string;
 
   // Customer info
-  customerId: string;        // Firebase Auth UID
+  customerId: string; // Firebase Auth UID
   customerName: string;
   customerEmail: string;
-  customerAvatar?: string;   // Optional profile picture
+  customerAvatar?: string; // Optional profile picture
 
   // Order info (optional - for verified purchases)
   orderId?: string;
   orderDate?: Timestamp;
-  productIds?: string[];     // Products in the order
+  productIds?: string[]; // Products in the order
 
   // Review content
-  rating: number;            // 1-5 stars
+  rating: number; // 1-5 stars
   title: string;
   text: string;
 
   // Media (optional)
-  images?: string[];         // Customer uploaded images
+  images?: string[]; // Customer uploaded images
 
   // Moderation
   status: ReviewStatus;
-  moderatedBy?: string;      // Admin who moderated
+  moderatedBy?: string; // Admin who moderated
   moderatedAt?: Timestamp;
   rejectionReason?: string;
 
   // Display
-  featured: boolean;         // Show prominently
-  displayOrder: number;      // For sorting featured reviews
+  featured: boolean; // Show prominently
+  displayOrder: number; // For sorting featured reviews
 
   // Metadata
   createdAt: Timestamp;
@@ -69,7 +69,17 @@ export interface CustomerReview {
   };
 }
 
-export type CustomerReviewInput = Omit<CustomerReview, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'moderatedBy' | 'moderatedAt' | 'featured' | 'displayOrder'>;
+export type CustomerReviewInput = Omit<
+  CustomerReview,
+  | 'id'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'status'
+  | 'moderatedBy'
+  | 'moderatedAt'
+  | 'featured'
+  | 'displayOrder'
+>;
 
 export interface ReviewStats {
   totalReviews: number;
@@ -116,14 +126,15 @@ export async function submitReview(review: CustomerReviewInput): Promise<string>
       featured: false,
       displayOrder: 0,
       createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     };
 
     // Only add optional fields if they have values
     if (review.customerAvatar) reviewData.customerAvatar = review.customerAvatar;
     if (review.orderId) reviewData.orderId = review.orderId;
     if (review.orderDate) reviewData.orderDate = review.orderDate;
-    if (review.productIds && review.productIds.length > 0) reviewData.productIds = review.productIds;
+    if (review.productIds && review.productIds.length > 0)
+      reviewData.productIds = review.productIds;
     if (review.images && review.images.length > 0) reviewData.images = review.images;
 
     const docRef = await addDoc(reviewsRef, reviewData);
@@ -142,15 +153,16 @@ export async function getAllReviews(): Promise<CustomerReview[]> {
     const reviewsRef = collection(db, COLLECTION_NAME);
     const snapshot = await getDocs(reviewsRef);
 
-    const reviews = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as CustomerReview));
+    const reviews = snapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+        }) as CustomerReview
+    );
 
     // Sort by createdAt descending (newest first)
-    return reviews.sort((a, b) =>
-      b.createdAt.toMillis() - a.createdAt.toMillis()
-    );
+    return reviews.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
   } catch (error) {
     console.error('Error fetching all reviews:', error);
     return [];
@@ -166,15 +178,16 @@ export async function getReviewsByStatus(status: ReviewStatus): Promise<Customer
     const snapshot = await getDocs(reviewsRef);
 
     const reviews = snapshot.docs
-      .map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as CustomerReview))
-      .filter(review => review.status === status);
+      .map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          }) as CustomerReview
+      )
+      .filter((review) => review.status === status);
 
-    return reviews.sort((a, b) =>
-      b.createdAt.toMillis() - a.createdAt.toMillis()
-    );
+    return reviews.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
   } catch (error) {
     console.error('Error fetching reviews by status:', error);
     return [];
@@ -190,11 +203,14 @@ export async function getApprovedReviews(maxResults?: number): Promise<CustomerR
     const snapshot = await getDocs(reviewsRef);
 
     let reviews = snapshot.docs
-      .map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as CustomerReview))
-      .filter(review => review.status === 'approved');
+      .map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          }) as CustomerReview
+      )
+      .filter((review) => review.status === 'approved');
 
     // Sort: featured first, then by displayOrder, then by rating, then by date
     reviews.sort((a, b) => {
@@ -224,11 +240,14 @@ export async function getFeaturedReviews(maxResults: number = 6): Promise<Custom
     const snapshot = await getDocs(reviewsRef);
 
     const reviews = snapshot.docs
-      .map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as CustomerReview))
-      .filter(review => review.status === 'approved' && review.featured)
+      .map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          }) as CustomerReview
+      )
+      .filter((review) => review.status === 'approved' && review.featured)
       .sort((a, b) => a.displayOrder - b.displayOrder)
       .slice(0, maxResults);
 
@@ -248,15 +267,16 @@ export async function getCustomerReviews(customerId: string): Promise<CustomerRe
     const snapshot = await getDocs(reviewsRef);
 
     const reviews = snapshot.docs
-      .map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as CustomerReview))
-      .filter(review => review.customerId === customerId);
+      .map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          }) as CustomerReview
+      )
+      .filter((review) => review.customerId === customerId);
 
-    return reviews.sort((a, b) =>
-      b.createdAt.toMillis() - a.createdAt.toMillis()
-    );
+    return reviews.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
   } catch (error) {
     console.error('Error fetching customer reviews:', error);
     return [];
@@ -274,7 +294,7 @@ export async function getReviewById(reviewId: string): Promise<CustomerReview | 
     if (docSnap.exists()) {
       return {
         id: docSnap.id,
-        ...docSnap.data()
+        ...docSnap.data(),
       } as CustomerReview;
     }
     return null;
@@ -299,7 +319,7 @@ export async function approveReview(
       moderatedBy: adminId,
       moderatedAt: Timestamp.now(),
       featured,
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     });
   } catch (error) {
     console.error('Error approving review:', error);
@@ -322,7 +342,7 @@ export async function rejectReview(
       moderatedBy: adminId,
       moderatedAt: Timestamp.now(),
       rejectionReason: reason || '',
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     });
   } catch (error) {
     console.error('Error rejecting review:', error);
@@ -338,7 +358,7 @@ export async function toggleFeatured(reviewId: string, featured: boolean): Promi
     const docRef = doc(db, COLLECTION_NAME, reviewId);
     await updateDoc(docRef, {
       featured,
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     });
   } catch (error) {
     console.error('Error toggling featured:', error);
@@ -354,7 +374,7 @@ export async function updateDisplayOrder(reviewId: string, order: number): Promi
     const docRef = doc(db, COLLECTION_NAME, reviewId);
     await updateDoc(docRef, {
       displayOrder: order,
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     });
   } catch (error) {
     console.error('Error updating display order:', error);
@@ -376,9 +396,9 @@ export async function addBusinessResponse(
       businessResponse: {
         text: responseText,
         respondedBy: adminId,
-        respondedAt: Timestamp.now()
+        respondedAt: Timestamp.now(),
       },
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     });
   } catch (error) {
     console.error('Error adding business response:', error);
@@ -412,14 +432,14 @@ export async function getReviewStats(): Promise<ReviewStats> {
       ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
       pendingCount: 0,
       approvedCount: 0,
-      rejectedCount: 0
+      rejectedCount: 0,
     };
 
     if (reviews.length === 0) return stats;
 
     let totalRating = 0;
 
-    reviews.forEach(review => {
+    reviews.forEach((review) => {
       // Count by status
       if (review.status === 'pending') stats.pendingCount++;
       else if (review.status === 'approved') stats.approvedCount++;
@@ -448,7 +468,7 @@ export async function getReviewStats(): Promise<ReviewStats> {
       ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
       pendingCount: 0,
       approvedCount: 0,
-      rejectedCount: 0
+      rejectedCount: 0,
     };
   }
 }
@@ -460,44 +480,49 @@ export async function getReviewStats(): Promise<ReviewStats> {
 /**
  * Subscribe to all reviews (for admin panel)
  */
-export function subscribeToReviews(
-  callback: (reviews: CustomerReview[]) => void
-): Unsubscribe {
+export function subscribeToReviews(callback: (reviews: CustomerReview[]) => void): Unsubscribe {
   const reviewsRef = collection(db, COLLECTION_NAME);
 
-  return onSnapshot(reviewsRef, (snapshot) => {
-    const reviews = snapshot.docs
-      .map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as CustomerReview))
-      .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+  return onSnapshot(
+    reviewsRef,
+    (snapshot) => {
+      const reviews = snapshot.docs
+        .map(
+          (doc) =>
+            ({
+              id: doc.id,
+              ...doc.data(),
+            }) as CustomerReview
+        )
+        .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
 
-    callback(reviews);
-  }, (error) => {
-    console.error('Error in reviews subscription:', error);
-    callback([]);
-  });
+      callback(reviews);
+    },
+    (error) => {
+      console.error('Error in reviews subscription:', error);
+      callback([]);
+    }
+  );
 }
 
 /**
  * Subscribe to pending reviews count (for admin badge)
  */
-export function subscribeToPendingCount(
-  callback: (count: number) => void
-): Unsubscribe {
+export function subscribeToPendingCount(callback: (count: number) => void): Unsubscribe {
   const reviewsRef = collection(db, COLLECTION_NAME);
 
-  return onSnapshot(reviewsRef, (snapshot) => {
-    const pendingCount = snapshot.docs
-      .filter(doc => doc.data().status === 'pending')
-      .length;
+  return onSnapshot(
+    reviewsRef,
+    (snapshot) => {
+      const pendingCount = snapshot.docs.filter((doc) => doc.data().status === 'pending').length;
 
-    callback(pendingCount);
-  }, (error) => {
-    console.error('Error in pending count subscription:', error);
-    callback(0);
-  });
+      callback(pendingCount);
+    },
+    (error) => {
+      console.error('Error in pending count subscription:', error);
+      callback(0);
+    }
+  );
 }
 
 // ============================================================================
@@ -512,7 +537,7 @@ export async function hasCustomerReviewed(customerId: string, orderId?: string):
     const reviews = await getCustomerReviews(customerId);
 
     if (orderId) {
-      return reviews.some(r => r.orderId === orderId);
+      return reviews.some((r) => r.orderId === orderId);
     }
 
     // If no orderId, just check if they have any reviews
@@ -531,7 +556,7 @@ export function formatReviewDate(timestamp: Timestamp): string {
   return date.toLocaleDateString('es-ES', {
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   });
 }
 
@@ -558,7 +583,7 @@ export function getTimeAgo(timestamp: Timestamp): string {
 export function getInitials(name: string): string {
   return name
     .split(' ')
-    .map(n => n[0])
+    .map((n) => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);

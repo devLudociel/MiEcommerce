@@ -155,10 +155,7 @@ function verifyEnvironment() {
       if (varConfig.optional && varConfig.alternative) {
         const hasAlternative = varConfig.alternative.every((alt) => process.env[alt]);
         if (hasAlternative) {
-          log(
-            colors.yellow,
-            `  ⚠️  ${varConfig.name} - No configurado (usando alternativa)`
-          );
+          log(colors.yellow, `  ⚠️  ${varConfig.name} - No configurado (usando alternativa)`);
           continue;
         }
       }
@@ -167,10 +164,7 @@ function verifyEnvironment() {
       if (exists && varConfig.requires) {
         const missingRequired = varConfig.requires.filter((req) => !process.env[req]);
         if (missingRequired.length > 0) {
-          log(
-            colors.red,
-            `  ❌ ${varConfig.name} - Requiere: ${missingRequired.join(', ')}`
-          );
+          log(colors.red, `  ❌ ${varConfig.name} - Requiere: ${missingRequired.join(', ')}`);
           results[category].failed++;
           hasErrors = true;
           continue;
@@ -250,16 +244,10 @@ function verifyEnvironment() {
   log(colors.blue, '\n' + '='.repeat(50) + '\n');
 
   if (hasErrors) {
-    log(
-      colors.red,
-      '❌ FALLÓ LA VERIFICACIÓN - Revisa los errores arriba\n'
-    );
+    log(colors.red, '❌ FALLÓ LA VERIFICACIÓN - Revisa los errores arriba\n');
     process.exit(1);
   } else if (hasWarnings) {
-    log(
-      colors.yellow,
-      '⚠️  VERIFICACIÓN PASADA CON WARNINGS - Revisa las advertencias\n'
-    );
+    log(colors.yellow, '⚠️  VERIFICACIÓN PASADA CON WARNINGS - Revisa las advertencias\n');
     process.exit(0);
   } else {
     log(

@@ -51,10 +51,10 @@ export const POST: APIRoute = async ({ request }) => {
   const authResult = await verifyAdminAuth(request);
   if (!authResult.success) {
     logger.warn('[update-order-status] Admin auth failed:', authResult.error);
-    return new Response(
-      JSON.stringify({ error: authResult.error }),
-      { status: authResult.isAuthenticated ? 403 : 401, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error: authResult.error }), {
+      status: authResult.isAuthenticated ? 403 : 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   try {
@@ -84,10 +84,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!orderSnap.exists) {
       logger.error('[update-order-status] Order not found', { orderId });
-      return new Response(
-        JSON.stringify({ error: 'Pedido no encontrado' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Pedido no encontrado' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const currentData = orderSnap.data() || {};

@@ -3,11 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import {
-  submitReview,
-  hasCustomerReviewed,
-  type CustomerReviewInput
-} from '../../lib/reviews';
+import { submitReview, hasCustomerReviewed, type CustomerReviewInput } from '../../lib/reviews';
 
 interface ReviewSubmissionFormProps {
   orderId?: string;
@@ -18,7 +14,7 @@ interface ReviewSubmissionFormProps {
 export default function ReviewSubmissionForm({
   orderId,
   onSuccess,
-  onCancel
+  onCancel,
 }: ReviewSubmissionFormProps) {
   const { user, email, displayName, isAuthenticated } = useAuth();
 
@@ -78,7 +74,7 @@ export default function ReviewSubmissionForm({
         orderId: orderId,
         rating,
         title: title.trim(),
-        text: text.trim()
+        text: text.trim(),
       };
 
       await submitReview(reviewData);
@@ -105,9 +101,7 @@ export default function ReviewSubmissionForm({
       <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm text-center">
         <div className="text-4xl mb-4">🔐</div>
         <h3 className="text-xl font-bold text-gray-800 mb-2">Inicia sesión para opinar</h3>
-        <p className="text-gray-600 mb-6">
-          Necesitas iniciar sesión para dejar una reseña
-        </p>
+        <p className="text-gray-600 mb-6">Necesitas iniciar sesión para dejar una reseña</p>
         <a
           href="/login?redirect=/dejar-resena"
           className="inline-block px-6 py-3 bg-cyan-600 text-white font-medium rounded-lg hover:bg-cyan-700 transition-colors"
@@ -163,9 +157,9 @@ export default function ReviewSubmissionForm({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Star Rating */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <p className="block text-sm font-medium text-gray-700 mb-3">
             ¿Cómo calificarías tu experiencia?
-          </label>
+          </p>
           <div className="flex items-center gap-2">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
@@ -220,9 +214,7 @@ export default function ReviewSubmissionForm({
             maxLength={1000}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all resize-none"
           />
-          <p className="text-xs text-gray-500 mt-1">
-            {text.length}/1000 caracteres (mínimo 20)
-          </p>
+          <p className="text-xs text-gray-500 mt-1">{text.length}/1000 caracteres (mínimo 20)</p>
         </div>
 
         {/* Error Message */}
@@ -262,9 +254,7 @@ export default function ReviewSubmissionForm({
                 Enviando...
               </>
             ) : (
-              <>
-                📤 Enviar Reseña
-              </>
+              <>📤 Enviar Reseña</>
             )}
           </button>
         </div>

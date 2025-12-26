@@ -58,7 +58,9 @@ export default function AdminStockNotifications() {
   const [notifications, setNotifications] = useState<NotificationWithId[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'notified' | 'cancelled'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'notified' | 'cancelled'>(
+    'all'
+  );
   const [viewMode, setViewMode] = useState<'list' | 'grouped'>('grouped');
 
   const { confirm, ConfirmDialog } = useConfirmDialog();
@@ -145,7 +147,14 @@ export default function AdminStockNotifications() {
     const uniqueProducts = new Set(notifications.map((n) => n.productId)).size;
     const uniqueEmails = new Set(notifications.map((n) => n.email)).size;
 
-    return { pending, notified, cancelled, uniqueProducts, uniqueEmails, total: notifications.length };
+    return {
+      pending,
+      notified,
+      cancelled,
+      uniqueProducts,
+      uniqueEmails,
+      total: notifications.length,
+    };
   }, [notifications]);
 
   // ============================================================================
@@ -168,7 +177,8 @@ export default function AdminStockNotifications() {
   const handleMarkAllAsNotified = async (productId: string) => {
     const confirmed = await confirm({
       title: '¿Marcar todos como notificados?',
-      message: 'Esto marcará todas las suscripciones pendientes de este producto como notificadas. Úsalo después de enviar los emails.',
+      message:
+        'Esto marcará todas las suscripciones pendientes de este producto como notificadas. Úsalo después de enviar los emails.',
       type: 'info',
       confirmText: 'Marcar Todos',
       cancelText: 'Cancelar',
@@ -271,9 +281,7 @@ export default function AdminStockNotifications() {
             <BellRing className="w-7 h-7 text-amber-500" />
             Notificaciones de Stock
           </h2>
-          <p className="text-gray-600 mt-1">
-            Usuarios esperando productos sin stock
-          </p>
+          <p className="text-gray-600 mt-1">Usuarios esperando productos sin stock</p>
         </div>
         <button
           onClick={() => handleExportEmails()}
@@ -395,9 +403,7 @@ export default function AdminStockNotifications() {
       {filteredNotifications.length === 0 ? (
         <div className="bg-white rounded-xl shadow-lg p-12 text-center">
           <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-600 mb-2">
-            No hay notificaciones
-          </h3>
+          <h3 className="text-xl font-semibold text-gray-600 mb-2">No hay notificaciones</h3>
           <p className="text-gray-500">
             {searchTerm || filterStatus !== 'all'
               ? 'No se encontraron resultados con los filtros aplicados'
@@ -459,7 +465,10 @@ export default function AdminStockNotifications() {
               {/* Notifications List */}
               <div className="divide-y divide-gray-100">
                 {group.notifications.slice(0, 5).map((n) => (
-                  <div key={n.id} className="px-6 py-3 flex items-center justify-between hover:bg-gray-50">
+                  <div
+                    key={n.id}
+                    className="px-6 py-3 flex items-center justify-between hover:bg-gray-50"
+                  >
                     <div className="flex items-center gap-3">
                       <Mail className="w-5 h-5 text-gray-400" />
                       <div>
@@ -470,13 +479,20 @@ export default function AdminStockNotifications() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        n.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                        n.status === 'notified' ? 'bg-green-100 text-green-700' :
-                        'bg-gray-100 text-gray-600'
-                      }`}>
-                        {n.status === 'pending' ? 'Pendiente' :
-                         n.status === 'notified' ? 'Notificado' : 'Cancelado'}
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          n.status === 'pending'
+                            ? 'bg-amber-100 text-amber-700'
+                            : n.status === 'notified'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {n.status === 'pending'
+                          ? 'Pendiente'
+                          : n.status === 'notified'
+                            ? 'Notificado'
+                            : 'Cancelado'}
                       </span>
                       {n.status === 'pending' && (
                         <button
@@ -553,17 +569,22 @@ export default function AdminStockNotifications() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {formatDate(n.createdAt)}
-                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{formatDate(n.createdAt)}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      n.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                      n.status === 'notified' ? 'bg-green-100 text-green-700' :
-                      'bg-gray-100 text-gray-600'
-                    }`}>
-                      {n.status === 'pending' ? 'Pendiente' :
-                       n.status === 'notified' ? 'Notificado' : 'Cancelado'}
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        n.status === 'pending'
+                          ? 'bg-amber-100 text-amber-700'
+                          : n.status === 'notified'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {n.status === 'pending'
+                        ? 'Pendiente'
+                        : n.status === 'notified'
+                          ? 'Notificado'
+                          : 'Cancelado'}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">

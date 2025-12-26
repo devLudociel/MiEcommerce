@@ -185,9 +185,7 @@ export default function BestSellers() {
                 </div>
 
                 {/* Sales count */}
-                <div className="mt-2 text-xs text-gray-500">
-                  {product.salesCount} vendidos
-                </div>
+                <div className="mt-2 text-xs text-gray-500">{product.salesCount} vendidos</div>
               </div>
 
               {/* Shine effect on hover */}

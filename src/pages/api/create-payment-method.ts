@@ -113,7 +113,10 @@ export const POST: APIRoute = async ({ request }) => {
       errorMessage = errorObj.message || 'Tarjeta inválida';
     } else if (errorObj.code === 'incorrect_number') {
       errorMessage = 'Número de tarjeta incorrecto';
-    } else if (errorObj.code === 'invalid_expiry_month' || errorObj.code === 'invalid_expiry_year') {
+    } else if (
+      errorObj.code === 'invalid_expiry_month' ||
+      errorObj.code === 'invalid_expiry_year'
+    ) {
       errorMessage = 'Fecha de vencimiento inválida';
     } else if (errorObj.code === 'invalid_cvc') {
       errorMessage = 'CVV inválido';

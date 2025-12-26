@@ -72,9 +72,7 @@ export async function autocompleteStreetES(
 ): Promise<AddressSuggestion[]> {
   const q = (query || '').trim();
   if (q.length < 3) return [];
-  const apiKey =
-    import.meta.env?.VITE_GEOAPIFY_API_KEY ||
-    import.meta.env?.PUBLIC_GEOAPIFY_KEY;
+  const apiKey = import.meta.env?.VITE_GEOAPIFY_API_KEY || import.meta.env?.PUBLIC_GEOAPIFY_KEY;
   if (!apiKey) return [];
   const parts = [q];
   if (opts?.postcode) parts.push(opts.postcode);

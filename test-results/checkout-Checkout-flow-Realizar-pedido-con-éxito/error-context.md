@@ -1,0 +1,313 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - link "Saltar al contenido principal" [ref=e2] [cursor=pointer]:
+    - /url: "#contenido-principal"
+  - banner [ref=e4]:
+    - navigation [ref=e7]:
+      - link "IA ImprimeArte Impresión y personalización" [ref=e8] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e9]: IA
+        - generic [ref=e10]:
+          - heading "ImprimeArte" [level=1] [ref=e11]
+          - paragraph [ref=e12]: Impresión y personalización
+      - generic [ref=e15]:
+        - textbox "Buscar productos, categorías..." [ref=e16]
+        - generic:
+          - img
+      - generic [ref=e17]:
+        - link "¿Necesitas ayuda? WhatsApp" [ref=e18] [cursor=pointer]:
+          - /url: https://wa.me/34645341452?text=¡Hola%20ImprimeArte!%20👋%20Tengo%20una%20consulta%20sobre%20sus%20servicios%20de%20impresión%20y%20personalización.%20¿Podrían%20ayudarme?
+          - img [ref=e19]
+          - generic [ref=e21]:
+            - generic [ref=e22]: ¿Necesitas ayuda?
+            - generic [ref=e23]: WhatsApp
+        - link "Mis favoritos" [ref=e24] [cursor=pointer]:
+          - /url: /account/wishlist
+          - img [ref=e25]
+          - generic [ref=e27]: Mis favoritos
+        - button "Mi cuenta" [ref=e29] [cursor=pointer]:
+          - img [ref=e30]
+          - generic [ref=e33]: Mi cuenta
+        - button "Abrir carrito" [ref=e35] [cursor=pointer]:
+          - img [ref=e36]
+          - generic [ref=e38]: Cesta
+          - generic [ref=e39]: "2"
+    - navigation [ref=e43]:
+      - button "Productos Gráficos" [ref=e45] [cursor=pointer]:
+        - text: Productos Gráficos
+        - img [ref=e46]
+      - button "Productos Textiles" [ref=e49] [cursor=pointer]:
+        - text: Productos Textiles
+        - img [ref=e50]
+      - button "Papelería" [ref=e53] [cursor=pointer]:
+        - text: Papelería
+        - img [ref=e54]
+      - button "Sublimación" [ref=e57] [cursor=pointer]:
+        - text: Sublimación
+        - img [ref=e58]
+      - button "Corte Láser" [ref=e61] [cursor=pointer]:
+        - text: Corte Láser
+        - img [ref=e62]
+      - button "Eventos" [ref=e65] [cursor=pointer]:
+        - text: Eventos
+        - img [ref=e66]
+      - button "Impresión 3D" [ref=e69] [cursor=pointer]:
+        - text: Impresión 3D
+        - img [ref=e70]
+      - button "Packaging Personalizado" [ref=e73] [cursor=pointer]:
+        - text: Packaging Personalizado
+        - img [ref=e74]
+      - button "Servicios Digitales" [ref=e77] [cursor=pointer]:
+        - text: Servicios Digitales
+        - img [ref=e78]
+      - generic [ref=e80]:
+        - link "Digitales" [ref=e81] [cursor=pointer]:
+          - /url: /productos/digitales
+          - img [ref=e82]
+          - generic [ref=e84]: Digitales
+        - link "Ofertas" [ref=e85] [cursor=pointer]:
+          - /url: /ofertas
+    - generic [ref=e88]:
+      - button [ref=e89] [cursor=pointer]:
+        - img [ref=e90]
+      - generic [ref=e92]: Hasta -30 € con el código PROMO
+      - generic [ref=e93]: ⏰
+      - generic [ref=e94]: Hasta el 31 de diciembre de 2025
+      - link "Comprar ahora" [ref=e95] [cursor=pointer]:
+        - /url: /ofertas
+      - button [ref=e96] [cursor=pointer]:
+        - img [ref=e97]
+  - main [ref=e99]:
+    - generic [ref=e102]:
+      - generic [ref=e103]:
+        - heading "Finalizar Compra" [level=1] [ref=e104]
+        - paragraph [ref=e105]: Completa tus datos para recibir tu pedido
+      - generic [ref=e106]:
+        - generic [ref=e107]:
+          - generic [ref=e108]:
+            - heading "Información de Envío" [level=2] [ref=e110]
+            - generic [ref=e111]:
+              - generic [ref=e112]:
+                - generic [ref=e113]: Nombre *
+                - textbox "Tu nombre" [ref=e114]: Juan
+              - generic [ref=e115]:
+                - generic [ref=e116]: Apellidos *
+                - textbox "Tus apellidos" [ref=e117]: Perez
+              - generic [ref=e118]:
+                - generic [ref=e119]: Email *
+                - textbox "tu@email.com" [ref=e120]: ok@example.com
+              - generic [ref=e121]:
+                - generic [ref=e122]: Teléfono *
+                - textbox "+34 600 000 000" [ref=e123]: "612345678"
+              - generic [ref=e124]:
+                - generic [ref=e125]: Dirección *
+                - textbox "Calle, número, piso..." [ref=e126]: Calle 123
+              - generic [ref=e127]:
+                - generic [ref=e128]: Código Postal *
+                - textbox "28001" [ref=e129]: "35001"
+              - generic [ref=e130]:
+                - generic [ref=e131]: Ciudad *
+                - textbox "Madrid" [active] [ref=e132]: Las Palmas
+              - generic [ref=e133]:
+                - generic [ref=e134]: Provincia *
+                - combobox [ref=e135]:
+                  - option "Selecciona una provincia" [selected]
+                  - option "Las Palmas"
+                  - option "Santa Cruz de Tenerife"
+                - paragraph [ref=e136]: Actualmente solo realizamos envíos a las Islas Canarias
+              - generic [ref=e137]:
+                - generic [ref=e138]: País *
+                - textbox [ref=e139]: España
+              - generic [ref=e140]:
+                - generic [ref=e141]: Notas adicionales (opcional)
+                - textbox "Instrucciones especiales de entrega..." [ref=e142]
+          - generic [ref=e143]:
+            - heading "Información de Facturación" [level=2] [ref=e144]
+            - generic [ref=e146] [cursor=pointer]:
+              - checkbox "Usar la misma dirección de envío" [checked] [ref=e147]
+              - generic [ref=e148]: Usar la misma dirección de envío
+            - generic [ref=e149]:
+              - generic [ref=e150]: NIF/CIF (opcional)
+              - textbox "12345678X" [ref=e151]
+          - generic [ref=e152]:
+            - heading "Método de Envío" [level=2] [ref=e153]
+            - generic [ref=e154]:
+              - generic [ref=e155]:
+                - img [ref=e156]
+                - generic [ref=e161]: Método de envío
+              - generic [ref=e162]:
+                - generic [ref=e163] [cursor=pointer]:
+                  - radio "Envío Express 9.99€ Entrega en 1-2 días laborables 1-2 días laborables" [ref=e164]
+                  - generic [ref=e165]:
+                    - generic [ref=e166]:
+                      - generic [ref=e167]: Envío Express
+                      - generic [ref=e168]: 9.99€
+                    - paragraph [ref=e169]: Entrega en 1-2 días laborables
+                    - generic [ref=e171]:
+                      - img [ref=e172]
+                      - text: 1-2 días laborables
+                - generic [ref=e175] [cursor=pointer]:
+                  - radio "Envío Estándar 4.99€ Entrega en 3-5 días laborables 3-5 días laborables" [ref=e176]
+                  - generic [ref=e177]:
+                    - generic [ref=e178]:
+                      - generic [ref=e179]: Envío Estándar
+                      - generic [ref=e180]: 4.99€
+                    - paragraph [ref=e181]: Entrega en 3-5 días laborables
+                    - generic [ref=e183]:
+                      - img [ref=e184]
+                      - text: 3-5 días laborables
+                - generic [ref=e187] [cursor=pointer]:
+                  - radio "Recogida en Tienda 0.00€ Recoge tu pedido en nuestra tienda sin coste 1-2 días laborables" [checked] [ref=e188]
+                  - generic [ref=e189]:
+                    - generic [ref=e190]:
+                      - generic [ref=e191]: Recogida en Tienda
+                      - generic [ref=e192]: 0.00€
+                    - paragraph [ref=e193]: Recoge tu pedido en nuestra tienda sin coste
+                    - generic [ref=e195]:
+                      - img [ref=e196]
+                      - text: 1-2 días laborables
+              - generic [ref=e199]: "* Los gastos de envío pueden variar según el peso del pedido"
+          - generic [ref=e200]:
+            - heading "Método de Pago" [level=2] [ref=e201]
+            - generic [ref=e202]:
+              - generic [ref=e203] [cursor=pointer]:
+                - radio "Tarjeta de Crédito/Débito Pago seguro con Stripe" [checked] [ref=e204]
+                - generic [ref=e205]:
+                  - text: Tarjeta de Crédito/Débito
+                  - generic [ref=e206]: Pago seguro con Stripe
+              - generic [ref=e207] [cursor=pointer]:
+                - radio "PayPal Próximamente" [disabled] [ref=e208]
+                - generic [ref=e209]:
+                  - text: PayPal
+                  - generic [ref=e210]: Próximamente
+              - generic [ref=e211] [cursor=pointer]:
+                - radio "Transferencia Bancaria Enviaremos los datos por email" [ref=e212]
+                - generic [ref=e213]:
+                  - text: Transferencia Bancaria
+                  - generic [ref=e214]: Enviaremos los datos por email
+            - generic [ref=e216]:
+              - generic [ref=e217]: Datos de la Tarjeta
+              - generic [ref=e220]:
+                - iframe [ref=e221]:
+                  - generic [ref=f1e1]:
+                    - generic: 0123456789０１２３４５６７８９
+                    - textbox [disabled]
+                    - generic [ref=f1e2]:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - img
+                            - generic:
+                              - img
+                          - generic:
+                            - img
+                      - generic [ref=f1e3]:
+                        - generic [ref=f1e4]:
+                          - generic: Número
+                          - generic [ref=f1e6]:
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                  - generic:
+                                    - img
+                                - generic:
+                                  - img
+                            - textbox "Número de la tarjeta de crédito o débito" [ref=f1e9]:
+                              - /placeholder: Número de tarjeta
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - textbox:
+                                  - /placeholder: MM / AA
+                          - generic:
+                            - generic:
+                              - generic:
+                                - textbox:
+                                  - /placeholder: CVC
+                    - textbox [disabled]
+                    - button
+                - textbox
+                - iframe [ref=e223]:
+                  - button "Autorrellenar con Link" [ref=f2e3] [cursor=pointer]:
+                    - generic [ref=f2e4]: Utilizar
+              - generic [ref=e224]:
+                - img [ref=e225]
+                - generic [ref=e227]:
+                  - paragraph [ref=e228]: Pago 100% seguro
+                  - paragraph [ref=e229]: Tus datos de tarjeta están protegidos con cifrado de nivel bancario. No almacenamos tu información de pago.
+              - generic [ref=e230]:
+                - img [ref=e231]
+                - img [ref=e234]
+                - img [ref=e238]
+          - generic [ref=e240]:
+            - generic [ref=e241] [cursor=pointer]:
+              - checkbox "Acepto los términos y condiciones y la política de privacidad" [ref=e242]
+              - generic [ref=e243]:
+                - text: Acepto los
+                - link "términos y condiciones" [ref=e244]:
+                  - /url: /terminos
+                - text: y la
+                - link "política de privacidad" [ref=e245]:
+                  - /url: /privacidad
+            - button "Realizar Pedido - 24.20 €" [disabled] [ref=e246]
+        - generic [ref=e248]:
+          - heading "Resumen del Pedido" [level=2] [ref=e249]
+          - generic [ref=e251]:
+            - button "Eliminar del carrito" [ref=e252] [cursor=pointer]:
+              - img [ref=e253]
+            - generic [ref=e256]:
+              - img "Prod 1" [ref=e257]
+              - generic [ref=e258]:
+                - heading "Prod 1" [level=3] [ref=e259]
+                - generic [ref=e260]:
+                  - button "Disminuir cantidad" [ref=e261] [cursor=pointer]:
+                    - img [ref=e262]
+                  - generic [ref=e263]: "2"
+                  - button "Aumentar cantidad" [ref=e264] [cursor=pointer]:
+                    - img [ref=e265]
+                  - generic [ref=e266]: unidades
+                - generic [ref=e267]:
+                  - generic [ref=e268]: 10.00 € × 2 =
+                  - paragraph [ref=e269]: 20.00 €
+          - generic [ref=e272]:
+            - textbox "Código de cupón" [ref=e273]
+            - button "Aplicar" [disabled] [ref=e274]
+          - generic [ref=e275]:
+            - generic [ref=e276]:
+              - generic [ref=e277]: "Subtotal:"
+              - generic [ref=e278]: 20.00 €
+            - generic [ref=e279]:
+              - generic [ref=e280]: "Envío (Recogida en Tienda):"
+              - generic [ref=e281]: GRATIS
+            - generic [ref=e282]:
+              - generic [ref=e283]: "IVA (21%):"
+              - generic [ref=e284]: 4.20 €
+            - generic [ref=e286]:
+              - generic [ref=e287]: "Total:"
+              - generic [ref=e288]: 24.20 €
+  - button "Abrir chat de soporte" [ref=e291] [cursor=pointer]:
+    - img [ref=e292]
+    - generic [ref=e294]: "1"
+    - generic [ref=e295]: ¿Necesitas ayuda?
+  - generic [ref=e298]:
+    - button "Menu" [ref=e299]:
+      - img [ref=e301]
+      - generic: Menu
+    - button "Inspect" [ref=e305]:
+      - img [ref=e307]
+      - generic: Inspect
+    - button "Audit" [ref=e309]:
+      - generic [ref=e310]:
+        - img [ref=e311]
+        - img [ref=e314]
+      - generic: Audit
+    - button "Settings" [ref=e317]:
+      - img [ref=e319]
+      - generic: Settings
+```

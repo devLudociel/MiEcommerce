@@ -13,11 +13,11 @@ import React, { useState } from 'react';
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 
 interface SplitProductPreviewProps {
-  baseImage: string;  // URL de la imagen base (caja, producto)
-  userImage?: string | null;  // URL de la imagen subida por el usuario
+  baseImage: string; // URL de la imagen base (caja, producto)
+  userImage?: string | null; // URL de la imagen subida por el usuario
   productName?: string;
-  baseImageLabel?: string;  // Label para el preview de la caja
-  userImageLabel?: string;  // Label para el preview de referencia
+  baseImageLabel?: string; // Label para el preview de la caja
+  userImageLabel?: string; // Label para el preview de referencia
 }
 
 export default function SplitProductPreview({
@@ -192,9 +192,7 @@ export default function SplitProductPreview({
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center p-6">
                   <div className="text-6xl mb-4">📸</div>
-                  <p className="text-gray-600 font-semibold mb-2">
-                    Sube tu foto de referencia
-                  </p>
+                  <p className="text-gray-600 font-semibold mb-2">Sube tu foto de referencia</p>
                   <p className="text-sm text-gray-500">
                     Esta imagen la usaremos para crear tu figura personalizada
                   </p>

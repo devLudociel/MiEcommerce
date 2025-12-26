@@ -3,6 +3,10 @@ import { useState } from 'react';
 export default function GuiaMaterialesComponent() {
   const [selectedTecnica, setSelectedTecnica] = useState<string | null>(null);
 
+  const handleToggleTecnica = (id: string) => {
+    setSelectedTecnica((current) => (current === id ? null : id));
+  };
+
   const tecnicas = [
     {
       id: 'dtf',
@@ -377,9 +381,15 @@ export default function GuiaMaterialesComponent() {
             {tecnicas.map((tecnica) => (
               <div
                 key={tecnica.id}
-                onClick={() =>
-                  setSelectedTecnica(selectedTecnica === tecnica.id ? null : tecnica.id)
-                }
+                onClick={() => handleToggleTecnica(tecnica.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    handleToggleTecnica(tecnica.id);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
                 className={`bg-white rounded-3xl p-6 border-2 transition-all duration-300 cursor-pointer ${
                   selectedTecnica === tecnica.id
                     ? 'border-cyan-500 shadow-2xl scale-105'

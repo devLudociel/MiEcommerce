@@ -3,7 +3,11 @@ import type { APIRoute } from 'astro';
 import type { Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { validateCouponCodeSchema } from '../../lib/validation/schemas';
-import { checkRateLimit, createRateLimitResponse, RATE_LIMIT_CONFIGS } from '../../lib/rate-limiter';
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_CONFIGS,
+} from '../../lib/rate-limiter';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
 

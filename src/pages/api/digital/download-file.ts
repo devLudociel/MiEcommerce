@@ -29,10 +29,10 @@ export const POST: APIRoute = async ({ request }) => {
     // Get auth token
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'No autorizado' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'No autorizado' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const token = authHeader.substring(7);
@@ -44,10 +44,10 @@ export const POST: APIRoute = async ({ request }) => {
     const { digitalAccessId, fileId } = body;
 
     if (!digitalAccessId || !fileId) {
-      return new Response(
-        JSON.stringify({ error: 'digitalAccessId y fileId son requeridos' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'digitalAccessId y fileId son requeridos' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     logger.info('[digital/download-file] Processing download request', {
@@ -62,20 +62,20 @@ export const POST: APIRoute = async ({ request }) => {
     const accessDoc = await db.collection('digital_access').doc(digitalAccessId).get();
 
     if (!accessDoc.exists) {
-      return new Response(
-        JSON.stringify({ error: 'Acceso no encontrado' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Acceso no encontrado' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const accessData = accessDoc.data();
 
     // Verify ownership
     if (accessData?.userId !== userId) {
-      return new Response(
-        JSON.stringify({ error: 'No tienes acceso a este archivo' }),
-        { status: 403, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'No tienes acceso a este archivo' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Find the file
@@ -83,10 +83,10 @@ export const POST: APIRoute = async ({ request }) => {
     const file = files.find((f) => f.id === fileId);
 
     if (!file) {
-      return new Response(
-        JSON.stringify({ error: 'Archivo no encontrado' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Archivo no encontrado' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Generate signed URL (valid for 1 hour)
@@ -108,10 +108,13 @@ export const POST: APIRoute = async ({ request }) => {
     const [fileBuffer] = await fileRef.download();
 
     // Update download stats
-    await db.collection('digital_access').doc(digitalAccessId).update({
-      totalDownloads: FieldValue.increment(1),
-      lastDownloadAt: FieldValue.serverTimestamp(),
-    });
+    await db
+      .collection('digital_access')
+      .doc(digitalAccessId)
+      .update({
+        totalDownloads: FieldValue.increment(1),
+        lastDownloadAt: FieldValue.serverTimestamp(),
+      });
 
     // Log the download
     await db.collection('download_logs').add({
@@ -144,11 +147,14 @@ export const POST: APIRoute = async ({ request }) => {
     });
   } catch (error: unknown) {
     const firebaseError = error as { code?: string };
-    if (firebaseError.code === 'auth/id-token-expired' || firebaseError.code === 'auth/argument-error') {
-      return new Response(
-        JSON.stringify({ error: 'Token inválido o expirado' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      );
+    if (
+      firebaseError.code === 'auth/id-token-expired' ||
+      firebaseError.code === 'auth/argument-error'
+    ) {
+      return new Response(JSON.stringify({ error: 'Token inválido o expirado' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     logger.error('[digital/download-file] Error:', error);

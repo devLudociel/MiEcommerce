@@ -98,9 +98,9 @@ export default function WishlistPanel() {
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <a href="#" className="btn btn-primary btn-sm">
+                  <button type="button" className="btn btn-primary btn-sm">
                     Ver
-                  </a>
+                  </button>
                   <button
                     onClick={() => wishlist.remove(p.id)}
                     className="btn btn-ghost btn-sm text-red-500"

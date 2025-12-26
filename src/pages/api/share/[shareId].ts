@@ -16,10 +16,10 @@ export const GET: APIRoute = async ({ params }) => {
     const { shareId } = params;
 
     if (!shareId) {
-      return new Response(
-        JSON.stringify({ error: 'Share ID is required' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Share ID is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     logger.info('[share/get] Fetching shared design:', shareId);
@@ -30,10 +30,10 @@ export const GET: APIRoute = async ({ params }) => {
 
     if (!shareSnap.exists) {
       logger.warn('[share/get] Shared design not found:', shareId);
-      return new Response(
-        JSON.stringify({ error: 'Shared design not found' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Shared design not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const shareData = shareSnap.data();
@@ -41,10 +41,10 @@ export const GET: APIRoute = async ({ params }) => {
     // Check if expired
     if (shareData?.expiresAt && shareData.expiresAt.toDate() < new Date()) {
       logger.warn('[share/get] Shared design expired:', shareId);
-      return new Response(
-        JSON.stringify({ error: 'This shared design has expired' }),
-        { status: 410, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'This shared design has expired' }), {
+        status: 410,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Increment view count

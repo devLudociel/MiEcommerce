@@ -36,9 +36,9 @@ import { logger } from '../../lib/logger';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 // Flatten categories for easy selection
-const flatCategories = categories.flatMap(cat => [
+const flatCategories = categories.flatMap((cat) => [
   { id: cat.id, name: cat.name, slug: cat.slug, isParent: true },
-  ...cat.subcategories.map(sub => ({
+  ...cat.subcategories.map((sub) => ({
     id: sub.id,
     name: `${cat.name} > ${sub.name}`,
     slug: sub.slug,
@@ -92,7 +92,10 @@ export default function AdminThemesPanel() {
     try {
       const created = await createTheme({
         name: newTheme.name,
-        slug: newTheme.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+        slug: newTheme.name
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, ''),
         description: newTheme.description || '',
         badge: newTheme.badge || '',
         priceModifier: newTheme.priceModifier || 0,
@@ -123,7 +126,7 @@ export default function AdminThemesPanel() {
   const handleUpdateTheme = async (theme: Theme, updates: Partial<Theme>) => {
     try {
       await updateTheme(theme.id, updates);
-      setThemes(themes.map(t => t.id === theme.id ? { ...t, ...updates } : t));
+      setThemes(themes.map((t) => (t.id === theme.id ? { ...t, ...updates } : t)));
       notify.success('Temática actualizada');
     } catch (error) {
       logger.error('[AdminThemesPanel] Error updating theme:', error);
@@ -144,7 +147,7 @@ export default function AdminThemesPanel() {
 
     try {
       await deleteTheme(theme.id);
-      setThemes(themes.filter(t => t.id !== theme.id));
+      setThemes(themes.filter((t) => t.id !== theme.id));
       notify.success(`Temática "${theme.name}" eliminada`);
     } catch (error) {
       logger.error('[AdminThemesPanel] Error deleting theme:', error);
@@ -178,7 +181,8 @@ export default function AdminThemesPanel() {
             Gestión de Temáticas
           </h2>
           <p className="text-gray-600 mt-1">
-            Administra las temáticas disponibles para tus productos. Cada temática puede tener diferentes imágenes según la categoría del producto.
+            Administra las temáticas disponibles para tus productos. Cada temática puede tener
+            diferentes imágenes según la categoría del producto.
           </p>
         </div>
         <button
@@ -197,9 +201,7 @@ export default function AdminThemesPanel() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
               <input
                 type="text"
                 value={newTheme.name || ''}
@@ -242,7 +244,9 @@ export default function AdminThemesPanel() {
               <input
                 type="number"
                 value={newTheme.priceModifier || 0}
-                onChange={(e) => setNewTheme({ ...newTheme, priceModifier: parseFloat(e.target.value) || 0 })}
+                onChange={(e) =>
+                  setNewTheme({ ...newTheme, priceModifier: parseFloat(e.target.value) || 0 })
+                }
                 min="0"
                 step="0.01"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -351,9 +355,11 @@ function ThemeCard({
   };
 
   return (
-    <div className={`border-2 rounded-xl overflow-hidden transition-all ${
-      theme.active ? 'border-gray-200' : 'border-gray-300 bg-gray-50 opacity-75'
-    }`}>
+    <div
+      className={`border-2 rounded-xl overflow-hidden transition-all ${
+        theme.active ? 'border-gray-200' : 'border-gray-300 bg-gray-50 opacity-75'
+      }`}
+    >
       {/* Header */}
       <div className="p-4 bg-white flex items-center gap-4">
         <button
@@ -401,7 +407,9 @@ function ThemeCard({
                 <input
                   type="number"
                   value={editForm.priceModifier}
-                  onChange={(e) => setEditForm({ ...editForm, priceModifier: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, priceModifier: parseFloat(e.target.value) || 0 })
+                  }
                   placeholder="Precio extra"
                   className="w-20 px-2 py-1 text-xs border border-gray-300 rounded"
                   min="0"
@@ -493,13 +501,11 @@ function ThemeCard({
             Imágenes por Categoría de Producto
           </h4>
           <p className="text-sm text-gray-500 mb-4">
-            Agrega imágenes de esta temática para diferentes categorías de productos. Cuando un cliente personalice un producto de esa categoría, verá la imagen correspondiente.
+            Agrega imágenes de esta temática para diferentes categorías de productos. Cuando un
+            cliente personalice un producto de esa categoría, verá la imagen correspondiente.
           </p>
 
-          <CategoryImagesEditor
-            theme={theme}
-            onRefresh={onRefresh}
-          />
+          <CategoryImagesEditor theme={theme} onRefresh={onRefresh} />
         </div>
       )}
     </div>
@@ -580,7 +586,7 @@ function CategoryImagesEditor({ theme, onRefresh }: CategoryImagesEditorProps) {
       return;
     }
 
-    const category = flatCategories.find(c => c.id === selectedCategory);
+    const category = flatCategories.find((c) => c.id === selectedCategory);
     if (!category) return;
 
     try {
@@ -679,9 +685,7 @@ function CategoryImagesEditor({ theme, onRefresh }: CategoryImagesEditorProps) {
                   )}
 
                   <div className="flex-1">
-                    <h5 className="font-medium text-gray-900 text-sm">
-                      {ci.categoryName}
-                    </h5>
+                    <h5 className="font-medium text-gray-900 text-sm">{ci.categoryName}</h5>
                     <p className="text-xs text-gray-500">
                       {getTotalVariants(ci)} variante{getTotalVariants(ci) !== 1 ? 's' : ''}
                     </p>
@@ -704,10 +708,7 @@ function CategoryImagesEditor({ theme, onRefresh }: CategoryImagesEditorProps) {
                   <div className="p-3 border-t border-gray-200">
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                       {variants.map((variant) => (
-                        <div
-                          key={variant.id}
-                          className="bg-gray-50 rounded-lg p-2 relative group"
-                        >
+                        <div key={variant.id} className="bg-gray-50 rounded-lg p-2 relative group">
                           <img
                             src={variant.imageUrl}
                             alt={variant.name}
@@ -763,7 +764,8 @@ function CategoryImagesEditor({ theme, onRefresh }: CategoryImagesEditorProps) {
           Añadir Nueva Variante
         </h5>
         <p className="text-sm text-gray-500 mb-4">
-          Añade variantes a cualquier categoría. Por ejemplo: Mickey, Minnie, Frozen dentro de Disney &gt; Cajas.
+          Añade variantes a cualquier categoría. Por ejemplo: Mickey, Minnie, Frozen dentro de
+          Disney &gt; Cajas.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

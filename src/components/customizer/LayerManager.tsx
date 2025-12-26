@@ -89,7 +89,9 @@ export default function LayerManager({
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <div
                 className={`p-1.5 rounded ${
-                  selectedLayerId === layer.id ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'
+                  selectedLayerId === layer.id
+                    ? 'bg-purple-500 text-white'
+                    : 'bg-gray-100 text-gray-600'
                 }`}
               >
                 {getLayerIcon(layer.type)}

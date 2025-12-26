@@ -38,7 +38,11 @@ export default function DropdownConfigEditor({ options, onChange }: DropdownConf
     onChange(
       options.map((opt) =>
         opt.value === optionValue
-          ? { ...opt, ...updates, value: updates.label ? updates.label.toLowerCase().replace(/\s+/g, '_') : opt.value }
+          ? {
+              ...opt,
+              ...updates,
+              value: updates.label ? updates.label.toLowerCase().replace(/\s+/g, '_') : opt.value,
+            }
           : opt
       )
     );
@@ -157,7 +161,9 @@ export default function DropdownConfigEditor({ options, onChange }: DropdownConf
                   <input
                     type="text"
                     value={option.description || ''}
-                    onChange={(e) => handleUpdateOption(option.value, { description: e.target.value })}
+                    onChange={(e) =>
+                      handleUpdateOption(option.value, { description: e.target.value })
+                    }
                     placeholder="Descripción adicional para ayudar al usuario"
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
@@ -192,7 +198,6 @@ export default function DropdownConfigEditor({ options, onChange }: DropdownConf
                 onChange={(e) => setNewOption({ ...newOption, label: e.target.value })}
                 placeholder="Ej: Mediano (30 x 40 cm)"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                autoFocus
               />
             </div>
 

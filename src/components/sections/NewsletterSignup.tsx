@@ -86,8 +86,8 @@ export default function NewsletterSignup() {
             ¡No te pierdas nuestras ofertas!
           </h2>
           <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Suscríbete a nuestro newsletter y recibe descuentos exclusivos, novedades y consejos
-            de diseño directamente en tu bandeja de entrada
+            Suscríbete a nuestro newsletter y recibe descuentos exclusivos, novedades y consejos de
+            diseño directamente en tu bandeja de entrada
           </p>
 
           {/* Benefits */}

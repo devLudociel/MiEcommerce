@@ -33,7 +33,8 @@ import { categories as navbarCategoriesData } from '../../data/categories';
 // TIPOS LOCALES
 // ============================================================================
 
-interface LocalBundleDiscount extends Omit<BundleDiscount, 'startDate' | 'endDate' | 'createdAt' | 'updatedAt'> {
+interface LocalBundleDiscount
+  extends Omit<BundleDiscount, 'startDate' | 'endDate' | 'createdAt' | 'updatedAt'> {
   id: string;
   startDate: Date;
   endDate: Date;
@@ -51,7 +52,12 @@ interface Product {
 // CONSTANTES
 // ============================================================================
 
-const DISCOUNT_TYPES: { value: BundleDiscountType; label: string; description: string; icon: React.ReactNode }[] = [
+const DISCOUNT_TYPES: {
+  value: BundleDiscountType;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+}[] = [
   {
     value: 'buy_x_get_y_free',
     label: 'Compra X, lleva Y gratis',
@@ -78,7 +84,7 @@ const DISCOUNT_TYPES: { value: BundleDiscountType; label: string; description: s
   },
 ];
 
-const navbarCategories = navbarCategoriesData.map(cat => ({
+const navbarCategories = navbarCategoriesData.map((cat) => ({
   id: cat.id,
   name: cat.name,
   slug: cat.slug,
@@ -328,8 +334,12 @@ export default function AdminBundleDiscounts() {
       {discounts.length === 0 ? (
         <div className="bg-gray-50 rounded-xl p-12 text-center">
           <Gift className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-600 mb-2">No hay descuentos configurados</h3>
-          <p className="text-gray-500 mb-4">Crea tu primer descuento por paquete para aumentar ventas</p>
+          <h3 className="text-xl font-semibold text-gray-600 mb-2">
+            No hay descuentos configurados
+          </h3>
+          <p className="text-gray-500 mb-4">
+            Crea tu primer descuento por paquete para aumentar ventas
+          </p>
           <button
             onClick={handleNew}
             className="inline-flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
@@ -347,10 +357,10 @@ export default function AdminBundleDiscounts() {
                 !discount.active
                   ? 'border-gray-200 opacity-60'
                   : isExpired(discount)
-                  ? 'border-red-200 bg-red-50'
-                  : isUpcoming(discount)
-                  ? 'border-amber-200 bg-amber-50'
-                  : 'border-green-200 bg-green-50'
+                    ? 'border-red-200 bg-red-50'
+                    : isUpcoming(discount)
+                      ? 'border-amber-200 bg-amber-50'
+                      : 'border-green-200 bg-green-50'
               }`}
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -361,10 +371,10 @@ export default function AdminBundleDiscounts() {
                       discount.type === 'buy_x_get_y_free'
                         ? 'bg-pink-100 text-pink-600'
                         : discount.type === 'buy_x_get_y_percent'
-                        ? 'bg-purple-100 text-purple-600'
-                        : discount.type === 'buy_x_fixed_price'
-                        ? 'bg-blue-100 text-blue-600'
-                        : 'bg-cyan-100 text-cyan-600'
+                          ? 'bg-purple-100 text-purple-600'
+                          : discount.type === 'buy_x_fixed_price'
+                            ? 'bg-blue-100 text-blue-600'
+                            : 'bg-cyan-100 text-cyan-600'
                     }`}
                   >
                     {DISCOUNT_TYPES.find((t) => t.value === discount.type)?.icon}
@@ -383,15 +393,16 @@ export default function AdminBundleDiscounts() {
                         {discount.applyTo === 'all'
                           ? 'Todos los productos'
                           : discount.applyTo === 'categories'
-                          ? `${discount.categoryIds?.length || 0} categorías`
-                          : discount.applyTo === 'products'
-                          ? `${discount.productIds?.length || 0} productos`
-                          : `${discount.tagIds?.length || 0} tags`}
+                            ? `${discount.categoryIds?.length || 0} categorías`
+                            : discount.applyTo === 'products'
+                              ? `${discount.productIds?.length || 0} productos`
+                              : `${discount.tagIds?.length || 0} tags`}
                       </span>
                       {/* Fechas */}
                       <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
                         <Calendar className="w-3 h-3" />
-                        {discount.startDate.toLocaleDateString()} - {discount.endDate.toLocaleDateString()}
+                        {discount.startDate.toLocaleDateString()} -{' '}
+                        {discount.endDate.toLocaleDateString()}
                       </span>
                     </div>
                   </div>
@@ -508,7 +519,9 @@ export default function AdminBundleDiscounts() {
                     >
                       <div
                         className={`p-2 rounded-lg ${
-                          formData.type === type.value ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'
+                          formData.type === type.value
+                            ? 'bg-purple-500 text-white'
+                            : 'bg-gray-100 text-gray-600'
                         }`}
                       >
                         {type.icon}
@@ -536,7 +549,9 @@ export default function AdminBundleDiscounts() {
                       type="number"
                       min="1"
                       value={formData.buyQuantity || 3}
-                      onChange={(e) => setFormData({ ...formData, buyQuantity: parseInt(e.target.value) || 1 })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, buyQuantity: parseInt(e.target.value) || 1 })
+                      }
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                     />
                   </div>
@@ -544,21 +559,22 @@ export default function AdminBundleDiscounts() {
                   {/* Cantidad gratis (solo para buy_x_get_y_free) */}
                   {formData.type === 'buy_x_get_y_free' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Gratis
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Gratis</label>
                       <input
                         type="number"
                         min="1"
                         value={formData.getQuantity || 1}
-                        onChange={(e) => setFormData({ ...formData, getQuantity: parseInt(e.target.value) || 1 })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, getQuantity: parseInt(e.target.value) || 1 })
+                        }
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                       />
                     </div>
                   )}
 
                   {/* Porcentaje (para buy_x_get_y_percent y quantity_percent) */}
-                  {(formData.type === 'buy_x_get_y_percent' || formData.type === 'quantity_percent') && (
+                  {(formData.type === 'buy_x_get_y_percent' ||
+                    formData.type === 'quantity_percent') && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         % Descuento
@@ -568,7 +584,12 @@ export default function AdminBundleDiscounts() {
                         min="1"
                         max="100"
                         value={formData.discountPercent || 50}
-                        onChange={(e) => setFormData({ ...formData, discountPercent: parseInt(e.target.value) || 0 })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            discountPercent: parseInt(e.target.value) || 0,
+                          })
+                        }
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                       />
                     </div>
@@ -585,7 +606,9 @@ export default function AdminBundleDiscounts() {
                         min="0"
                         step="0.01"
                         value={formData.fixedPrice || 0}
-                        onChange={(e) => setFormData({ ...formData, fixedPrice: parseFloat(e.target.value) || 0 })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, fixedPrice: parseFloat(e.target.value) || 0 })
+                        }
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                       />
                     </div>
@@ -597,16 +620,27 @@ export default function AdminBundleDiscounts() {
                   <p className="text-sm text-gray-600">
                     <span className="font-semibold">Resultado:</span>{' '}
                     {formData.type === 'buy_x_get_y_free' && (
-                      <>Compra {formData.buyQuantity} y paga {(formData.buyQuantity || 3) - (formData.getQuantity || 1)}</>
+                      <>
+                        Compra {formData.buyQuantity} y paga{' '}
+                        {(formData.buyQuantity || 3) - (formData.getQuantity || 1)}
+                      </>
                     )}
                     {formData.type === 'buy_x_get_y_percent' && (
-                      <>La {formData.buyQuantity}ª unidad tiene {formData.discountPercent}% de descuento</>
+                      <>
+                        La {formData.buyQuantity}ª unidad tiene {formData.discountPercent}% de
+                        descuento
+                      </>
                     )}
                     {formData.type === 'buy_x_fixed_price' && (
-                      <>{formData.buyQuantity} unidades por €{formData.fixedPrice?.toFixed(2)}</>
+                      <>
+                        {formData.buyQuantity} unidades por €{formData.fixedPrice?.toFixed(2)}
+                      </>
                     )}
                     {formData.type === 'quantity_percent' && (
-                      <>A partir de {formData.buyQuantity} unidades, {formData.discountPercent}% de descuento en todas</>
+                      <>
+                        A partir de {formData.buyQuantity} unidades, {formData.discountPercent}% de
+                        descuento en todas
+                      </>
                     )}
                   </p>
                 </div>
@@ -678,7 +712,10 @@ export default function AdminBundleDiscounts() {
                       multiple
                       value={formData.productIds || []}
                       onChange={(e) => {
-                        const selected = Array.from(e.target.selectedOptions, (option) => option.value);
+                        const selected = Array.from(
+                          e.target.selectedOptions,
+                          (option) => option.value
+                        );
                         setFormData({ ...formData, productIds: selected });
                       }}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 h-32"
@@ -689,7 +726,9 @@ export default function AdminBundleDiscounts() {
                         </option>
                       ))}
                     </select>
-                    <p className="text-xs text-gray-500 mt-1">Ctrl+Click para seleccionar múltiples</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Ctrl+Click para seleccionar múltiples
+                    </p>
                   </div>
                 )}
               </div>
@@ -703,18 +742,20 @@ export default function AdminBundleDiscounts() {
                   <input
                     type="date"
                     value={formData.startDate?.toISOString().split('T')[0] || ''}
-                    onChange={(e) => setFormData({ ...formData, startDate: new Date(e.target.value) })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, startDate: new Date(e.target.value) })
+                    }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Fecha fin
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Fecha fin</label>
                   <input
                     type="date"
                     value={formData.endDate?.toISOString().split('T')[0] || ''}
-                    onChange={(e) => setFormData({ ...formData, endDate: new Date(e.target.value) })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, endDate: new Date(e.target.value) })
+                    }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   />
                 </div>

@@ -13,7 +13,7 @@ import {
   isValidUrl,
   type ContactInfoInput,
   type SocialLink,
-  type ScheduleItem
+  type ScheduleItem,
 } from '../../lib/contactInfo';
 
 type TabType = 'basic' | 'social' | 'schedule' | 'company';
@@ -45,7 +45,7 @@ export default function AdminContactInfoPanel() {
 
   // Handle form changes
   const handleChange = (field: keyof ContactInfoInput, value: unknown) => {
-    setContactInfo(prev => ({ ...prev, [field]: value }));
+    setContactInfo((prev) => ({ ...prev, [field]: value }));
     setHasChanges(true);
     setError(null);
     setSuccess(null);
@@ -95,33 +95,33 @@ export default function AdminContactInfoPanel() {
       icon: '📷',
       url: '',
       active: true,
-      order: contactInfo.socialLinks.length
+      order: contactInfo.socialLinks.length,
     };
     handleChange('socialLinks', [...contactInfo.socialLinks, newLink]);
   };
 
   const handleUpdateSocialLink = (id: string, updates: Partial<SocialLink>) => {
-    const updated = contactInfo.socialLinks.map(link =>
+    const updated = contactInfo.socialLinks.map((link) =>
       link.id === id ? { ...link, ...updates } : link
     );
     handleChange('socialLinks', updated);
   };
 
   const handleDeleteSocialLink = (id: string) => {
-    const filtered = contactInfo.socialLinks.filter(link => link.id !== id);
+    const filtered = contactInfo.socialLinks.filter((link) => link.id !== id);
     handleChange('socialLinks', filtered);
   };
 
   const handleMoveSocialLink = (id: string, direction: 'up' | 'down') => {
     const links = [...contactInfo.socialLinks];
-    const index = links.findIndex(l => l.id === id);
+    const index = links.findIndex((l) => l.id === id);
     if (direction === 'up' && index > 0) {
       [links[index], links[index - 1]] = [links[index - 1], links[index]];
     } else if (direction === 'down' && index < links.length - 1) {
       [links[index], links[index + 1]] = [links[index + 1], links[index]];
     }
     // Update order values
-    links.forEach((link, i) => link.order = i);
+    links.forEach((link, i) => (link.order = i));
     handleChange('socialLinks', links);
   };
 
@@ -131,32 +131,32 @@ export default function AdminContactInfoPanel() {
       id: Date.now().toString(),
       day: '',
       hours: '',
-      order: contactInfo.schedule.length
+      order: contactInfo.schedule.length,
     };
     handleChange('schedule', [...contactInfo.schedule, newItem]);
   };
 
   const handleUpdateScheduleItem = (id: string, updates: Partial<ScheduleItem>) => {
-    const updated = contactInfo.schedule.map(item =>
+    const updated = contactInfo.schedule.map((item) =>
       item.id === id ? { ...item, ...updates } : item
     );
     handleChange('schedule', updated);
   };
 
   const handleDeleteScheduleItem = (id: string) => {
-    const filtered = contactInfo.schedule.filter(item => item.id !== id);
+    const filtered = contactInfo.schedule.filter((item) => item.id !== id);
     handleChange('schedule', filtered);
   };
 
   const handleMoveScheduleItem = (id: string, direction: 'up' | 'down') => {
     const items = [...contactInfo.schedule];
-    const index = items.findIndex(i => i.id === id);
+    const index = items.findIndex((i) => i.id === id);
     if (direction === 'up' && index > 0) {
       [items[index], items[index - 1]] = [items[index - 1], items[index]];
     } else if (direction === 'down' && index < items.length - 1) {
       [items[index], items[index + 1]] = [items[index + 1], items[index]];
     }
-    items.forEach((item, i) => item.order = i);
+    items.forEach((item, i) => (item.order = i));
     handleChange('schedule', items);
   };
 
@@ -175,7 +175,9 @@ export default function AdminContactInfoPanel() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Información de Contacto</h1>
-            <p className="text-gray-600 mt-1">Gestiona la información de contacto que aparece en toda la web</p>
+            <p className="text-gray-600 mt-1">
+              Gestiona la información de contacto que aparece en toda la web
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -195,9 +197,7 @@ export default function AdminContactInfoPanel() {
                   Guardando...
                 </>
               ) : (
-                <>
-                  💾 Guardar Cambios
-                </>
+                <>💾 Guardar Cambios</>
               )}
             </button>
           </div>
@@ -230,7 +230,7 @@ export default function AdminContactInfoPanel() {
               { id: 'social', label: 'Redes Sociales', icon: '🌐' },
               { id: 'schedule', label: 'Horarios', icon: '🕐' },
               { id: 'company', label: 'Empresa', icon: '🏢' },
-            ].map(tab => (
+            ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as TabType)}
@@ -281,9 +281,7 @@ export default function AdminContactInfoPanel() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                   <input
                     type="email"
                     value={contactInfo.email}
@@ -341,9 +339,7 @@ export default function AdminContactInfoPanel() {
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ciudad
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Ciudad</label>
                     <input
                       type="text"
                       value={contactInfo.city}
@@ -380,9 +376,7 @@ export default function AdminContactInfoPanel() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      País
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">País</label>
                     <input
                       type="text"
                       value={contactInfo.country}
@@ -416,7 +410,8 @@ export default function AdminContactInfoPanel() {
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <p className="text-sm text-gray-600">
-                    Gestiona los enlaces a tus redes sociales. El enlace de WhatsApp se genera automáticamente.
+                    Gestiona los enlaces a tus redes sociales. El enlace de WhatsApp se genera
+                    automáticamente.
                   </p>
                   <button
                     onClick={handleAddSocialLink}
@@ -430,94 +425,103 @@ export default function AdminContactInfoPanel() {
                   {contactInfo.socialLinks
                     .sort((a, b) => a.order - b.order)
                     .map((link, index) => (
-                    <div
-                      key={link.id}
-                      className={`p-4 border rounded-lg ${
-                        link.active ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="flex flex-col gap-1">
-                          <button
-                            onClick={() => handleMoveSocialLink(link.id, 'up')}
-                            disabled={index === 0}
-                            className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                          >
-                            ▲
-                          </button>
-                          <button
-                            onClick={() => handleMoveSocialLink(link.id, 'down')}
-                            disabled={index === contactInfo.socialLinks.length - 1}
-                            className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                          >
-                            ▼
-                          </button>
-                        </div>
-
-                        <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">
-                              Plataforma
-                            </label>
-                            <select
-                              value={link.platform}
-                              onChange={(e) => {
-                                const platform = getPlatformInfo(e.target.value);
-                                handleUpdateSocialLink(link.id, {
-                                  platform: e.target.value,
-                                  icon: platform.icon
-                                });
-                              }}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
-                            >
-                              {SOCIAL_PLATFORMS.map(p => (
-                                <option key={p.value} value={p.value}>
-                                  {p.icon} {p.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="md:col-span-2">
-                            <label className="block text-xs font-medium text-gray-500 mb-1">
-                              URL {link.platform === 'WhatsApp' && '(se genera automáticamente)'}
-                            </label>
-                            <input
-                              type="text"
-                              value={link.url}
-                              onChange={(e) => handleUpdateSocialLink(link.id, { url: e.target.value })}
-                              placeholder={link.platform === 'WhatsApp' ? 'Automático desde WhatsApp' : 'https://...'}
-                              disabled={link.platform === 'WhatsApp'}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 disabled:bg-gray-100"
-                            />
-                          </div>
-
-                          <div className="flex items-end gap-2">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={link.active}
-                                onChange={(e) => handleUpdateSocialLink(link.id, { active: e.target.checked })}
-                                className="w-4 h-4 text-cyan-600 rounded focus:ring-cyan-500"
-                              />
-                              <span className="text-sm text-gray-600">Activo</span>
-                            </label>
+                      <div
+                        key={link.id}
+                        className={`p-4 border rounded-lg ${
+                          link.active ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className="flex flex-col gap-1">
                             <button
-                              onClick={() => handleDeleteSocialLink(link.id)}
-                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Eliminar"
+                              onClick={() => handleMoveSocialLink(link.id, 'up')}
+                              disabled={index === 0}
+                              className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
                             >
-                              🗑️
+                              ▲
                             </button>
+                            <button
+                              onClick={() => handleMoveSocialLink(link.id, 'down')}
+                              disabled={index === contactInfo.socialLinks.length - 1}
+                              className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                            >
+                              ▼
+                            </button>
+                          </div>
+
+                          <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">
+                                Plataforma
+                              </label>
+                              <select
+                                value={link.platform}
+                                onChange={(e) => {
+                                  const platform = getPlatformInfo(e.target.value);
+                                  handleUpdateSocialLink(link.id, {
+                                    platform: e.target.value,
+                                    icon: platform.icon,
+                                  });
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
+                              >
+                                {SOCIAL_PLATFORMS.map((p) => (
+                                  <option key={p.value} value={p.value}>
+                                    {p.icon} {p.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-medium text-gray-500 mb-1">
+                                URL {link.platform === 'WhatsApp' && '(se genera automáticamente)'}
+                              </label>
+                              <input
+                                type="text"
+                                value={link.url}
+                                onChange={(e) =>
+                                  handleUpdateSocialLink(link.id, { url: e.target.value })
+                                }
+                                placeholder={
+                                  link.platform === 'WhatsApp'
+                                    ? 'Automático desde WhatsApp'
+                                    : 'https://...'
+                                }
+                                disabled={link.platform === 'WhatsApp'}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 disabled:bg-gray-100"
+                              />
+                            </div>
+
+                            <div className="flex items-end gap-2">
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={link.active}
+                                  onChange={(e) =>
+                                    handleUpdateSocialLink(link.id, { active: e.target.checked })
+                                  }
+                                  className="w-4 h-4 text-cyan-600 rounded focus:ring-cyan-500"
+                                />
+                                <span className="text-sm text-gray-600">Activo</span>
+                              </label>
+                              <button
+                                onClick={() => handleDeleteSocialLink(link.id)}
+                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Eliminar"
+                              >
+                                🗑️
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
 
                   {contactInfo.socialLinks.length === 0 && (
                     <div className="text-center py-8 text-gray-500">
-                      No hay redes sociales configuradas. Haz clic en "Añadir Red Social" para empezar.
+                      No hay redes sociales configuradas. Haz clic en "Añadir Red Social" para
+                      empezar.
                     </div>
                   )}
                 </div>
@@ -543,64 +547,68 @@ export default function AdminContactInfoPanel() {
                   {contactInfo.schedule
                     .sort((a, b) => a.order - b.order)
                     .map((item, index) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg"
-                    >
-                      <div className="flex flex-col gap-1">
-                        <button
-                          onClick={() => handleMoveScheduleItem(item.id, 'up')}
-                          disabled={index === 0}
-                          className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                        >
-                          ▲
-                        </button>
-                        <button
-                          onClick={() => handleMoveScheduleItem(item.id, 'down')}
-                          disabled={index === contactInfo.schedule.length - 1}
-                          className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                        >
-                          ▼
-                        </button>
-                      </div>
-
-                      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-500 mb-1">
-                            Día(s)
-                          </label>
-                          <input
-                            type="text"
-                            value={item.day}
-                            onChange={(e) => handleUpdateScheduleItem(item.id, { day: e.target.value })}
-                            placeholder="Lunes - Viernes"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-gray-500 mb-1">
-                            Horario
-                          </label>
-                          <input
-                            type="text"
-                            value={item.hours}
-                            onChange={(e) => handleUpdateScheduleItem(item.id, { hours: e.target.value })}
-                            placeholder="9:00 - 20:00"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
-                          />
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleDeleteScheduleItem(item.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Eliminar"
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg"
                       >
-                        🗑️
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex flex-col gap-1">
+                          <button
+                            onClick={() => handleMoveScheduleItem(item.id, 'up')}
+                            disabled={index === 0}
+                            className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            onClick={() => handleMoveScheduleItem(item.id, 'down')}
+                            disabled={index === contactInfo.schedule.length - 1}
+                            className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                          >
+                            ▼
+                          </button>
+                        </div>
+
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">
+                              Día(s)
+                            </label>
+                            <input
+                              type="text"
+                              value={item.day}
+                              onChange={(e) =>
+                                handleUpdateScheduleItem(item.id, { day: e.target.value })
+                              }
+                              placeholder="Lunes - Viernes"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">
+                              Horario
+                            </label>
+                            <input
+                              type="text"
+                              value={item.hours}
+                              onChange={(e) =>
+                                handleUpdateScheduleItem(item.id, { hours: e.target.value })
+                              }
+                              placeholder="9:00 - 20:00"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
+                            />
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => handleDeleteScheduleItem(item.id)}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Eliminar"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    ))}
 
                   {contactInfo.schedule.length === 0 && (
                     <div className="text-center py-8 text-gray-500">
@@ -616,8 +624,11 @@ export default function AdminContactInfoPanel() {
                       <span>👁️</span> Vista previa
                     </h4>
                     <div className="space-y-2">
-                      {contactInfo.schedule.map(item => (
-                        <div key={item.id} className="flex justify-between py-2 border-b border-gray-200 last:border-0">
+                      {contactInfo.schedule.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex justify-between py-2 border-b border-gray-200 last:border-0"
+                        >
                           <span className="font-medium text-gray-700">{item.day}</span>
                           <span className="text-cyan-600">{item.hours}</span>
                         </div>
@@ -645,9 +656,7 @@ export default function AdminContactInfoPanel() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Eslogan
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Eslogan</label>
                   <input
                     type="text"
                     value={contactInfo.companySlogan}
@@ -681,7 +690,9 @@ export default function AdminContactInfoPanel() {
                     </div>
                     <div>
                       <h3 className="text-xl font-black">{contactInfo.companyName || 'Nombre'}</h3>
-                      <p className="text-sm text-gray-400">{contactInfo.companySlogan || 'Eslogan'}</p>
+                      <p className="text-sm text-gray-400">
+                        {contactInfo.companySlogan || 'Eslogan'}
+                      </p>
                     </div>
                   </div>
                   <p className="text-gray-400 text-sm">

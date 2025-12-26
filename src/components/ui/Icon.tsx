@@ -95,7 +95,9 @@ export default function Icon({ name, size = 20, strokeWidth = 2, className, ...r
   if (!LucideIcon && import.meta.env.DEV) {
     // Útil para detectar nombres inválidos o no importados
     // Ej: name="folder-open" se normaliza a "FolderOpen"
-    console.warn(`[Icon] Unknown icon: "${name}" (normalized: "${normalized}"). Add to iconMap in Icon.tsx`);
+    console.warn(
+      `[Icon] Unknown icon: "${name}" (normalized: "${normalized}"). Add to iconMap in Icon.tsx`
+    );
   }
 
   return <Comp size={size} strokeWidth={strokeWidth} className={className} {...rest} />;

@@ -150,8 +150,15 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
         );
 
         // Log de los primeros 3 productos para debug
-        productList.slice(0, 3).forEach(p => {
-          console.log('  -', p.name, '| category:', p.category, '| subcategory:', (p as any).subcategory);
+        productList.slice(0, 3).forEach((p) => {
+          console.log(
+            '  -',
+            p.name,
+            '| category:',
+            p.category,
+            '| subcategory:',
+            (p as any).subcategory
+          );
         });
 
         setProducts(productList);
@@ -202,7 +209,7 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
 
   // Filtrar y ordenar productos
   const filteredProducts = useMemo(() => {
-    let filtered = products.filter((product) => {
+    const filtered = products.filter((product) => {
       // Filtro por precio
       if (product.basePrice < filters.priceRange[0] || product.basePrice > filters.priceRange[1]) {
         return false;
@@ -281,7 +288,14 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
         <Breadcrumbs category={currentCategory} subcategory={currentSubcategory} />
 
         {/* Encabezado */}
-        <div style={{ marginBottom: '2rem', background: 'white', padding: '2rem', borderRadius: '12px' }}>
+        <div
+          style={{
+            marginBottom: '2rem',
+            background: 'white',
+            padding: '2rem',
+            borderRadius: '12px',
+          }}
+        >
           <h1
             style={{
               fontSize: '2.5rem',
@@ -316,9 +330,7 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
               cursor: 'pointer',
             }}
           >
-            <span>
-              Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
-            </span>
+            <span>Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}</span>
             <svg
               style={{
                 width: '20px',
@@ -330,7 +342,12 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
             </svg>
           </button>
         </div>
@@ -353,7 +370,14 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
               }}
             >
               {/* Header de filtros */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1.5rem',
+                }}
+              >
                 <h3 style={{ fontSize: '1.125rem', fontWeight: '600', margin: 0 }}>Filtros</h3>
                 {activeFiltersCount > 0 && (
                   <button
@@ -373,7 +397,13 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
               </div>
 
               {/* Ordenar por */}
-              <div style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid #e5e7eb' }}>
+              <div
+                style={{
+                  marginBottom: '1.5rem',
+                  paddingBottom: '1.5rem',
+                  borderBottom: '1px solid #e5e7eb',
+                }}
+              >
                 <label
                   style={{
                     display: 'block',
@@ -406,7 +436,13 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
               </div>
 
               {/* Rango de precio */}
-              <div style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid #e5e7eb' }}>
+              <div
+                style={{
+                  marginBottom: '1.5rem',
+                  paddingBottom: '1.5rem',
+                  borderBottom: '1px solid #e5e7eb',
+                }}
+              >
                 <label
                   style={{
                     display: 'block',
@@ -431,14 +467,28 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
                   }
                   style={{ width: '100%' }}
                 />
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: '12px',
+                    color: '#6b7280',
+                    marginTop: '4px',
+                  }}
+                >
                   <span>€{realPriceRange[0]}</span>
                   <span>€{realPriceRange[1]}</span>
                 </div>
               </div>
 
               {/* Filtro de ofertas */}
-              <div style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid #e5e7eb' }}>
+              <div
+                style={{
+                  marginBottom: '1.5rem',
+                  paddingBottom: '1.5rem',
+                  borderBottom: '1px solid #e5e7eb',
+                }}
+              >
                 <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
@@ -495,12 +545,26 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
           {/* Grid de productos */}
           <main className="lg:col-span-3">
             {loading ? (
-              <div style={{ textAlign: 'center', padding: '3rem', background: 'white', borderRadius: '12px' }}>
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '3rem',
+                  background: 'white',
+                  borderRadius: '12px',
+                }}
+              >
                 <div className="loading-spinner"></div>
                 <p style={{ marginTop: '1rem', color: '#6b7280' }}>Cargando productos...</p>
               </div>
             ) : filteredProducts.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '3rem', background: 'white', borderRadius: '12px' }}>
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '3rem',
+                  background: 'white',
+                  borderRadius: '12px',
+                }}
+              >
                 <p style={{ fontSize: '1.25rem', color: '#6b7280', marginBottom: '1rem' }}>
                   No se encontraron productos con estos filtros
                 </p>

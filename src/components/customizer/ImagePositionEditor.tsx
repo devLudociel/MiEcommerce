@@ -38,7 +38,7 @@ interface ImagePositionEditorProps {
 export default function ImagePositionEditor({
   transform,
   onChange,
-  disabled = false
+  disabled = false,
 }: ImagePositionEditorProps) {
   const {
     transform: historyTransform,
@@ -126,9 +126,7 @@ export default function ImagePositionEditor({
       {/* Position X */}
       <div className="space-y-2">
         <label className="flex items-center justify-between text-sm font-medium text-gray-700">
-          <span className="flex items-center gap-2">
-            ↔️ Posición Horizontal
-          </span>
+          <span className="flex items-center gap-2">↔️ Posición Horizontal</span>
           <span className="text-purple-600 font-mono">{Math.round(transform.x)}%</span>
         </label>
         <input
@@ -158,9 +156,7 @@ export default function ImagePositionEditor({
       {/* Position Y */}
       <div className="space-y-2">
         <label className="flex items-center justify-between text-sm font-medium text-gray-700">
-          <span className="flex items-center gap-2">
-            ↕️ Posición Vertical
-          </span>
+          <span className="flex items-center gap-2">↕️ Posición Vertical</span>
           <span className="text-purple-600 font-mono">{Math.round(transform.y)}%</span>
         </label>
         <input
@@ -202,7 +198,9 @@ export default function ImagePositionEditor({
           max="300"
           step="5"
           value={transform.scale * 100}
-          onChange={(e) => handleTransformChange({ ...transform, scale: Number(e.target.value) / 100 })}
+          onChange={(e) =>
+            handleTransformChange({ ...transform, scale: Number(e.target.value) / 100 })
+          }
           disabled={disabled}
           className="w-full h-8 md:h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
           style={{
@@ -235,7 +233,9 @@ export default function ImagePositionEditor({
           min="0"
           max="360"
           value={transform.rotation}
-          onChange={(e) => handleTransformChange({ ...transform, rotation: Number(e.target.value) })}
+          onChange={(e) =>
+            handleTransformChange({ ...transform, rotation: Number(e.target.value) })
+          }
           disabled={disabled}
           className="w-full h-8 md:h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
           style={{
@@ -287,7 +287,8 @@ export default function ImagePositionEditor({
       {/* Tip */}
       <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
         <p className="text-xs text-blue-800">
-          <span className="font-bold">💡 Tip:</span> Ajusta la posición para que tu diseño quede perfectamente centrado en el producto.
+          <span className="font-bold">💡 Tip:</span> Ajusta la posición para que tu diseño quede
+          perfectamente centrado en el producto.
         </p>
       </div>
     </div>

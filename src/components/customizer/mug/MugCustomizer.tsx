@@ -101,7 +101,10 @@ export default function MugCustomizer({ product }: MugCustomizerProps) {
     }
 
     setSelectedElementId(newElement.id);
-    logger.info('[MugCustomizer] Element added', { elementId: newElement.id, type: newElement.type });
+    logger.info('[MugCustomizer] Element added', {
+      elementId: newElement.id,
+      type: newElement.type,
+    });
   };
 
   const handleUpdateElement = (elementId: string, updates: Partial<MugDesignElement>) => {
@@ -167,7 +170,8 @@ export default function MugCustomizer({ product }: MugCustomizerProps) {
         printArea: customization.printArea,
         color: customization.color,
         size: customization.size,
-        elementsCount: (customization.elements?.length || 0) +
+        elementsCount:
+          (customization.elements?.length || 0) +
           (customization.frontElements?.length || 0) +
           (customization.backElements?.length || 0),
         templateId: customization.templateId,

@@ -12,20 +12,24 @@
 import React, { useState } from 'react';
 import { ZoomIn, ZoomOut, Maximize2, RotateCcw } from 'lucide-react';
 import type { ImageTransform } from '../../types/customization';
-import { getPositionsForSide, getContainerTransform, type PresetPosition } from '../../constants/textilePositions';
+import {
+  getPositionsForSide,
+  getContainerTransform,
+  type PresetPosition,
+} from '../../constants/textilePositions';
 
 interface TextileProductPreviewProps {
-  frontImage: string;  // URL de la imagen del producto (vista frontal)
-  backImage: string;   // URL de la imagen del producto (vista trasera)
-  userFrontImage?: string | null;  // Imagen del usuario para el frente
-  userBackImage?: string | null;   // Imagen del usuario para la espalda
-  frontTransform?: ImageTransform;  // Transform para imagen frontal
-  backTransform?: ImageTransform;   // Transform para imagen trasera
+  frontImage: string; // URL de la imagen del producto (vista frontal)
+  backImage: string; // URL de la imagen del producto (vista trasera)
+  userFrontImage?: string | null; // Imagen del usuario para el frente
+  userBackImage?: string | null; // Imagen del usuario para la espalda
+  frontTransform?: ImageTransform; // Transform para imagen frontal
+  backTransform?: ImageTransform; // Transform para imagen trasera
   productName?: string;
   onTransformChange?: (side: 'front' | 'back', transform: ImageTransform) => void;
   printAreaPercentage?: number;
-  activeSide?: 'front' | 'back';  // Vista activa controlada externamente
-  onActiveSideChange?: (side: 'front' | 'back') => void;  // Callback para cambio de vista
+  activeSide?: 'front' | 'back'; // Vista activa controlada externamente
+  onActiveSideChange?: (side: 'front' | 'back') => void; // Callback para cambio de vista
 }
 
 export default function TextileProductPreview({
@@ -63,9 +67,8 @@ export default function TextileProductPreview({
   };
 
   // Get active transform and images based on current side
-  const activeTransform = activeSide === 'front'
-    ? (frontTransform || defaultTransform)
-    : (backTransform || defaultTransform);
+  const activeTransform =
+    activeSide === 'front' ? frontTransform || defaultTransform : backTransform || defaultTransform;
   const activeUserImage = activeSide === 'front' ? userFrontImage : userBackImage;
 
   // Debug logs
@@ -223,7 +226,12 @@ export default function TextileProductPreview({
               draggable={false}
               onLoad={(e) => {
                 console.log('[TextilePreview] ✅ FRONT Base image LOADED:', frontImage);
-                console.log('[TextilePreview] FRONT dimensions:', e.currentTarget.naturalWidth, 'x', e.currentTarget.naturalHeight);
+                console.log(
+                  '[TextilePreview] FRONT dimensions:',
+                  e.currentTarget.naturalWidth,
+                  'x',
+                  e.currentTarget.naturalHeight
+                );
               }}
               onError={(e) => {
                 console.error('[TextilePreview] ❌ FRONT Base image ERROR:', frontImage, e);
@@ -243,7 +251,12 @@ export default function TextileProductPreview({
               draggable={false}
               onLoad={(e) => {
                 console.log('[TextilePreview] ✅ BACK Base image LOADED:', backImage);
-                console.log('[TextilePreview] BACK dimensions:', e.currentTarget.naturalWidth, 'x', e.currentTarget.naturalHeight);
+                console.log(
+                  '[TextilePreview] BACK dimensions:',
+                  e.currentTarget.naturalWidth,
+                  'x',
+                  e.currentTarget.naturalHeight
+                );
               }}
               onError={(e) => {
                 console.error('[TextilePreview] ❌ BACK Base image ERROR:', backImage, e);
@@ -274,25 +287,49 @@ export default function TextileProductPreview({
             {showGuides && (
               <>
                 {/* Front guides */}
-                {activeSide === 'front' && userFrontImage && Math.abs((frontTransform?.x || 50) - 50) < 5 && Math.abs((frontTransform?.y || 50) - 50) < 5 && (
-                  <>
-                    <div className="absolute left-1/2 top-0 bottom-0 w-px bg-green-500/50 pointer-events-none" style={{ zIndex: 40 }} />
-                    <div className="absolute top-1/2 left-0 right-0 h-px bg-green-500/50 pointer-events-none" style={{ zIndex: 40 }} />
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ zIndex: 40 }}>
-                      <div className="w-8 h-8 border-2 border-green-500 rounded-full bg-green-500/20" />
-                    </div>
-                  </>
-                )}
+                {activeSide === 'front' &&
+                  userFrontImage &&
+                  Math.abs((frontTransform?.x || 50) - 50) < 5 &&
+                  Math.abs((frontTransform?.y || 50) - 50) < 5 && (
+                    <>
+                      <div
+                        className="absolute left-1/2 top-0 bottom-0 w-px bg-green-500/50 pointer-events-none"
+                        style={{ zIndex: 40 }}
+                      />
+                      <div
+                        className="absolute top-1/2 left-0 right-0 h-px bg-green-500/50 pointer-events-none"
+                        style={{ zIndex: 40 }}
+                      />
+                      <div
+                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                        style={{ zIndex: 40 }}
+                      >
+                        <div className="w-8 h-8 border-2 border-green-500 rounded-full bg-green-500/20" />
+                      </div>
+                    </>
+                  )}
                 {/* Back guides */}
-                {activeSide === 'back' && userBackImage && Math.abs((backTransform?.x || 50) - 50) < 5 && Math.abs((backTransform?.y || 50) - 50) < 5 && (
-                  <>
-                    <div className="absolute left-1/2 top-0 bottom-0 w-px bg-green-500/50 pointer-events-none" style={{ zIndex: 40 }} />
-                    <div className="absolute top-1/2 left-0 right-0 h-px bg-green-500/50 pointer-events-none" style={{ zIndex: 40 }} />
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ zIndex: 40 }}>
-                      <div className="w-8 h-8 border-2 border-green-500 rounded-full bg-green-500/20" />
-                    </div>
-                  </>
-                )}
+                {activeSide === 'back' &&
+                  userBackImage &&
+                  Math.abs((backTransform?.x || 50) - 50) < 5 &&
+                  Math.abs((backTransform?.y || 50) - 50) < 5 && (
+                    <>
+                      <div
+                        className="absolute left-1/2 top-0 bottom-0 w-px bg-green-500/50 pointer-events-none"
+                        style={{ zIndex: 40 }}
+                      />
+                      <div
+                        className="absolute top-1/2 left-0 right-0 h-px bg-green-500/50 pointer-events-none"
+                        style={{ zIndex: 40 }}
+                      />
+                      <div
+                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                        style={{ zIndex: 40 }}
+                      >
+                        <div className="w-8 h-8 border-2 border-green-500 rounded-full bg-green-500/20" />
+                      </div>
+                    </>
+                  )}
               </>
             )}
 
@@ -360,13 +397,15 @@ export default function TextileProductPreview({
 
             {/* Overlay hint cuando no hay imagen */}
             {!activeUserImage && (
-              <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 5, pointerEvents: 'none', backgroundColor: 'transparent' }}>
+              <div
+                className="absolute inset-0 flex items-center justify-center"
+                style={{ zIndex: 5, pointerEvents: 'none', backgroundColor: 'transparent' }}
+              >
                 <div className="text-center p-6">
-                  <div className="text-5xl mb-3">
-                    {activeSide === 'front' ? '🔵' : '🔴'}
-                  </div>
+                  <div className="text-5xl mb-3">{activeSide === 'front' ? '🔵' : '🔴'}</div>
                   <p className="text-gray-500 font-medium">
-                    Sube tu diseño para la {activeSide === 'front' ? 'parte frontal' : 'parte trasera'}
+                    Sube tu diseño para la{' '}
+                    {activeSide === 'front' ? 'parte frontal' : 'parte trasera'}
                   </p>
                 </div>
               </div>
@@ -387,9 +426,7 @@ export default function TextileProductPreview({
             </div>
             {activeUserImage && (
               <div className="flex items-center gap-2">
-                <span className="font-mono">
-                  {Math.round(activeTransform.scale * 100)}%
-                </span>
+                <span className="font-mono">{Math.round(activeTransform.scale * 100)}%</span>
                 <button
                   onClick={handleResetTransform}
                   className="p-1 hover:bg-gray-200 rounded transition-colors"
@@ -403,17 +440,19 @@ export default function TextileProductPreview({
           </div>
           <div className="flex items-start gap-1 text-xs text-gray-500">
             <div className="w-3 h-3 border border-dashed border-purple-400 mt-0.5" />
-            <span>
-              = Área de impresión. Sube diseños diferentes para frente y espalda.
-            </span>
+            <span>= Área de impresión. Sube diseños diferentes para frente y espalda.</span>
           </div>
 
           {/* Status indicators */}
           <div className="mt-2 flex gap-2 text-xs">
-            <div className={`px-2 py-1 rounded ${userFrontImage ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+            <div
+              className={`px-2 py-1 rounded ${userFrontImage ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}
+            >
               Frente: {userFrontImage ? '✓ Con diseño' : '○ Sin diseño'}
             </div>
-            <div className={`px-2 py-1 rounded ${userBackImage ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'}`}>
+            <div
+              className={`px-2 py-1 rounded ${userBackImage ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'}`}
+            >
               Espalda: {userBackImage ? '✓ Con diseño' : '○ Sin diseño'}
             </div>
           </div>

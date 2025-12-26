@@ -169,7 +169,9 @@ export default function AdminOrdersList() {
       showModal(
         'error',
         'Error al actualizar',
-        error instanceof Error ? error.message : 'No se pudo actualizar el estado del pedido. Por favor, intenta de nuevo.'
+        error instanceof Error
+          ? error.message
+          : 'No se pudo actualizar el estado del pedido. Por favor, intenta de nuevo.'
       );
     }
   };

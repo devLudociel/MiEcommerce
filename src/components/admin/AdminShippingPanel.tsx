@@ -212,9 +212,10 @@ export default function AdminShippingPanel() {
 
     const confirmed = await confirm({
       title: '¿Eliminar zona?',
-      message: zoneMethods.length > 0
-        ? `Esta zona tiene ${zoneMethods.length} método(s) de envío que también se eliminarán.`
-        : 'Esta acción no se puede deshacer.',
+      message:
+        zoneMethods.length > 0
+          ? `Esta zona tiene ${zoneMethods.length} método(s) de envío que también se eliminarán.`
+          : 'Esta acción no se puede deshacer.',
       type: 'danger',
       confirmText: 'Eliminar',
       cancelText: 'Cancelar',
@@ -363,7 +364,8 @@ export default function AdminShippingPanel() {
   const handleInitializeDefaults = async () => {
     const confirmed = await confirm({
       title: '¿Crear configuración predeterminada?',
-      message: 'Se creará la zona "Islas Canarias" con métodos de envío estándar, express y recogida en tienda.',
+      message:
+        'Se creará la zona "Islas Canarias" con métodos de envío estándar, express y recogida en tienda.',
       type: 'info',
       confirmText: 'Crear',
       cancelText: 'Cancelar',
@@ -429,8 +431,8 @@ export default function AdminShippingPanel() {
         const zoneMethods = methods.filter((m) => m.zoneId === matchingZone.id && m.active);
         setTestResult(
           `✅ Código postal válido (Canarias)\n` +
-          `📍 Zona: ${matchingZone.name}\n` +
-          `📦 Métodos: ${zoneMethods.length > 0 ? zoneMethods.map((m) => m.name).join(', ') : 'Ninguno configurado'}`
+            `📍 Zona: ${matchingZone.name}\n` +
+            `📦 Métodos: ${zoneMethods.length > 0 ? zoneMethods.map((m) => m.name).join(', ') : 'Ninguno configurado'}`
         );
       } else {
         setTestResult('⚠️ Código postal de Canarias, pero sin zona configurada');
@@ -521,8 +523,9 @@ export default function AdminShippingPanel() {
           <div>
             <p className="font-medium text-amber-800">Solo envíos a Canarias</p>
             <p className="text-sm text-amber-700 mt-1">
-              Actualmente solo se realizan envíos a las Islas Canarias (códigos postales 35000-35999 y 38000-38999).
-              Los clientes de otras zonas verán un mensaje indicando que no hay envío disponible.
+              Actualmente solo se realizan envíos a las Islas Canarias (códigos postales 35000-35999
+              y 38000-38999). Los clientes de otras zonas verán un mensaje indicando que no hay
+              envío disponible.
             </p>
           </div>
         </div>
@@ -558,10 +561,14 @@ export default function AdminShippingPanel() {
                   className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      zone.active ? 'bg-cyan-100' : 'bg-gray-100'
-                    }`}>
-                      <MapPin className={`w-5 h-5 ${zone.active ? 'text-cyan-600' : 'text-gray-400'}`} />
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        zone.active ? 'bg-cyan-100' : 'bg-gray-100'
+                      }`}
+                    >
+                      <MapPin
+                        className={`w-5 h-5 ${zone.active ? 'text-cyan-600' : 'text-gray-400'}`}
+                      />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -609,9 +616,14 @@ export default function AdminShippingPanel() {
                   <div className="border-t border-gray-100 p-4 bg-gray-50">
                     {/* Zone Info */}
                     <div className="mb-4 text-sm text-gray-600">
-                      <p><strong>Códigos postales:</strong> {zone.postalCodes?.join(', ') || 'No definidos'}</p>
+                      <p>
+                        <strong>Códigos postales:</strong>{' '}
+                        {zone.postalCodes?.join(', ') || 'No definidos'}
+                      </p>
                       {zone.provinces && zone.provinces.length > 0 && (
-                        <p><strong>Provincias:</strong> {zone.provinces.join(', ')}</p>
+                        <p>
+                          <strong>Provincias:</strong> {zone.provinces.join(', ')}
+                        </p>
                       )}
                     </div>
 
@@ -653,23 +665,28 @@ export default function AdminShippingPanel() {
                                     )}
                                   </div>
                                   {method.description && (
-                                    <p className="text-sm text-gray-500 mb-2">{method.description}</p>
+                                    <p className="text-sm text-gray-500 mb-2">
+                                      {method.description}
+                                    </p>
                                   )}
                                   <div className="flex flex-wrap gap-3 text-sm">
                                     <span className="inline-flex items-center gap-1 text-gray-600">
                                       <Euro className="w-3 h-3" />
-                                      {method.basePrice === 0 ? 'Gratis' : `${method.basePrice.toFixed(2)}€`}
+                                      {method.basePrice === 0
+                                        ? 'Gratis'
+                                        : `${method.basePrice.toFixed(2)}€`}
                                     </span>
                                     <span className="inline-flex items-center gap-1 text-gray-600">
                                       <Clock className="w-3 h-3" />
                                       {method.estimatedDays} días
                                     </span>
-                                    {method.freeShippingThreshold && method.freeShippingThreshold > 0 && (
-                                      <span className="inline-flex items-center gap-1 text-green-600">
-                                        <Gift className="w-3 h-3" />
-                                        Gratis desde {method.freeShippingThreshold}€
-                                      </span>
-                                    )}
+                                    {method.freeShippingThreshold &&
+                                      method.freeShippingThreshold > 0 && (
+                                        <span className="inline-flex items-center gap-1 text-green-600">
+                                          <Gift className="w-3 h-3" />
+                                          Gratis desde {method.freeShippingThreshold}€
+                                        </span>
+                                      )}
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-1">
@@ -728,9 +745,7 @@ export default function AdminShippingPanel() {
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
                 <input
                   type="text"
                   value={zoneForm.name}
@@ -740,9 +755,7 @@ export default function AdminShippingPanel() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Descripción
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                 <input
                   type="text"
                   value={zoneForm.description}
@@ -767,9 +780,7 @@ export default function AdminShippingPanel() {
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Provincias
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Provincias</label>
                 <input
                   type="text"
                   value={zoneForm.provinces}
@@ -826,9 +837,7 @@ export default function AdminShippingPanel() {
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
                 <input
                   type="text"
                   value={methodForm.name}
@@ -838,9 +847,7 @@ export default function AdminShippingPanel() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Descripción
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                 <input
                   type="text"
                   value={methodForm.description}
@@ -859,7 +866,9 @@ export default function AdminShippingPanel() {
                     step="0.01"
                     min="0"
                     value={methodForm.basePrice}
-                    onChange={(e) => setMethodForm({ ...methodForm, basePrice: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setMethodForm({ ...methodForm, basePrice: parseFloat(e.target.value) || 0 })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                   />
                 </div>
@@ -872,7 +881,9 @@ export default function AdminShippingPanel() {
                     step="0.01"
                     min="0"
                     value={methodForm.pricePerKg}
-                    onChange={(e) => setMethodForm({ ...methodForm, pricePerKg: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setMethodForm({ ...methodForm, pricePerKg: parseFloat(e.target.value) || 0 })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                   />
                 </div>
@@ -885,7 +896,9 @@ export default function AdminShippingPanel() {
                   <input
                     type="text"
                     value={methodForm.estimatedDays}
-                    onChange={(e) => setMethodForm({ ...methodForm, estimatedDays: e.target.value })}
+                    onChange={(e) =>
+                      setMethodForm({ ...methodForm, estimatedDays: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                     placeholder="Ej: 3-5"
                   />
@@ -898,7 +911,9 @@ export default function AdminShippingPanel() {
                     type="number"
                     min="0"
                     value={methodForm.maxWeight}
-                    onChange={(e) => setMethodForm({ ...methodForm, maxWeight: parseInt(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setMethodForm({ ...methodForm, maxWeight: parseInt(e.target.value) || 0 })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                   />
                 </div>
@@ -912,7 +927,12 @@ export default function AdminShippingPanel() {
                   step="0.01"
                   min="0"
                   value={methodForm.freeShippingThreshold}
-                  onChange={(e) => setMethodForm({ ...methodForm, freeShippingThreshold: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setMethodForm({
+                      ...methodForm,
+                      freeShippingThreshold: parseFloat(e.target.value) || 0,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                   placeholder="Dejar en 0 para no aplicar"
                 />

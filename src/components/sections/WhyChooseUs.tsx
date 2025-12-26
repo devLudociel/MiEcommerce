@@ -4,7 +4,8 @@ export default function WhyChooseUs() {
     {
       icon: '⚡',
       title: 'Entrega Rápida',
-      description: 'Recibe tus productos personalizados en 3-5 días laborables. Envíos express disponibles.',
+      description:
+        'Recibe tus productos personalizados en 3-5 días laborables. Envíos express disponibles.',
       color: 'from-yellow-400 to-orange-500',
     },
     {
@@ -16,25 +17,29 @@ export default function WhyChooseUs() {
     {
       icon: '💯',
       title: 'Garantía 100%',
-      description: '30 días de garantía en todos nuestros productos. Si no estás satisfecho, te devolvemos tu dinero.',
+      description:
+        '30 días de garantía en todos nuestros productos. Si no estás satisfecho, te devolvemos tu dinero.',
       color: 'from-green-400 to-cyan-500',
     },
     {
       icon: '🎨',
       title: 'Diseño Personalizado',
-      description: 'Crea diseños únicos con nuestro editor online o envíanos tu idea y la hacemos realidad.',
+      description:
+        'Crea diseños únicos con nuestro editor online o envíanos tu idea y la hacemos realidad.',
       color: 'from-blue-400 to-indigo-500',
     },
     {
       icon: '💰',
       title: 'Mejores Precios',
-      description: 'Precios competitivos sin comprometer la calidad. Descuentos en pedidos grandes.',
+      description:
+        'Precios competitivos sin comprometer la calidad. Descuentos en pedidos grandes.',
       color: 'from-red-400 to-pink-500',
     },
     {
       icon: '🏆',
       title: 'Expertos en Canarias',
-      description: 'Más de 10 años de experiencia en personalización. Servicio local con alcance regional.',
+      description:
+        'Más de 10 años de experiencia en personalización. Servicio local con alcance regional.',
       color: 'from-cyan-400 to-blue-500',
     },
   ];

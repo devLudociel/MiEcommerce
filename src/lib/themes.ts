@@ -26,11 +26,11 @@ import { logger } from './logger';
  * Ej: "Mickey", "Minnie", "Frozen" dentro de Disney > Cajas
  */
 export interface ThemeVariant {
-  id: string;              // ID único de la variante
-  name: string;            // Nombre de la variante (ej: "Mickey", "Minnie")
-  imageUrl: string;        // Miniatura para mostrar en el selector
-  previewImage: string;    // Imagen grande del producto con el diseño aplicado
-  order?: number;          // Orden de visualización
+  id: string; // ID único de la variante
+  name: string; // Nombre de la variante (ej: "Mickey", "Minnie")
+  imageUrl: string; // Miniatura para mostrar en el selector
+  previewImage: string; // Imagen grande del producto con el diseño aplicado
+  order?: number; // Orden de visualización
 }
 
 /**
@@ -38,12 +38,12 @@ export interface ThemeVariant {
  * Ahora soporta MÚLTIPLES variantes por categoría
  */
 export interface ThemeCategoryImage {
-  categoryId: string;      // ID de la categoría de producto (ej: "tazas", "cajas")
-  categoryName: string;    // Nombre legible (ej: "Tazas", "Cajas de Chuches")
+  categoryId: string; // ID de la categoría de producto (ej: "tazas", "cajas")
+  categoryName: string; // Nombre legible (ej: "Tazas", "Cajas de Chuches")
   variants: ThemeVariant[]; // Múltiples variantes para esta categoría
   // Campos legacy para compatibilidad (se usan si variants está vacío)
-  imageUrl?: string;       // Miniatura para mostrar en el selector
-  previewImage?: string;   // Imagen grande del producto con el diseño aplicado
+  imageUrl?: string; // Miniatura para mostrar en el selector
+  previewImage?: string; // Imagen grande del producto con el diseño aplicado
 }
 
 /**
@@ -51,13 +51,13 @@ export interface ThemeCategoryImage {
  */
 export interface Theme {
   id: string;
-  name: string;            // Nombre de la temática (ej: "Princesas", "Dinosaurios")
-  slug: string;            // Slug URL-friendly
-  description?: string;    // Descripción opcional
-  badge?: string;          // Badge opcional (ej: "Popular", "Nuevo")
-  priceModifier?: number;  // Precio extra por usar esta temática
-  order?: number;          // Orden de visualización
-  active: boolean;         // Si está activa o no
+  name: string; // Nombre de la temática (ej: "Princesas", "Dinosaurios")
+  slug: string; // Slug URL-friendly
+  description?: string; // Descripción opcional
+  badge?: string; // Badge opcional (ej: "Popular", "Nuevo")
+  priceModifier?: number; // Precio extra por usar esta temática
+  order?: number; // Orden de visualización
+  active: boolean; // Si está activa o no
   categoryImages: ThemeCategoryImage[]; // Imágenes por categoría de producto
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -93,7 +93,12 @@ export async function createTheme(data: CreateThemeInput): Promise<Theme> {
   const theme: Theme = {
     id: docRef.id,
     ...data,
-    slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+    slug:
+      data.slug ||
+      data.name
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, ''),
     createdAt: now,
     updatedAt: now,
   };
@@ -109,20 +114,16 @@ export async function createTheme(data: CreateThemeInput): Promise<Theme> {
 export async function getAllThemes(): Promise<Theme[]> {
   const q = query(themesCollection, orderBy('order', 'asc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => doc.data() as Theme);
+  return snapshot.docs.map((doc) => doc.data() as Theme);
 }
 
 /**
  * Obtener solo las temáticas activas
  */
 export async function getActiveThemes(): Promise<Theme[]> {
-  const q = query(
-    themesCollection,
-    where('active', '==', true),
-    orderBy('order', 'asc')
-  );
+  const q = query(themesCollection, where('active', '==', true), orderBy('order', 'asc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => doc.data() as Theme);
+  return snapshot.docs.map((doc) => doc.data() as Theme);
 }
 
 /**
@@ -149,13 +150,16 @@ export async function getThemesForCategory(categoryId: string): Promise<Theme[]>
   // DEBUG: Log all themes and their category images
   console.log(`[getThemesForCategory] 🔍 Looking for categoryId: "${categoryId}"`);
   console.log(`[getThemesForCategory] All active themes (${themes.length}):`);
-  themes.forEach(t => {
-    console.log(`  - "${t.name}" has categoryImages with IDs:`, t.categoryImages?.map(ci => ci.categoryId));
+  themes.forEach((t) => {
+    console.log(
+      `  - "${t.name}" has categoryImages with IDs:`,
+      t.categoryImages?.map((ci) => ci.categoryId)
+    );
   });
 
   // Filtramos las que tienen imagen para esta categoría
-  const filtered = themes.filter(theme =>
-    theme.categoryImages?.some(ci => ci.categoryId === categoryId)
+  const filtered = themes.filter((theme) =>
+    theme.categoryImages?.some((ci) => ci.categoryId === categoryId)
   );
 
   console.log(`[getThemesForCategory] ✅ Filtered themes for "${categoryId}":`, filtered.length);
@@ -189,9 +193,8 @@ export async function setThemeCategoryImage(
   }
 
   // Buscar si ya existe una imagen para esta categoría
-  const existingIndex = theme.categoryImages?.findIndex(
-    ci => ci.categoryId === categoryImage.categoryId
-  ) ?? -1;
+  const existingIndex =
+    theme.categoryImages?.findIndex((ci) => ci.categoryId === categoryImage.categoryId) ?? -1;
 
   let updatedImages: ThemeCategoryImage[];
 
@@ -223,9 +226,7 @@ export async function addThemeVariant(
   }
 
   // Buscar si ya existe la categoría
-  const existingIndex = theme.categoryImages?.findIndex(
-    ci => ci.categoryId === categoryId
-  ) ?? -1;
+  const existingIndex = theme.categoryImages?.findIndex((ci) => ci.categoryId === categoryId) ?? -1;
 
   const newVariant: ThemeVariant = {
     id: `${categoryId}_${Date.now()}`,
@@ -249,11 +250,14 @@ export async function addThemeVariant(
     };
   } else {
     // Crear nueva categoría con la variante
-    updatedImages = [...(theme.categoryImages || []), {
-      categoryId,
-      categoryName,
-      variants: [newVariant],
-    }];
+    updatedImages = [
+      ...(theme.categoryImages || []),
+      {
+        categoryId,
+        categoryName,
+        variants: [newVariant],
+      },
+    ];
   }
 
   await updateTheme(themeId, { categoryImages: updatedImages });
@@ -275,9 +279,7 @@ export async function updateThemeVariant(
     throw new Error(`Theme not found: ${themeId}`);
   }
 
-  const categoryIndex = theme.categoryImages?.findIndex(
-    ci => ci.categoryId === categoryId
-  ) ?? -1;
+  const categoryIndex = theme.categoryImages?.findIndex((ci) => ci.categoryId === categoryId) ?? -1;
 
   if (categoryIndex < 0) {
     throw new Error(`Category not found: ${categoryId}`);
@@ -285,7 +287,7 @@ export async function updateThemeVariant(
 
   const updatedImages = [...theme.categoryImages];
   const category = updatedImages[categoryIndex];
-  const variantIndex = category.variants?.findIndex(v => v.id === variantId) ?? -1;
+  const variantIndex = category.variants?.findIndex((v) => v.id === variantId) ?? -1;
 
   if (variantIndex < 0) {
     throw new Error(`Variant not found: ${variantId}`);
@@ -313,9 +315,7 @@ export async function removeThemeVariant(
     throw new Error(`Theme not found: ${themeId}`);
   }
 
-  const categoryIndex = theme.categoryImages?.findIndex(
-    ci => ci.categoryId === categoryId
-  ) ?? -1;
+  const categoryIndex = theme.categoryImages?.findIndex((ci) => ci.categoryId === categoryId) ?? -1;
 
   if (categoryIndex < 0) {
     throw new Error(`Category not found: ${categoryId}`);
@@ -323,7 +323,7 @@ export async function removeThemeVariant(
 
   const updatedImages = [...theme.categoryImages];
   const category = updatedImages[categoryIndex];
-  const newVariants = category.variants?.filter(v => v.id !== variantId) || [];
+  const newVariants = category.variants?.filter((v) => v.id !== variantId) || [];
 
   if (newVariants.length === 0) {
     // Si no quedan variantes, eliminar la categoría completa
@@ -342,18 +342,13 @@ export async function removeThemeVariant(
 /**
  * Eliminar imagen de una categoría en una temática (elimina todas las variantes)
  */
-export async function removeThemeCategoryImage(
-  themeId: string,
-  categoryId: string
-): Promise<void> {
+export async function removeThemeCategoryImage(themeId: string, categoryId: string): Promise<void> {
   const theme = await getThemeById(themeId);
   if (!theme) {
     throw new Error(`Theme not found: ${themeId}`);
   }
 
-  const updatedImages = theme.categoryImages?.filter(
-    ci => ci.categoryId !== categoryId
-  ) || [];
+  const updatedImages = theme.categoryImages?.filter((ci) => ci.categoryId !== categoryId) || [];
 
   await updateTheme(themeId, { categoryImages: updatedImages });
   logger.info('[Themes] Category image removed from theme:', themeId, categoryId);
@@ -362,11 +357,8 @@ export async function removeThemeCategoryImage(
 /**
  * Obtener todas las variantes de una temática para una categoría específica
  */
-export function getThemeVariantsForCategory(
-  theme: Theme,
-  categoryId: string
-): ThemeVariant[] {
-  const categoryImage = theme.categoryImages?.find(ci => ci.categoryId === categoryId);
+export function getThemeVariantsForCategory(theme: Theme, categoryId: string): ThemeVariant[] {
+  const categoryImage = theme.categoryImages?.find((ci) => ci.categoryId === categoryId);
   if (!categoryImage) return [];
 
   // Si tiene variantes, devolverlas
@@ -376,12 +368,14 @@ export function getThemeVariantsForCategory(
 
   // Compatibilidad legacy: si tiene imageUrl/previewImage sin variants
   if (categoryImage.imageUrl && categoryImage.previewImage) {
-    return [{
-      id: `${categoryId}_legacy`,
-      name: theme.name,
-      imageUrl: categoryImage.imageUrl,
-      previewImage: categoryImage.previewImage,
-    }];
+    return [
+      {
+        id: `${categoryId}_legacy`,
+        name: theme.name,
+        imageUrl: categoryImage.imageUrl,
+        previewImage: categoryImage.previewImage,
+      },
+    ];
   }
 
   return [];
@@ -400,9 +394,7 @@ export async function deleteTheme(id: string): Promise<void> {
  * Reordenar temáticas
  */
 export async function reorderThemes(themeIds: string[]): Promise<void> {
-  const updates = themeIds.map((id, index) =>
-    updateTheme(id, { order: index })
-  );
+  const updates = themeIds.map((id, index) => updateTheme(id, { order: index }));
 
   await Promise.all(updates);
   logger.info('[Themes] Themes reordered');

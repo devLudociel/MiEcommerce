@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
 import { db, batchGetProductReviewStats } from '../../lib/firebase';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
-import { collection, query, where, limit, getDocs, type QueryDocumentSnapshot, type DocumentData } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  where,
+  limit,
+  getDocs,
+  type QueryDocumentSnapshot,
+  type DocumentData,
+} from 'firebase/firestore';
 import { ProductGridSkeleton } from '../ui/SkeletonLoader';
 import ErrorMessage from '../errors/ErrorMessage';
 import { logger } from '../../lib/logger';
@@ -96,16 +104,24 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
         setError(null);
         logger.debug('[ProductGrid] Loading physical products only', { maxItems });
 
-        const q = query(collection(db, 'products'), where('active', '==', true), limit(maxItems * 2)); // Load more to compensate for filtering
+        const q = query(
+          collection(db, 'products'),
+          where('active', '==', true),
+          limit(maxItems * 2)
+        ); // Load more to compensate for filtering
         const snap = await getDocs(q);
 
         // Filter out digital products
-        const physicalDocs = snap.docs.filter(d => {
-          const data = d.data();
-          return !data.isDigital; // Exclude digital products
-        }).slice(0, maxItems); // Limit to maxItems after filtering
+        const physicalDocs = snap.docs
+          .filter((d) => {
+            const data = d.data();
+            return !data.isDigital; // Exclude digital products
+          })
+          .slice(0, maxItems); // Limit to maxItems after filtering
 
-        logger.info(`[ProductGrid] Filtered ${physicalDocs.length} physical products from ${snap.docs.length} total`);
+        logger.info(
+          `[ProductGrid] Filtered ${physicalDocs.length} physical products from ${snap.docs.length} total`
+        );
 
         // PERFORMANCE: Batch get all review stats in a single query instead of N queries
         const productIds = physicalDocs.map((d) => d.id);

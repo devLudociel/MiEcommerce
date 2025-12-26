@@ -194,7 +194,10 @@ export function withRateLimit(
 /**
  * Get current rate limit stats for a request (for debugging)
  */
-export function getRateLimitStats(request: Request, namespace: string = 'default'): {
+export function getRateLimitStats(
+  request: Request,
+  namespace: string = 'default'
+): {
   identifier: string;
   entry?: RateLimitEntry;
 } {

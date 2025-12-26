@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ThreeDMugPreview from './ThreeDMugPreview';
 
 interface ProductCustomizerProps {
@@ -28,26 +28,29 @@ const PRODUCT_COLORS = [
 
 // Dimensiones del área de impresión (en mm convertido a px a 96 DPI)
 const PRINT_AREA_MM = {
-  width: 210,  // mm
-  height: 95   // mm
+  width: 210, // mm
+  height: 95, // mm
 };
 
 // Convertir mm a px (96 DPI = 3.7795 px/mm aprox)
 const MM_TO_PX = 3.7795;
 const PRINT_AREA_PX = {
-  width: Math.round(PRINT_AREA_MM.width * MM_TO_PX),   // ~794px
-  height: Math.round(PRINT_AREA_MM.height * MM_TO_PX)  // ~359px
+  width: Math.round(PRINT_AREA_MM.width * MM_TO_PX), // ~794px
+  height: Math.round(PRINT_AREA_MM.height * MM_TO_PX), // ~359px
 };
 
 type HandleType = 'none' | 'move' | 'nw' | 'ne' | 'sw' | 'se' | 'rotate';
 
 export default function ProductCustomizer({
   productType = 'mug',
-  onSave
+  onSave: _onSave,
 }: ProductCustomizerProps) {
   const [productColor, setProductColor] = useState('#ffffff');
   const [designImage, setDesignImage] = useState<string | null>(null);
-  const [designPosition, setDesignPosition] = useState({ x: PRINT_AREA_PX.width / 2, y: PRINT_AREA_PX.height / 2 });
+  const [designPosition, setDesignPosition] = useState({
+    x: PRINT_AREA_PX.width / 2,
+    y: PRINT_AREA_PX.height / 2,
+  });
   const [designSize, setDesignSize] = useState({ width: 200, height: 200 });
   const [designRotation, setDesignRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -55,12 +58,19 @@ export default function ProductCustomizer({
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const loadedImageRef = useRef<HTMLImageElement | null>(null);
-  const dragStartRef = useRef({ x: 0, y: 0, designX: 0, designY: 0, startSize: { width: 0, height: 0 }, startRotation: 0 });
+  const dragStartRef = useRef({
+    x: 0,
+    y: 0,
+    designX: 0,
+    designY: 0,
+    startSize: { width: 0, height: 0 },
+    startRotation: 0,
+  });
   const textureCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [textureUrl, setTextureUrl] = useState<string | undefined>(undefined);
 
   // Renderizar canvas 2D
-  const renderCanvas = () => {
+  const renderCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -130,13 +140,7 @@ export default function ProductCustomizer({
       const drawWidth = designSize.width;
       const drawHeight = designSize.height;
 
-      ctx.drawImage(
-        loadedImageRef.current,
-        -drawWidth / 2,
-        -drawHeight / 2,
-        drawWidth,
-        drawHeight
-      );
+      ctx.drawImage(loadedImageRef.current, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
 
       // Borde de selección
       ctx.strokeStyle = '#10b981';
@@ -155,7 +159,7 @@ export default function ProductCustomizer({
         [-drawWidth / 2, -drawHeight / 2],
         [drawWidth / 2, -drawHeight / 2],
         [drawWidth / 2, drawHeight / 2],
-        [-drawWidth / 2, drawHeight / 2]
+        [-drawWidth / 2, drawHeight / 2],
       ].forEach(([x, y]) => {
         ctx.fillRect(x - handleSize / 2, y - handleSize / 2, handleSize, handleSize);
         ctx.strokeRect(x - handleSize / 2, y - handleSize / 2, handleSize, handleSize);
@@ -178,12 +182,12 @@ export default function ProductCustomizer({
 
       ctx.restore();
     }
-  };
+  }, [designImage, designPosition, designRotation, designSize]);
 
   // Renderizar cuando cambien las propiedades
   useEffect(() => {
     renderCanvas();
-  }, [designImage, designPosition, designSize, designRotation]);
+  }, [renderCanvas]);
 
   // Generar textura para el modelo 3D
   useEffect(() => {
@@ -235,7 +239,7 @@ export default function ProductCustomizer({
     // Convertir coordenadas del canvas al sistema local de la imagen (considerando rotación)
     const dx = canvasX - designPosition.x;
     const dy = canvasY - designPosition.y;
-    const angle = -designRotation * Math.PI / 180;
+    const angle = (-designRotation * Math.PI) / 180;
     const localX = dx * Math.cos(angle) - dy * Math.sin(angle);
     const localY = dx * Math.sin(angle) + dy * Math.cos(angle);
 
@@ -243,7 +247,10 @@ export default function ProductCustomizer({
     const halfHeight = designSize.height / 2;
 
     // Handle de rotación (arriba del centro)
-    if (Math.abs(localX) < handleSize && Math.abs(localY + halfHeight + rotateHandleDistance) < handleSize) {
+    if (
+      Math.abs(localX) < handleSize &&
+      Math.abs(localY + halfHeight + rotateHandleDistance) < handleSize
+    ) {
       return 'rotate';
     }
 
@@ -317,7 +324,7 @@ export default function ProductCustomizer({
         designX: designPosition.x,
         designY: designPosition.y,
         startSize: { ...designSize },
-        startRotation: designRotation
+        startRotation: designRotation,
       };
       setIsDragging(true);
     }
@@ -337,13 +344,13 @@ export default function ProductCustomizer({
     if (!isDragging && loadedImageRef.current) {
       const handle = getHandleAtPosition(x, y);
       const cursors: Record<HandleType, string> = {
-        'none': 'default',
-        'move': 'grab',
-        'nw': 'nwse-resize',
-        'ne': 'nesw-resize',
-        'sw': 'nesw-resize',
-        'se': 'nwse-resize',
-        'rotate': 'crosshair'
+        none: 'default',
+        move: 'grab',
+        nw: 'nwse-resize',
+        ne: 'nesw-resize',
+        sw: 'nesw-resize',
+        se: 'nwse-resize',
+        rotate: 'crosshair',
       };
       canvas.style.cursor = cursors[handle];
     }
@@ -357,19 +364,22 @@ export default function ProductCustomizer({
       // Mover
       setDesignPosition({
         x: dragStartRef.current.designX + dx,
-        y: dragStartRef.current.designY + dy
+        y: dragStartRef.current.designY + dy,
       });
     } else if (activeHandle === 'rotate') {
       // Rotar
       const centerX = designPosition.x;
       const centerY = designPosition.y;
-      const startAngle = Math.atan2(dragStartRef.current.y - centerY, dragStartRef.current.x - centerX);
+      const startAngle = Math.atan2(
+        dragStartRef.current.y - centerY,
+        dragStartRef.current.x - centerX
+      );
       const currentAngle = Math.atan2(y - centerY, x - centerX);
-      const deltaAngle = (currentAngle - startAngle) * 180 / Math.PI;
+      const deltaAngle = ((currentAngle - startAngle) * 180) / Math.PI;
       setDesignRotation(dragStartRef.current.startRotation + deltaAngle);
     } else if (activeHandle !== 'none') {
       // Resize desde esquinas
-      const angle = designRotation * Math.PI / 180;
+      const angle = (designRotation * Math.PI) / 180;
       const rotatedDx = dx * Math.cos(angle) + dy * Math.sin(angle);
       const rotatedDy = -dx * Math.sin(angle) + dy * Math.cos(angle);
 
@@ -408,58 +418,68 @@ export default function ProductCustomizer({
   };
 
   const rotateDesign = (degrees: number) => {
-    setDesignRotation(prev => prev + degrees);
+    setDesignRotation((prev) => prev + degrees);
   };
 
   const scaleDesign = (factor: number) => {
-    setDesignSize(prev => ({
+    setDesignSize((prev) => ({
       width: Math.max(50, Math.min(PRINT_AREA_PX.width, prev.width * factor)),
-      height: Math.max(50, Math.min(PRINT_AREA_PX.height, prev.height * factor))
+      height: Math.max(50, Math.min(PRINT_AREA_PX.height, prev.height * factor)),
     }));
   };
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: '24px',
-      padding: '24px',
-      background: '#f9fafb',
-      minHeight: '100vh'
-    }}>
-      {/* Panel Izquierdo - Vista 3D */}
-      <div style={{
-        background: '#ffffff',
-        borderRadius: '16px',
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '24px',
         padding: '24px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-      }}>
-        <h2 style={{
-          fontSize: '24px',
-          fontWeight: '700',
-          color: '#111827',
-          marginBottom: '24px'
-        }}>
+        background: '#f9fafb',
+        minHeight: '100vh',
+      }}
+    >
+      {/* Panel Izquierdo - Vista 3D */}
+      <div
+        style={{
+          background: '#ffffff',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        }}
+      >
+        <h2
+          style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: '#111827',
+            marginBottom: '24px',
+          }}
+        >
           Vista 3D
         </h2>
 
         {/* Selector de color */}
         <div style={{ marginBottom: '24px' }}>
-          <label style={{
-            display: 'block',
-            fontSize: '14px',
-            fontWeight: '600',
-            color: '#374151',
-            marginBottom: '12px'
-          }}>
+          <div
+            style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#374151',
+              marginBottom: '12px',
+            }}
+          >
             Color del Producto
-          </label>
+          </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '8px'
-          }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '8px',
+            }}
+          >
             {PRODUCT_COLORS.map((color) => (
               <button
                 key={color.value}
@@ -472,7 +492,8 @@ export default function ProductCustomizer({
                   background: color.value,
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  boxShadow: productColor === color.value ? '0 4px 12px rgba(16,185,129,0.3)' : 'none'
+                  boxShadow:
+                    productColor === color.value ? '0 4px 12px rgba(16,185,129,0.3)' : 'none',
                 }}
                 title={color.name}
               />
@@ -493,39 +514,46 @@ export default function ProductCustomizer({
       </div>
 
       {/* Panel Derecho - Editor 2D */}
-      <div style={{
-        background: '#ffffff',
-        borderRadius: '16px',
-        padding: '24px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-      }}>
-        <h2 style={{
-          fontSize: '24px',
-          fontWeight: '700',
-          color: '#111827',
-          marginBottom: '24px'
-        }}>
+      <div
+        style={{
+          background: '#ffffff',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        }}
+      >
+        <h2
+          style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: '#111827',
+            marginBottom: '24px',
+          }}
+        >
           Editor de Diseño
         </h2>
 
         {/* Upload de imagen */}
         <div style={{ marginBottom: '24px' }}>
-          <label style={{
-            display: 'block',
-            padding: '16px',
-            background: '#3b82f6',
-            color: '#ffffff',
-            borderRadius: '8px',
-            textAlign: 'center',
-            cursor: 'pointer',
-            fontWeight: '600',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
-          onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
+          <label
+            htmlFor="product-customizer-image-upload"
+            style={{
+              display: 'block',
+              padding: '16px',
+              background: '#3b82f6',
+              color: '#ffffff',
+              borderRadius: '8px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              fontWeight: '600',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#2563eb')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#3b82f6')}
           >
             📤 Subir Imagen
             <input
+              id="product-customizer-image-upload"
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
@@ -536,15 +564,17 @@ export default function ProductCustomizer({
 
         {/* Área de edición 2D */}
         <div style={{ marginBottom: '24px' }}>
-          <label style={{
-            display: 'block',
-            fontSize: '14px',
-            fontWeight: '600',
-            color: '#374151',
-            marginBottom: '12px'
-          }}>
+          <div
+            style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#374151',
+              marginBottom: '12px',
+            }}
+          >
             Área de Impresión (210mm × 95mm)
-          </label>
+          </div>
 
           <canvas
             ref={canvasRef}
@@ -556,7 +586,7 @@ export default function ProductCustomizer({
               border: '2px solid #d1d5db',
               borderRadius: '8px',
               cursor: isDragging ? 'grabbing' : 'default',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
             }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -567,41 +597,61 @@ export default function ProductCustomizer({
 
         {/* Controles */}
         {designImage && (
-          <div style={{
-            background: '#f9fafb',
-            borderRadius: '8px',
-            padding: '16px'
-          }}>
-            <h3 style={{
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '12px'
-            }}>
+          <div
+            style={{
+              background: '#f9fafb',
+              borderRadius: '8px',
+              padding: '16px',
+            }}
+          >
+            <h3
+              style={{
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '12px',
+              }}
+            >
               Controles
             </h3>
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '8px'
-            }}>
-              <button onClick={centerDesign} style={buttonStyle}>📍 Centrar</button>
-              <button onClick={() => rotateDesign(90)} style={buttonStyle}>↻ Rotar 90°</button>
-              <button onClick={() => scaleDesign(1.1)} style={buttonStyle}>🔍+ Ampliar</button>
-              <button onClick={() => scaleDesign(0.9)} style={buttonStyle}>🔍− Reducir</button>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '8px',
+              }}
+            >
+              <button onClick={centerDesign} style={buttonStyle}>
+                📍 Centrar
+              </button>
+              <button onClick={() => rotateDesign(90)} style={buttonStyle}>
+                ↻ Rotar 90°
+              </button>
+              <button onClick={() => scaleDesign(1.1)} style={buttonStyle}>
+                🔍+ Ampliar
+              </button>
+              <button onClick={() => scaleDesign(0.9)} style={buttonStyle}>
+                🔍− Reducir
+              </button>
             </div>
 
-            <div style={{
-              marginTop: '12px',
-              padding: '12px',
-              background: '#e0f2fe',
-              borderRadius: '6px',
-              fontSize: '12px',
-              color: '#075985'
-            }}>
-              <strong>Posición:</strong> X: {Math.round(designPosition.x)}px, Y: {Math.round(designPosition.y)}px<br/>
-              <strong>Tamaño:</strong> {Math.round(designSize.width)} × {Math.round(designSize.height)}px<br/>
+            <div
+              style={{
+                marginTop: '12px',
+                padding: '12px',
+                background: '#e0f2fe',
+                borderRadius: '6px',
+                fontSize: '12px',
+                color: '#075985',
+              }}
+            >
+              <strong>Posición:</strong> X: {Math.round(designPosition.x)}px, Y:{' '}
+              {Math.round(designPosition.y)}px
+              <br />
+              <strong>Tamaño:</strong> {Math.round(designSize.width)} ×{' '}
+              {Math.round(designSize.height)}px
+              <br />
               <strong>Rotación:</strong> {Math.round(designRotation)}°
             </div>
           </div>
@@ -620,5 +670,5 @@ const buttonStyle: React.CSSProperties = {
   fontSize: '13px',
   fontWeight: '500',
   color: '#374151',
-  transition: 'all 0.2s'
+  transition: 'all 0.2s',
 };

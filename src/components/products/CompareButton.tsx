@@ -78,15 +78,9 @@ export default function CompareButton({
         title={isComparing ? 'Quitar del comparador' : 'Agregar al comparador'}
         disabled={isFull && !isComparing}
       >
-        {isComparing ? (
-          <Check className="w-5 h-5" />
-        ) : (
-          <GitCompareArrows className="w-5 h-5" />
-        )}
+        {isComparing ? <Check className="w-5 h-5" /> : <GitCompareArrows className="w-5 h-5" />}
         {showLabel && (
-          <span className="text-sm font-medium">
-            {isComparing ? 'Comparando' : 'Comparar'}
-          </span>
+          <span className="text-sm font-medium">{isComparing ? 'Comparando' : 'Comparar'}</span>
         )}
       </button>
     );

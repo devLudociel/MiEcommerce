@@ -46,8 +46,31 @@ const firebaseConfig = {
   measurementId: import.meta.env.PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+const isTestEnv = Boolean(import.meta.env.VITEST);
+const testFirebaseConfig = {
+  apiKey: 'AIzaSyDUMMYTESTKEY00000000000000000000',
+  authDomain: 'demo-test.firebaseapp.com',
+  projectId: 'demo-test',
+  storageBucket: 'demo-test.appspot.com',
+  messagingSenderId: '1234567890',
+  appId: '1:1234567890:web:demo-test',
+  measurementId: 'G-TEST',
+};
+
+const resolvedFirebaseConfig = isTestEnv
+  ? {
+      apiKey: firebaseConfig.apiKey || testFirebaseConfig.apiKey,
+      authDomain: firebaseConfig.authDomain || testFirebaseConfig.authDomain,
+      projectId: firebaseConfig.projectId || testFirebaseConfig.projectId,
+      storageBucket: firebaseConfig.storageBucket || testFirebaseConfig.storageBucket,
+      messagingSenderId: firebaseConfig.messagingSenderId || testFirebaseConfig.messagingSenderId,
+      appId: firebaseConfig.appId || testFirebaseConfig.appId,
+      measurementId: firebaseConfig.measurementId || testFirebaseConfig.measurementId,
+    }
+  : firebaseConfig;
+
 // Initialize Firebase (avoid duplicate-app in HMR / multiple imports)
-const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const app: FirebaseApp = getApps().length ? getApp() : initializeApp(resolvedFirebaseConfig);
 
 // Initialize Cloud Firestore with transport tweaks to reduce WebChannel noise
 export const db: Firestore = (() => {
@@ -454,7 +477,13 @@ import type {
   ShippingInfo,
   PaymentInfo,
 } from '../types/firebase';
-export type { OrderData, OrderItem, TrackingEvent, ShippingInfo, PaymentInfo } from '../types/firebase';
+export type {
+  OrderData,
+  OrderItem,
+  TrackingEvent,
+  ShippingInfo,
+  PaymentInfo,
+} from '../types/firebase';
 
 /**
  * Obtener pedido por ID
@@ -987,7 +1016,7 @@ export async function batchGetProductReviewStats(
     const allReviewsPromises = batches.map(async (batch) => {
       const q = query(collection(db, 'reviews'), where('productId', 'in', batch));
       const snapshot = await getDocs(q);
-      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Review));
+      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Review);
     });
 
     const allReviewsArrays = await Promise.all(allReviewsPromises);
@@ -1027,7 +1056,6 @@ export async function batchGetProductReviewStats(
     return statsMap;
   }
 }
-
 
 /**
  * Verificar si el usuario ya dejó review en un producto
@@ -1338,12 +1366,15 @@ export async function createCoupon(
     if (couponData.maxUsesPerUser) baseData.maxUsesPerUser = couponData.maxUsesPerUser;
 
     // ELIMINAR EXPLÍCITAMENTE cualquier campo undefined
-    const cleanData = Object.entries(baseData).reduce((acc, [key, value]) => {
-      if (value !== undefined) {
-        acc[key] = value;
-      }
-      return acc;
-    }, {} as Record<string, any>);
+    const cleanData = Object.entries(baseData).reduce(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = value;
+        }
+        return acc;
+      },
+      {} as Record<string, any>
+    );
 
     logger.info('🧹 [v3-FINAL] Datos limpios:', cleanData);
     logger.info(

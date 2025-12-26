@@ -162,9 +162,7 @@ export default function DownloadsLibrary() {
       <div className="text-center py-12">
         <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
         <h3 className="text-xl font-semibold text-gray-900 mb-2">No tienes descargas aún</h3>
-        <p className="text-gray-600 mb-6">
-          Los productos digitales que compres aparecerán aquí
-        </p>
+        <p className="text-gray-600 mb-6">Los productos digitales que compres aparecerán aquí</p>
         <a
           href="/productos?categoria=digital"
           className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -192,9 +190,7 @@ export default function DownloadsLibrary() {
           >
             {/* Product Header */}
             <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                {download.productName}
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">{download.productName}</h3>
               <div className="flex items-center gap-4 text-sm text-gray-600">
                 <span>Comprado: {formatDate(download.purchasedAt)}</span>
                 <span>•</span>

@@ -106,12 +106,27 @@ export default function OptimizedImage({
     }
   };
 
+  const handleClick = onClick ? () => onClick() : undefined;
+  const interactiveProps = onClick
+    ? {
+        role: 'button',
+        tabIndex: 0,
+        onClick: handleClick,
+        onKeyDown: (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onClick();
+          }
+        },
+      }
+    : {};
+
   return (
     <div
       ref={containerRef}
       className={`relative overflow-hidden bg-gray-100 ${className}`}
       style={aspectRatio ? { aspectRatio } : undefined}
-      onClick={onClick}
+      {...interactiveProps}
     >
       {/* Loading placeholder */}
       {!isLoaded && !hasError && (
@@ -124,7 +139,9 @@ export default function OptimizedImage({
           ref={imgRef}
           src={optimizedSrc}
           srcSet={srcSet}
-          sizes={useSrcSet ? '(max-width: 640px) 400px, (max-width: 1024px) 800px, 1200px' : undefined}
+          sizes={
+            useSrcSet ? '(max-width: 640px) 400px, (max-width: 1024px) 800px, 1200px' : undefined
+          }
           alt={alt}
           loading={loading}
           decoding="async"

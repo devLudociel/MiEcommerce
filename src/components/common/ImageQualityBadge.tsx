@@ -12,7 +12,11 @@ interface ImageQualityBadgeProps {
  * Badge que muestra la calidad de una imagen de manera visual
  * Usado en el customizer para alertar al usuario sobre problemas de calidad
  */
-export default function ImageQualityBadge({ quality, showDetails = false, compact = false }: ImageQualityBadgeProps) {
+export default function ImageQualityBadge({
+  quality,
+  showDetails = false,
+  compact = false,
+}: ImageQualityBadgeProps) {
   // Configuración por nivel de calidad
   const qualityConfig = {
     excellent: {
@@ -134,7 +138,10 @@ export default function ImageQualityBadge({ quality, showDetails = false, compac
         <div className="pt-2 border-t border-current/20">
           <ul className="space-y-1">
             {quality.recommendations.map((rec, idx) => (
-              <li key={idx} className={`flex items-start gap-1.5 text-xs ${config.textColor} opacity-80`}>
+              <li
+                key={idx}
+                className={`flex items-start gap-1.5 text-xs ${config.textColor} opacity-80`}
+              >
                 <Info className="w-3 h-3 flex-shrink-0 mt-0.5" />
                 <span>{rec}</span>
               </li>

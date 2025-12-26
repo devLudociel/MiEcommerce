@@ -2,7 +2,11 @@
 import type { APIRoute } from 'astro';
 import { Resend } from 'resend';
 import { getAdminDb } from '../../lib/firebase-admin';
-import { orderConfirmationTemplate, orderStatusUpdateTemplate, newsletterWelcomeTemplate } from '../../lib/emailTemplates';
+import {
+  orderConfirmationTemplate,
+  orderStatusUpdateTemplate,
+  newsletterWelcomeTemplate,
+} from '../../lib/emailTemplates';
 import type { OrderData } from '../../types/firebase';
 
 // Simple console logger for API routes (avoids import issues)

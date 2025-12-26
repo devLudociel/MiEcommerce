@@ -36,9 +36,7 @@ export default function HowItWorks() {
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-            ¿Cómo funciona?
-          </h2>
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">¿Cómo funciona?</h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Es súper fácil. Solo 4 pasos para tener tu producto personalizado
           </p>
@@ -79,9 +77,7 @@ export default function HowItWorks() {
                 </div>
 
                 {/* Title */}
-                <h3 className="text-xl font-bold text-gray-800 text-center mb-3">
-                  {step.title}
-                </h3>
+                <h3 className="text-xl font-bold text-gray-800 text-center mb-3">{step.title}</h3>
 
                 {/* Description */}
                 <p className="text-gray-600 text-center text-sm leading-relaxed">
@@ -99,12 +95,7 @@ export default function HowItWorks() {
             className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-full hover:shadow-xl transform hover:scale-105 transition-all duration-300"
           >
             <span>¡Empieza ahora!</span>
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"

@@ -1,15 +1,7 @@
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../../lib/firebase';
 
 export default function AccountMenu() {
-  const [email, setEmail] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<string>('');
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => setEmail(u?.email ?? null));
-    return () => unsub();
-  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

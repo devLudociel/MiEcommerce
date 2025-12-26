@@ -89,24 +89,24 @@ export async function getUserData(uid: string): Promise<UserDataDoc | null> {
 }
 
 export async function upsertProfile(uid: string, profile: UserProfile) {
-  await withRetry(
-    async () => updateDoc(userDocRef(uid), { profile }),
-    { context: 'Update user profile', maxAttempts: 3 }
-  );
+  await withRetry(async () => updateDoc(userDocRef(uid), { profile }), {
+    context: 'Update user profile',
+    maxAttempts: 3,
+  });
 }
 
 export async function saveAddresses(uid: string, addresses: Address[]) {
-  await withRetry(
-    async () => updateDoc(userDocRef(uid), { addresses }),
-    { context: 'Save addresses', maxAttempts: 3 }
-  );
+  await withRetry(async () => updateDoc(userDocRef(uid), { addresses }), {
+    context: 'Save addresses',
+    maxAttempts: 3,
+  });
 }
 
 export async function saveWishlist(uid: string, wishlist: UserDataDoc['wishlist']) {
-  await withRetry(
-    async () => updateDoc(userDocRef(uid), { wishlist }),
-    { context: 'Save wishlist', maxAttempts: 3 }
-  );
+  await withRetry(async () => updateDoc(userDocRef(uid), { wishlist }), {
+    context: 'Save wishlist',
+    maxAttempts: 3,
+  });
 }
 
 export async function getAddresses(uid: string): Promise<Address[]> {
@@ -124,15 +124,15 @@ export async function getDefaultAddresses(
 }
 
 export async function saveTaxIds(uid: string, taxIds: TaxId[]) {
-  await withRetry(
-    async () => updateDoc(userDocRef(uid), { taxIds }),
-    { context: 'Save tax IDs', maxAttempts: 3 }
-  );
+  await withRetry(async () => updateDoc(userDocRef(uid), { taxIds }), {
+    context: 'Save tax IDs',
+    maxAttempts: 3,
+  });
 }
 
 export async function updateUserSettings(uid: string, patch: Partial<UserDataDoc>) {
-  await withRetry(
-    async () => updateDoc(userDocRef(uid), patch as any),
-    { context: 'Update user settings', maxAttempts: 3 }
-  );
+  await withRetry(async () => updateDoc(userDocRef(uid), patch as any), {
+    context: 'Update user settings',
+    maxAttempts: 3,
+  });
 }

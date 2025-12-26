@@ -19,7 +19,7 @@ import {
   Loader2,
   RefreshCw,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
 } from 'lucide-react';
 import {
   type Testimonial,
@@ -37,7 +37,7 @@ import {
   uploadTestimonialImage,
   getNextTestimonialOrder,
   getNextStatOrder,
-  migrateDefaultTestimonials
+  migrateDefaultTestimonials,
 } from '../../lib/testimonials';
 
 // Common emoji options for testimonials
@@ -206,7 +206,7 @@ export default function AdminTestimonialsPanel() {
     setUploadingImage(true);
     try {
       const url = await uploadTestimonialImage(file);
-      setTestimonialForm(prev => ({ ...prev, image: url }));
+      setTestimonialForm((prev) => ({ ...prev, image: url }));
       setSuccess('Imagen subida');
     } catch (err) {
       setError('Error al subir imagen');
@@ -416,7 +416,9 @@ export default function AdminTestimonialsPanel() {
                     <input
                       type="text"
                       value={testimonialForm.name}
-                      onChange={(e) => setTestimonialForm(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={(e) =>
+                        setTestimonialForm((prev) => ({ ...prev, name: e.target.value }))
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                       placeholder="María González"
                     />
@@ -426,7 +428,9 @@ export default function AdminTestimonialsPanel() {
                     <input
                       type="text"
                       value={testimonialForm.role}
-                      onChange={(e) => setTestimonialForm(prev => ({ ...prev, role: e.target.value }))}
+                      onChange={(e) =>
+                        setTestimonialForm((prev) => ({ ...prev, role: e.target.value }))
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                       placeholder="Cliente verificado"
                     />
@@ -437,7 +441,9 @@ export default function AdminTestimonialsPanel() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Texto *</label>
                   <textarea
                     value={testimonialForm.text}
-                    onChange={(e) => setTestimonialForm(prev => ({ ...prev, text: e.target.value }))}
+                    onChange={(e) =>
+                      setTestimonialForm((prev) => ({ ...prev, text: e.target.value }))
+                    }
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                     placeholder="¡Increíble calidad! El servicio fue excepcional..."
@@ -452,7 +458,7 @@ export default function AdminTestimonialsPanel() {
                         <button
                           key={emoji}
                           type="button"
-                          onClick={() => setTestimonialForm(prev => ({ ...prev, image: emoji }))}
+                          onClick={() => setTestimonialForm((prev) => ({ ...prev, image: emoji }))}
                           className={`text-2xl p-2 rounded-lg border-2 transition-colors ${
                             testimonialForm.image === emoji
                               ? 'border-cyan-500 bg-cyan-50'
@@ -477,23 +483,33 @@ export default function AdminTestimonialsPanel() {
                         htmlFor="testimonial-image"
                         className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-200"
                       >
-                        {uploadingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                        {uploadingImage ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Upload className="w-4 h-4" />
+                        )}
                         {uploadingImage ? 'Subiendo...' : 'Subir foto'}
                       </label>
                     </div>
                     {testimonialForm.image.startsWith('http') && (
-                      <img src={testimonialForm.image} alt="Preview" className="w-12 h-12 rounded-full mt-2 object-cover" />
+                      <img
+                        src={testimonialForm.image}
+                        alt="Preview"
+                        className="w-12 h-12 rounded-full mt-2 object-cover"
+                      />
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Valoración</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Valoración
+                    </label>
                     <div className="flex gap-1">
                       {[1, 2, 3, 4, 5].map((n) => (
                         <button
                           key={n}
                           type="button"
-                          onClick={() => setTestimonialForm(prev => ({ ...prev, rating: n }))}
+                          onClick={() => setTestimonialForm((prev) => ({ ...prev, rating: n }))}
                           className="text-2xl"
                         >
                           {n <= testimonialForm.rating ? '⭐' : '☆'}
@@ -507,7 +523,9 @@ export default function AdminTestimonialsPanel() {
                     <input
                       type="text"
                       value={testimonialForm.date}
-                      onChange={(e) => setTestimonialForm(prev => ({ ...prev, date: e.target.value }))}
+                      onChange={(e) =>
+                        setTestimonialForm((prev) => ({ ...prev, date: e.target.value }))
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                       placeholder="Hace 2 semanas"
                     />
@@ -517,14 +535,18 @@ export default function AdminTestimonialsPanel() {
                 <div className="flex items-center gap-3 mt-4">
                   <button
                     type="button"
-                    onClick={() => setTestimonialForm(prev => ({ ...prev, active: !prev.active }))}
+                    onClick={() =>
+                      setTestimonialForm((prev) => ({ ...prev, active: !prev.active }))
+                    }
                     className={`relative w-12 h-6 rounded-full transition-colors ${
                       testimonialForm.active ? 'bg-green-500' : 'bg-gray-300'
                     }`}
                   >
-                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                      testimonialForm.active ? 'right-1' : 'left-1'
-                    }`} />
+                    <span
+                      className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                        testimonialForm.active ? 'right-1' : 'left-1'
+                      }`}
+                    />
                   </button>
                   <span className="text-sm text-gray-700">
                     {testimonialForm.active ? 'Visible' : 'Oculto'}
@@ -532,7 +554,10 @@ export default function AdminTestimonialsPanel() {
                 </div>
 
                 <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-                  <button onClick={handleCancelTestimonial} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                  <button
+                    onClick={handleCancelTestimonial}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                  >
                     Cancelar
                   </button>
                   <button
@@ -540,7 +565,11 @@ export default function AdminTestimonialsPanel() {
                     disabled={saving}
                     className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:opacity-50"
                   >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {saving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
                     Guardar
                   </button>
                 </div>
@@ -554,17 +583,27 @@ export default function AdminTestimonialsPanel() {
                   <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No hay testimonios</h3>
                   <p className="text-gray-500 mb-4">Añade reseñas de tus clientes</p>
-                  <button onClick={handleCreateTestimonial} className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg">
+                  <button
+                    onClick={handleCreateTestimonial}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg"
+                  >
                     <Plus className="w-4 h-4" /> Crear Testimonio
                   </button>
                 </div>
               ) : (
                 testimonials.map((t) => (
-                  <div key={t.id} className={`bg-white rounded-xl border p-4 ${!t.active && 'opacity-60'}`}>
+                  <div
+                    key={t.id}
+                    className={`bg-white rounded-xl border p-4 ${!t.active && 'opacity-60'}`}
+                  >
                     <div className="flex items-start gap-4">
                       <div className="text-4xl">
                         {t.image.startsWith('http') ? (
-                          <img src={t.image} alt={t.name} className="w-12 h-12 rounded-full object-cover" />
+                          <img
+                            src={t.image}
+                            alt={t.name}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
                         ) : (
                           t.image
                         )}
@@ -573,22 +612,33 @@ export default function AdminTestimonialsPanel() {
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-semibold">{t.name}</span>
                           <span className="text-sm text-gray-500">• {t.role}</span>
-                          {!t.active && <span className="text-xs px-2 py-0.5 bg-gray-200 rounded-full">Oculto</span>}
+                          {!t.active && (
+                            <span className="text-xs px-2 py-0.5 bg-gray-200 rounded-full">
+                              Oculto
+                            </span>
+                          )}
                         </div>
-                        <div className="text-yellow-400 text-sm mb-1">
-                          {'⭐'.repeat(t.rating)}
-                        </div>
+                        <div className="text-yellow-400 text-sm mb-1">{'⭐'.repeat(t.rating)}</div>
                         <p className="text-gray-600 text-sm">{t.text}</p>
                         <p className="text-gray-400 text-xs mt-1">{t.date}</p>
                       </div>
                       <div className="flex items-center gap-1">
-                        <button onClick={() => handleToggleTestimonial(t)} className={`p-2 rounded-lg ${t.active ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}>
+                        <button
+                          onClick={() => handleToggleTestimonial(t)}
+                          className={`p-2 rounded-lg ${t.active ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}
+                        >
                           {t.active ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                         </button>
-                        <button onClick={() => handleEditTestimonial(t)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
+                        <button
+                          onClick={() => handleEditTestimonial(t)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                        >
                           <Edit2 className="w-5 h-5" />
                         </button>
-                        <button onClick={() => handleDeleteTestimonial(t.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
+                        <button
+                          onClick={() => handleDeleteTestimonial(t.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                        >
                           <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
@@ -628,7 +678,7 @@ export default function AdminTestimonialsPanel() {
                     <input
                       type="text"
                       value={statForm.icon}
-                      onChange={(e) => setStatForm(prev => ({ ...prev, icon: e.target.value }))}
+                      onChange={(e) => setStatForm((prev) => ({ ...prev, icon: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-2xl text-center"
                       placeholder="📊"
                     />
@@ -638,17 +688,19 @@ export default function AdminTestimonialsPanel() {
                     <input
                       type="text"
                       value={statForm.value}
-                      onChange={(e) => setStatForm(prev => ({ ...prev, value: e.target.value }))}
+                      onChange={(e) => setStatForm((prev) => ({ ...prev, value: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                       placeholder="1,500+"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Etiqueta *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Etiqueta *
+                    </label>
                     <input
                       type="text"
                       value={statForm.label}
-                      onChange={(e) => setStatForm(prev => ({ ...prev, label: e.target.value }))}
+                      onChange={(e) => setStatForm((prev) => ({ ...prev, label: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                       placeholder="Clientes Satisfechos"
                     />
@@ -658,14 +710,16 @@ export default function AdminTestimonialsPanel() {
                 <div className="flex items-center gap-3 mt-4">
                   <button
                     type="button"
-                    onClick={() => setStatForm(prev => ({ ...prev, active: !prev.active }))}
+                    onClick={() => setStatForm((prev) => ({ ...prev, active: !prev.active }))}
                     className={`relative w-12 h-6 rounded-full transition-colors ${
                       statForm.active ? 'bg-green-500' : 'bg-gray-300'
                     }`}
                   >
-                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                      statForm.active ? 'right-1' : 'left-1'
-                    }`} />
+                    <span
+                      className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                        statForm.active ? 'right-1' : 'left-1'
+                      }`}
+                    />
                   </button>
                   <span className="text-sm text-gray-700">
                     {statForm.active ? 'Visible' : 'Oculto'}
@@ -673,7 +727,10 @@ export default function AdminTestimonialsPanel() {
                 </div>
 
                 <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-                  <button onClick={handleCancelStat} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                  <button
+                    onClick={handleCancelStat}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                  >
                     Cancelar
                   </button>
                   <button
@@ -681,7 +738,11 @@ export default function AdminTestimonialsPanel() {
                     disabled={saving}
                     className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:opacity-50"
                   >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {saving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
                     Guardar
                   </button>
                 </div>
@@ -695,13 +756,19 @@ export default function AdminTestimonialsPanel() {
                   <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No hay estadísticas</h3>
                   <p className="text-gray-500 mb-4">Añade estadísticas para mostrar en la web</p>
-                  <button onClick={handleCreateStat} className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg">
+                  <button
+                    onClick={handleCreateStat}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg"
+                  >
                     <Plus className="w-4 h-4" /> Crear Estadística
                   </button>
                 </div>
               ) : (
                 stats.map((s) => (
-                  <div key={s.id} className={`bg-white rounded-xl border p-6 ${!s.active && 'opacity-60'}`}>
+                  <div
+                    key={s.id}
+                    className={`bg-white rounded-xl border p-6 ${!s.active && 'opacity-60'}`}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="text-4xl">{s.icon}</div>
@@ -711,13 +778,22 @@ export default function AdminTestimonialsPanel() {
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        <button onClick={() => handleToggleStat(s)} className={`p-2 rounded-lg ${s.active ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}>
+                        <button
+                          onClick={() => handleToggleStat(s)}
+                          className={`p-2 rounded-lg ${s.active ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}
+                        >
                           {s.active ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                         </button>
-                        <button onClick={() => handleEditStat(s)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
+                        <button
+                          onClick={() => handleEditStat(s)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                        >
                           <Edit2 className="w-5 h-5" />
                         </button>
-                        <button onClick={() => handleDeleteStat(s.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
+                        <button
+                          onClick={() => handleDeleteStat(s.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                        >
                           <Trash2 className="w-5 h-5" />
                         </button>
                       </div>

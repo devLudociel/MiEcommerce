@@ -70,7 +70,7 @@ export function defaultShouldRetry(error: unknown): boolean {
       'aborted',
       'internal',
     ];
-    return retryableCodes.some(c => code.includes(c));
+    return retryableCodes.some((c) => code.includes(c));
   }
 
   return false;
@@ -80,7 +80,7 @@ export function defaultShouldRetry(error: unknown): boolean {
  * Sleep utility for delays
  */
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -115,10 +115,7 @@ async function withTimeout<T>(
 /**
  * Retry a function with exponential backoff
  */
-export async function withRetry<T>(
-  fn: () => Promise<T>,
-  config: RetryConfig = {}
-): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>, config: RetryConfig = {}): Promise<T> {
   const {
     maxAttempts = 3,
     backoffMs = 1000,
@@ -177,9 +174,7 @@ export async function withRetryBatch<T>(
   operations: Array<() => Promise<T>>,
   config: RetryConfig = {}
 ): Promise<RetryResult<T>[]> {
-  const results = await Promise.allSettled(
-    operations.map(op => withRetry(op, config))
-  );
+  const results = await Promise.allSettled(operations.map((op) => withRetry(op, config)));
 
   return results.map((result, index) => {
     if (result.status === 'fulfilled') {

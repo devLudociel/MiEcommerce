@@ -57,8 +57,11 @@ export default function ProfilePanel() {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Información personal</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="form-label">Nombre</label>
+            <label className="form-label" htmlFor="profile-first-name">
+              Nombre
+            </label>
             <input
+              id="profile-first-name"
               className="input"
               value={profile.firstName || ''}
               onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
@@ -66,8 +69,11 @@ export default function ProfilePanel() {
             />
           </div>
           <div>
-            <label className="form-label">Apellidos</label>
+            <label className="form-label" htmlFor="profile-last-name">
+              Apellidos
+            </label>
             <input
+              id="profile-last-name"
               className="input"
               value={profile.lastName || ''}
               onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
@@ -81,13 +87,18 @@ export default function ProfilePanel() {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Información de contacto</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="form-label">Correo electrónico</label>
-            <input className="input" value={email} disabled />
+            <label className="form-label" htmlFor="profile-email">
+              Correo electrónico
+            </label>
+            <input id="profile-email" className="input" value={email} disabled />
             <p className="text-xs text-gray-500 mt-1">El correo no se puede modificar</p>
           </div>
           <div>
-            <label className="form-label">Teléfono</label>
+            <label className="form-label" htmlFor="profile-phone">
+              Teléfono
+            </label>
             <input
+              id="profile-phone"
               className="input"
               value={profile.phone || ''}
               onChange={(e) => setProfile({ ...profile, phone: e.target.value })}

@@ -40,10 +40,10 @@ export const POST: APIRoute = async ({ request }) => {
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       logger.warn('[admin/digital/create-product] No auth token provided');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized: Token required' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Unauthorized: Token required' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const token = authHeader.substring(7);
@@ -52,10 +52,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Check if user is admin
     if (!decodedToken.admin && !isAdminEmail(decodedToken.email)) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized: Admin access required' }),
-        { status: 403, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Unauthorized: Admin access required' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const rawData = await request.json();
@@ -115,11 +115,14 @@ export const POST: APIRoute = async ({ request }) => {
     );
   } catch (error: unknown) {
     const firebaseError = error as { code?: string };
-    if (firebaseError.code === 'auth/id-token-expired' || firebaseError.code === 'auth/argument-error') {
-      return new Response(
-        JSON.stringify({ error: 'Token inválido o expirado' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      );
+    if (
+      firebaseError.code === 'auth/id-token-expired' ||
+      firebaseError.code === 'auth/argument-error'
+    ) {
+      return new Response(JSON.stringify({ error: 'Token inválido o expirado' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     logger.error('[admin/digital/create-product] Error:', error);

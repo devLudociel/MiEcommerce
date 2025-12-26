@@ -47,7 +47,7 @@ export function initFacebookPixel(pixelId: string) {
   // Create fbq function
   const fbq: FbqFunction = function (...args: unknown[]) {
     if (fbq.callMethod) {
-      fbq.callMethod.apply(fbq, args);
+      fbq.callMethod(...args);
     } else {
       fbq.queue?.push(args);
     }
@@ -147,11 +147,7 @@ export function trackFBInitiateCheckout(items: AnalyticsItem[], value: number) {
 /**
  * Track purchase (Purchase) - CRITICAL FOR CONVERSIONS
  */
-export function trackFBPurchase(order: {
-  id: string;
-  total: number;
-  items: AnalyticsItem[];
-}) {
+export function trackFBPurchase(order: { id: string; total: number; items: AnalyticsItem[] }) {
   if (!window.fbq) return;
 
   window.fbq('track', 'Purchase', {

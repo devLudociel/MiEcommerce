@@ -71,12 +71,16 @@ export function orderConfirmationTemplate(order: OrderData): { subject: string; 
                             <td style="width: 70%;">
                               <div style="font-weight: bold; color: #1e293b; margin-bottom: 5px;">${item.name}</div>
                               ${item.variantName ? `<div style="font-size: 12px; color: #64748b;">Variante: ${item.variantName}</div>` : ''}
-                              ${item.customization ? `
+                              ${
+                                item.customization
+                                  ? `
                                 <div style="font-size: 12px; color: #9333ea; font-weight: bold;">
                                   ✨ Personalizado
                                   ${generateCustomizationSummary(item.customization) ? ` (${generateCustomizationSummary(item.customization)})` : ''}
                                 </div>
-                              ` : ''}
+                              `
+                                  : ''
+                              }
                             </td>
                             <td style="width: 30%; text-align: right;">
                               <div style="font-size: 12px; color: #64748b; margin-bottom: 5px;">Cantidad: ${item.quantity}</div>

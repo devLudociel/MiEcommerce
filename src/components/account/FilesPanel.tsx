@@ -1,5 +1,5 @@
 import { logger } from '../../lib/logger';
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import {
   ref,
   listAll,
@@ -29,7 +29,6 @@ export default function FilesPanel() {
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
 
   // Modal state
   const [modal, setModal] = useState<{
@@ -56,12 +55,7 @@ export default function FilesPanel() {
     setModal({ ...modal, isOpen: false });
   };
 
-  // Cargar archivos al montar
-  useEffect(() => {
-    loadFiles();
-  }, []);
-
-  const loadFiles = async () => {
+  const loadFiles = useCallback(async () => {
     try {
       setLoading(true);
       const user = auth.currentUser;
@@ -102,7 +96,12 @@ export default function FilesPanel() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Cargar archivos al montar
+  useEffect(() => {
+    loadFiles();
+  }, [loadFiles]);
 
   const getFileType = (filename: string): 'image' | 'document' | 'video' | 'other' => {
     const ext = filename.split('.').pop()?.toLowerCase() || '';
@@ -136,14 +135,11 @@ export default function FilesPanel() {
 
         await executeStorageOperation(
           () =>
-            withRetry(
-              async () => uploadBytes(fileRef, file),
-              {
-                context: `Upload file ${file.name}`,
-                maxAttempts: 3,
-                backoffMs: 1500,
-              }
-            ),
+            withRetry(async () => uploadBytes(fileRef, file), {
+              context: `Upload file ${file.name}`,
+              maxAttempts: 3,
+              backoffMs: 1500,
+            }),
           `upload-file-${uniqueName}`
         );
         logger.info(`Archivo subido: ${file.name}`);

@@ -107,12 +107,7 @@ const DEFAULT_TAG_COLORS: { [key: string]: { bg: string; text: string; icon: str
 // COMPONENTE
 // ============================================================================
 
-export default function ProductTagBadge({
-  tag,
-  size = 'sm',
-  onClick,
-  href,
-}: ProductTagBadgeProps) {
+export default function ProductTagBadge({ tag, size = 'sm', onClick, href }: ProductTagBadgeProps) {
   const cache = useTagsCache();
 
   // Look up tag in cache (by slug or name)

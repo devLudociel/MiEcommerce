@@ -21,7 +21,11 @@ interface Product {
 
 export default function ProductGridOfertas() {
   // Fetch products on sale with React Query
-  const { data: rawProducts = [], isLoading: loading, error: queryError } = useProducts({ onSale: true });
+  const {
+    data: rawProducts = [],
+    isLoading: loading,
+    error: queryError,
+  } = useProducts({ onSale: true });
 
   const error = queryError ? (queryError as Error).message : null;
 

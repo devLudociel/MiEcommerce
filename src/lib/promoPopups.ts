@@ -11,7 +11,7 @@ import {
   doc,
   query,
   where,
-  Timestamp
+  Timestamp,
 } from 'firebase/firestore';
 
 // ============================================================================
@@ -64,7 +64,10 @@ export interface PromoPopup {
   updatedAt: Timestamp;
 }
 
-export type PromoPopupInput = Omit<PromoPopup, 'id' | 'impressions' | 'clicks' | 'dismissals' | 'createdAt' | 'updatedAt'>;
+export type PromoPopupInput = Omit<
+  PromoPopup,
+  'id' | 'impressions' | 'clicks' | 'dismissals' | 'createdAt' | 'updatedAt'
+>;
 
 // ============================================================================
 // STORAGE KEY
@@ -167,7 +170,7 @@ export function shouldShowPopup(
 
   // Check page targeting
   if (popup.showOnPages && popup.showOnPages.length > 0) {
-    const matchesPage = popup.showOnPages.some(page => {
+    const matchesPage = popup.showOnPages.some((page) => {
       if (page === currentPath) return true;
       if (page.endsWith('*') && currentPath.startsWith(page.slice(0, -1))) return true;
       return false;
@@ -177,7 +180,7 @@ export function shouldShowPopup(
 
   // Check excluded pages
   if (popup.excludePages && popup.excludePages.length > 0) {
-    const isExcluded = popup.excludePages.some(page => {
+    const isExcluded = popup.excludePages.some((page) => {
       if (page === currentPath) return true;
       if (page.endsWith('*') && currentPath.startsWith(page.slice(0, -1))) return true;
       return false;
@@ -210,14 +213,11 @@ export function shouldShowPopup(
 
 export async function getActivePopups(): Promise<PromoPopup[]> {
   try {
-    const q = query(
-      collection(db, 'promo_popups'),
-      where('active', '==', true)
-    );
+    const q = query(collection(db, 'promo_popups'), where('active', '==', true));
     const snapshot = await getDocs(q);
-    const popups = snapshot.docs.map(doc => ({
+    const popups = snapshot.docs.map((doc) => ({
       id: doc.id,
-      ...doc.data()
+      ...doc.data(),
     })) as PromoPopup[];
 
     // Sort by priority (higher first)
@@ -231,9 +231,9 @@ export async function getActivePopups(): Promise<PromoPopup[]> {
 export async function getAllPopups(): Promise<PromoPopup[]> {
   try {
     const snapshot = await getDocs(collection(db, 'promo_popups'));
-    const popups = snapshot.docs.map(doc => ({
+    const popups = snapshot.docs.map((doc) => ({
       id: doc.id,
-      ...doc.data()
+      ...doc.data(),
     })) as PromoPopup[];
 
     // Sort by priority and creation date
@@ -272,11 +272,16 @@ export async function deletePopup(id: string): Promise<void> {
   await deleteDoc(doc(db, 'promo_popups', id));
 }
 
-export async function incrementPopupStat(id: string, stat: 'impressions' | 'clicks' | 'dismissals'): Promise<void> {
+export async function incrementPopupStat(
+  id: string,
+  stat: 'impressions' | 'clicks' | 'dismissals'
+): Promise<void> {
   try {
     const docRef = doc(db, 'promo_popups', id);
     // Get current value and increment
-    const snapshot = await getDocs(query(collection(db, 'promo_popups'), where('__name__', '==', id)));
+    const snapshot = await getDocs(
+      query(collection(db, 'promo_popups'), where('__name__', '==', id))
+    );
     if (!snapshot.empty) {
       const currentValue = snapshot.docs[0].data()[stat] || 0;
       await updateDoc(docRef, {
@@ -307,7 +312,8 @@ export const POPUP_TEMPLATES: Partial<PromoPopupInput>[] = [
   },
   {
     title: 'No te vayas todavia',
-    message: 'Tenemos ofertas especiales esperandote. Usa el cupón QUEDATEAQUI para un 15% de descuento.',
+    message:
+      'Tenemos ofertas especiales esperandote. Usa el cupón QUEDATEAQUI para un 15% de descuento.',
     buttonText: 'Ver ofertas',
     type: 'modal',
     position: 'center',

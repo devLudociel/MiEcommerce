@@ -107,8 +107,7 @@ export const useSearch = (): UseSearchReturn => {
         const searchableText = `${name} ${desc} ${tags.join(' ')} ${category}`;
 
         // El producto matchea si contiene TODAS las palabras de búsqueda
-        const matches =
-          searchTerms.length === 0 || matchesSearchTerms(searchableText, searchTerms);
+        const matches = searchTerms.length === 0 || matchesSearchTerms(searchableText, searchTerms);
 
         if (matches) {
           res.push({

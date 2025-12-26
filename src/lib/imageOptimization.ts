@@ -121,7 +121,7 @@ function transformImageKitUrl(url: string, dimensions: ImageDimensions): string 
 
   // Find the base URL and path
   const parts = url.split('/');
-  const baseIndex = parts.findIndex(part => part.includes('imagekit.io'));
+  const baseIndex = parts.findIndex((part) => part.includes('imagekit.io'));
   if (baseIndex === -1) return url;
 
   const base = parts.slice(0, baseIndex + 2).join('/'); // Base + account ID

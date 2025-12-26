@@ -71,12 +71,12 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
   // Auto-save draft functionality
   const draftKey = `draft_${product.id}`;
-  const {
-    loadDraft,
-    clearDraft,
-    getLastSavedTime,
-    hasDraft,
-  } = useAutoSaveDraft(draftKey, { values, layers }, true, 30000); // Auto-save every 30 seconds
+  const { loadDraft, clearDraft, getLastSavedTime, hasDraft } = useAutoSaveDraft(
+    draftKey,
+    { values, layers },
+    true,
+    30000
+  ); // Auto-save every 30 seconds
 
   // Check for reorder query parameter first
   useEffect(() => {
@@ -122,7 +122,9 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
           // Show success notification
           if (reorderMode === 'edit') {
-            notify.success('Configuración anterior cargada. Puedes editarla antes de agregar al carrito.');
+            notify.success(
+              'Configuración anterior cargada. Puedes editarla antes de agregar al carrito.'
+            );
           } else {
             notify.success('Reordenando producto con la configuración anterior...');
           }
@@ -134,7 +136,8 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
       // Clean up URL
       urlParams.delete('reorder');
-      const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+      const newUrl =
+        window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
       window.history.replaceState({}, '', newUrl);
     }
   }, [product.id]);
@@ -168,7 +171,9 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
           localStorage.removeItem(sharedKey);
 
           // Show success notification
-          notify.success('¡Diseño compartido cargado! Puedes personalizarlo antes de agregar al carrito.');
+          notify.success(
+            '¡Diseño compartido cargado! Puedes personalizarlo antes de agregar al carrito.'
+          );
         } catch (error) {
           logger.error('[DynamicCustomizer] Error loading shared design', error);
           notify.error('Error al cargar el diseño compartido');
@@ -177,7 +182,8 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
       // Clean up URL
       urlParams.delete('shared');
-      const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+      const newUrl =
+        window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
       window.history.replaceState({}, '', newUrl);
     }
   }, [product.id]);
@@ -201,20 +207,26 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
         let themes: Theme[] = [];
         for (const catId of categoryIds) {
           const catThemes = await getThemesForCategory(catId);
-          console.log(`[DynamicCustomizer] 🎨 Themes found for categoryId "${catId}":`, catThemes.length);
-          catThemes.forEach(t => {
-            console.log(`  - Theme "${t.name}" has categoryImages:`, t.categoryImages?.map(ci => ({
-              categoryId: ci.categoryId,
-              categoryName: ci.categoryName,
-              variantsCount: ci.variants?.length || 0,
-            })));
+          console.log(
+            `[DynamicCustomizer] 🎨 Themes found for categoryId "${catId}":`,
+            catThemes.length
+          );
+          catThemes.forEach((t) => {
+            console.log(
+              `  - Theme "${t.name}" has categoryImages:`,
+              t.categoryImages?.map((ci) => ({
+                categoryId: ci.categoryId,
+                categoryName: ci.categoryName,
+                variantsCount: ci.variants?.length || 0,
+              }))
+            );
           });
           themes = [...themes, ...catThemes];
         }
 
         // Remove duplicates (same theme might match both category and subcategory)
         const uniqueThemes = themes.filter(
-          (theme, index, self) => index === self.findIndex(t => t.id === theme.id)
+          (theme, index, self) => index === self.findIndex((t) => t.id === theme.id)
         );
 
         setCentralizedThemes(uniqueThemes);
@@ -247,11 +259,12 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
         ? Math.floor((Date.now() - new Date(lastSavedTime).getTime()) / 1000 / 60)
         : null;
 
-      const timeText = timeSinceLastSave !== null
-        ? timeSinceLastSave < 1
-          ? 'hace menos de 1 minuto'
-          : `hace ${timeSinceLastSave} minuto${timeSinceLastSave > 1 ? 's' : ''}`
-        : '';
+      const timeText =
+        timeSinceLastSave !== null
+          ? timeSinceLastSave < 1
+            ? 'hace menos de 1 minuto'
+            : `hace ${timeSinceLastSave} minuto${timeSinceLastSave > 1 ? 's' : ''}`
+          : '';
 
       logger.info('[DynamicCustomizer] Draft found', { productId: product.id, lastSavedTime });
       setShowDraftNotification(true);
@@ -267,10 +280,10 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
   // Preload color preview images for faster switching
   useEffect(() => {
-    const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
+    const colorField = schema.fields.find((f) => f.fieldType === 'color_selector');
     if (colorField) {
       const colorConfig = colorField.config as ColorSelectorConfig;
-      colorConfig.availableColors?.forEach(color => {
+      colorConfig.availableColors?.forEach((color) => {
         // Preload images in order of priority
         const imagesToPreload: string[] = [];
 
@@ -279,7 +292,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
         if (color.previewImages?.back) imagesToPreload.push(color.previewImages.back);
         if (color.previewImage) imagesToPreload.push(color.previewImage);
 
-        imagesToPreload.forEach(url => {
+        imagesToPreload.forEach((url) => {
           const img = new Image();
           img.src = url;
         });
@@ -297,8 +310,8 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     const labelLower = field.label.toLowerCase();
     const quantityKeywords = ['quantity', 'cantidad', 'unidades', 'units', 'qty'];
 
-    return quantityKeywords.some(keyword =>
-      idLower.includes(keyword) || labelLower.includes(keyword)
+    return quantityKeywords.some(
+      (keyword) => idLower.includes(keyword) || labelLower.includes(keyword)
     );
   };
 
@@ -333,7 +346,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     if (quantityField.fieldType === 'dropdown') {
       const dropdownConfig = quantityField.config as DropdownConfig;
       const selectedOption = dropdownConfig.options?.find(
-        opt => opt.value === selectedValue.value
+        (opt) => opt.value === selectedValue.value
       );
       if (selectedOption?.unitPriceOverride !== undefined) {
         return selectedOption.unitPriceOverride;
@@ -344,7 +357,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   };
 
   // Find quantity field and get the selected quantity
-  const quantityField = schema.fields.find(f => isQuantityField(f));
+  const quantityField = schema.fields.find((f) => isQuantityField(f));
   const quantityValue = quantityField ? values[quantityField.id] : undefined;
   const selectedQuantity = extractQuantity(quantityValue);
 
@@ -406,40 +419,44 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
   const handleTextileTransformChange = (side: 'front' | 'back', transform: ImageTransform) => {
     // PRIORIDAD 1: Buscar campo específico del lado activo
-    let targetField = schema.fields.find(f =>
-      f.fieldType === 'image_upload' && (
-        side === 'front'
-          ? (
-            f.id.toLowerCase().includes('front') ||
+    let targetField = schema.fields.find(
+      (f) =>
+        f.fieldType === 'image_upload' &&
+        (side === 'front'
+          ? f.id.toLowerCase().includes('front') ||
             f.id.toLowerCase().includes('frontal') ||
             f.id.toLowerCase().includes('frente') ||
             f.label.toLowerCase().includes('front') ||
             f.label.toLowerCase().includes('frontal') ||
             f.label.toLowerCase().includes('frente')
-          )
-          : (
-            f.id.toLowerCase().includes('back') ||
+          : f.id.toLowerCase().includes('back') ||
             f.id.toLowerCase().includes('trasera') ||
             f.id.toLowerCase().includes('espalda') ||
             f.label.toLowerCase().includes('back') ||
             f.label.toLowerCase().includes('trasera') ||
-            f.label.toLowerCase().includes('espalda')
-          )
-      )
+            f.label.toLowerCase().includes('espalda'))
     );
 
     // PRIORIDAD 2: Si no hay campo específico, buscar campo genérico
     if (!targetField) {
-      targetField = schema.fields.find(f => {
+      targetField = schema.fields.find((f) => {
         if (f.fieldType !== 'image_upload') return false;
         const idLower = f.id.toLowerCase();
         const labelLower = f.label.toLowerCase();
         // Es genérico si NO contiene front ni back
         const isGeneric =
-          !idLower.includes('front') && !idLower.includes('frontal') && !idLower.includes('frente') &&
-          !idLower.includes('back') && !idLower.includes('trasera') && !idLower.includes('espalda') &&
-          !labelLower.includes('front') && !labelLower.includes('frontal') && !labelLower.includes('frente') &&
-          !labelLower.includes('back') && !labelLower.includes('trasera') && !labelLower.includes('espalda');
+          !idLower.includes('front') &&
+          !idLower.includes('frontal') &&
+          !idLower.includes('frente') &&
+          !idLower.includes('back') &&
+          !idLower.includes('trasera') &&
+          !idLower.includes('espalda') &&
+          !labelLower.includes('front') &&
+          !labelLower.includes('frontal') &&
+          !labelLower.includes('frente') &&
+          !labelLower.includes('back') &&
+          !labelLower.includes('trasera') &&
+          !labelLower.includes('espalda');
         return isGeneric;
       });
     }
@@ -449,7 +466,12 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
       return;
     }
 
-    console.log('[TextileTransformChange] Updating transform for field:', targetField.id, 'side:', side);
+    console.log(
+      '[TextileTransformChange] Updating transform for field:',
+      targetField.id,
+      'side:',
+      side
+    );
 
     // Actualizar solo el imageTransform, manteniendo el resto de los datos
     setValues((prev) => ({
@@ -753,28 +775,30 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
               {field.label}
               {field.required && <span className="text-red-500 ml-1">*</span>}
             </label>
-            {field.helpText && (
-              <p className="text-sm text-gray-500 mb-3">{field.helpText}</p>
-            )}
-            <div className={`grid gap-3 ${
-              cardConfig.layout === 'horizontal'
-                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-                : cardConfig.layout === 'vertical'
-                ? 'grid-cols-1'
-                : 'grid-cols-1 sm:grid-cols-2'
-            }`}>
+            {field.helpText && <p className="text-sm text-gray-500 mb-3">{field.helpText}</p>}
+            <div
+              className={`grid gap-3 ${
+                cardConfig.layout === 'horizontal'
+                  ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                  : cardConfig.layout === 'vertical'
+                    ? 'grid-cols-1'
+                    : 'grid-cols-1 sm:grid-cols-2'
+              }`}
+            >
               {cardConfig.options.map((option) => {
                 const isSelected = value?.value === option.value;
                 return (
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => handleFieldChange(field.id, {
-                      fieldId: field.id,
-                      value: option.value,
-                      displayValue: option.label,
-                      priceModifier: option.priceModifier || field.priceModifier || 0,
-                    })}
+                    onClick={() =>
+                      handleFieldChange(field.id, {
+                        fieldId: field.id,
+                        value: option.value,
+                        displayValue: option.label,
+                        priceModifier: option.priceModifier || field.priceModifier || 0,
+                      })
+                    }
                     className={`relative p-4 rounded-xl border-2 transition-all text-left ${
                       isSelected
                         ? 'border-purple-500 bg-purple-50 shadow-lg'
@@ -822,7 +846,11 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                     {isSelected && (
                       <div className="absolute top-2 left-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
                         <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       </div>
                     )}
@@ -843,18 +871,18 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
               {field.label}
               {field.required && <span className="text-red-500 ml-1">*</span>}
             </label>
-            {field.helpText && (
-              <p className="text-sm text-gray-500 mb-2">{field.helpText}</p>
-            )}
+            {field.helpText && <p className="text-sm text-gray-500 mb-2">{field.helpText}</p>}
             <input
               type="text"
               value={textValue}
-              onChange={(e) => handleFieldChange(field.id, {
-                fieldId: field.id,
-                value: e.target.value,
-                displayValue: e.target.value,
-                priceModifier: field.priceModifier || 0,
-              })}
+              onChange={(e) =>
+                handleFieldChange(field.id, {
+                  fieldId: field.id,
+                  value: e.target.value,
+                  displayValue: e.target.value,
+                  priceModifier: field.priceModifier || 0,
+                })
+              }
               placeholder={textConfig.placeholder || ''}
               maxLength={textConfig.maxLength}
               minLength={textConfig.minLength}
@@ -878,12 +906,14 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
               <input
                 type="checkbox"
                 checked={isChecked}
-                onChange={(e) => handleFieldChange(field.id, {
-                  fieldId: field.id,
-                  value: e.target.checked,
-                  displayValue: e.target.checked ? 'Sí' : 'No',
-                  priceModifier: e.target.checked ? (field.priceModifier || 0) : 0,
-                })}
+                onChange={(e) =>
+                  handleFieldChange(field.id, {
+                    fieldId: field.id,
+                    value: e.target.checked,
+                    displayValue: e.target.checked ? 'Sí' : 'No',
+                    priceModifier: e.target.checked ? field.priceModifier || 0 : 0,
+                  })
+                }
                 className="mt-1 w-5 h-5 rounded border-2 border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
               />
               <div>
@@ -902,9 +932,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                 )}
               </div>
             </label>
-            {field.helpText && (
-              <p className="text-sm text-gray-400 mt-2 ml-8">{field.helpText}</p>
-            )}
+            {field.helpText && <p className="text-sm text-gray-400 mt-2 ml-8">{field.helpText}</p>}
           </div>
         );
       }
@@ -918,19 +946,19 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
               {field.label}
               {field.required && <span className="text-red-500 ml-1">*</span>}
             </label>
-            {field.helpText && (
-              <p className="text-sm text-gray-500 mb-2">{field.helpText}</p>
-            )}
+            {field.helpText && <p className="text-sm text-gray-500 mb-2">{field.helpText}</p>}
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 value={numberValue}
-                onChange={(e) => handleFieldChange(field.id, {
-                  fieldId: field.id,
-                  value: parseFloat(e.target.value) || 0,
-                  displayValue: `${e.target.value}${numberConfig.unit ? ` ${numberConfig.unit}` : ''}`,
-                  priceModifier: field.priceModifier || 0,
-                })}
+                onChange={(e) =>
+                  handleFieldChange(field.id, {
+                    fieldId: field.id,
+                    value: parseFloat(e.target.value) || 0,
+                    displayValue: `${e.target.value}${numberConfig.unit ? ` ${numberConfig.unit}` : ''}`,
+                    priceModifier: field.priceModifier || 0,
+                  })
+                }
                 min={numberConfig.min}
                 max={numberConfig.max}
                 step={numberConfig.step || 1}
@@ -952,10 +980,10 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
               {field.label}
               {field.required && <span className="text-red-500 ml-1">*</span>}
             </label>
-            {field.helpText && (
-              <p className="text-sm text-gray-500 mb-3">{field.helpText}</p>
-            )}
-            <div className={`space-y-2 ${radioConfig.layout === 'horizontal' ? 'flex flex-wrap gap-4' : ''}`}>
+            {field.helpText && <p className="text-sm text-gray-500 mb-3">{field.helpText}</p>}
+            <div
+              className={`space-y-2 ${radioConfig.layout === 'horizontal' ? 'flex flex-wrap gap-4' : ''}`}
+            >
               {radioConfig.options?.map((option: any) => {
                 const isSelected = value?.value === option.value;
                 return (
@@ -972,17 +1000,21 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                       name={field.id}
                       value={option.value}
                       checked={isSelected}
-                      onChange={() => handleFieldChange(field.id, {
-                        fieldId: field.id,
-                        value: option.value,
-                        displayValue: option.label,
-                        priceModifier: option.priceModifier || field.priceModifier || 0,
-                      })}
+                      onChange={() =>
+                        handleFieldChange(field.id, {
+                          fieldId: field.id,
+                          value: option.value,
+                          displayValue: option.label,
+                          priceModifier: option.priceModifier || field.priceModifier || 0,
+                        })
+                      }
                       className="w-4 h-4 text-purple-600 focus:ring-purple-500"
                     />
                     <span className="font-medium text-gray-700">{option.label}</span>
                     {option.priceModifier && option.priceModifier > 0 && (
-                      <span className="text-sm text-purple-600">+€{option.priceModifier.toFixed(2)}</span>
+                      <span className="text-sm text-purple-600">
+                        +€{option.priceModifier.toFixed(2)}
+                      </span>
                     )}
                   </label>
                 );
@@ -1005,7 +1037,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
   // Get card_selector field if exists (for legacy theme gallery)
   const getCardSelectorField = (): CustomizationField | null => {
-    return schema.fields.find(f => f.fieldType === 'card_selector') || null;
+    return schema.fields.find((f) => f.fieldType === 'card_selector') || null;
   };
 
   const cardSelectorField = getCardSelectorField();
@@ -1020,7 +1052,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   const getThemeCategoryImage = (theme: Theme): ThemeCategoryImage | null => {
     const categoryIds = [product.categoryId, product.subcategoryId].filter(Boolean);
     for (const catId of categoryIds) {
-      const catImage = theme.categoryImages?.find(ci => ci.categoryId === catId);
+      const catImage = theme.categoryImages?.find((ci) => ci.categoryId === catId);
       if (catImage) return catImage;
     }
     return null;
@@ -1037,7 +1069,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   // Handle theme selection from modal (supports both centralized and legacy)
   const handleSelectTheme = (option: { value: string; label: string; priceModifier?: number }) => {
     // Check if it's a centralized theme
-    const centralizedTheme = centralizedThemes.find(t => t.id === option.value);
+    const centralizedTheme = centralizedThemes.find((t) => t.id === option.value);
     if (centralizedTheme) {
       // Get first variant if available
       const categoryIds = [product.categoryId, product.subcategoryId].filter(Boolean) as string[];
@@ -1071,7 +1103,11 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   };
 
   // Get currently selected theme info (supports both centralized and legacy)
-  const getSelectedThemeInfo = (): { value: string; label: string; previewImage?: string } | null => {
+  const getSelectedThemeInfo = (): {
+    value: string;
+    label: string;
+    previewImage?: string;
+  } | null => {
     // Priority 1: Centralized theme with selected variant
     if (selectedCentralizedTheme) {
       // Use selected variant's preview if available
@@ -1095,7 +1131,9 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     if (cardSelectorField) {
       const cardValue = values[cardSelectorField.id];
       if (cardValue) {
-        const selectedOption = cardSelectorConfig?.options?.find(o => o.value === cardValue.value);
+        const selectedOption = cardSelectorConfig?.options?.find(
+          (o) => o.value === cardValue.value
+        );
         if (selectedOption) {
           return {
             value: selectedOption.value,
@@ -1123,7 +1161,10 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   const getBaseImage = (): string => {
     // PRIORIDAD 1: Variante seleccionada de temática centralizada
     if (selectedVariant?.previewImage) {
-      console.log('[getBaseImage] ✅ Using selected variant previewImage:', selectedVariant.previewImage);
+      console.log(
+        '[getBaseImage] ✅ Using selected variant previewImage:',
+        selectedVariant.previewImage
+      );
       return selectedVariant.previewImage;
     }
 
@@ -1131,33 +1172,39 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     if (selectedCentralizedTheme) {
       const catImage = getThemeCategoryImage(selectedCentralizedTheme);
       if (catImage?.previewImage) {
-        console.log('[getBaseImage] ✅ Using centralized theme previewImage:', catImage.previewImage);
+        console.log(
+          '[getBaseImage] ✅ Using centralized theme previewImage:',
+          catImage.previewImage
+        );
         return catImage.previewImage;
       }
     }
 
     // PRIORIDAD 2: Buscar card_selector con previewImage (temáticas legacy)
-    const cardField = schema.fields.find(f => f.fieldType === 'card_selector');
+    const cardField = schema.fields.find((f) => f.fieldType === 'card_selector');
     if (cardField) {
       const cardValue = values[cardField.id];
       if (cardValue) {
         const cardConfig = cardField.config as CardSelectorConfig;
-        const selectedCard = cardConfig.options?.find(c => c.value === cardValue.value);
+        const selectedCard = cardConfig.options?.find((c) => c.value === cardValue.value);
 
         if (selectedCard?.previewImage) {
-          console.log('[getBaseImage] ✅ Using card_selector previewImage:', selectedCard.previewImage);
+          console.log(
+            '[getBaseImage] ✅ Using card_selector previewImage:',
+            selectedCard.previewImage
+          );
           return selectedCard.previewImage;
         }
       }
     }
 
     // PRIORIDAD 3: Buscar color_selector con previewImage
-    const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
+    const colorField = schema.fields.find((f) => f.fieldType === 'color_selector');
     if (colorField) {
       const colorValue = values[colorField.id];
       if (colorValue) {
         const colorConfig = colorField.config as ColorSelectorConfig;
-        const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
+        const selectedColor = colorConfig.availableColors?.find((c) => c.id === colorValue.value);
 
         // Soportar múltiples formatos de imagen
         if (selectedColor?.previewImages?.default) {
@@ -1182,7 +1229,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
   // Get user uploaded image
   const getUserImage = (): string | null => {
-    const imageField = schema.fields.find(f => f.fieldType === 'image_upload');
+    const imageField = schema.fields.find((f) => f.fieldType === 'image_upload');
     if (!imageField) return null;
 
     const imageValue = values[imageField.id];
@@ -1191,7 +1238,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
   // Get image transform
   const getImageTransform = () => {
-    const imageField = schema.fields.find(f => f.fieldType === 'image_upload');
+    const imageField = schema.fields.find((f) => f.fieldType === 'image_upload');
     if (!imageField) return undefined;
 
     const imageValue = values[imageField.id];
@@ -1237,12 +1284,13 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
       nameLower.includes('camiseta') ||
       nameLower.includes('sudadera') ||
       nameLower.includes('polo') ||
-      tags.some((tag: string) =>
-        tag.includes('camiseta') ||
-        tag.includes('sudadera') ||
-        tag.includes('polo') ||
-        tag.includes('textil') ||
-        tag.includes('ropa')
+      tags.some(
+        (tag: string) =>
+          tag.includes('camiseta') ||
+          tag.includes('sudadera') ||
+          tag.includes('polo') ||
+          tag.includes('textil') ||
+          tag.includes('ropa')
       )
     );
   };
@@ -1250,15 +1298,15 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   // Obtener imagen frontal para textiles
   const getTextileFrontImage = (): string | null => {
     // PRIORIDAD 1: Buscar campo frontal específico
-    const frontField = schema.fields.find(f =>
-      f.fieldType === 'image_upload' && (
-        f.id.toLowerCase().includes('front') ||
-        f.id.toLowerCase().includes('frontal') ||
-        f.id.toLowerCase().includes('frente') ||
-        f.label.toLowerCase().includes('front') ||
-        f.label.toLowerCase().includes('frontal') ||
-        f.label.toLowerCase().includes('frente')
-      )
+    const frontField = schema.fields.find(
+      (f) =>
+        f.fieldType === 'image_upload' &&
+        (f.id.toLowerCase().includes('front') ||
+          f.id.toLowerCase().includes('frontal') ||
+          f.id.toLowerCase().includes('frente') ||
+          f.label.toLowerCase().includes('front') ||
+          f.label.toLowerCase().includes('frontal') ||
+          f.label.toLowerCase().includes('frente'))
     );
 
     if (frontField) {
@@ -1271,16 +1319,24 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
     // PRIORIDAD 2: Buscar campo genérico (sin front/back en nombre) para compatibilidad
     // Esto permite que schemas con un solo campo genérico funcionen en ambas vistas
-    const genericField = schema.fields.find(f => {
+    const genericField = schema.fields.find((f) => {
       if (f.fieldType !== 'image_upload') return false;
       const idLower = f.id.toLowerCase();
       const labelLower = f.label.toLowerCase();
       // Es genérico si NO contiene front ni back
       const isGeneric =
-        !idLower.includes('front') && !idLower.includes('frontal') && !idLower.includes('frente') &&
-        !idLower.includes('back') && !idLower.includes('trasera') && !idLower.includes('espalda') &&
-        !labelLower.includes('front') && !labelLower.includes('frontal') && !labelLower.includes('frente') &&
-        !labelLower.includes('back') && !labelLower.includes('trasera') && !labelLower.includes('espalda');
+        !idLower.includes('front') &&
+        !idLower.includes('frontal') &&
+        !idLower.includes('frente') &&
+        !idLower.includes('back') &&
+        !idLower.includes('trasera') &&
+        !idLower.includes('espalda') &&
+        !labelLower.includes('front') &&
+        !labelLower.includes('frontal') &&
+        !labelLower.includes('frente') &&
+        !labelLower.includes('back') &&
+        !labelLower.includes('trasera') &&
+        !labelLower.includes('espalda');
       return isGeneric;
     });
 
@@ -1298,15 +1354,15 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
   const getTextileBackImage = (): string | null => {
     // PRIORIDAD 1: Buscar campo trasero específico
-    const backField = schema.fields.find(f =>
-      f.fieldType === 'image_upload' && (
-        f.id.toLowerCase().includes('back') ||
-        f.id.toLowerCase().includes('trasera') ||
-        f.id.toLowerCase().includes('espalda') ||
-        f.label.toLowerCase().includes('back') ||
-        f.label.toLowerCase().includes('trasera') ||
-        f.label.toLowerCase().includes('espalda')
-      )
+    const backField = schema.fields.find(
+      (f) =>
+        f.fieldType === 'image_upload' &&
+        (f.id.toLowerCase().includes('back') ||
+          f.id.toLowerCase().includes('trasera') ||
+          f.id.toLowerCase().includes('espalda') ||
+          f.label.toLowerCase().includes('back') ||
+          f.label.toLowerCase().includes('trasera') ||
+          f.label.toLowerCase().includes('espalda'))
     );
 
     if (backField) {
@@ -1318,16 +1374,24 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     }
 
     // PRIORIDAD 2: Buscar campo genérico (sin front/back en nombre)
-    const genericField = schema.fields.find(f => {
+    const genericField = schema.fields.find((f) => {
       if (f.fieldType !== 'image_upload') return false;
       const idLower = f.id.toLowerCase();
       const labelLower = f.label.toLowerCase();
       // Es genérico si NO contiene front ni back
       const isGeneric =
-        !idLower.includes('front') && !idLower.includes('frontal') && !idLower.includes('frente') &&
-        !idLower.includes('back') && !idLower.includes('trasera') && !idLower.includes('espalda') &&
-        !labelLower.includes('front') && !labelLower.includes('frontal') && !labelLower.includes('frente') &&
-        !labelLower.includes('back') && !labelLower.includes('trasera') && !labelLower.includes('espalda');
+        !idLower.includes('front') &&
+        !idLower.includes('frontal') &&
+        !idLower.includes('frente') &&
+        !idLower.includes('back') &&
+        !idLower.includes('trasera') &&
+        !idLower.includes('espalda') &&
+        !labelLower.includes('front') &&
+        !labelLower.includes('frontal') &&
+        !labelLower.includes('frente') &&
+        !labelLower.includes('back') &&
+        !labelLower.includes('trasera') &&
+        !labelLower.includes('espalda');
       return isGeneric;
     });
 
@@ -1345,15 +1409,15 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
   const getTextileFrontTransform = () => {
     // PRIORIDAD 1: Buscar transform de campo frontal específico
-    const frontField = schema.fields.find(f =>
-      f.fieldType === 'image_upload' && (
-        f.id.toLowerCase().includes('front') ||
-        f.id.toLowerCase().includes('frontal') ||
-        f.id.toLowerCase().includes('frente') ||
-        f.label.toLowerCase().includes('front') ||
-        f.label.toLowerCase().includes('frontal') ||
-        f.label.toLowerCase().includes('frente')
-      )
+    const frontField = schema.fields.find(
+      (f) =>
+        f.fieldType === 'image_upload' &&
+        (f.id.toLowerCase().includes('front') ||
+          f.id.toLowerCase().includes('frontal') ||
+          f.id.toLowerCase().includes('frente') ||
+          f.label.toLowerCase().includes('front') ||
+          f.label.toLowerCase().includes('frontal') ||
+          f.label.toLowerCase().includes('frente'))
     );
 
     if (frontField) {
@@ -1364,15 +1428,23 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     }
 
     // PRIORIDAD 2: Buscar transform de campo genérico
-    const genericField = schema.fields.find(f => {
+    const genericField = schema.fields.find((f) => {
       if (f.fieldType !== 'image_upload') return false;
       const idLower = f.id.toLowerCase();
       const labelLower = f.label.toLowerCase();
       const isGeneric =
-        !idLower.includes('front') && !idLower.includes('frontal') && !idLower.includes('frente') &&
-        !idLower.includes('back') && !idLower.includes('trasera') && !idLower.includes('espalda') &&
-        !labelLower.includes('front') && !labelLower.includes('frontal') && !labelLower.includes('frente') &&
-        !labelLower.includes('back') && !labelLower.includes('trasera') && !labelLower.includes('espalda');
+        !idLower.includes('front') &&
+        !idLower.includes('frontal') &&
+        !idLower.includes('frente') &&
+        !idLower.includes('back') &&
+        !idLower.includes('trasera') &&
+        !idLower.includes('espalda') &&
+        !labelLower.includes('front') &&
+        !labelLower.includes('frontal') &&
+        !labelLower.includes('frente') &&
+        !labelLower.includes('back') &&
+        !labelLower.includes('trasera') &&
+        !labelLower.includes('espalda');
       return isGeneric;
     });
 
@@ -1388,15 +1460,15 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
   const getTextileBackTransform = () => {
     // PRIORIDAD 1: Buscar transform de campo trasero específico
-    const backField = schema.fields.find(f =>
-      f.fieldType === 'image_upload' && (
-        f.id.toLowerCase().includes('back') ||
-        f.id.toLowerCase().includes('trasera') ||
-        f.id.toLowerCase().includes('espalda') ||
-        f.label.toLowerCase().includes('back') ||
-        f.label.toLowerCase().includes('trasera') ||
-        f.label.toLowerCase().includes('espalda')
-      )
+    const backField = schema.fields.find(
+      (f) =>
+        f.fieldType === 'image_upload' &&
+        (f.id.toLowerCase().includes('back') ||
+          f.id.toLowerCase().includes('trasera') ||
+          f.id.toLowerCase().includes('espalda') ||
+          f.label.toLowerCase().includes('back') ||
+          f.label.toLowerCase().includes('trasera') ||
+          f.label.toLowerCase().includes('espalda'))
     );
 
     if (backField) {
@@ -1407,15 +1479,23 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     }
 
     // PRIORIDAD 2: Buscar transform de campo genérico
-    const genericField = schema.fields.find(f => {
+    const genericField = schema.fields.find((f) => {
       if (f.fieldType !== 'image_upload') return false;
       const idLower = f.id.toLowerCase();
       const labelLower = f.label.toLowerCase();
       const isGeneric =
-        !idLower.includes('front') && !idLower.includes('frontal') && !idLower.includes('frente') &&
-        !idLower.includes('back') && !idLower.includes('trasera') && !idLower.includes('espalda') &&
-        !labelLower.includes('front') && !labelLower.includes('frontal') && !labelLower.includes('frente') &&
-        !labelLower.includes('back') && !labelLower.includes('trasera') && !labelLower.includes('espalda');
+        !idLower.includes('front') &&
+        !idLower.includes('frontal') &&
+        !idLower.includes('frente') &&
+        !idLower.includes('back') &&
+        !idLower.includes('trasera') &&
+        !idLower.includes('espalda') &&
+        !labelLower.includes('front') &&
+        !labelLower.includes('frontal') &&
+        !labelLower.includes('frente') &&
+        !labelLower.includes('back') &&
+        !labelLower.includes('trasera') &&
+        !labelLower.includes('espalda');
       return isGeneric;
     });
 
@@ -1432,22 +1512,28 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   // Obtener imagen base frontal y trasera del producto
   const getTextileBaseFrontImage = (): string => {
     // PRIORIDAD 1: Buscar color selector y obtener su imagen frontal específica
-    const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
+    const colorField = schema.fields.find((f) => f.fieldType === 'color_selector');
     if (colorField) {
       const colorValue = values[colorField.id];
       if (colorValue) {
         const colorConfig = colorField.config as ColorSelectorConfig;
-        const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
+        const selectedColor = colorConfig.availableColors?.find((c) => c.id === colorValue.value);
 
         // Si el color tiene imagen frontal específica, usarla
         if (selectedColor?.previewImages?.front) {
-          console.log('[TextileFront] Using color-specific front image:', selectedColor.previewImages.front);
+          console.log(
+            '[TextileFront] Using color-specific front image:',
+            selectedColor.previewImages.front
+          );
           return selectedColor.previewImages.front;
         }
 
         // Fallback a previewImage antigua (deprecated)
         if (selectedColor?.previewImage) {
-          console.log('[TextileFront] Using color previewImage (deprecated):', selectedColor.previewImage);
+          console.log(
+            '[TextileFront] Using color previewImage (deprecated):',
+            selectedColor.previewImage
+          );
           return selectedColor.previewImage;
         }
       }
@@ -1467,16 +1553,19 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
   const getTextileBaseBackImage = (): string => {
     // PRIORIDAD 1: Buscar color selector y obtener su imagen trasera específica
-    const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
+    const colorField = schema.fields.find((f) => f.fieldType === 'color_selector');
     if (colorField) {
       const colorValue = values[colorField.id];
       if (colorValue) {
         const colorConfig = colorField.config as ColorSelectorConfig;
-        const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
+        const selectedColor = colorConfig.availableColors?.find((c) => c.id === colorValue.value);
 
         // Si el color tiene imagen trasera específica, usarla
         if (selectedColor?.previewImages?.back) {
-          console.log('[TextileBack] Using color-specific back image:', selectedColor.previewImages.back);
+          console.log(
+            '[TextileBack] Using color-specific back image:',
+            selectedColor.previewImages.back
+          );
           return selectedColor.previewImages.back;
         }
       }
@@ -1511,18 +1600,20 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                   <Save className="w-6 h-6 text-blue-600" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-blue-900 text-lg mb-1">
-                    Borrador Encontrado
-                  </h3>
+                  <h3 className="font-bold text-blue-900 text-lg mb-1">Borrador Encontrado</h3>
                   <p className="text-blue-700 text-sm mb-3">
-                    Encontramos un diseño guardado automáticamente. ¿Quieres continuar donde lo dejaste?
+                    Encontramos un diseño guardado automáticamente. ¿Quieres continuar donde lo
+                    dejaste?
                   </p>
                   {getLastSavedTime() && (
                     <p className="text-blue-600 text-xs mb-3">
-                      Última modificación: {(() => {
+                      Última modificación:{' '}
+                      {(() => {
                         const lastSaved = getLastSavedTime();
                         if (!lastSaved) return '';
-                        const mins = Math.floor((Date.now() - new Date(lastSaved).getTime()) / 1000 / 60);
+                        const mins = Math.floor(
+                          (Date.now() - new Date(lastSaved).getTime()) / 1000 / 60
+                        );
                         return mins < 1
                           ? 'hace menos de 1 minuto'
                           : `hace ${mins} minuto${mins > 1 ? 's' : ''}`;
@@ -1571,7 +1662,10 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                 </button>
                 {getSelectedTheme()?.previewImage && (
                   <p className="text-center text-sm text-gray-500 mt-2">
-                    Temática actual: <span className="font-semibold text-purple-600">{getSelectedTheme()?.label}</span>
+                    Temática actual:{' '}
+                    <span className="font-semibold text-purple-600">
+                      {getSelectedTheme()?.label}
+                    </span>
                   </p>
                 )}
               </div>
@@ -1614,7 +1708,8 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
             {layers.length > 0 && (
               <div className="mt-4 p-4 bg-pink-50 border-2 border-pink-200 rounded-lg">
                 <p className="text-sm text-pink-800 font-medium mb-2">
-                  🎨 {layers.length} clipart{layers.length > 1 ? 's' : ''} añadido{layers.length > 1 ? 's' : ''}
+                  🎨 {layers.length} clipart{layers.length > 1 ? 's' : ''} añadido
+                  {layers.length > 1 ? 's' : ''}
                 </p>
                 <p className="text-xs text-pink-600">
                   Los cliparts se agregarán sobre tu diseño. Puedes añadir múltiples elementos.
@@ -1625,9 +1720,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
           {/* Right Column: Fields */}
           <div className="order-1 lg:order-2">
-            <div className="space-y-6 mb-8">
-              {sortedFields.map((field) => renderField(field))}
-            </div>
+            <div className="space-y-6 mb-8">{sortedFields.map((field) => renderField(field))}</div>
 
             {/* Pricing Summary */}
             <div className="bg-gradient-to-r from-purple-50 to-cyan-50 rounded-xl p-6 mb-6">
@@ -1750,9 +1843,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
               <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Palette className="w-6 h-6 text-white" />
-                  <h3 className="text-xl font-bold text-white">
-                    Elige una Temática
-                  </h3>
+                  <h3 className="text-xl font-bold text-white">Elige una Temática</h3>
                 </div>
                 <button
                   onClick={() => setShowThemes(false)}
@@ -1765,7 +1856,8 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
               {/* Modal Content */}
               <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
                 <p className="text-gray-600 mb-6">
-                  Selecciona un diseño para tu producto. La imagen de vista previa se actualizará automáticamente.
+                  Selecciona un diseño para tu producto. La imagen de vista previa se actualizará
+                  automáticamente.
                 </p>
 
                 {/* Centralized Themes with Variants */}
@@ -1773,7 +1865,9 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                   <div className="space-y-6">
                     {centralizedThemes.map((theme) => {
                       // Get all variants for this theme in the current product category
-                      const categoryIds = [product.categoryId, product.subcategoryId].filter(Boolean) as string[];
+                      const categoryIds = [product.categoryId, product.subcategoryId].filter(
+                        Boolean
+                      ) as string[];
                       let variants: ThemeVariant[] = [];
                       for (const catId of categoryIds) {
                         const catVariants = getThemeVariantsForCategory(theme, catId);
@@ -1808,7 +1902,9 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                           {/* Variants Grid */}
                           <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                             {variants.map((variant) => {
-                              const isSelected = selectedVariant?.id === variant.id && selectedCentralizedTheme?.id === theme.id;
+                              const isSelected =
+                                selectedVariant?.id === variant.id &&
+                                selectedCentralizedTheme?.id === theme.id;
                               return (
                                 <button
                                   key={variant.id}
@@ -1830,16 +1926,28 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                                     {/* Selected indicator */}
                                     {isSelected && (
                                       <div className="absolute top-1 left-1 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center shadow">
-                                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                        <svg
+                                          className="w-4 h-4 text-white"
+                                          fill="currentColor"
+                                          viewBox="0 0 20 20"
+                                        >
+                                          <path
+                                            fillRule="evenodd"
+                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                            clipRule="evenodd"
+                                          />
                                         </svg>
                                       </div>
                                     )}
                                   </div>
 
                                   {/* Variant Name */}
-                                  <div className={`px-2 py-1.5 ${isSelected ? 'bg-purple-50' : 'bg-white'}`}>
-                                    <p className={`text-xs font-medium text-center truncate ${isSelected ? 'text-purple-700' : 'text-gray-700'}`}>
+                                  <div
+                                    className={`px-2 py-1.5 ${isSelected ? 'bg-purple-50' : 'bg-white'}`}
+                                  >
+                                    <p
+                                      className={`text-xs font-medium text-center truncate ${isSelected ? 'text-purple-700' : 'text-gray-700'}`}
+                                    >
                                       {variant.name}
                                     </p>
                                   </div>
@@ -1905,8 +2013,16 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                             {/* Selected indicator */}
                             {isSelected && (
                               <div className="absolute top-2 left-2 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                <svg
+                                  className="w-5 h-5 text-white"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
                                 </svg>
                               </div>
                             )}
@@ -1914,7 +2030,9 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
                           {/* Theme Info */}
                           <div className={`p-3 ${isSelected ? 'bg-purple-50' : 'bg-white'}`}>
-                            <h4 className={`font-bold text-sm ${isSelected ? 'text-purple-700' : 'text-gray-800'}`}>
+                            <h4
+                              className={`font-bold text-sm ${isSelected ? 'text-purple-700' : 'text-gray-800'}`}
+                            >
                               {option.label}
                             </h4>
                             {option.description && (
@@ -1940,9 +2058,11 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                 <p className="text-sm text-gray-500">
                   {hasCentralizedThemes
                     ? (() => {
-                        const categoryIds = [product.categoryId, product.subcategoryId].filter(Boolean) as string[];
+                        const categoryIds = [product.categoryId, product.subcategoryId].filter(
+                          Boolean
+                        ) as string[];
                         let totalVariants = 0;
-                        centralizedThemes.forEach(theme => {
+                        centralizedThemes.forEach((theme) => {
                           for (const catId of categoryIds) {
                             const variants = getThemeVariantsForCategory(theme, catId);
                             if (variants.length > 0) {
@@ -1953,8 +2073,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                         });
                         return `${centralizedThemes.length} temáticas, ${totalVariants} diseños disponibles`;
                       })()
-                    : `${cardSelectorConfig?.options?.length || 0} diseños disponibles`
-                  }
+                    : `${cardSelectorConfig?.options?.length || 0} diseños disponibles`}
                 </p>
                 <button
                   onClick={() => setShowThemes(false)}

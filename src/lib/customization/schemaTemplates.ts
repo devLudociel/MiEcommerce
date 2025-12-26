@@ -65,7 +65,8 @@ export const CANDY_BOX_SCHEMA: CustomizationSchema = {
       required: false,
       priceModifier: 0,
       order: 3,
-      helpText: 'Puede ser una imagen, invitación, personaje o idea. No es obligatorio. (Imagen 1 de 3)',
+      helpText:
+        'Puede ser una imagen, invitación, personaje o idea. No es obligatorio. (Imagen 1 de 3)',
       config: {
         maxSizeMB: 10,
         allowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
@@ -211,12 +212,14 @@ export const CANDY_BOX_SCHEMA: CustomizationSchema = {
     {
       id: 'design_confirmation',
       fieldType: 'checkbox',
-      label: 'Entiendo que el diseño se adaptará a la temática elegida y recibiré una vista previa antes de imprimir.',
+      label:
+        'Entiendo que el diseño se adaptará a la temática elegida y recibiré una vista previa antes de imprimir.',
       required: true,
       priceModifier: 0,
       order: 11,
       config: {
-        description: 'El diseño final lo realiza nuestro equipo basándose en tus preferencias. Recibirás un preview para aprobar antes de la producción.',
+        description:
+          'El diseño final lo realiza nuestro equipo basándose en tus preferencias. Recibirás un preview para aprobar antes de la producción.',
         helpText: 'Debes aceptar para continuar',
       },
     },
@@ -453,12 +456,42 @@ export const MUG_CUSTOMIZATION_SCHEMA: CustomizationSchema = {
         displayStyle: 'visual_cards',
         layout: 'grid',
         options: [
-          { value: 'foto', label: 'Foto personalizada', icon: '📷', description: 'Tu foto favorita en la taza' },
-          { value: 'texto_nombre', label: 'Texto + nombre', icon: '✍️', description: 'Nombre con mensaje especial' },
-          { value: 'ilustracion', label: 'Ilustración / caricatura', icon: '🎨', description: 'Diseño ilustrado personalizado' },
-          { value: 'infantil', label: 'Diseño infantil', icon: '🧸', description: 'Para los más pequeños' },
-          { value: 'frase_divertida', label: 'Frase divertida', icon: '😄', description: 'Humor y frases ingeniosas' },
-          { value: 'logo_empresa', label: 'Logo / empresa', icon: '🏢', description: 'Corporativo o negocio' },
+          {
+            value: 'foto',
+            label: 'Foto personalizada',
+            icon: '📷',
+            description: 'Tu foto favorita en la taza',
+          },
+          {
+            value: 'texto_nombre',
+            label: 'Texto + nombre',
+            icon: '✍️',
+            description: 'Nombre con mensaje especial',
+          },
+          {
+            value: 'ilustracion',
+            label: 'Ilustración / caricatura',
+            icon: '🎨',
+            description: 'Diseño ilustrado personalizado',
+          },
+          {
+            value: 'infantil',
+            label: 'Diseño infantil',
+            icon: '🧸',
+            description: 'Para los más pequeños',
+          },
+          {
+            value: 'frase_divertida',
+            label: 'Frase divertida',
+            icon: '😄',
+            description: 'Humor y frases ingeniosas',
+          },
+          {
+            value: 'logo_empresa',
+            label: 'Logo / empresa',
+            icon: '🏢',
+            description: 'Corporativo o negocio',
+          },
         ],
       },
     },
@@ -613,12 +646,14 @@ export const MUG_CUSTOMIZATION_SCHEMA: CustomizationSchema = {
     {
       id: 'design_confirmation',
       fieldType: 'checkbox',
-      label: 'Confirmo que los textos están correctamente escritos y entiendo que recibiré una vista previa antes de imprimir.',
+      label:
+        'Confirmo que los textos están correctamente escritos y entiendo que recibiré una vista previa antes de imprimir.',
       required: true,
       priceModifier: 0,
       order: 10,
       config: {
-        description: 'Te enviaremos una vista previa para confirmar el diseño antes de producir. El diseño final lo realiza nuestro equipo adaptándolo al tipo de taza seleccionado.',
+        description:
+          'Te enviaremos una vista previa para confirmar el diseño antes de producir. El diseño final lo realiza nuestro equipo adaptándolo al tipo de taza seleccionado.',
         helpText: 'Debes aceptar para continuar',
       },
     },
@@ -642,7 +677,8 @@ export const SCHEMA_TEMPLATES: SchemaTemplate[] = [
   {
     id: 'candy_box',
     name: 'Cajas de Chuches',
-    description: 'Personalización para cajas de chuches infantiles con temática, nombre, edad y mensaje',
+    description:
+      'Personalización para cajas de chuches infantiles con temática, nombre, edad y mensaje',
     icon: '🍬',
     category: 'Eventos Infantiles',
     schema: CANDY_BOX_SCHEMA,
@@ -658,7 +694,8 @@ export const SCHEMA_TEMPLATES: SchemaTemplate[] = [
   {
     id: 'mug_customization',
     name: 'Tazas Personalizadas',
-    description: 'Personalización completa para tazas con diferentes tipos, estilos de diseño y textos',
+    description:
+      'Personalización completa para tazas con diferentes tipos, estilos de diseño y textos',
     icon: '☕',
     category: 'Sublimación',
     schema: MUG_CUSTOMIZATION_SCHEMA,
@@ -669,12 +706,12 @@ export const SCHEMA_TEMPLATES: SchemaTemplate[] = [
  * Obtiene una plantilla por ID
  */
 export function getSchemaTemplate(templateId: string): SchemaTemplate | undefined {
-  return SCHEMA_TEMPLATES.find(t => t.id === templateId);
+  return SCHEMA_TEMPLATES.find((t) => t.id === templateId);
 }
 
 /**
  * Obtiene todas las plantillas de una categoría
  */
 export function getTemplatesByCategory(category: string): SchemaTemplate[] {
-  return SCHEMA_TEMPLATES.filter(t => t.category === category);
+  return SCHEMA_TEMPLATES.filter((t) => t.category === category);
 }

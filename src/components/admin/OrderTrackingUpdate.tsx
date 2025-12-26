@@ -70,7 +70,9 @@ export default function OrderTrackingUpdate({ order, onUpdate }: OrderTrackingUp
           orderId: order.id,
           trackingNumber: trackingNumber.trim(),
           carrier,
-          estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery).toISOString() : undefined,
+          estimatedDelivery: estimatedDelivery
+            ? new Date(estimatedDelivery).toISOString()
+            : undefined,
         }),
       });
 

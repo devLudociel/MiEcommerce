@@ -1,4 +1,4 @@
-import { memo, useRef, useState } from 'react';
+import { memo, useCallback, useRef, useState } from 'react';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 
 interface ProductImage {
@@ -48,6 +48,20 @@ export const ProductGallery = memo(function ProductGallery({
     onImageChange((selectedImage + 1) % images.length);
   };
 
+  const handleToggleZoom = useCallback(() => {
+    setIsZoomed((prev) => !prev);
+  }, []);
+
+  const handleZoomKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        handleToggleZoom();
+      }
+    },
+    [handleToggleZoom]
+  );
+
   return (
     <div className="space-y-4 lg:space-y-6">
       {/* Main Image with Zoom */}
@@ -57,8 +71,13 @@ export const ProductGallery = memo(function ProductGallery({
           className={`relative bg-white rounded-3xl overflow-hidden shadow-xl border-4 border-transparent ${
             isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'
           } hover:border-cyan-500/50 transition-all duration-500`}
-          onClick={() => setIsZoomed(!isZoomed)}
+          onClick={handleToggleZoom}
+          onKeyDown={handleZoomKeyDown}
           onMouseMove={handleImageZoom}
+          role="button"
+          tabIndex={0}
+          aria-pressed={isZoomed}
+          aria-label={isZoomed ? 'Reducir zoom de la imagen' : 'Ampliar zoom de la imagen'}
         >
           <img
             src={currentImage?.url || FALLBACK_IMG_400x300}
@@ -103,7 +122,12 @@ export const ProductGallery = memo(function ProductGallery({
             aria-label="Imagen anterior"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
           <button

@@ -82,16 +82,15 @@ export function QualityBadge({
       aria-label={`Calidad de impresión: ${config.label}`}
     >
       {showIcon && (
-        <Icon className={`${sizeStyle.icon} ${config.iconColor} flex-shrink-0`} aria-hidden="true" />
+        <Icon
+          className={`${sizeStyle.icon} ${config.iconColor} flex-shrink-0`}
+          aria-hidden="true"
+        />
       )}
       <span>
         Calidad: <strong>{config.label}</strong>
       </span>
-      {showDPI && dpi && (
-        <span className="ml-1 opacity-75">
-          ({dpi} DPI)
-        </span>
-      )}
+      {showDPI && dpi && <span className="ml-1 opacity-75">({dpi} DPI)</span>}
     </div>
   );
 }
@@ -129,21 +128,11 @@ export function QualityBadgeDetailed({
         <Icon className={`w-5 h-5 ${config.iconColor} flex-shrink-0 mt-0.5`} aria-hidden="true" />
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold">
-              Calidad de impresión: {config.label}
-            </span>
-            {dpi && (
-              <span className="text-xs opacity-75">
-                ({dpi} DPI)
-              </span>
-            )}
+            <span className="font-semibold">Calidad de impresión: {config.label}</span>
+            {dpi && <span className="text-xs opacity-75">({dpi} DPI)</span>}
           </div>
           <p className="text-sm mb-1">{message}</p>
-          {recommendation && (
-            <p className="text-sm font-medium mt-2">
-              💡 {recommendation}
-            </p>
-          )}
+          {recommendation && <p className="text-sm font-medium mt-2">💡 {recommendation}</p>}
         </div>
       </div>
     </div>

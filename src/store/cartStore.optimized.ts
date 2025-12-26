@@ -133,8 +133,9 @@ export const cartTotal = computed(cartStore, (cart) => cart.total);
  * Computed store for item IDs only
  * Useful for checking if a product is in cart without subscribing to full cart
  */
-export const cartItemIds = computed(cartStore, (cart) =>
-  new Set(cart.items.map((item) => `${item.id}-${item.variantId || 'default'}`))
+export const cartItemIds = computed(
+  cartStore,
+  (cart) => new Set(cart.items.map((item) => `${item.id}-${item.variantId || 'default'}`))
 );
 
 /**

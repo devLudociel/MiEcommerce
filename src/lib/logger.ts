@@ -29,7 +29,14 @@ export enum LogLevel {
 }
 
 /** Type for log data - accepts structured data or primitive values */
-export type LogData = Record<string, unknown> | Error | string | number | boolean | null | undefined;
+export type LogData =
+  | Record<string, unknown>
+  | Error
+  | string
+  | number
+  | boolean
+  | null
+  | undefined;
 
 /** Extended window interface for dev tools */
 interface WindowWithLogger extends Window {

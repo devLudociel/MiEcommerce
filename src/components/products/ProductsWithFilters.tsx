@@ -80,7 +80,10 @@ export default function ProductsWithFilters() {
             ...prev,
             categories: [category.id],
           }));
-          logger.debug('[ProductsWithFilters] Category filter applied', { slug: categorySlug, id: category.id });
+          logger.debug('[ProductsWithFilters] Category filter applied', {
+            slug: categorySlug,
+            id: category.id,
+          });
         }
       }
     }
@@ -112,11 +115,7 @@ export default function ProductsWithFilters() {
         setLoading(true);
         logger.debug('[ProductsWithFilters] Loading products');
 
-        const q = query(
-          collection(db, 'products'),
-          where('active', '==', true),
-          limit(100)
-        );
+        const q = query(collection(db, 'products'), where('active', '==', true), limit(100));
 
         const snapshot = await getDocs(q);
         const items: Product[] = snapshot.docs.map((doc) => {
@@ -160,7 +159,7 @@ export default function ProductsWithFilters() {
   useEffect(() => {
     console.log('⚙️ INICIO - Aplicando filtros:', {
       totalProducts: products.length,
-      filters: currentFilters
+      filters: currentFilters,
     });
 
     let filtered = [...products];
@@ -196,7 +195,7 @@ export default function ProductsWithFilters() {
       console.log('🔍 Antes de filtrar por tags:', {
         totalProducts: filtered.length,
         buscando: currentFilters.tags,
-        productosConTags: filtered.map(p => ({ name: p.name, tags: p.tags }))
+        productosConTags: filtered.map((p) => ({ name: p.name, tags: p.tags })),
       });
 
       filtered = filtered.filter((p) => {
@@ -211,7 +210,8 @@ export default function ProductsWithFilters() {
 
             // Coincidencia singular/plural (camiseta <-> camisetas)
             if (searchLower.endsWith('s') && searchLower.slice(0, -1) === productLower) return true;
-            if (productLower.endsWith('s') && productLower.slice(0, -1) === searchLower) return true;
+            if (productLower.endsWith('s') && productLower.slice(0, -1) === searchLower)
+              return true;
 
             return false;
           });
@@ -223,12 +223,12 @@ export default function ProductsWithFilters() {
 
       console.log('✅ Después de filtrar por tags:', {
         remaining: filtered.length,
-        productos: filtered.map(p => p.name)
+        productos: filtered.map((p) => p.name),
       });
 
       logger.debug('[ProductsWithFilters] Tag filter applied', {
         tags: currentFilters.tags,
-        remaining: filtered.length
+        remaining: filtered.length,
       });
     }
 
@@ -264,7 +264,7 @@ export default function ProductsWithFilters() {
 
     console.log('🎯 FINAL - Productos que se mostrarán:', {
       total: filtered.length,
-      nombres: filtered.map(p => p.name)
+      nombres: filtered.map((p) => p.name),
     });
 
     setFilteredProducts(filtered);
@@ -324,15 +324,17 @@ export default function ProductsWithFilters() {
                   Intenta ajustar los filtros para ver más resultados
                 </p>
                 <button
-                  onClick={() => handleFilterChange({
-                    categories: [],
-                    priceRange: { min: 0, max: 200 },
-                    colors: [],
-                    sizes: [],
-                    minRating: 0,
-                    inStock: false,
-                    sortBy: 'newest',
-                  })}
+                  onClick={() =>
+                    handleFilterChange({
+                      categories: [],
+                      priceRange: { min: 0, max: 200 },
+                      colors: [],
+                      sizes: [],
+                      minRating: 0,
+                      inStock: false,
+                      sortBy: 'newest',
+                    })
+                  }
                   className="px-6 py-3 bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-700 transition-colors"
                 >
                   Limpiar filtros
@@ -390,9 +392,7 @@ export default function ProductsWithFilters() {
                           </svg>
                         ))}
                         {product.rating > 0 && (
-                          <span className="text-sm text-gray-500 ml-1">
-                            ({product.reviews})
-                          </span>
+                          <span className="text-sm text-gray-500 ml-1">({product.reviews})</span>
                         )}
                       </div>
 
@@ -402,7 +402,9 @@ export default function ProductsWithFilters() {
                       </h3>
 
                       {/* Category */}
-                      <p className="text-sm text-gray-500 mb-3 capitalize">{product.categoryName}</p>
+                      <p className="text-sm text-gray-500 mb-3 capitalize">
+                        {product.categoryName}
+                      </p>
 
                       {/* Price */}
                       <div className="flex items-center gap-2">

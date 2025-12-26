@@ -89,7 +89,8 @@ export const POST: APIRoute = async ({ request }) => {
       await orderRef.set(
         {
           paymentStatus: 'paid',
-          status: orderData?.status === 'pending' ? 'processing' : orderData?.status || 'processing',
+          status:
+            orderData?.status === 'pending' ? 'processing' : orderData?.status || 'processing',
           updatedAt: new Date(),
         },
         { merge: true }

@@ -33,17 +33,10 @@ export default function CompareBar() {
           {/* Center: Product thumbnails */}
           <div className="flex-1 flex items-center gap-2 overflow-x-auto px-4">
             {items.map((item) => (
-              <div
-                key={item.id}
-                className="flex-shrink-0 relative group"
-              >
+              <div key={item.id} className="flex-shrink-0 relative group">
                 <div className="w-14 h-14 rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50">
                   {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
                       Sin img

@@ -100,7 +100,7 @@ export default function SavedDesignsPanel() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        await response.json();
         notify.success('Diseño duplicado correctamente');
         fetchDesigns(); // Refresh list
       } else {
@@ -253,8 +253,6 @@ function DesignCard({
   onUseInProduct,
   onUseInOtherProduct,
 }: DesignCardProps) {
-  const [showMenu, setShowMenu] = useState(false);
-
   return (
     <div className="group bg-white rounded-lg border-2 border-gray-200 hover:border-purple-400 transition-all overflow-hidden hover:shadow-lg">
       {/* Thumbnail */}

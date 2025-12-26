@@ -92,12 +92,12 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
 
   // Auto-save draft functionality
   const draftKey = `draft_${product.id}`;
-  const {
-    loadDraft,
-    clearDraft,
-    getLastSavedTime,
-    hasDraft,
-  } = useAutoSaveDraft(draftKey, { values, layers }, true, 30000);
+  const { loadDraft, clearDraft, getLastSavedTime, hasDraft } = useAutoSaveDraft(
+    draftKey,
+    { values, layers },
+    true,
+    30000
+  );
 
   // Detectar tipos de producto
   const isResinProduct = useCallback((): boolean => {
@@ -137,12 +137,13 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
       nameLower.includes('camiseta') ||
       nameLower.includes('sudadera') ||
       nameLower.includes('polo') ||
-      tags.some((tag) =>
-        tag.includes('camiseta') ||
-        tag.includes('sudadera') ||
-        tag.includes('polo') ||
-        tag.includes('textil') ||
-        tag.includes('ropa')
+      tags.some(
+        (tag) =>
+          tag.includes('camiseta') ||
+          tag.includes('sudadera') ||
+          tag.includes('polo') ||
+          tag.includes('textil') ||
+          tag.includes('ropa')
       )
     );
   }, [product]);
@@ -152,8 +153,12 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     const optionFields: CustomizationField[] = [];
     const designFields: CustomizationField[] = [];
 
-    schema.fields.forEach(field => {
-      if (field.fieldType === 'color_selector' || field.fieldType === 'size_selector' || field.fieldType === 'dropdown') {
+    schema.fields.forEach((field) => {
+      if (
+        field.fieldType === 'color_selector' ||
+        field.fieldType === 'size_selector' ||
+        field.fieldType === 'dropdown'
+      ) {
         optionFields.push(field);
       } else if (field.fieldType === 'image_upload') {
         designFields.push(field);
@@ -240,7 +245,8 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
       }
 
       urlParams.delete('reorder');
-      const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+      const newUrl =
+        window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
       window.history.replaceState({}, '', newUrl);
     }
 
@@ -261,7 +267,8 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
       }
 
       urlParams.delete('shared');
-      const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+      const newUrl =
+        window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
       window.history.replaceState({}, '', newUrl);
     }
   }, [product.id]);
@@ -281,17 +288,17 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
 
   // Preload color images
   useEffect(() => {
-    const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
+    const colorField = schema.fields.find((f) => f.fieldType === 'color_selector');
     if (colorField) {
       const colorConfig = colorField.config as ColorSelectorConfig;
-      colorConfig.availableColors?.forEach(color => {
+      colorConfig.availableColors?.forEach((color) => {
         const imagesToPreload: string[] = [];
         if (color.previewImages?.default) imagesToPreload.push(color.previewImages.default);
         if (color.previewImages?.front) imagesToPreload.push(color.previewImages.front);
         if (color.previewImages?.back) imagesToPreload.push(color.previewImages.back);
         if (color.previewImage) imagesToPreload.push(color.previewImage);
 
-        imagesToPreload.forEach(url => {
+        imagesToPreload.forEach((url) => {
           const img = new Image();
           img.src = url;
         });
@@ -309,8 +316,8 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     const labelLower = field.label.toLowerCase();
     const quantityKeywords = ['quantity', 'cantidad', 'unidades', 'units', 'qty'];
 
-    return quantityKeywords.some(keyword =>
-      idLower.includes(keyword) || labelLower.includes(keyword)
+    return quantityKeywords.some(
+      (keyword) => idLower.includes(keyword) || labelLower.includes(keyword)
     );
   }, []);
 
@@ -335,30 +342,33 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
   }, []);
 
   // Helper function to get tiered unit price from quantity field
-  const getTieredUnitPrice = useCallback((
-    quantityField: CustomizationField | undefined,
-    selectedValue: CustomizationValue | undefined
-  ): number | null => {
-    if (!quantityField || !selectedValue) return null;
+  const getTieredUnitPrice = useCallback(
+    (
+      quantityField: CustomizationField | undefined,
+      selectedValue: CustomizationValue | undefined
+    ): number | null => {
+      if (!quantityField || !selectedValue) return null;
 
-    // Check if it's a dropdown with unitPriceOverride
-    if (quantityField.fieldType === 'dropdown') {
-      const dropdownConfig = quantityField.config as DropdownConfig;
-      const selectedOption = dropdownConfig.options?.find(
-        opt => opt.value === selectedValue.value
-      );
-      if (selectedOption?.unitPriceOverride !== undefined) {
-        return selectedOption.unitPriceOverride;
+      // Check if it's a dropdown with unitPriceOverride
+      if (quantityField.fieldType === 'dropdown') {
+        const dropdownConfig = quantityField.config as DropdownConfig;
+        const selectedOption = dropdownConfig.options?.find(
+          (opt) => opt.value === selectedValue.value
+        );
+        if (selectedOption?.unitPriceOverride !== undefined) {
+          return selectedOption.unitPriceOverride;
+        }
       }
-    }
 
-    return null;
-  }, []);
+      return null;
+    },
+    []
+  );
 
   // Calculate pricing with quantity multiplication and tiered pricing
   const pricing: CustomizationPricing = useMemo(() => {
     // Find quantity field and get the selected quantity
-    const quantityField = schema.fields.find(f => isQuantityField(f));
+    const quantityField = schema.fields.find((f) => isQuantityField(f));
     const quantityValue = quantityField ? values[quantityField.id] : undefined;
     const quantity = extractQuantity(quantityValue);
 
@@ -384,94 +394,130 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
         };
       });
 
-    return { basePrice: effectiveBasePrice, customizationPrice, totalPrice, quantity, unitPrice, breakdown };
-  }, [product.basePrice, values, schema.fields, isQuantityField, extractQuantity, getTieredUnitPrice]);
-
-  const handleFieldChange = useCallback((fieldId: string, value: CustomizationValue) => {
-    const field = schema.fields.find((f) => f.id === fieldId);
-    const fieldLabel = field?.label || fieldId;
-
-    setValues((prev) => ({
-      ...prev,
-      [fieldId]: { ...value, fieldLabel },
-    }));
-    setError(null);
-  }, [schema.fields]);
-
-  const handleTextileTransformChange = useCallback((side: 'front' | 'back', transform: ImageTransform) => {
-    let targetField = schema.fields.find(f =>
-      f.fieldType === 'image_upload' && (
-        side === 'front'
-          ? (f.id.toLowerCase().includes('front') || f.id.toLowerCase().includes('frontal') || f.id.toLowerCase().includes('frente'))
-          : (f.id.toLowerCase().includes('back') || f.id.toLowerCase().includes('trasera') || f.id.toLowerCase().includes('espalda'))
-      )
-    );
-
-    if (!targetField) {
-      targetField = schema.fields.find(f => {
-        if (f.fieldType !== 'image_upload') return false;
-        const idLower = f.id.toLowerCase();
-        return !idLower.includes('front') && !idLower.includes('back') && !idLower.includes('frontal') && !idLower.includes('trasera');
-      });
-    }
-
-    if (!targetField) return;
-
-    setValues((prev) => ({
-      ...prev,
-      [targetField.id]: { ...prev[targetField.id], imageTransform: transform },
-    }));
-  }, [schema.fields]);
-
-  const handleLoadTemplate = useCallback((template: DesignTemplate) => {
-    const newValues: Record<string, CustomizationValue> = {};
-
-    template.template.fields.forEach((templateField) => {
-      const schemaField = schema.fields.find((f) => f.id === templateField.fieldId);
-      if (!schemaField) return;
-
-      newValues[templateField.fieldId] = {
-        fieldId: templateField.fieldId,
-        fieldLabel: schemaField.label,
-        value: templateField.value,
-        displayValue: templateField.displayValue,
-        imageUrl: templateField.imageUrl,
-        imageTransform: templateField.imageTransform,
-        priceModifier: schemaField.priceModifier,
-      };
-    });
-
-    setValues(newValues);
-    setShowTemplates(false);
-    notify.success(`Plantilla "${template.name}" cargada`);
-  }, [schema.fields]);
-
-  const handleSelectClipart = useCallback((clipart: Clipart) => {
-    const newLayer: DesignLayer = {
-      id: `layer_${Date.now()}`,
-      type: 'clipart',
-      source: clipart.imageUrl,
-      transform: { x: 50, y: 50, scale: 0.5, rotation: 0 },
-      zIndex: layers.length,
-      locked: false,
-      visible: true,
-      opacity: 100,
+    return {
+      basePrice: effectiveBasePrice,
+      customizationPrice,
+      totalPrice,
+      quantity,
+      unitPrice,
+      breakdown,
     };
+  }, [
+    product.basePrice,
+    values,
+    schema.fields,
+    isQuantityField,
+    extractQuantity,
+    getTieredUnitPrice,
+  ]);
 
-    setLayers((prev) => [...prev, newLayer]);
-    setShowCliparts(false);
-    notify.success(`Clipart "${clipart.name}" anadido`);
-  }, [layers.length]);
+  const handleFieldChange = useCallback(
+    (fieldId: string, value: CustomizationValue) => {
+      const field = schema.fields.find((f) => f.id === fieldId);
+      const fieldLabel = field?.label || fieldId;
+
+      setValues((prev) => ({
+        ...prev,
+        [fieldId]: { ...value, fieldLabel },
+      }));
+      setError(null);
+    },
+    [schema.fields]
+  );
+
+  const handleTextileTransformChange = useCallback(
+    (side: 'front' | 'back', transform: ImageTransform) => {
+      let targetField = schema.fields.find(
+        (f) =>
+          f.fieldType === 'image_upload' &&
+          (side === 'front'
+            ? f.id.toLowerCase().includes('front') ||
+              f.id.toLowerCase().includes('frontal') ||
+              f.id.toLowerCase().includes('frente')
+            : f.id.toLowerCase().includes('back') ||
+              f.id.toLowerCase().includes('trasera') ||
+              f.id.toLowerCase().includes('espalda'))
+      );
+
+      if (!targetField) {
+        targetField = schema.fields.find((f) => {
+          if (f.fieldType !== 'image_upload') return false;
+          const idLower = f.id.toLowerCase();
+          return (
+            !idLower.includes('front') &&
+            !idLower.includes('back') &&
+            !idLower.includes('frontal') &&
+            !idLower.includes('trasera')
+          );
+        });
+      }
+
+      if (!targetField) return;
+
+      setValues((prev) => ({
+        ...prev,
+        [targetField.id]: { ...prev[targetField.id], imageTransform: transform },
+      }));
+    },
+    [schema.fields]
+  );
+
+  const handleLoadTemplate = useCallback(
+    (template: DesignTemplate) => {
+      const newValues: Record<string, CustomizationValue> = {};
+
+      template.template.fields.forEach((templateField) => {
+        const schemaField = schema.fields.find((f) => f.id === templateField.fieldId);
+        if (!schemaField) return;
+
+        newValues[templateField.fieldId] = {
+          fieldId: templateField.fieldId,
+          fieldLabel: schemaField.label,
+          value: templateField.value,
+          displayValue: templateField.displayValue,
+          imageUrl: templateField.imageUrl,
+          imageTransform: templateField.imageTransform,
+          priceModifier: schemaField.priceModifier,
+        };
+      });
+
+      setValues(newValues);
+      setShowTemplates(false);
+      notify.success(`Plantilla "${template.name}" cargada`);
+    },
+    [schema.fields]
+  );
+
+  const handleSelectClipart = useCallback(
+    (clipart: Clipart) => {
+      const newLayer: DesignLayer = {
+        id: `layer_${Date.now()}`,
+        type: 'clipart',
+        source: clipart.imageUrl,
+        transform: { x: 50, y: 50, scale: 0.5, rotation: 0 },
+        zIndex: layers.length,
+        locked: false,
+        visible: true,
+        opacity: 100,
+      };
+
+      setLayers((prev) => [...prev, newLayer]);
+      setShowCliparts(false);
+      notify.success(`Clipart "${clipart.name}" anadido`);
+    },
+    [layers.length]
+  );
 
   const validateCurrentStep = useCallback((): boolean => {
     const currentStepData = steps[currentStep];
     if (!currentStepData) return true;
 
-    const fieldsToValidate = currentStepData.id === 'options'
-      ? fieldsByStep.optionFields
-      : currentStepData.id === 'design'
-        ? fieldsByStep.designFields
-        : [];
+    const fieldsToValidate =
+      currentStepData.id === 'options'
+        ? fieldsByStep.optionFields
+        : currentStepData.id === 'design'
+          ? fieldsByStep.designFields
+          : [];
 
     for (const field of fieldsToValidate) {
       if (!field.required) continue;
@@ -540,27 +586,30 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     setError(null);
 
     if (currentStep < steps.length - 1) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep((prev) => prev + 1);
     }
   }, [currentStep, steps.length, validateCurrentStep]);
 
   const handlePrevStep = useCallback(() => {
     setError(null);
     if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep((prev) => prev - 1);
     }
   }, [currentStep]);
 
-  const goToStep = useCallback((stepIndex: number) => {
-    // Solo permitir ir a pasos anteriores o al siguiente si el actual es valido
-    if (stepIndex < currentStep) {
-      setCurrentStep(stepIndex);
-      setError(null);
-    } else if (stepIndex === currentStep + 1 && validateCurrentStep()) {
-      setCurrentStep(stepIndex);
-      setError(null);
-    }
-  }, [currentStep, validateCurrentStep]);
+  const goToStep = useCallback(
+    (stepIndex: number) => {
+      // Solo permitir ir a pasos anteriores o al siguiente si el actual es valido
+      if (stepIndex < currentStep) {
+        setCurrentStep(stepIndex);
+        setError(null);
+      } else if (stepIndex === currentStep + 1 && validateCurrentStep()) {
+        setCurrentStep(stepIndex);
+        setError(null);
+      }
+    },
+    [currentStep, validateCurrentStep]
+  );
 
   const handleAddToCart = useCallback(async () => {
     setError(null);
@@ -627,14 +676,14 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
 
   // Get preview images
   const getBaseImage = useCallback((): string => {
-    const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
+    const colorField = schema.fields.find((f) => f.fieldType === 'color_selector');
     if (!colorField) return schema.previewImages?.default || product.images[0] || '';
 
     const colorValue = values[colorField.id];
     if (!colorValue) return schema.previewImages?.default || product.images[0] || '';
 
     const colorConfig = colorField.config as ColorSelectorConfig;
-    const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
+    const selectedColor = colorConfig.availableColors?.find((c) => c.id === colorValue.value);
 
     if (selectedColor?.previewImages?.default) return selectedColor.previewImages.default;
     if (selectedColor?.previewImages?.front) return selectedColor.previewImages.front;
@@ -644,33 +693,40 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
   }, [schema, values, product.images]);
 
   const getUserImage = useCallback((): string | null => {
-    const imageField = schema.fields.find(f => f.fieldType === 'image_upload');
+    const imageField = schema.fields.find((f) => f.fieldType === 'image_upload');
     if (!imageField) return null;
     return (values[imageField.id]?.imageUrl as string) || null;
   }, [schema.fields, values]);
 
   const getImageTransform = useCallback(() => {
-    const imageField = schema.fields.find(f => f.fieldType === 'image_upload');
+    const imageField = schema.fields.find((f) => f.fieldType === 'image_upload');
     if (!imageField) return undefined;
     return values[imageField.id]?.imageTransform;
   }, [schema.fields, values]);
 
   // Textile-specific image getters
   const getTextileFrontImage = useCallback((): string | null => {
-    const frontField = schema.fields.find(f =>
-      f.fieldType === 'image_upload' && (
-        f.id.toLowerCase().includes('front') || f.id.toLowerCase().includes('frontal') || f.id.toLowerCase().includes('frente')
-      )
+    const frontField = schema.fields.find(
+      (f) =>
+        f.fieldType === 'image_upload' &&
+        (f.id.toLowerCase().includes('front') ||
+          f.id.toLowerCase().includes('frontal') ||
+          f.id.toLowerCase().includes('frente'))
     );
 
     if (frontField && values[frontField.id]?.imageUrl) {
       return values[frontField.id].imageUrl as string;
     }
 
-    const genericField = schema.fields.find(f => {
+    const genericField = schema.fields.find((f) => {
       if (f.fieldType !== 'image_upload') return false;
       const idLower = f.id.toLowerCase();
-      return !idLower.includes('front') && !idLower.includes('back') && !idLower.includes('frontal') && !idLower.includes('trasera');
+      return (
+        !idLower.includes('front') &&
+        !idLower.includes('back') &&
+        !idLower.includes('frontal') &&
+        !idLower.includes('trasera')
+      );
     });
 
     if (genericField && values[genericField.id]?.imageUrl) {
@@ -681,20 +737,27 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
   }, [schema.fields, values]);
 
   const getTextileBackImage = useCallback((): string | null => {
-    const backField = schema.fields.find(f =>
-      f.fieldType === 'image_upload' && (
-        f.id.toLowerCase().includes('back') || f.id.toLowerCase().includes('trasera') || f.id.toLowerCase().includes('espalda')
-      )
+    const backField = schema.fields.find(
+      (f) =>
+        f.fieldType === 'image_upload' &&
+        (f.id.toLowerCase().includes('back') ||
+          f.id.toLowerCase().includes('trasera') ||
+          f.id.toLowerCase().includes('espalda'))
     );
 
     if (backField && values[backField.id]?.imageUrl) {
       return values[backField.id].imageUrl as string;
     }
 
-    const genericField = schema.fields.find(f => {
+    const genericField = schema.fields.find((f) => {
       if (f.fieldType !== 'image_upload') return false;
       const idLower = f.id.toLowerCase();
-      return !idLower.includes('front') && !idLower.includes('back') && !idLower.includes('frontal') && !idLower.includes('trasera');
+      return (
+        !idLower.includes('front') &&
+        !idLower.includes('back') &&
+        !idLower.includes('frontal') &&
+        !idLower.includes('trasera')
+      );
     });
 
     if (genericField && values[genericField.id]?.imageUrl) {
@@ -705,17 +768,17 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
   }, [schema.fields, values]);
 
   const getTextileFrontTransform = useCallback(() => {
-    const frontField = schema.fields.find(f =>
-      f.fieldType === 'image_upload' && (
-        f.id.toLowerCase().includes('front') || f.id.toLowerCase().includes('frontal')
-      )
+    const frontField = schema.fields.find(
+      (f) =>
+        f.fieldType === 'image_upload' &&
+        (f.id.toLowerCase().includes('front') || f.id.toLowerCase().includes('frontal'))
     );
 
     if (frontField && values[frontField.id]?.imageTransform) {
       return values[frontField.id].imageTransform;
     }
 
-    const genericField = schema.fields.find(f => {
+    const genericField = schema.fields.find((f) => {
       if (f.fieldType !== 'image_upload') return false;
       const idLower = f.id.toLowerCase();
       return !idLower.includes('front') && !idLower.includes('back');
@@ -729,10 +792,10 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
   }, [schema.fields, values]);
 
   const getTextileBackTransform = useCallback(() => {
-    const backField = schema.fields.find(f =>
-      f.fieldType === 'image_upload' && (
-        f.id.toLowerCase().includes('back') || f.id.toLowerCase().includes('trasera')
-      )
+    const backField = schema.fields.find(
+      (f) =>
+        f.fieldType === 'image_upload' &&
+        (f.id.toLowerCase().includes('back') || f.id.toLowerCase().includes('trasera'))
     );
 
     if (backField && values[backField.id]?.imageTransform) {
@@ -743,12 +806,12 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
   }, [schema.fields, values]);
 
   const getTextileBaseFrontImage = useCallback((): string => {
-    const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
+    const colorField = schema.fields.find((f) => f.fieldType === 'color_selector');
     if (colorField) {
       const colorValue = values[colorField.id];
       if (colorValue) {
         const colorConfig = colorField.config as ColorSelectorConfig;
-        const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
+        const selectedColor = colorConfig.availableColors?.find((c) => c.id === colorValue.value);
         if (selectedColor?.previewImages?.front) return selectedColor.previewImages.front;
         if (selectedColor?.previewImage) return selectedColor.previewImage;
       }
@@ -757,12 +820,12 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
   }, [schema, values, product.images]);
 
   const getTextileBaseBackImage = useCallback((): string => {
-    const colorField = schema.fields.find(f => f.fieldType === 'color_selector');
+    const colorField = schema.fields.find((f) => f.fieldType === 'color_selector');
     if (colorField) {
       const colorValue = values[colorField.id];
       if (colorValue) {
         const colorConfig = colorField.config as ColorSelectorConfig;
-        const selectedColor = colorConfig.availableColors?.find(c => c.id === colorValue.value);
+        const selectedColor = colorConfig.availableColors?.find((c) => c.id === colorValue.value);
         if (selectedColor?.previewImages?.back) return selectedColor.previewImages.back;
       }
     }
@@ -770,90 +833,99 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
   }, [schema, values, getTextileBaseFrontImage]);
 
   // Render field component
-  const renderField = useCallback((field: CustomizationField) => {
-    if (field.condition) {
-      const dependentValue = values[field.condition.dependsOn]?.value;
-      const showWhen = Array.isArray(field.condition.showWhen)
-        ? field.condition.showWhen
-        : [field.condition.showWhen];
+  const renderField = useCallback(
+    (field: CustomizationField) => {
+      if (field.condition) {
+        const dependentValue = values[field.condition.dependsOn]?.value;
+        const showWhen = Array.isArray(field.condition.showWhen)
+          ? field.condition.showWhen
+          : [field.condition.showWhen];
 
-      if (!showWhen.includes(String(dependentValue))) return null;
-    }
+        if (!showWhen.includes(String(dependentValue))) return null;
+      }
 
-    const value = values[field.id];
+      const value = values[field.id];
 
-    switch (field.fieldType) {
-      case 'color_selector':
-        return (
-          <ColorSelector
-            key={field.id}
-            fieldId={field.id}
-            label={field.label}
-            required={field.required}
-            config={field.config as ColorSelectorConfig}
-            value={value}
-            onChange={(val) => handleFieldChange(field.id, val)}
-            helpText={field.helpText}
-          />
-        );
+      switch (field.fieldType) {
+        case 'color_selector':
+          return (
+            <ColorSelector
+              key={field.id}
+              fieldId={field.id}
+              label={field.label}
+              required={field.required}
+              config={field.config as ColorSelectorConfig}
+              value={value}
+              onChange={(val) => handleFieldChange(field.id, val)}
+              helpText={field.helpText}
+            />
+          );
 
-      case 'size_selector':
-        return (
-          <SizeSelector
-            key={field.id}
-            fieldId={field.id}
-            label={field.label}
-            required={field.required}
-            config={field.config as SizeSelectorConfig}
-            value={value}
-            onChange={(val) => handleFieldChange(field.id, val)}
-            helpText={field.helpText}
-          />
-        );
+        case 'size_selector':
+          return (
+            <SizeSelector
+              key={field.id}
+              fieldId={field.id}
+              label={field.label}
+              required={field.required}
+              config={field.config as SizeSelectorConfig}
+              value={value}
+              onChange={(val) => handleFieldChange(field.id, val)}
+              helpText={field.helpText}
+            />
+          );
 
-      case 'dropdown':
-        return (
-          <DropdownField
-            key={field.id}
-            fieldId={field.id}
-            label={field.label}
-            required={field.required}
-            config={field.config as DropdownConfig}
-            value={value}
-            onChange={(val) => handleFieldChange(field.id, val)}
-            helpText={field.helpText}
-          />
-        );
+        case 'dropdown':
+          return (
+            <DropdownField
+              key={field.id}
+              fieldId={field.id}
+              label={field.label}
+              required={field.required}
+              config={field.config as DropdownConfig}
+              value={value}
+              onChange={(val) => handleFieldChange(field.id, val)}
+              helpText={field.helpText}
+            />
+          );
 
-      case 'image_upload':
-        if (isTextileProduct()) {
-          const fieldIdLower = field.id.toLowerCase();
-          const isFrontField = fieldIdLower.includes('front') || fieldIdLower.includes('frontal') || fieldIdLower.includes('frente');
-          const isBackField = fieldIdLower.includes('back') || fieldIdLower.includes('trasera') || fieldIdLower.includes('espalda');
+        case 'image_upload':
+          if (isTextileProduct()) {
+            const fieldIdLower = field.id.toLowerCase();
+            const isFrontField =
+              fieldIdLower.includes('front') ||
+              fieldIdLower.includes('frontal') ||
+              fieldIdLower.includes('frente');
+            const isBackField =
+              fieldIdLower.includes('back') ||
+              fieldIdLower.includes('trasera') ||
+              fieldIdLower.includes('espalda');
 
-          if (isFrontField && activeSide !== 'front') return null;
-          if (isBackField && activeSide !== 'back') return null;
-        }
+            if (isFrontField && activeSide !== 'front') return null;
+            if (isBackField && activeSide !== 'back') return null;
+          }
 
-        return (
-          <ImageUploadField
-            key={field.id}
-            fieldId={field.id}
-            label={field.label}
-            required={field.required}
-            config={field.config as ImageUploadConfig}
-            value={value}
-            onChange={(val) => handleFieldChange(field.id, val)}
-            helpText={field.helpText}
-            productType={product.categoryId}
-            categoryId={product.categoryId}
-          />
-        );
+          return (
+            <ImageUploadField
+              key={field.id}
+              fieldId={field.id}
+              label={field.label}
+              required={field.required}
+              config={field.config as ImageUploadConfig}
+              value={value}
+              onChange={(val) => handleFieldChange(field.id, val)}
+              helpText={field.helpText}
+              productType={product.categoryId}
+              categoryId={product.categoryId}
+            />
+          );
 
-      default:
-        return null;
-    }
-  }, [values, handleFieldChange, isTextileProduct, activeSide, product.categoryId]);
+        default:
+          return null;
+      }
+    },
+    [values, handleFieldChange, isTextileProduct, activeSide, product.categoryId]
+  );
 
   // Render step content
   const renderStepContent = () => {
@@ -864,7 +936,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
       case 'options':
         return (
           <div className="space-y-6">
-            {fieldsByStep.optionFields.map(field => renderField(field))}
+            {fieldsByStep.optionFields.map((field) => renderField(field))}
           </div>
         );
 
@@ -917,13 +989,14 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
             )}
 
             {/* Image upload fields */}
-            {fieldsByStep.designFields.map(field => renderField(field))}
+            {fieldsByStep.designFields.map((field) => renderField(field))}
 
             {/* Cliparts info */}
             {layers.length > 0 && (
               <div className="p-3 bg-pink-50 border border-pink-200 rounded-lg">
                 <p className="text-sm text-pink-800 font-medium">
-                  {layers.length} clipart{layers.length > 1 ? 's' : ''} anadido{layers.length > 1 ? 's' : ''}
+                  {layers.length} clipart{layers.length > 1 ? 's' : ''} anadido
+                  {layers.length > 1 ? 's' : ''}
                 </p>
               </div>
             )}
@@ -965,8 +1038,8 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
             <div className="bg-gray-50 rounded-xl p-4 text-center">
               <Move className="w-8 h-8 mx-auto text-gray-400 mb-2" />
               <p className="text-sm text-gray-500">
-                Arrastra la imagen en la vista previa para moverla.
-                Usa los deslizadores para escalar y rotar.
+                Arrastra la imagen en la vista previa para moverla. Usa los deslizadores para
+                escalar y rotar.
               </p>
             </div>
           </div>
@@ -980,7 +1053,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
               <h4 className="font-bold text-gray-800 mb-3">Tu seleccion:</h4>
               <div className="space-y-2">
                 {Object.entries(values).map(([fieldId, val]) => {
-                  const field = schema.fields.find(f => f.id === fieldId);
+                  const field = schema.fields.find((f) => f.id === fieldId);
                   if (!field || !val.displayValue) return null;
                   return (
                     <div key={fieldId} className="flex justify-between text-sm">
@@ -1130,7 +1203,9 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
                 <Save className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-blue-800 font-medium">Borrador encontrado</p>
-                  <p className="text-xs text-blue-600 mt-1">Tienes un diseno guardado automaticamente.</p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Tienes un diseno guardado automaticamente.
+                  </p>
                   <div className="flex gap-2 mt-2">
                     <button
                       onClick={handleLoadDraft}
@@ -1172,11 +1247,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
                           : 'bg-gray-200 text-gray-400'
                     }`}
                   >
-                    {index < currentStep ? (
-                      <Check className="w-5 h-5" />
-                    ) : (
-                      step.icon
-                    )}
+                    {index < currentStep ? <Check className="w-5 h-5" /> : step.icon}
                   </div>
                   <span
                     className={`text-[10px] sm:text-xs font-medium text-center leading-tight ${
@@ -1228,9 +1299,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Preview - arriba en movil */}
           <div className="order-1 lg:order-1">
-            <div className="sticky top-4">
-              {renderPreview()}
-            </div>
+            <div className="sticky top-4">{renderPreview()}</div>
           </div>
 
           {/* Step Content - abajo en movil */}
@@ -1241,15 +1310,11 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900">
                   {steps[currentStep]?.title}
                 </h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  {steps[currentStep]?.description}
-                </p>
+                <p className="text-sm text-gray-500 mt-1">{steps[currentStep]?.description}</p>
               </div>
 
               {/* Step Fields */}
-              <div className="mb-6">
-                {renderStepContent()}
-              </div>
+              <div className="mb-6">{renderStepContent()}</div>
 
               {/* Error */}
               {error && (

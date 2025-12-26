@@ -1,6 +1,6 @@
 // src/components/checkout/StripeCardElement.tsx
 import { useState } from 'react';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { CardElement } from '@stripe/react-stripe-js';
 import type { StripeCardElementChangeEvent } from '@stripe/stripe-js';
 
 interface StripeCardElementProps {
@@ -59,7 +59,7 @@ export default function StripeCardElement({ onCardComplete, onError }: StripeCar
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">Datos de la Tarjeta</label>
+      <p className="block text-sm font-medium text-gray-700">Datos de la Tarjeta</p>
 
       <div
         className={`

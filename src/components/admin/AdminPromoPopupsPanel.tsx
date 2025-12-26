@@ -310,9 +310,7 @@ export default function AdminPromoPopupsPanel() {
           {/* Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Titulo *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Titulo *</label>
               <input
                 type="text"
                 value={formData.title}
@@ -322,9 +320,7 @@ export default function AdminPromoPopupsPanel() {
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Mensaje *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mensaje *</label>
               <textarea
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
@@ -346,13 +342,13 @@ export default function AdminPromoPopupsPanel() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Prioridad
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Prioridad</label>
               <input
                 type="number"
                 value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 0 })}
+                onChange={(e) =>
+                  setFormData({ ...formData, priority: parseInt(e.target.value) || 0 })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 min="0"
                 max="100"
@@ -432,7 +428,9 @@ export default function AdminPromoPopupsPanel() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Posicion</label>
                 <select
                   value={formData.position}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value as PopupPosition })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, position: e.target.value as PopupPosition })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="center">Centro</option>
@@ -480,7 +478,9 @@ export default function AdminPromoPopupsPanel() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Disparador</label>
                 <select
                   value={formData.trigger}
-                  onChange={(e) => setFormData({ ...formData, trigger: e.target.value as PopupTrigger })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, trigger: e.target.value as PopupTrigger })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="immediate">Inmediato</option>
@@ -497,7 +497,9 @@ export default function AdminPromoPopupsPanel() {
                   <input
                     type="number"
                     value={formData.triggerDelay}
-                    onChange={(e) => setFormData({ ...formData, triggerDelay: parseInt(e.target.value) || 5 })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, triggerDelay: parseInt(e.target.value) || 5 })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     min="1"
                   />
@@ -511,7 +513,12 @@ export default function AdminPromoPopupsPanel() {
                   <input
                     type="number"
                     value={formData.triggerScrollPercent}
-                    onChange={(e) => setFormData({ ...formData, triggerScrollPercent: parseInt(e.target.value) || 50 })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        triggerScrollPercent: parseInt(e.target.value) || 50,
+                      })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     min="1"
                     max="100"
@@ -541,7 +548,9 @@ export default function AdminPromoPopupsPanel() {
                 <input
                   type="number"
                   value={formData.showFrequency}
-                  onChange={(e) => setFormData({ ...formData, showFrequency: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, showFrequency: parseInt(e.target.value) || 0 })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   min="0"
                 />
@@ -554,11 +563,15 @@ export default function AdminPromoPopupsPanel() {
             <h4 className="font-medium text-gray-900 mb-3">Segmentacion</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mostrar a
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mostrar a</label>
                 <select
-                  value={formData.showToLoggedIn === null ? 'all' : formData.showToLoggedIn ? 'logged-in' : 'guests'}
+                  value={
+                    formData.showToLoggedIn === null
+                      ? 'all'
+                      : formData.showToLoggedIn
+                        ? 'logged-in'
+                        : 'guests'
+                  }
                   onChange={(e) => {
                     const value = e.target.value;
                     setFormData({
@@ -580,10 +593,14 @@ export default function AdminPromoPopupsPanel() {
                 <input
                   type="text"
                   value={formData.showOnPages?.join(', ') || ''}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    showOnPages: e.target.value ? e.target.value.split(',').map(s => s.trim()) : []
-                  })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      showOnPages: e.target.value
+                        ? e.target.value.split(',').map((s) => s.trim())
+                        : [],
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="/, /productos"
                 />
@@ -595,10 +612,14 @@ export default function AdminPromoPopupsPanel() {
                 <input
                   type="text"
                   value={formData.excludePages?.join(', ') || ''}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    excludePages: e.target.value ? e.target.value.split(',').map(s => s.trim()) : []
-                  })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      excludePages: e.target.value
+                        ? e.target.value.split(',').map((s) => s.trim())
+                        : [],
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="/checkout, /confirmacion"
                 />
@@ -647,7 +668,9 @@ export default function AdminPromoPopupsPanel() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Popups Promocionales</h2>
-          <p className="text-gray-600 mt-1">Gestiona banners, modales y notificaciones promocionales</p>
+          <p className="text-gray-600 mt-1">
+            Gestiona banners, modales y notificaciones promocionales
+          </p>
         </div>
         <button
           onClick={handleCreate}
@@ -666,7 +689,7 @@ export default function AdminPromoPopupsPanel() {
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="text-2xl font-bold text-green-600">
-            {popups.filter(p => p.active).length}
+            {popups.filter((p) => p.active).length}
           </div>
           <div className="text-sm text-gray-600">Activos</div>
         </div>
@@ -722,8 +745,8 @@ export default function AdminPromoPopupsPanel() {
                       popup.type === 'modal'
                         ? 'bg-purple-100 text-purple-700'
                         : popup.type === 'banner'
-                        ? 'bg-cyan-100 text-cyan-700'
-                        : 'bg-orange-100 text-orange-700'
+                          ? 'bg-cyan-100 text-cyan-700'
+                          : 'bg-orange-100 text-orange-700'
                     }`}
                   >
                     {getTypeLabel(popup.type)}

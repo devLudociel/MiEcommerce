@@ -2,14 +2,7 @@
 // Sistema de gestión de información de contacto centralizada
 
 import { db } from './firebase';
-import {
-  doc,
-  getDoc,
-  setDoc,
-  onSnapshot,
-  Timestamp,
-  type Unsubscribe
-} from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, Timestamp, type Unsubscribe } from 'firebase/firestore';
 
 // ============================================================================
 // TYPES
@@ -34,10 +27,10 @@ export interface ScheduleItem {
 export interface ContactInfo {
   // Basic contact
   phone: string;
-  phoneDisplay: string;  // Formatted display version
+  phoneDisplay: string; // Formatted display version
   email: string;
   whatsapp: string;
-  whatsappMessage: string;  // Default message for WhatsApp
+  whatsappMessage: string; // Default message for WhatsApp
 
   // Address
   address: string;
@@ -45,7 +38,7 @@ export interface ContactInfo {
   province: string;
   postalCode: string;
   country: string;
-  googleMapsEmbed: string;  // Google Maps embed URL
+  googleMapsEmbed: string; // Google Maps embed URL
 
   // Company
   companyName: string;
@@ -79,28 +72,80 @@ export const DEFAULT_CONTACT_INFO: ContactInfoInput = {
   phoneDisplay: '645 341 452',
   email: 'info@imprimarte.com',
   whatsapp: '34645341452',
-  whatsappMessage: '¡Hola ImprimeArte! 👋 Tengo una consulta sobre sus servicios de impresión y personalización. ¿Podrían ayudarme?',
+  whatsappMessage:
+    '¡Hola ImprimeArte! 👋 Tengo una consulta sobre sus servicios de impresión y personalización. ¿Podrían ayudarme?',
 
   address: '',
   city: 'Santa Cruz de Tenerife',
   province: 'Canarias',
   postalCode: '',
   country: 'España',
-  googleMapsEmbed: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d111551.9926778267!2d-16.402524!3d28.463888!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xc41ccfda44fc0fd%3A0x10340f3be4bc8c0!2sSanta%20Cruz%20de%20Tenerife!5e0!3m2!1ses!2ses',
+  googleMapsEmbed:
+    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d111551.9926778267!2d-16.402524!3d28.463888!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xc41ccfda44fc0fd%3A0x10340f3be4bc8c0!2sSanta%20Cruz%20de%20Tenerife!5e0!3m2!1ses!2ses',
 
   companyName: 'ImprimeArte',
   companySlogan: 'Impresión y personalización',
-  companyDescription: 'Especialistas en impresión y personalización. Damos vida a tus ideas con la más alta calidad y tecnología.',
+  companyDescription:
+    'Especialistas en impresión y personalización. Damos vida a tus ideas con la más alta calidad y tecnología.',
 
   socialLinks: [
-    { id: '1', platform: 'Instagram', icon: '📷', url: 'https://instagram.com/imprimarte', active: true, order: 0 },
-    { id: '2', platform: 'Facebook', icon: '👍', url: 'https://facebook.com/imprimarte', active: true, order: 1 },
-    { id: '3', platform: 'TikTok', icon: '🎵', url: 'https://tiktok.com/@imprimarte', active: true, order: 2 },
-    { id: '4', platform: 'WhatsApp', icon: '💬', url: '', active: true, order: 3 },  // URL generated from whatsapp field
-    { id: '5', platform: 'YouTube', icon: '📺', url: 'https://youtube.com/@imprimarte', active: true, order: 4 },
-    { id: '6', platform: 'Pinterest', icon: '📌', url: 'https://pinterest.com/imprimarte', active: true, order: 5 },
-    { id: '7', platform: 'Twitter', icon: '🐦', url: 'https://twitter.com/imprimarte', active: false, order: 6 },
-    { id: '8', platform: 'LinkedIn', icon: '💼', url: 'https://linkedin.com/company/imprimarte', active: false, order: 7 },
+    {
+      id: '1',
+      platform: 'Instagram',
+      icon: '📷',
+      url: 'https://instagram.com/imprimarte',
+      active: true,
+      order: 0,
+    },
+    {
+      id: '2',
+      platform: 'Facebook',
+      icon: '👍',
+      url: 'https://facebook.com/imprimarte',
+      active: true,
+      order: 1,
+    },
+    {
+      id: '3',
+      platform: 'TikTok',
+      icon: '🎵',
+      url: 'https://tiktok.com/@imprimarte',
+      active: true,
+      order: 2,
+    },
+    { id: '4', platform: 'WhatsApp', icon: '💬', url: '', active: true, order: 3 }, // URL generated from whatsapp field
+    {
+      id: '5',
+      platform: 'YouTube',
+      icon: '📺',
+      url: 'https://youtube.com/@imprimarte',
+      active: true,
+      order: 4,
+    },
+    {
+      id: '6',
+      platform: 'Pinterest',
+      icon: '📌',
+      url: 'https://pinterest.com/imprimarte',
+      active: true,
+      order: 5,
+    },
+    {
+      id: '7',
+      platform: 'Twitter',
+      icon: '🐦',
+      url: 'https://twitter.com/imprimarte',
+      active: false,
+      order: 6,
+    },
+    {
+      id: '8',
+      platform: 'LinkedIn',
+      icon: '💼',
+      url: 'https://linkedin.com/company/imprimarte',
+      active: false,
+      order: 7,
+    },
   ],
 
   schedule: [
@@ -149,21 +194,23 @@ export async function getContactInfoWithDefaults(): Promise<ContactInfoInput> {
 /**
  * Suscripción en tiempo real a la información de contacto
  */
-export function subscribeToContactInfo(
-  callback: (info: ContactInfo | null) => void
-): Unsubscribe {
+export function subscribeToContactInfo(callback: (info: ContactInfo | null) => void): Unsubscribe {
   const docRef = doc(db, DOCUMENT_PATH);
 
-  return onSnapshot(docRef, (docSnap) => {
-    if (docSnap.exists()) {
-      callback(docSnap.data() as ContactInfo);
-    } else {
+  return onSnapshot(
+    docRef,
+    (docSnap) => {
+      if (docSnap.exists()) {
+        callback(docSnap.data() as ContactInfo);
+      } else {
+        callback(null);
+      }
+    },
+    (error) => {
+      console.error('Error in contact info subscription:', error);
       callback(null);
     }
-  }, (error) => {
-    console.error('Error in contact info subscription:', error);
-    callback(null);
-  });
+  );
 }
 
 /**
@@ -174,7 +221,7 @@ export async function saveContactInfo(info: ContactInfoInput): Promise<void> {
     const docRef = doc(db, DOCUMENT_PATH);
     await setDoc(docRef, {
       ...info,
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     });
   } catch (error) {
     console.error('Error saving contact info:', error);
@@ -225,8 +272,9 @@ export function getSocialLinkUrl(link: SocialLink, contactInfo: ContactInfoInput
  * Obtener dirección completa formateada
  */
 export function getFullAddress(info: ContactInfoInput): string {
-  const parts = [info.address, info.city, info.province, info.postalCode, info.country]
-    .filter(Boolean);
+  const parts = [info.address, info.city, info.province, info.postalCode, info.country].filter(
+    Boolean
+  );
   return parts.join(', ');
 }
 
@@ -288,10 +336,12 @@ export const SOCIAL_PLATFORMS = [
 ];
 
 export function getPlatformInfo(platform: string) {
-  return SOCIAL_PLATFORMS.find(p => p.value === platform) || {
-    value: platform,
-    label: platform,
-    icon: '🔗',
-    color: '#666666'
-  };
+  return (
+    SOCIAL_PLATFORMS.find((p) => p.value === platform) || {
+      value: platform,
+      label: platform,
+      icon: '🔗',
+      color: '#666666',
+    }
+  );
 }

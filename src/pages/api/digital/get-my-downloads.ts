@@ -17,10 +17,10 @@ export const GET: APIRoute = async ({ request }) => {
     // Get auth token
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'No autorizado' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'No autorizado' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const token = authHeader.substring(7);
@@ -33,10 +33,7 @@ export const GET: APIRoute = async ({ request }) => {
     const db = getAdminDb();
 
     // Get all digital access records for this user (without orderBy to avoid index requirement)
-    const snapshot = await db
-      .collection('digital_access')
-      .where('userId', '==', userId)
-      .get();
+    const snapshot = await db.collection('digital_access').where('userId', '==', userId).get();
 
     const downloads = snapshot.docs
       .map((doc) => {
@@ -57,17 +54,20 @@ export const GET: APIRoute = async ({ request }) => {
       count: downloads.length,
     });
 
-    return new Response(
-      JSON.stringify({ downloads }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ downloads }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error: unknown) {
     const firebaseError = error as { code?: string };
-    if (firebaseError.code === 'auth/id-token-expired' || firebaseError.code === 'auth/argument-error') {
-      return new Response(
-        JSON.stringify({ error: 'Token inválido o expirado' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      );
+    if (
+      firebaseError.code === 'auth/id-token-expired' ||
+      firebaseError.code === 'auth/argument-error'
+    ) {
+      return new Response(JSON.stringify({ error: 'Token inválido o expirado' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     logger.error('[digital/get-my-downloads] Error:', error);

@@ -50,7 +50,12 @@ export default function MugReviewScreen({
                 textAlign: element.align || 'left',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: element.align === 'center' ? 'center' : element.align === 'right' ? 'flex-end' : 'flex-start',
+                justifyContent:
+                  element.align === 'center'
+                    ? 'center'
+                    : element.align === 'right'
+                      ? 'flex-end'
+                      : 'flex-start',
                 whiteSpace: 'pre-wrap',
               }}
             >
@@ -79,7 +84,9 @@ export default function MugReviewScreen({
                 position: 'absolute',
                 inset: 0,
                 backgroundColor: element.backgroundColor || 'transparent',
-                backgroundImage: element.backgroundPattern ? `url(${element.backgroundPattern})` : undefined,
+                backgroundImage: element.backgroundPattern
+                  ? `url(${element.backgroundPattern})`
+                  : undefined,
                 backgroundSize: 'cover',
                 zIndex: element.zIndex,
               }}
@@ -106,7 +113,8 @@ export default function MugReviewScreen({
           <div>
             <h2 className="text-2xl font-bold text-gray-800">Revisa tu diseño</h2>
             <p className="text-sm text-gray-600 mt-1">
-              Se imprimirá según aparece en la vista previa. Asegúrate de que todo esté correcto antes de continuar.
+              Se imprimirá según aparece en la vista previa. Asegúrate de que todo esté correcto
+              antes de continuar.
             </p>
           </div>
           <button
@@ -187,18 +195,14 @@ export default function MugReviewScreen({
                   </div>
                 </div>
 
-                <p className="text-xs text-gray-500 mt-3 text-center italic">
-                  Arrastra para rotar
-                </p>
+                <p className="text-xs text-gray-500 mt-3 text-center italic">Arrastra para rotar</p>
               </div>
             </div>
 
             {/* Checklist */}
             <div>
               <div className="bg-gradient-to-br from-purple-50 to-cyan-50 rounded-xl p-6">
-                <h3 className="font-bold text-gray-800 mb-4 text-lg">
-                  Lista de verificación
-                </h3>
+                <h3 className="font-bold text-gray-800 mb-4 text-lg">Lista de verificación</h3>
 
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-start gap-3">
@@ -221,17 +225,13 @@ export default function MugReviewScreen({
                     <div className="w-5 h-5 rounded-full bg-purple-500 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
                       <span className="text-xs">•</span>
                     </div>
-                    <span className="text-gray-700">
-                      ¿Llega el fondo hasta los bordes?
-                    </span>
+                    <span className="text-gray-700">¿Llega el fondo hasta los bordes?</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <div className="w-5 h-5 rounded-full bg-purple-500 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
                       <span className="text-xs">•</span>
                     </div>
-                    <span className="text-gray-700">
-                      ¿Está todo bien escrito?
-                    </span>
+                    <span className="text-gray-700">¿Está todo bien escrito?</span>
                   </li>
                 </ul>
 
@@ -271,11 +271,16 @@ export default function MugReviewScreen({
                 <h4 className="font-semibold text-gray-800 mb-2">{productName}</h4>
                 <div className="text-sm text-gray-600 space-y-1">
                   <p>Material: {customization.material === 'magic' ? 'Mágica' : 'Estándar'}</p>
-                  <p>
-                    Área: {customization.printArea === '360' ? 'Impresión 360°' : 'Doble cara'}
-                  </p>
+                  <p>Área: {customization.printArea === '360' ? 'Impresión 360°' : 'Doble cara'}</p>
                   {customization.size && (
-                    <p>Tamaño: {customization.size === 'small' ? 'Pequeña' : customization.size === 'medium' ? 'Mediana' : 'Grande'}</p>
+                    <p>
+                      Tamaño:{' '}
+                      {customization.size === 'small'
+                        ? 'Pequeña'
+                        : customization.size === 'medium'
+                          ? 'Mediana'
+                          : 'Grande'}
+                    </p>
                   )}
                 </div>
               </div>

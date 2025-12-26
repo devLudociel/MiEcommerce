@@ -6,7 +6,7 @@ import {
   getEmailUrl,
   getSocialLinkUrl,
   getShortAddress,
-  type ContactInfoInput
+  type ContactInfoInput,
 } from '../../lib/contactInfo';
 
 interface FormData {
@@ -82,59 +82,72 @@ export default function ContactoComponent() {
   }, []);
 
   // Build dynamic contact cards
-  const contactInfo = contactData ? [
-    {
-      icon: '📞',
-      title: 'Teléfono',
-      content: contactData.phoneDisplay ? `+34 ${contactData.phoneDisplay}` : '+34 645 341 452',
-      action: getPhoneUrl(contactData.phone),
-      color: 'from-cyan-500 to-cyan-600',
-    },
-    {
-      icon: '📧',
-      title: 'Email',
-      content: contactData.email,
-      action: getEmailUrl(contactData.email),
-      color: 'from-magenta-500 to-magenta-600',
-    },
-    {
-      icon: '💬',
-      title: 'WhatsApp',
-      content: 'Chatea con nosotros',
-      action: getWhatsAppUrl(contactData.whatsapp, contactData.whatsappMessage),
-      color: 'from-green-500 to-green-600',
-    },
-    {
-      icon: '📍',
-      title: 'Dirección',
-      content: getShortAddress(contactData),
-      action: null,
-      color: 'from-purple-500 to-purple-600',
-    },
-  ] : defaultContactCards;
+  const contactInfo = contactData
+    ? [
+        {
+          icon: '📞',
+          title: 'Teléfono',
+          content: contactData.phoneDisplay ? `+34 ${contactData.phoneDisplay}` : '+34 645 341 452',
+          action: getPhoneUrl(contactData.phone),
+          color: 'from-cyan-500 to-cyan-600',
+        },
+        {
+          icon: '📧',
+          title: 'Email',
+          content: contactData.email,
+          action: getEmailUrl(contactData.email),
+          color: 'from-magenta-500 to-magenta-600',
+        },
+        {
+          icon: '💬',
+          title: 'WhatsApp',
+          content: 'Chatea con nosotros',
+          action: getWhatsAppUrl(contactData.whatsapp, contactData.whatsappMessage),
+          color: 'from-green-500 to-green-600',
+        },
+        {
+          icon: '📍',
+          title: 'Dirección',
+          content: getShortAddress(contactData),
+          action: null,
+          color: 'from-purple-500 to-purple-600',
+        },
+      ]
+    : defaultContactCards;
 
   // Build dynamic schedule
-  const schedule = contactData?.schedule?.length > 0
-    ? contactData.schedule.sort((a, b) => a.order - b.order).map(s => ({ day: s.day, hours: s.hours }))
-    : defaultSchedule;
+  const schedule =
+    contactData?.schedule?.length > 0
+      ? contactData.schedule
+          .sort((a, b) => a.order - b.order)
+          .map((s) => ({ day: s.day, hours: s.hours }))
+      : defaultSchedule;
 
   // Build dynamic social links
   const socialLinks = contactData?.socialLinks
     ? contactData.socialLinks
-        .filter(link => link.active)
+        .filter((link) => link.active)
         .sort((a, b) => a.order - b.order)
-        .map(link => ({
+        .map((link) => ({
           icon: link.icon,
           name: link.platform,
           url: getSocialLinkUrl(link, contactData),
-          color: link.platform === 'Facebook' ? 'hover:bg-blue-500' :
-                 link.platform === 'Instagram' ? 'hover:bg-pink-500' :
-                 link.platform === 'Twitter' ? 'hover:bg-sky-500' :
-                 link.platform === 'LinkedIn' ? 'hover:bg-blue-700' :
-                 link.platform === 'WhatsApp' ? 'hover:bg-green-500' :
-                 link.platform === 'TikTok' ? 'hover:bg-black' :
-                 link.platform === 'YouTube' ? 'hover:bg-red-500' :
-                 'hover:bg-gray-500'
+          color:
+            link.platform === 'Facebook'
+              ? 'hover:bg-blue-500'
+              : link.platform === 'Instagram'
+                ? 'hover:bg-pink-500'
+                : link.platform === 'Twitter'
+                  ? 'hover:bg-sky-500'
+                  : link.platform === 'LinkedIn'
+                    ? 'hover:bg-blue-700'
+                    : link.platform === 'WhatsApp'
+                      ? 'hover:bg-green-500'
+                      : link.platform === 'TikTok'
+                        ? 'hover:bg-black'
+                        : link.platform === 'YouTube'
+                          ? 'hover:bg-red-500'
+                          : 'hover:bg-gray-500',
         }))
     : [
         { icon: '📘', name: 'Facebook', url: '#', color: 'hover:bg-blue-500' },
@@ -203,10 +216,14 @@ export default function ContactoComponent() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
+                <label
+                  className="block text-sm font-bold text-gray-700 mb-2"
+                  htmlFor="contact-full-name"
+                >
                   Nombre completo *
                 </label>
                 <input
+                  id="contact-full-name"
                   type="text"
                   name="nombre"
                   value={formData.nombre}
@@ -218,8 +235,14 @@ export default function ContactoComponent() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Email *</label>
+                <label
+                  className="block text-sm font-bold text-gray-700 mb-2"
+                  htmlFor="contact-email"
+                >
+                  Email *
+                </label>
                 <input
+                  id="contact-email"
                   type="email"
                   name="email"
                   value={formData.email}
@@ -231,8 +254,14 @@ export default function ContactoComponent() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Teléfono</label>
+                <label
+                  className="block text-sm font-bold text-gray-700 mb-2"
+                  htmlFor="contact-phone"
+                >
+                  Teléfono
+                </label>
                 <input
+                  id="contact-phone"
                   type="tel"
                   name="telefono"
                   value={formData.telefono}
@@ -243,8 +272,14 @@ export default function ContactoComponent() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Asunto *</label>
+                <label
+                  className="block text-sm font-bold text-gray-700 mb-2"
+                  htmlFor="contact-subject"
+                >
+                  Asunto *
+                </label>
                 <select
+                  id="contact-subject"
                   name="asunto"
                   value={formData.asunto}
                   onChange={handleChange}
@@ -262,8 +297,14 @@ export default function ContactoComponent() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Mensaje *</label>
+                <label
+                  className="block text-sm font-bold text-gray-700 mb-2"
+                  htmlFor="contact-message"
+                >
+                  Mensaje *
+                </label>
                 <textarea
+                  id="contact-message"
                   name="mensaje"
                   value={formData.mensaje}
                   onChange={handleChange}
@@ -354,7 +395,10 @@ export default function ContactoComponent() {
             style={{ height: '400px' }}
           >
             <iframe
-              src={contactData?.googleMapsEmbed || "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d111551.9926778267!2d-16.402524!3d28.463888!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xc41ccfda44fc0fd%3A0x10340f3be4bc8c0!2sSanta%20Cruz%20de%20Tenerife!5e0!3m2!1ses!2ses!4v1234567890"}
+              src={
+                contactData?.googleMapsEmbed ||
+                'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d111551.9926778267!2d-16.402524!3d28.463888!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xc41ccfda44fc0fd%3A0x10340f3be4bc8c0!2sSanta%20Cruz%20de%20Tenerife!5e0!3m2!1ses!2ses!4v1234567890'
+              }
               width="100%"
               height="100%"
               style={{ border: 0 }}
@@ -377,7 +421,11 @@ export default function ContactoComponent() {
 
           <div className="flex flex-wrap justify-center gap-4">
             <a
-              href={contactData ? getWhatsAppUrl(contactData.whatsapp, contactData.whatsappMessage) : "https://wa.me/34645341452"}
+              href={
+                contactData
+                  ? getWhatsAppUrl(contactData.whatsapp, contactData.whatsappMessage)
+                  : 'https://wa.me/34645341452'
+              }
               target="_blank"
               rel="noopener noreferrer"
               className="px-8 py-4 bg-green-500 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
@@ -385,7 +433,7 @@ export default function ContactoComponent() {
               💬 Abrir WhatsApp
             </a>
             <a
-              href={contactData ? getPhoneUrl(contactData.phone) : "tel:+34645341452"}
+              href={contactData ? getPhoneUrl(contactData.phone) : 'tel:+34645341452'}
               className="px-8 py-4 bg-gradient-primary text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
             >
               📞 Llamar Ahora

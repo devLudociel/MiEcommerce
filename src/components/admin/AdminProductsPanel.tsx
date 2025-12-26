@@ -16,10 +16,28 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
-import { Plus, Edit2, Trash2, X, Save, Upload, Image as ImageIcon, Copy, Download, FileUp, AlertCircle, CheckCircle } from 'lucide-react';
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  X,
+  Save,
+  Upload,
+  Image as ImageIcon,
+  Copy,
+  Download,
+  FileUp,
+  AlertCircle,
+  CheckCircle,
+} from 'lucide-react';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { categories as navbarCategoriesData } from '../../data/categories';
-import { exportProductsToCsv, parseProductsCsv, generateCsvTemplate, validateUniqueSlugs } from '../../lib/productsCsv';
+import {
+  exportProductsToCsv,
+  parseProductsCsv,
+  generateCsvTemplate,
+  validateUniqueSlugs,
+} from '../../lib/productsCsv';
 import type { FirebaseProduct } from '../../types/firebase';
 
 // ============================================================================
@@ -95,15 +113,15 @@ type ProductInput = Omit<Product, 'id' | 'createdAt'> & {
 // ============================================================================
 
 // Estas son las categorías REALES del navbar - sincronizadas con categories.ts
-const navbarCategories = navbarCategoriesData.map(cat => ({
+const navbarCategories = navbarCategoriesData.map((cat) => ({
   id: cat.id,
   name: cat.name,
   slug: cat.slug,
 }));
 
 // Subcategorías extraídas del mismo archivo
-const subcategories: Subcategory[] = navbarCategoriesData.flatMap(cat =>
-  cat.subcategories.map(sub => ({
+const subcategories: Subcategory[] = navbarCategoriesData.flatMap((cat) =>
+  cat.subcategories.map((sub) => ({
     id: sub.id,
     categoryId: cat.id,
     name: sub.name,
@@ -266,9 +284,7 @@ export default function AdminProductsPanelV2() {
     try {
       // Generate new slug with suffix
       const baseSlug = product.slug.replace(/-copia(-\d+)?$/, '');
-      const existingSlugs = products
-        .map((p) => p.slug)
-        .filter((s) => s.startsWith(baseSlug));
+      const existingSlugs = products.map((p) => p.slug).filter((s) => s.startsWith(baseSlug));
 
       let newSlug = `${baseSlug}-copia`;
       let counter = 1;
@@ -312,7 +328,7 @@ export default function AdminProductsPanelV2() {
       logger.info('[AdminProducts] Product duplicated', {
         originalId: product.id,
         newId: docRef.id,
-        newSlug
+        newSlug,
       });
 
       // Open the duplicated product for editing
@@ -323,7 +339,6 @@ export default function AdminProductsPanelV2() {
         updatedAt: new Date(),
       };
       handleEdit(newProduct);
-
     } catch (error) {
       logger.error('[AdminProducts] Error duplicating product', error);
       notify.error('Error al duplicar producto');
@@ -385,11 +400,7 @@ export default function AdminProductsPanelV2() {
     setIsCheckingSlug(true);
     try {
       // Verificar si el slug ya existe en otro producto
-      const q = query(
-        collection(db, 'products'),
-        where('slug', '==', slug),
-        limit(1)
-      );
+      const q = query(collection(db, 'products'), where('slug', '==', slug), limit(1));
       const snapshot = await getDocs(q);
 
       // Si encontramos un producto con ese slug
@@ -454,7 +465,9 @@ export default function AdminProductsPanelV2() {
         onSale: !!formData.onSale,
         updatedAt: Timestamp.now(),
         // Optional fields - only include if they have values
-        ...(formData.customizationSchemaId && { customizationSchemaId: formData.customizationSchemaId }),
+        ...(formData.customizationSchemaId && {
+          customizationSchemaId: formData.customizationSchemaId,
+        }),
         ...(formData.onSale && formData.salePrice && { salePrice: Number(formData.salePrice) }),
       };
 
@@ -828,15 +841,15 @@ export default function AdminProductsPanelV2() {
                             product.stock === 0
                               ? 'bg-red-100 text-red-700'
                               : product.stock <= (product.lowStockThreshold || 5)
-                              ? 'bg-amber-100 text-amber-700'
-                              : 'bg-blue-100 text-blue-700'
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-blue-100 text-blue-700'
                           }`}
                         >
                           {product.stock === 0
                             ? '❌ Sin stock'
                             : product.stock <= (product.lowStockThreshold || 5)
-                            ? `⚠️ ${product.stock} uds`
-                            : `📦 ${product.stock} uds`}
+                              ? `⚠️ ${product.stock} uds`
+                              : `📦 ${product.stock} uds`}
                         </span>
                       )}
                     </div>
@@ -998,7 +1011,10 @@ export default function AdminProductsPanelV2() {
                       ))}
                     </select>
                     <p className="mt-1 text-xs text-gray-500">
-                      📂 Categoría principal (textiles, sublimados, resina, etc.) - Aparecerá en <code className="text-cyan-600">/categoria/{formData.category || 'categoria'}</code>
+                      📂 Categoría principal (textiles, sublimados, resina, etc.) - Aparecerá en{' '}
+                      <code className="text-cyan-600">
+                        /categoria/{formData.category || 'categoria'}
+                      </code>
                     </p>
                   </div>
 
@@ -1030,7 +1046,11 @@ export default function AdminProductsPanelV2() {
                         ))}
                     </select>
                     <p className="mt-1 text-xs text-gray-500">
-                      📁 Subcategoría específica - Aparecerá en <code className="text-cyan-600">/categoria/{formData.category || 'categoria'}/{formData.subcategory || 'subcategoria'}</code>
+                      📁 Subcategoría específica - Aparecerá en{' '}
+                      <code className="text-cyan-600">
+                        /categoria/{formData.category || 'categoria'}/
+                        {formData.subcategory || 'subcategoria'}
+                      </code>
                     </p>
                   </div>
 
@@ -1166,9 +1186,7 @@ export default function AdminProductsPanelV2() {
                           placeholder="100"
                         />
                         {(formData.stock ?? 0) <= (formData.lowStockThreshold ?? 5) && (
-                          <p className="mt-1 text-xs text-red-600 font-medium">
-                            ⚠️ Stock bajo
-                          </p>
+                          <p className="mt-1 text-xs text-red-600 font-medium">⚠️ Stock bajo</p>
                         )}
                       </div>
 
@@ -1220,18 +1238,20 @@ export default function AdminProductsPanelV2() {
                     </div>
 
                     {/* Indicador visual del estado */}
-                    <div className={`text-center py-2 rounded-lg text-sm font-medium ${
-                      (formData.stock ?? 0) === 0
-                        ? 'bg-red-100 text-red-700'
-                        : (formData.stock ?? 0) <= (formData.lowStockThreshold ?? 5)
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-green-100 text-green-700'
-                    }`}>
+                    <div
+                      className={`text-center py-2 rounded-lg text-sm font-medium ${
+                        (formData.stock ?? 0) === 0
+                          ? 'bg-red-100 text-red-700'
+                          : (formData.stock ?? 0) <= (formData.lowStockThreshold ?? 5)
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-green-100 text-green-700'
+                      }`}
+                    >
                       {(formData.stock ?? 0) === 0
                         ? `❌ Sin stock${formData.allowBackorder ? ' (bajo pedido activo)' : ''}`
                         : (formData.stock ?? 0) <= (formData.lowStockThreshold ?? 5)
-                        ? `⚠️ Stock bajo: ${formData.stock} unidades`
-                        : `✅ Stock disponible: ${formData.stock} unidades`}
+                          ? `⚠️ Stock bajo: ${formData.stock} unidades`
+                          : `✅ Stock disponible: ${formData.stock} unidades`}
                     </div>
                   </div>
                 )}
@@ -1256,7 +1276,9 @@ export default function AdminProductsPanelV2() {
                       onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
                       maxLength={70}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        (formData.metaTitle?.length || 0) > 60 ? 'border-red-300' : 'border-gray-300'
+                        (formData.metaTitle?.length || 0) > 60
+                          ? 'border-red-300'
+                          : 'border-gray-300'
                       }`}
                       placeholder={formData.name || 'Título que aparecerá en Google'}
                     />
@@ -1264,15 +1286,17 @@ export default function AdminProductsPanelV2() {
                       <p className="text-xs text-gray-500">
                         Deja vacío para usar el nombre del producto
                       </p>
-                      <span className={`text-xs font-medium ${
-                        (formData.metaTitle?.length || 0) === 0
-                          ? 'text-gray-400'
-                          : (formData.metaTitle?.length || 0) <= 50
-                          ? 'text-green-600'
-                          : (formData.metaTitle?.length || 0) <= 60
-                          ? 'text-amber-600'
-                          : 'text-red-600'
-                      }`}>
+                      <span
+                        className={`text-xs font-medium ${
+                          (formData.metaTitle?.length || 0) === 0
+                            ? 'text-gray-400'
+                            : (formData.metaTitle?.length || 0) <= 50
+                              ? 'text-green-600'
+                              : (formData.metaTitle?.length || 0) <= 60
+                                ? 'text-amber-600'
+                                : 'text-red-600'
+                        }`}
+                      >
                         {formData.metaTitle?.length || 0}/60
                       </span>
                     </div>
@@ -1285,11 +1309,15 @@ export default function AdminProductsPanelV2() {
                     </label>
                     <textarea
                       value={formData.metaDescription || ''}
-                      onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, metaDescription: e.target.value })
+                      }
                       maxLength={170}
                       rows={3}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
-                        (formData.metaDescription?.length || 0) > 160 ? 'border-red-300' : 'border-gray-300'
+                        (formData.metaDescription?.length || 0) > 160
+                          ? 'border-red-300'
+                          : 'border-gray-300'
                       }`}
                       placeholder={formData.description || 'Descripción que aparecerá en Google'}
                     />
@@ -1297,15 +1325,17 @@ export default function AdminProductsPanelV2() {
                       <p className="text-xs text-gray-500">
                         Deja vacío para usar la descripción del producto
                       </p>
-                      <span className={`text-xs font-medium ${
-                        (formData.metaDescription?.length || 0) === 0
-                          ? 'text-gray-400'
-                          : (formData.metaDescription?.length || 0) <= 140
-                          ? 'text-green-600'
-                          : (formData.metaDescription?.length || 0) <= 160
-                          ? 'text-amber-600'
-                          : 'text-red-600'
-                      }`}>
+                      <span
+                        className={`text-xs font-medium ${
+                          (formData.metaDescription?.length || 0) === 0
+                            ? 'text-gray-400'
+                            : (formData.metaDescription?.length || 0) <= 140
+                              ? 'text-green-600'
+                              : (formData.metaDescription?.length || 0) <= 160
+                                ? 'text-amber-600'
+                                : 'text-red-600'
+                        }`}
+                      >
                         {formData.metaDescription?.length || 0}/160
                       </span>
                     </div>
@@ -1327,14 +1357,18 @@ export default function AdminProductsPanelV2() {
                       </p>
                       {/* Description */}
                       <p className="text-[#545454] text-sm line-clamp-2">
-                        {formData.metaDescription || formData.description || 'Descripción del producto que aparecerá en los resultados de búsqueda de Google...'}
+                        {formData.metaDescription ||
+                          formData.description ||
+                          'Descripción del producto que aparecerá en los resultados de búsqueda de Google...'}
                       </p>
                     </div>
                   </div>
 
                   {/* Tips */}
                   <div className="text-xs text-gray-500 space-y-1">
-                    <p>💡 <strong>Tips SEO:</strong></p>
+                    <p>
+                      💡 <strong>Tips SEO:</strong>
+                    </p>
                     <ul className="list-disc list-inside space-y-0.5 ml-4">
                       <li>Incluye palabras clave relevantes al inicio del título</li>
                       <li>La descripción debe ser atractiva y describir el producto</li>
@@ -1454,23 +1488,53 @@ export default function AdminProductsPanelV2() {
                     🏷️ Tipos de producto (camisetas, tazas, llaveros, etc.) - Separados por comas
                   </p>
                   <div className="mt-2 p-3 bg-white rounded-lg border border-blue-200">
-                    <p className="text-xs text-blue-700 font-semibold mb-1">💡 Dónde aparecerá este producto:</p>
+                    <p className="text-xs text-blue-700 font-semibold mb-1">
+                      💡 Dónde aparecerá este producto:
+                    </p>
                     <ul className="text-xs text-gray-600 space-y-1">
-                      <li>• <strong>Por categoría:</strong> <code className="text-cyan-600">/categoria/{formData.category || 'categoria'}</code></li>
+                      <li>
+                        • <strong>Por categoría:</strong>{' '}
+                        <code className="text-cyan-600">
+                          /categoria/{formData.category || 'categoria'}
+                        </code>
+                      </li>
                       {formData.subcategory && (
-                        <li>• <strong>Por subcategoría:</strong> <code className="text-cyan-600">/categoria/{formData.category}/{formData.subcategory}</code></li>
+                        <li>
+                          • <strong>Por subcategoría:</strong>{' '}
+                          <code className="text-cyan-600">
+                            /categoria/{formData.category}/{formData.subcategory}
+                          </code>
+                        </li>
                       )}
                       {formData.tags && formData.tags.length > 0 && (
-                        <li>• <strong>Por tags:</strong> {formData.tags.slice(0, 3).map(tag => (
-                          <code key={tag} className="text-purple-600 ml-1">/productos?tag={tag}</code>
-                        ))}</li>
+                        <li>
+                          • <strong>Por tags:</strong>{' '}
+                          {formData.tags.slice(0, 3).map((tag) => (
+                            <code key={tag} className="text-purple-600 ml-1">
+                              /productos?tag={tag}
+                            </code>
+                          ))}
+                        </li>
                       )}
                     </ul>
-                    <p className="text-xs text-green-700 font-semibold mt-2 pt-2 border-t border-blue-200">✅ Ejemplos completos:</p>
+                    <p className="text-xs text-green-700 font-semibold mt-2 pt-2 border-t border-blue-200">
+                      ✅ Ejemplos completos:
+                    </p>
                     <ul className="text-xs text-gray-600 space-y-1 mt-1">
-                      <li>• Camiseta → Tags: <code className="text-purple-600">camisetas, ropa, algodon</code> → <code className="text-green-600">/productos?tag=camisetas</code></li>
-                      <li>• Taza → Tags: <code className="text-purple-600">tazas, cocina, regalo</code> → <code className="text-green-600">/productos?tag=tazas</code></li>
-                      <li>• Llavero → Tags: <code className="text-purple-600">llaveros, madera</code> → <code className="text-green-600">/productos?tag=llaveros</code></li>
+                      <li>
+                        • Camiseta → Tags:{' '}
+                        <code className="text-purple-600">camisetas, ropa, algodon</code> →{' '}
+                        <code className="text-green-600">/productos?tag=camisetas</code>
+                      </li>
+                      <li>
+                        • Taza → Tags:{' '}
+                        <code className="text-purple-600">tazas, cocina, regalo</code> →{' '}
+                        <code className="text-green-600">/productos?tag=tazas</code>
+                      </li>
+                      <li>
+                        • Llavero → Tags: <code className="text-purple-600">llaveros, madera</code>{' '}
+                        → <code className="text-green-600">/productos?tag=llaveros</code>
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -1561,7 +1625,10 @@ export default function AdminProductsPanelV2() {
                   <li>• Formato aceptado: CSV (valores separados por comas)</li>
                   <li>• Primera fila debe contener los encabezados</li>
                   <li>• Campos obligatorios: name, category, basePrice, slug</li>
-                  <li>• Las imágenes y tags se separan con <code className="bg-blue-100 px-1 rounded">|</code></li>
+                  <li>
+                    • Las imágenes y tags se separan con{' '}
+                    <code className="bg-blue-100 px-1 rounded">|</code>
+                  </li>
                   <li>• Si incluyes un ID existente, el producto se actualizará</li>
                 </ul>
                 <button
@@ -1629,9 +1696,7 @@ export default function AdminProductsPanelV2() {
                           <div key={idx} className="text-sm text-red-700">
                             <span className="font-medium">Fila {error.row}:</span> {error.message}
                             {error.data && (
-                              <div className="text-xs text-red-500 truncate">
-                                {error.data}
-                              </div>
+                              <div className="text-xs text-red-500 truncate">{error.data}</div>
                             )}
                           </div>
                         ))}
@@ -1643,7 +1708,8 @@ export default function AdminProductsPanelV2() {
                   {importPreview.products.length > 0 && (
                     <div className="bg-gray-50 rounded-xl p-4">
                       <h4 className="font-semibold text-gray-800 mb-2">
-                        Vista previa ({Math.min(5, importPreview.products.length)} de {importPreview.products.length})
+                        Vista previa ({Math.min(5, importPreview.products.length)} de{' '}
+                        {importPreview.products.length})
                       </h4>
                       <div className="space-y-2">
                         {importPreview.products.slice(0, 5).map((product, idx) => (
@@ -1654,12 +1720,17 @@ export default function AdminProductsPanelV2() {
                             <div>
                               <div className="font-medium text-gray-800">{product.name}</div>
                               <div className="text-sm text-gray-500">
-                                {product.category} • €{product.basePrice?.toFixed(2)} • /{product.slug}
+                                {product.category} • €{product.basePrice?.toFixed(2)} • /
+                                {product.slug}
                               </div>
                             </div>
-                            <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                              product.id ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
-                            }`}>
+                            <span
+                              className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                                product.id
+                                  ? 'bg-amber-100 text-amber-700'
+                                  : 'bg-green-100 text-green-700'
+                              }`}
+                            >
                               {product.id ? 'Actualizar' : 'Crear'}
                             </span>
                           </div>

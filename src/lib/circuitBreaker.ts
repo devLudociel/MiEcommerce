@@ -104,9 +104,7 @@ export class CircuitBreaker {
       } else {
         logger.warn(`[CircuitBreaker] '${this.config.name}' is OPEN, rejecting request`, {
           failureCount: this.failureCount,
-          timeSinceLastFailure: this.lastFailureTime
-            ? Date.now() - this.lastFailureTime
-            : null,
+          timeSinceLastFailure: this.lastFailureTime ? Date.now() - this.lastFailureTime : null,
         });
         throw new CircuitBreakerError(this.config.name, this.state);
       }

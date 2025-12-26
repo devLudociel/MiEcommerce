@@ -1,7 +1,6 @@
 // src/components/checkout/SecureCardPayment.tsx
 import { useState } from 'react';
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
-import type { Stripe, StripeElements } from '@stripe/stripe-js';
 import { logger } from '../../lib/logger';
 import { withRetry } from '../../lib/resilience';
 import StripeCardElement from './StripeCardElement';
@@ -110,7 +109,7 @@ export default function SecureCardPayment({
       logger.info('[SecureCardPayment] PaymentMethod created', {
         orderId: effectiveOrderId,
         paymentMethodId: paymentMethod.id,
-        last4: (paymentMethod.card as any)?.last4,
+        last4: paymentMethod.card?.last4,
       });
 
       // Step 2: Create PaymentIntent on server (with order validation)
@@ -135,7 +134,9 @@ export default function SecureCardPayment({
 
           if (!paymentIntentResponse.ok) {
             logger.error('[SecureCardPayment] Error creating PaymentIntent', data);
-            const error = new Error(data.error || 'Error al iniciar el pago') as Error & { status?: number };
+            const error = new Error(data.error || 'Error al iniciar el pago') as Error & {
+              status?: number;
+            };
             error.status = paymentIntentResponse.status;
             throw error;
           }

@@ -1,4 +1,16 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+const fillShippingForm = async (page: Page) => {
+  await page.getByPlaceholder('Tu nombre').fill('Juan');
+  await page.getByPlaceholder('Tus apellidos').fill('Perez');
+  await page.getByPlaceholder('tu@email.com').fill('ok@example.com');
+  await page.getByPlaceholder('+34 600 000 000').fill('612345678');
+  await page.getByPlaceholder('Calle, número, piso...').fill('Calle 123');
+  await page.getByPlaceholder('28001').fill('35001');
+  await page.getByPlaceholder('Madrid').fill('Las Palmas');
+  await page.getByRole('combobox', { name: /Provincia/i }).selectOption('Las Palmas');
+  await expect(page.getByText('Envío Estándar')).toBeVisible();
+};
 
 test.describe('Checkout flow', () => {
   test.beforeEach(async ({ page, baseURL }) => {
@@ -6,6 +18,7 @@ test.describe('Checkout flow', () => {
     await page.addInitScript(
       (cart) => {
         localStorage.setItem('cart', JSON.stringify(cart));
+        localStorage.setItem('cart:guest', JSON.stringify(cart));
       },
       {
         items: [{ id: 'p1', name: 'Prod 1', price: 10, quantity: 2, image: 'x.jpg' }],
@@ -29,19 +42,7 @@ test.describe('Checkout flow', () => {
   });
 
   test('Paso 1 -> Paso 2 con datos válidos', async ({ page }) => {
-    // Completar formulario de envío
-    await page.getByPlaceholder('Juan').fill('Juan');
-    await page.getByPlaceholder('García').fill('Perez');
-    await page.getByPlaceholder('tu@email.com').fill('ok@example.com');
-    await page.getByPlaceholder('612 345 678').fill('612345678');
-    await page.getByPlaceholder('Calle Principal, 123, Piso 2').fill('Calle 123');
-    const madridInputs = page.getByPlaceholder('Madrid');
-    await madridInputs.nth(0).fill('Madrid'); // ciudad
-    await madridInputs.nth(1).fill('Madrid'); // provincia
-    await page.getByPlaceholder('28001').fill('28001');
-
-    await page.getByRole('button', { name: /Continuar al Pago/i }).click();
-
+    await fillShippingForm(page);
     await expect(page.getByText(/Método de Pago|Metodo de Pago/i)).toBeVisible();
   });
 
@@ -76,23 +77,15 @@ test.describe('Checkout flow', () => {
     });
 
     // Rellenar mínimos necesarios de paso 1 (para que se renderice el bloque del cupón)
-    await page.getByPlaceholder('Juan').fill('Juan');
-    await page.getByPlaceholder('García').fill('Perez');
-    await page.getByPlaceholder('tu@email.com').fill('ok@example.com');
-    await page.getByPlaceholder('612 345 678').fill('612345678');
-    await page.getByPlaceholder('Calle Principal, 123, Piso 2').fill('Calle 123');
-    const madridInputs = page.getByPlaceholder('Madrid');
-    await madridInputs.nth(0).fill('Madrid');
-    await madridInputs.nth(1).fill('Madrid');
-    await page.getByPlaceholder('28001').fill('28001');
+    await fillShippingForm(page);
 
     // Aplicar cupón
-    await page.getByPlaceholder('CODIGO-DESCUENTO').fill('PERC10');
+    await page.getByPlaceholder('Código de cupón').fill('PERC10');
     await page.getByRole('button', { name: 'Aplicar' }).click();
 
     // Ver etiqueta de cupón aplicado y línea de descuento
-    await expect(page.getByText(/Cupón aplicado/i)).toBeVisible();
-    await expect(page.getByText(/Descuento \(PERC10\)/)).toBeVisible();
+    await expect(page.getByText(/Cupón: PERC10/i)).toBeVisible();
+    await expect(page.getByText(/Descuento cupón/i)).toBeVisible();
   });
 
   test('Eliminar cupón aplicado', async ({ page }) => {
@@ -124,39 +117,25 @@ test.describe('Checkout flow', () => {
     });
 
     // Completar mínimos del paso 1
-    await page.getByPlaceholder('Juan').fill('Juan');
-    await page.getByPlaceholder('García').fill('Perez');
-    await page.getByPlaceholder('tu@email.com').fill('ok@example.com');
-    await page.getByPlaceholder('612 345 678').fill('612345678');
-    await page.getByPlaceholder('Calle Principal, 123, Piso 2').fill('Calle 123');
-    await page.getByPlaceholder('Madrid').nth(0).fill('Madrid');
-    await page.getByPlaceholder('Madrid').nth(1).fill('Madrid');
-    await page.getByPlaceholder('28001').fill('28001');
+    await fillShippingForm(page);
 
     // Aplicar y luego eliminar
-    await page.getByPlaceholder('CODIGO-DESCUENTO').fill('PERC10');
+    await page.getByPlaceholder('Código de cupón').fill('PERC10');
     await page.getByRole('button', { name: 'Aplicar' }).click();
-    await expect(page.getByText(/Cupón aplicado/i)).toBeVisible();
-    await page.getByRole('button', { name: 'Eliminar' }).click();
-    await expect(page.getByText(/Cupón aplicado/i)).toHaveCount(0);
+    await expect(page.getByText(/Cupón: PERC10/i)).toBeVisible();
+    await page.getByRole('button', { name: '✕' }).click();
+    await expect(page.getByText(/Cupón: PERC10/i)).toHaveCount(0);
   });
 
   test('Cambiar método de envío a Express actualiza coste', async ({ page }) => {
     // Completar mínimos del paso 1
-    await page.getByPlaceholder('Juan').fill('Juan');
-    await page.getByPlaceholder('García').fill('Perez');
-    await page.getByPlaceholder('tu@email.com').fill('ok@example.com');
-    await page.getByPlaceholder('612 345 678').fill('612345678');
-    await page.getByPlaceholder('Calle Principal, 123, Piso 2').fill('Calle 123');
-    await page.getByPlaceholder('Madrid').nth(0).fill('Madrid');
-    await page.getByPlaceholder('Madrid').nth(1).fill('Madrid');
-    await page.getByPlaceholder('28001').fill('28001');
+    await fillShippingForm(page);
 
     // Cambiar a Express
-    await page.getByText('Express').click();
+    await page.getByText('Envío Express').click();
 
     // Ahora debería mostrar 4.95 en la fila de Envío
-    await expect(page.getByText('€4.95').first()).toBeVisible();
+    await expect(page.getByText('9.99 €').first()).toBeVisible();
   });
 
   test('Cupón de envío gratis muestra GRATIS (Cupón)', async ({ page }) => {
@@ -188,19 +167,12 @@ test.describe('Checkout flow', () => {
     });
 
     // Completar mínimos del paso 1
-    await page.getByPlaceholder('Juan').fill('Juan');
-    await page.getByPlaceholder('García').fill('Perez');
-    await page.getByPlaceholder('tu@email.com').fill('ok@example.com');
-    await page.getByPlaceholder('612 345 678').fill('612345678');
-    await page.getByPlaceholder('Calle Principal, 123, Piso 2').fill('Calle 123');
-    await page.getByPlaceholder('Madrid').nth(0).fill('Madrid');
-    await page.getByPlaceholder('Madrid').nth(1).fill('Madrid');
-    await page.getByPlaceholder('28001').fill('28001');
+    await fillShippingForm(page);
 
-    await page.getByPlaceholder('CODIGO-DESCUENTO').fill('FREESHIP');
+    await page.getByPlaceholder('Código de cupón').fill('FREESHIP');
     await page.getByRole('button', { name: 'Aplicar' }).click();
 
-    await expect(page.getByText('(Cupón)')).toBeVisible();
+    await expect(page.getByText('GRATIS')).toBeVisible();
   });
 
   test('Realizar pedido con éxito', async ({ page }) => {
@@ -217,24 +189,12 @@ test.describe('Checkout flow', () => {
     await page.route('**/api/send-email', async (route) => route.fulfill({ status: 200 }));
 
     // Paso 1
-    await page.getByPlaceholder('Juan').fill('Juan');
-    await page.getByPlaceholder('García').fill('Perez');
-    await page.getByPlaceholder('tu@email.com').fill('ok@example.com');
-    await page.getByPlaceholder('612 345 678').fill('612345678');
-    await page.getByPlaceholder('Calle Principal, 123, Piso 2').fill('Calle 123');
-    await page.getByPlaceholder('Madrid').nth(0).fill('Madrid');
-    await page.getByPlaceholder('Madrid').nth(1).fill('Madrid');
-    await page.getByPlaceholder('28001').fill('28001');
-    await page.getByRole('button', { name: /Continuar al Pago/i }).click();
+    await fillShippingForm(page);
 
-    // Paso 2: tarjeta
-    await page.getByPlaceholder('1234 5678 9012 3456').fill('4242 4242 4242 4242');
-    await page.getByPlaceholder('JUAN GARCIA').fill('JUAN GARCIA');
-    await page.getByPlaceholder('MM/AA').fill('12/99');
-    await page.getByPlaceholder('123', { exact: true }).fill('123');
-    await page.getByRole('button', { name: /Revisar Pedido/i }).click();
+    // Seleccionar transferencia para evitar Stripe Elements en e2e
+    await page.getByRole('radio', { name: /Transferencia Bancaria/i }).click();
 
-    // Paso 3: aceptar términos y Realizar pedido
+    // Aceptar términos y Realizar pedido
     await page.getByRole('checkbox').check();
     await page.getByRole('button', { name: /Realizar Pedido/i }).click();
 

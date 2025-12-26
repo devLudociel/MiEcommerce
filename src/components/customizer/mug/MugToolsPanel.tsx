@@ -40,15 +40,30 @@ export default function MugToolsPanel({
 
   const [backgroundColorInput, setBackgroundColorInput] = useState('#FFFFFF');
 
-  const tools: Array<{ id: MugTool; icon: React.ComponentType<{ className?: string }>; label: string; color: string }> = [
+  const tools: Array<{
+    id: MugTool;
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+    color: string;
+  }> = [
     { id: 'text', icon: Type, label: 'Texto', color: 'bg-blue-100 text-blue-600' },
     { id: 'names', icon: Users, label: 'Nombres', color: 'bg-green-100 text-green-600' },
-    { id: 'uploads', icon: Upload, label: 'Archivos subidos', color: 'bg-purple-100 text-purple-600' },
+    {
+      id: 'uploads',
+      icon: Upload,
+      label: 'Archivos subidos',
+      color: 'bg-purple-100 text-purple-600',
+    },
     { id: 'graphics', icon: Shapes, label: 'Gráficos', color: 'bg-pink-100 text-pink-600' },
     { id: 'background', icon: Palette, label: 'Fondo', color: 'bg-yellow-100 text-yellow-600' },
     { id: 'template', icon: Layout, label: 'Plantilla', color: 'bg-indigo-100 text-indigo-600' },
     { id: 'tables', icon: Grid3x3, label: 'Tablas', color: 'bg-cyan-100 text-cyan-600' },
-    { id: 'color', icon: Pipette, label: 'Color de la plantilla', color: 'bg-orange-100 text-orange-600' },
+    {
+      id: 'color',
+      icon: Pipette,
+      label: 'Color de la plantilla',
+      color: 'bg-orange-100 text-orange-600',
+    },
   ];
 
   const handleAddText = () => {
@@ -131,9 +146,7 @@ export default function MugToolsPanel({
         return (
           <div className="p-4 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Texto
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Texto</label>
               <textarea
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
@@ -144,9 +157,7 @@ export default function MugToolsPanel({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Fuente
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Fuente</label>
               <select
                 value={selectedFont}
                 onChange={(e) => setSelectedFont(e.target.value)}
@@ -175,9 +186,7 @@ export default function MugToolsPanel({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Color
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
               <div className="grid grid-cols-5 gap-2">
                 {TEXT_COLORS.map((color) => (
                   <button
@@ -266,9 +275,7 @@ export default function MugToolsPanel({
         return (
           <div className="p-4 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Sube tu imagen
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Sube tu imagen</label>
               <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition-colors cursor-pointer">
                 <input
                   type="file"
@@ -279,12 +286,8 @@ export default function MugToolsPanel({
                 />
                 <label htmlFor="file-upload" className="cursor-pointer">
                   <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600 font-medium">
-                    Haz clic o arrastra tu imagen aquí
-                  </p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    JPG, PNG, SVG • Máx 10MB
-                  </p>
+                  <p className="text-gray-600 font-medium">Haz clic o arrastra tu imagen aquí</p>
+                  <p className="text-sm text-gray-500 mt-2">JPG, PNG, SVG • Máx 10MB</p>
                 </label>
               </div>
             </div>
@@ -322,9 +325,7 @@ export default function MugToolsPanel({
         return (
           <div className="p-4 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Color de Fondo
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Color de Fondo</label>
               <input
                 type="color"
                 value={backgroundColorInput}
@@ -388,9 +389,7 @@ export default function MugToolsPanel({
       case 'tables':
         return (
           <div className="p-4 space-y-4">
-            <p className="text-sm text-gray-600">
-              Funcionalidad de tablas en desarrollo...
-            </p>
+            <p className="text-sm text-gray-600">Funcionalidad de tablas en desarrollo...</p>
           </div>
         );
 

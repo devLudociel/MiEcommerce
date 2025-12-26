@@ -54,7 +54,7 @@ export default function AdminCustomizationPanel() {
 
       // Load custom categories from Firestore
       const customCategoriesSnapshot = await getDocs(collection(db, 'customization_categories'));
-      const customCategories: CategoryWithSchema[] = customCategoriesSnapshot.docs.map(doc => ({
+      const customCategories: CategoryWithSchema[] = customCategoriesSnapshot.docs.map((doc) => ({
         id: doc.id,
         name: doc.data().name,
         slug: doc.data().slug,
@@ -180,7 +180,10 @@ export default function AdminCustomizationPanel() {
       setSelectedCategory(updatedCategories.find((c) => c.id === categoryId) || null);
 
       notify.success('Template aplicado y guardado en Firebase');
-      logger.info('[AdminCustomizationPanel] Template applied and saved', { categoryId, templateKey });
+      logger.info('[AdminCustomizationPanel] Template applied and saved', {
+        categoryId,
+        templateKey,
+      });
     } catch (error) {
       logger.error('[AdminCustomizationPanel] Error applying template', error);
       notify.error('Error al aplicar el template');
@@ -260,7 +263,7 @@ export default function AdminCustomizationPanel() {
     }
 
     // Verificar que no exista ya
-    if (categories.find(cat => cat.id === newCategoryForm.id)) {
+    if (categories.find((cat) => cat.id === newCategoryForm.id)) {
       notify.error('Ya existe una categoría con ese ID');
       return;
     }
@@ -384,15 +387,15 @@ export default function AdminCustomizationPanel() {
                     key={category.id}
                     onClick={() => handleSelectCategory(category)}
                     className={`w-full p-4 text-left transition-colors hover:bg-gray-50 ${
-                      selectedCategory?.id === category.id ? 'bg-purple-50 border-l-4 border-purple-500' : ''
+                      selectedCategory?.id === category.id
+                        ? 'bg-purple-50 border-l-4 border-purple-500'
+                        : ''
                     }`}
                   >
                     <div className="flex items-start gap-3">
                       <div className="text-3xl">{category.icon}</div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-gray-900 truncate">
-                          {category.name}
-                        </div>
+                        <div className="font-semibold text-gray-900 truncate">{category.name}</div>
                         <div className="text-xs text-gray-500 mt-1">
                           {category.customizationSchema ? (
                             <span className="text-green-600 font-medium">
@@ -415,9 +418,7 @@ export default function AdminCustomizationPanel() {
             {!selectedCategory ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
                 <div className="text-6xl mb-4">👈</div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  Selecciona una categoría
-                </h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Selecciona una categoría</h3>
                 <p className="text-gray-600">
                   Elige una categoría de la lista para configurar sus campos de personalización
                 </p>
@@ -460,7 +461,9 @@ export default function AdminCustomizationPanel() {
                       onClick={() => setEditingSchema(true)}
                       className="flex-1 px-4 py-3 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 transition-colors"
                     >
-                      {selectedCategory.customizationSchema ? '✏️ Editar Schema' : '➕ Crear Schema'}
+                      {selectedCategory.customizationSchema
+                        ? '✏️ Editar Schema'
+                        : '➕ Crear Schema'}
                     </button>
                     {selectedCategory.customizationSchema && (
                       <button
@@ -476,9 +479,7 @@ export default function AdminCustomizationPanel() {
                 {/* Current Schema */}
                 {selectedCategory.customizationSchema ? (
                   <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">
-                      📋 Schema Actual
-                    </h3>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">📋 Schema Actual</h3>
 
                     <div className="space-y-3">
                       {selectedCategory.customizationSchema.fields.map((field, idx) => (
@@ -498,7 +499,10 @@ export default function AdminCustomizationPanel() {
                                 )}
                               </div>
                               <div className="text-sm text-gray-600">
-                                Tipo: <code className="bg-white px-2 py-0.5 rounded">{field.fieldType}</code>
+                                Tipo:{' '}
+                                <code className="bg-white px-2 py-0.5 rounded">
+                                  {field.fieldType}
+                                </code>
                               </div>
                               {field.priceModifier > 0 && (
                                 <div className="text-sm text-purple-600 font-medium mt-1">
@@ -538,7 +542,9 @@ export default function AdminCustomizationPanel() {
                           >
                             <div className="font-semibold text-gray-900">{option.label}</div>
                             <div className="text-xs text-gray-500 mt-1">
-                              {exampleSchemas[option.value as keyof typeof exampleSchemas]?.fields.length || 0} campos
+                              {exampleSchemas[option.value as keyof typeof exampleSchemas]?.fields
+                                .length || 0}{' '}
+                              campos
                             </div>
                           </button>
                         ))}
@@ -553,7 +559,8 @@ export default function AdminCustomizationPanel() {
                       ✅ ¡Schema Configurado!
                     </h3>
                     <p className="text-gray-700 mb-4">
-                      Tu categoría ya tiene campos de personalización configurados. Pruébalo en acción:
+                      Tu categoría ya tiene campos de personalización configurados. Pruébalo en
+                      acción:
                     </p>
                     <a
                       href="/test-customizer"
@@ -581,7 +588,8 @@ export default function AdminCustomizationPanel() {
                 ➕ Crear Nueva Categoría de Personalización
               </h2>
               <p className="text-purple-100 text-sm mt-1">
-                Define una nueva categoría para productos personalizables (ej: termos, vasos, gorras)
+                Define una nueva categoría para productos personalizables (ej: termos, vasos,
+                gorras)
               </p>
             </div>
 
@@ -649,12 +657,12 @@ export default function AdminCustomizationPanel() {
 
               {/* Descripción */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Descripción
-                </label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Descripción</label>
                 <textarea
                   value={newCategoryForm.description}
-                  onChange={(e) => setNewCategoryForm({ ...newCategoryForm, description: e.target.value })}
+                  onChange={(e) =>
+                    setNewCategoryForm({ ...newCategoryForm, description: e.target.value })
+                  }
                   placeholder="Termos térmicos con diseño personalizado"
                   rows={3}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none transition-colors resize-none"
@@ -663,14 +671,14 @@ export default function AdminCustomizationPanel() {
 
               {/* Icono */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Icono (emoji)
-                </label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Icono (emoji)</label>
                 <div className="flex items-center gap-4">
                   <input
                     type="text"
                     value={newCategoryForm.icon}
-                    onChange={(e) => setNewCategoryForm({ ...newCategoryForm, icon: e.target.value })}
+                    onChange={(e) =>
+                      setNewCategoryForm({ ...newCategoryForm, icon: e.target.value })
+                    }
                     placeholder="🍵"
                     maxLength={2}
                     className="w-20 px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none transition-colors text-center text-2xl"
@@ -679,9 +687,7 @@ export default function AdminCustomizationPanel() {
                     <p className="text-sm text-gray-600">
                       Emoji que aparecerá junto al nombre de la categoría
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Sugerencias: 🍵 ☕ 🥤 🧴 🧢 👒 🎒
-                    </p>
+                    <p className="text-xs text-gray-400 mt-1">Sugerencias: 🍵 ☕ 🥤 🧴 🧢 👒 🎒</p>
                   </div>
                 </div>
               </div>

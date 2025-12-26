@@ -45,9 +45,7 @@ export default function LowStockAlerts() {
 
       // Separate out of stock and low stock
       const outOfStock = products.filter((p) => p.stock === 0);
-      const lowStock = products.filter(
-        (p) => p.stock > 0 && p.stock <= p.lowStockThreshold
-      );
+      const lowStock = products.filter((p) => p.stock > 0 && p.stock <= p.lowStockThreshold);
 
       // Sort by stock (lowest first)
       outOfStock.sort((a, b) => a.stock - b.stock);
@@ -106,9 +104,7 @@ export default function LowStockAlerts() {
           </div>
           <div>
             <h3 className="font-semibold text-green-800">Stock OK</h3>
-            <p className="text-sm text-green-600">
-              Todos los productos tienen stock suficiente
-            </p>
+            <p className="text-sm text-green-600">Todos los productos tienen stock suficiente</p>
           </div>
         </div>
       </div>

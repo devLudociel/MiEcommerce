@@ -155,7 +155,12 @@ export default function CategoriesShowcase() {
             className="inline-flex items-center gap-2 px-5 py-2.5 sm:px-8 sm:py-4 border-2 border-cyan-500 text-cyan-600 text-sm sm:text-base font-semibold rounded-full hover:bg-cyan-500 hover:text-white transform hover:scale-105 active:scale-95 transition-all duration-300"
           >
             <span>Ver todos los productos</span>
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-4 h-4 sm:w-5 sm:h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"

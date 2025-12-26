@@ -44,10 +44,10 @@ export const POST: APIRoute = async ({ request }) => {
     // Check if share exists
     const shareSnap = await shareRef.get();
     if (!shareSnap.exists) {
-      return new Response(
-        JSON.stringify({ error: 'Share not found' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Share not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Increment platform counter and total share count
@@ -58,10 +58,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     logger.info('[share/track-share] Share tracked successfully');
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     logger.error('[share/track-share] Error:', error);
     return new Response(

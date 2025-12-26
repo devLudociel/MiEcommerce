@@ -11,14 +11,9 @@ import {
   doc,
   Timestamp,
   onSnapshot,
-  type Unsubscribe
+  type Unsubscribe,
 } from 'firebase/firestore';
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  deleteObject
-} from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // ============================================================================
 // TYPES
@@ -68,10 +63,13 @@ export async function getAllBanners(): Promise<HeroBanner[]> {
     const bannersRef = collection(db, COLLECTION_NAME);
     const snapshot = await getDocs(bannersRef);
 
-    const banners = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as HeroBanner));
+    const banners = snapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+        }) as HeroBanner
+    );
 
     // Ordenar en el cliente para evitar problemas de índices
     return banners.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -90,14 +88,17 @@ export async function getActiveBanners(): Promise<HeroBanner[]> {
     const bannersRef = collection(db, COLLECTION_NAME);
     const snapshot = await getDocs(bannersRef);
 
-    const allBanners = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as HeroBanner));
+    const allBanners = snapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+        }) as HeroBanner
+    );
 
     // Filtrar activos y ordenar en el cliente
     return allBanners
-      .filter(banner => banner.active === true)
+      .filter((banner) => banner.active === true)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   } catch (error) {
     console.error('Error fetching active banners:', error);
@@ -108,22 +109,27 @@ export async function getActiveBanners(): Promise<HeroBanner[]> {
 /**
  * Suscripción en tiempo real a los banners (para el admin)
  */
-export function subscribeToBanners(
-  callback: (banners: HeroBanner[]) => void
-): Unsubscribe {
+export function subscribeToBanners(callback: (banners: HeroBanner[]) => void): Unsubscribe {
   const bannersRef = collection(db, COLLECTION_NAME);
 
-  return onSnapshot(bannersRef, (snapshot) => {
-    const banners = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as HeroBanner));
-    // Ordenar en el cliente
-    banners.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    callback(banners);
-  }, (error) => {
-    console.error('Error in banners subscription:', error);
-  });
+  return onSnapshot(
+    bannersRef,
+    (snapshot) => {
+      const banners = snapshot.docs.map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          }) as HeroBanner
+      );
+      // Ordenar en el cliente
+      banners.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      callback(banners);
+    },
+    (error) => {
+      console.error('Error in banners subscription:', error);
+    }
+  );
 }
 
 /**
@@ -135,7 +141,7 @@ export async function createBanner(input: HeroBannerInput): Promise<string> {
     const docRef = await addDoc(collection(db, COLLECTION_NAME), {
       ...input,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     });
     return docRef.id;
   } catch (error) {
@@ -147,15 +153,12 @@ export async function createBanner(input: HeroBannerInput): Promise<string> {
 /**
  * Actualizar un banner existente
  */
-export async function updateBanner(
-  id: string,
-  updates: Partial<HeroBannerInput>
-): Promise<void> {
+export async function updateBanner(id: string, updates: Partial<HeroBannerInput>): Promise<void> {
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, {
       ...updates,
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     });
   } catch (error) {
     console.error('Error updating banner:', error);
@@ -188,9 +191,7 @@ export async function toggleBannerActive(id: string, active: boolean): Promise<v
  */
 export async function reorderBanners(bannerIds: string[]): Promise<void> {
   try {
-    const updates = bannerIds.map((id, index) =>
-      updateBanner(id, { order: index })
-    );
+    const updates = bannerIds.map((id, index) => updateBanner(id, { order: index }));
     await Promise.all(updates);
   } catch (error) {
     console.error('Error reordering banners:', error);
@@ -251,7 +252,7 @@ export async function deleteBannerImage(imageUrl: string): Promise<void> {
 export async function getNextOrder(): Promise<number> {
   const banners = await getAllBanners();
   if (banners.length === 0) return 0;
-  return Math.max(...banners.map(b => b.order)) + 1;
+  return Math.max(...banners.map((b) => b.order)) + 1;
 }
 
 /**
@@ -259,7 +260,7 @@ export async function getNextOrder(): Promise<number> {
  */
 export async function moveBannerUp(bannerId: string): Promise<void> {
   const banners = await getAllBanners();
-  const index = banners.findIndex(b => b.id === bannerId);
+  const index = banners.findIndex((b) => b.id === bannerId);
 
   if (index > 0) {
     const prevBanner = banners[index - 1];
@@ -267,7 +268,7 @@ export async function moveBannerUp(bannerId: string): Promise<void> {
 
     await Promise.all([
       updateBanner(currentBanner.id, { order: prevBanner.order }),
-      updateBanner(prevBanner.id, { order: currentBanner.order })
+      updateBanner(prevBanner.id, { order: currentBanner.order }),
     ]);
   }
 }
@@ -277,7 +278,7 @@ export async function moveBannerUp(bannerId: string): Promise<void> {
  */
 export async function moveBannerDown(bannerId: string): Promise<void> {
   const banners = await getAllBanners();
-  const index = banners.findIndex(b => b.id === bannerId);
+  const index = banners.findIndex((b) => b.id === bannerId);
 
   if (index < banners.length - 1) {
     const nextBanner = banners[index + 1];
@@ -285,7 +286,7 @@ export async function moveBannerDown(bannerId: string): Promise<void> {
 
     await Promise.all([
       updateBanner(currentBanner.id, { order: nextBanner.order }),
-      updateBanner(nextBanner.id, { order: currentBanner.order })
+      updateBanner(nextBanner.id, { order: currentBanner.order }),
     ]);
   }
 }
@@ -303,7 +304,8 @@ export const DEFAULT_BANNERS: Omit<HeroBannerInput, 'order'>[] = [
     ctaPrimaryUrl: '/productos',
     ctaSecondaryText: 'Ver Catálogo',
     ctaSecondaryUrl: '/productos',
-    backgroundImage: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=1920&h=1080&fit=crop',
+    backgroundImage:
+      'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=1920&h=1080&fit=crop',
     accentColor: 'cyan',
     active: true,
   },
@@ -315,7 +317,8 @@ export const DEFAULT_BANNERS: Omit<HeroBannerInput, 'order'>[] = [
     ctaPrimaryUrl: '/productos',
     ctaSecondaryText: 'Más Info',
     ctaSecondaryUrl: '/como-funciona',
-    backgroundImage: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&h=1080&fit=crop',
+    backgroundImage:
+      'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&h=1080&fit=crop',
     accentColor: 'magenta',
     active: true,
   },
@@ -327,19 +330,22 @@ export const DEFAULT_BANNERS: Omit<HeroBannerInput, 'order'>[] = [
     ctaPrimaryUrl: '/ofertas',
     ctaSecondaryText: 'Suscribirse',
     ctaSecondaryUrl: '/cuenta',
-    backgroundImage: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=1920&h=1080&fit=crop',
+    backgroundImage:
+      'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=1920&h=1080&fit=crop',
     accentColor: 'yellow',
     active: true,
   },
   {
     title: 'Experiencia Premium',
     subtitle: 'Calidad Garantizada',
-    description: 'Productos premium con la mejor calidad, diseño excepcional y servicio al cliente 24/7',
+    description:
+      'Productos premium con la mejor calidad, diseño excepcional y servicio al cliente 24/7',
     ctaPrimaryText: 'Descubrir',
     ctaPrimaryUrl: '/productos',
     ctaSecondaryText: 'Contactar',
     ctaSecondaryUrl: '/contacto',
-    backgroundImage: 'https://images.unsplash.com/photo-1560472355-536de3962603?w=1920&h=1080&fit=crop',
+    backgroundImage:
+      'https://images.unsplash.com/photo-1560472355-536de3962603?w=1920&h=1080&fit=crop',
     accentColor: 'rainbow',
     active: true,
   },
@@ -359,7 +365,7 @@ export async function migrateDefaultBanners(): Promise<void> {
   for (let i = 0; i < DEFAULT_BANNERS.length; i++) {
     await createBanner({
       ...DEFAULT_BANNERS[i],
-      order: i
+      order: i,
     });
   }
   console.log('Migration complete!');

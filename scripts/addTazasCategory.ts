@@ -60,7 +60,6 @@ async function addTazasCategory() {
     console.log(`   ID: ${docRef.id}`);
     console.log(`   Slug: tazas`);
     console.log(`   URL: /productos?category=tazas`);
-
   } catch (error) {
     console.error('❌ Error adding category:', error);
     process.exit(1);

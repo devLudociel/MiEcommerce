@@ -208,7 +208,9 @@ export default function ProductDebugPanel({ slug }: ProductDebugPanelProps) {
       {/* Schema Detectado */}
       <div
         className={`rounded-xl shadow-lg p-6 ${
-          detectedSchemaId ? 'bg-green-50 border-2 border-green-200' : 'bg-orange-50 border-2 border-orange-200'
+          detectedSchemaId
+            ? 'bg-green-50 border-2 border-green-200'
+            : 'bg-orange-50 border-2 border-orange-200'
         }`}
       >
         <h2 className="text-xl font-bold text-gray-900 mb-4">
@@ -218,7 +220,8 @@ export default function ProductDebugPanel({ slug }: ProductDebugPanelProps) {
         {detectedSchemaId ? (
           <div>
             <p className="text-green-800 mb-2">
-              Se detectó el schema ID: <code className="bg-green-100 px-2 py-1 rounded font-mono">{detectedSchemaId}</code>
+              Se detectó el schema ID:{' '}
+              <code className="bg-green-100 px-2 py-1 rounded font-mono">{detectedSchemaId}</code>
             </p>
             <p className="text-sm text-green-700">
               El producto debería usar el customizer dinámico con este schema.
@@ -227,18 +230,21 @@ export default function ProductDebugPanel({ slug }: ProductDebugPanelProps) {
         ) : (
           <div>
             <p className="text-orange-800 mb-4">
-              No se pudo detectar un schema ID para este producto. Está usando el customizer tradicional (fallback).
+              No se pudo detectar un schema ID para este producto. Está usando el customizer
+              tradicional (fallback).
             </p>
             <div className="bg-white rounded-lg p-4 border border-orange-200">
               <p className="text-sm font-semibold text-gray-900 mb-2">💡 Soluciones:</p>
               <ul className="text-sm text-gray-700 space-y-2">
                 <li>
                   • Verifica que <code className="bg-gray-100 px-1 rounded">categoryId</code> o{' '}
-                  <code className="bg-gray-100 px-1 rounded">subcategoryId</code> contenga una de estas palabras:
-                  camisetas, ropa, cuadros, marcos, resina, figuras, tazas
+                  <code className="bg-gray-100 px-1 rounded">subcategoryId</code> contenga una de
+                  estas palabras: camisetas, ropa, cuadros, marcos, resina, figuras, tazas
                 </li>
                 <li>
-                  • O agrega un campo <code className="bg-gray-100 px-1 rounded">customizationSchemaId</code> con el ID del schema (ej: "cat_camisetas")
+                  • O agrega un campo{' '}
+                  <code className="bg-gray-100 px-1 rounded">customizationSchemaId</code> con el ID
+                  del schema (ej: "cat_camisetas")
                 </li>
                 <li>• O agrega tags que contengan esas palabras clave</li>
               </ul>
@@ -250,7 +256,9 @@ export default function ProductDebugPanel({ slug }: ProductDebugPanelProps) {
       {/* Schema Cargado */}
       <div
         className={`rounded-xl shadow-lg p-6 ${
-          loadedSchema ? 'bg-blue-50 border-2 border-blue-200' : 'bg-gray-50 border-2 border-gray-200'
+          loadedSchema
+            ? 'bg-blue-50 border-2 border-blue-200'
+            : 'bg-gray-50 border-2 border-gray-200'
         }`}
       >
         <h2 className="text-xl font-bold text-gray-900 mb-4">
@@ -284,20 +292,23 @@ export default function ProductDebugPanel({ slug }: ProductDebugPanelProps) {
 
             <div className="mt-4 p-3 bg-green-100 rounded-lg">
               <p className="text-sm text-green-800">
-                <strong>Estado:</strong> Este producto debería mostrar el DynamicCustomizer con los campos configurados. ✅
+                <strong>Estado:</strong> Este producto debería mostrar el DynamicCustomizer con los
+                campos configurados. ✅
               </p>
             </div>
           </div>
         ) : detectedSchemaId ? (
           <div>
             <p className="text-gray-700 mb-4">
-              ⚠️ Se detectó el schema ID <code className="bg-gray-200 px-2 py-1 rounded font-mono">{detectedSchemaId}</code>,
+              ⚠️ Se detectó el schema ID{' '}
+              <code className="bg-gray-200 px-2 py-1 rounded font-mono">{detectedSchemaId}</code>,
               pero no existe en Firebase.
             </p>
             <div className="bg-white rounded-lg p-4 border border-gray-300">
               <p className="text-sm font-semibold text-gray-900 mb-2">💡 Solución:</p>
               <p className="text-sm text-gray-700 mb-3">
-                Ve a <strong>/admin/customization</strong> y configura el schema para esta categoría.
+                Ve a <strong>/admin/customization</strong> y configura el schema para esta
+                categoría.
               </p>
               <a
                 href="/admin/customization"
@@ -324,6 +335,7 @@ export default function ProductDebugPanel({ slug }: ProductDebugPanelProps) {
             href={`/personalizar/${slug}`}
             target="_blank"
             className="px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+            rel="noreferrer"
           >
             Ver Página de Personalización →
           </a>

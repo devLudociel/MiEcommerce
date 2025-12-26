@@ -3,9 +3,9 @@ import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import type { ImageTransform } from '../../types/customization';
 
 interface ProductPreviewProps {
-  baseImage: string;  // URL de la imagen base (camiseta, caja, marco)
-  userImage?: string | null;  // URL de la imagen subida por el usuario
-  transform?: ImageTransform;  // Transformación aplicada
+  baseImage: string; // URL de la imagen base (camiseta, caja, marco)
+  userImage?: string | null; // URL de la imagen subida por el usuario
+  transform?: ImageTransform; // Transformación aplicada
   productName?: string;
   printAreaPercentage?: number; // Porcentaje del área imprimible (default 70%)
   showPrintArea?: boolean; // Mostrar área de impresión
@@ -180,9 +180,7 @@ export default function ProductPreview({
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center p-6">
                   <div className="text-5xl mb-3">🖼️</div>
-                  <p className="text-gray-500 font-medium">
-                    Sube tu diseño para ver el preview
-                  </p>
+                  <p className="text-gray-500 font-medium">Sube tu diseño para ver el preview</p>
                 </div>
               </div>
             )}
@@ -199,9 +197,7 @@ export default function ProductPreview({
               )}
             </div>
             {userImage && (
-              <span className="font-mono">
-                {Math.round(appliedTransform.scale * 100)}%
-              </span>
+              <span className="font-mono">{Math.round(appliedTransform.scale * 100)}%</span>
             )}
           </div>
           {showPrintArea && (

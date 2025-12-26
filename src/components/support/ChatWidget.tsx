@@ -2,7 +2,16 @@
 // Floating chat widget with multiple contact options
 
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Phone, Mail, HelpCircle, ChevronRight, Loader2 } from 'lucide-react';
+import {
+  MessageCircle,
+  X,
+  Send,
+  Phone,
+  Mail,
+  HelpCircle,
+  ChevronRight,
+  Loader2,
+} from 'lucide-react';
 import { db } from '../../lib/firebase';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { useAuth } from '../hooks/useAuth';
@@ -32,39 +41,46 @@ type WidgetView = 'closed' | 'main' | 'faq' | 'faq-detail' | 'contact';
 // ============================================================================
 
 const WHATSAPP_NUMBER = '34645341452';
-const WHATSAPP_MESSAGE = '¡Hola ImprimeArte! 👋 Tengo una consulta sobre sus servicios de impresión y personalización. ¿Podrían ayudarme?';
+const WHATSAPP_MESSAGE =
+  '¡Hola ImprimeArte! 👋 Tengo una consulta sobre sus servicios de impresión y personalización. ¿Podrían ayudarme?';
 const SUPPORT_EMAIL = 'soporte@imprimeartes.com';
 
 const QUICK_QUESTIONS: QuickQuestion[] = [
   {
     id: '1',
     question: '¿Cuánto tarda un pedido?',
-    answer: 'Los tiempos de producción varían según el producto. Generalmente: productos estándar 2-3 días laborables, personalizados 3-5 días laborables. El envío añade 1-3 días adicionales según la zona.'
+    answer:
+      'Los tiempos de producción varían según el producto. Generalmente: productos estándar 2-3 días laborables, personalizados 3-5 días laborables. El envío añade 1-3 días adicionales según la zona.',
   },
   {
     id: '2',
     question: '¿Cómo puedo personalizar mi producto?',
-    answer: 'Selecciona el producto que deseas, haz clic en "Personalizar" y sigue los pasos del configurador. Puedes subir tu imagen, añadir texto y elegir colores. Verás una vista previa antes de añadir al carrito.'
+    answer:
+      'Selecciona el producto que deseas, haz clic en "Personalizar" y sigue los pasos del configurador. Puedes subir tu imagen, añadir texto y elegir colores. Verás una vista previa antes de añadir al carrito.',
   },
   {
     id: '3',
     question: '¿Cuáles son los métodos de pago?',
-    answer: 'Aceptamos tarjetas de crédito/débito (Visa, Mastercard, American Express) a través de Stripe. El pago es 100% seguro y tus datos están protegidos.'
+    answer:
+      'Aceptamos tarjetas de crédito/débito (Visa, Mastercard, American Express) a través de Stripe. El pago es 100% seguro y tus datos están protegidos.',
   },
   {
     id: '4',
     question: '¿Puedo devolver un producto personalizado?',
-    answer: 'Los productos personalizados no admiten devolución salvo defecto de fabricación. Revisa bien tu diseño antes de confirmar. Si hay un error de producción, te lo reemplazamos sin costo.'
+    answer:
+      'Los productos personalizados no admiten devolución salvo defecto de fabricación. Revisa bien tu diseño antes de confirmar. Si hay un error de producción, te lo reemplazamos sin costo.',
   },
   {
     id: '5',
     question: '¿Hacen envíos internacionales?',
-    answer: 'Actualmente enviamos a toda España peninsular y Baleares. Para Canarias, Ceuta, Melilla y otros países, contáctanos directamente para calcular el envío.'
+    answer:
+      'Actualmente enviamos a toda España peninsular y Baleares. Para Canarias, Ceuta, Melilla y otros países, contáctanos directamente para calcular el envío.',
   },
   {
     id: '6',
     question: '¿Cómo puedo seguir mi pedido?',
-    answer: 'Una vez enviado tu pedido, recibirás un email con el número de seguimiento. También puedes ver el estado en "Mi cuenta" → "Mis pedidos".'
+    answer:
+      'Una vez enviado tu pedido, recibirás un email con el número de seguimiento. También puedes ver el estado en "Mi cuenta" → "Mis pedidos".',
   },
 ];
 
@@ -79,7 +95,7 @@ export default function ChatWidget() {
     name: '',
     email: '',
     subject: '',
-    message: ''
+    message: '',
   });
   const [sending, setSending] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -90,10 +106,10 @@ export default function ChatWidget() {
   // Pre-fill form with user data
   useEffect(() => {
     if (user) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         name: displayName || prev.name,
-        email: userEmail || prev.email
+        email: userEmail || prev.email,
       }));
     }
   }, [user, userEmail, displayName]);
@@ -158,7 +174,7 @@ export default function ChatWidget() {
         userId: user?.uid || null,
         status: 'pending',
         createdAt: Timestamp.now(),
-        source: 'chat_widget'
+        source: 'chat_widget',
       });
 
       notify.success('¡Mensaje enviado! Te responderemos pronto.');
@@ -359,10 +375,14 @@ export default function ChatWidget() {
             </button>
             <form onSubmit={handleContactSubmit} className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                  htmlFor="chat-contact-name"
+                >
                   Nombre *
                 </label>
                 <input
+                  id="chat-contact-name"
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -372,10 +392,14 @@ export default function ChatWidget() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                  htmlFor="chat-contact-email"
+                >
                   Email *
                 </label>
                 <input
+                  id="chat-contact-email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -385,10 +409,14 @@ export default function ChatWidget() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                  htmlFor="chat-contact-subject"
+                >
                   Asunto
                 </label>
                 <input
+                  id="chat-contact-subject"
                   type="text"
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
@@ -397,10 +425,14 @@ export default function ChatWidget() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                  htmlFor="chat-contact-message"
+                >
                   Mensaje *
                 </label>
                 <textarea
+                  id="chat-contact-message"
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   rows={3}
@@ -433,9 +465,7 @@ export default function ChatWidget() {
 
       {/* Footer */}
       <div className="px-4 py-2 bg-gray-50 border-t border-gray-100 text-center">
-        <p className="text-xs text-gray-500">
-          Horario de atención: Lun-Vie 9:00-18:00
-        </p>
+        <p className="text-xs text-gray-500">Horario de atención: Lun-Vie 9:00-18:00</p>
       </div>
     </div>
   );

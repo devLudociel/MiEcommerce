@@ -11,13 +11,9 @@ import {
   doc,
   Timestamp,
   onSnapshot,
-  type Unsubscribe
+  type Unsubscribe,
 } from 'firebase/firestore';
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL
-} from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // ============================================================================
 // TYPES
@@ -65,10 +61,13 @@ export async function getAllTestimonials(): Promise<Testimonial[]> {
     const ref = collection(db, TESTIMONIALS_COLLECTION);
     const snapshot = await getDocs(ref);
 
-    const testimonials = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as Testimonial));
+    const testimonials = snapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+        }) as Testimonial
+    );
 
     return testimonials.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   } catch (error) {
@@ -82,13 +81,16 @@ export async function getActiveTestimonials(): Promise<Testimonial[]> {
     const ref = collection(db, TESTIMONIALS_COLLECTION);
     const snapshot = await getDocs(ref);
 
-    const testimonials = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as Testimonial));
+    const testimonials = snapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+        }) as Testimonial
+    );
 
     return testimonials
-      .filter(t => t.active === true)
+      .filter((t) => t.active === true)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   } catch (error) {
     console.error('Error fetching active testimonials:', error);
@@ -96,19 +98,28 @@ export async function getActiveTestimonials(): Promise<Testimonial[]> {
   }
 }
 
-export function subscribeToTestimonials(callback: (testimonials: Testimonial[]) => void): Unsubscribe {
+export function subscribeToTestimonials(
+  callback: (testimonials: Testimonial[]) => void
+): Unsubscribe {
   const testimonialRef = collection(db, TESTIMONIALS_COLLECTION);
 
-  return onSnapshot(testimonialRef, (snapshot) => {
-    const testimonials = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as Testimonial));
-    testimonials.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    callback(testimonials);
-  }, (error) => {
-    console.error('Error in testimonials subscription:', error);
-  });
+  return onSnapshot(
+    testimonialRef,
+    (snapshot) => {
+      const testimonials = snapshot.docs.map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          }) as Testimonial
+      );
+      testimonials.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      callback(testimonials);
+    },
+    (error) => {
+      console.error('Error in testimonials subscription:', error);
+    }
+  );
 }
 
 export async function createTestimonial(input: TestimonialInput): Promise<string> {
@@ -117,7 +128,7 @@ export async function createTestimonial(input: TestimonialInput): Promise<string
     const docRef = await addDoc(collection(db, TESTIMONIALS_COLLECTION), {
       ...input,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     });
     return docRef.id;
   } catch (error) {
@@ -126,12 +137,15 @@ export async function createTestimonial(input: TestimonialInput): Promise<string
   }
 }
 
-export async function updateTestimonial(id: string, updates: Partial<TestimonialInput>): Promise<void> {
+export async function updateTestimonial(
+  id: string,
+  updates: Partial<TestimonialInput>
+): Promise<void> {
   try {
     const docRef = doc(db, TESTIMONIALS_COLLECTION, id);
     await updateDoc(docRef, {
       ...updates,
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     });
   } catch (error) {
     console.error('Error updating testimonial:', error);
@@ -158,10 +172,13 @@ export async function getAllStats(): Promise<SocialStat[]> {
     const ref = collection(db, STATS_COLLECTION);
     const snapshot = await getDocs(ref);
 
-    const stats = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as SocialStat));
+    const stats = snapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+        }) as SocialStat
+    );
 
     return stats.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   } catch (error) {
@@ -175,14 +192,15 @@ export async function getActiveStats(): Promise<SocialStat[]> {
     const ref = collection(db, STATS_COLLECTION);
     const snapshot = await getDocs(ref);
 
-    const stats = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as SocialStat));
+    const stats = snapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+        }) as SocialStat
+    );
 
-    return stats
-      .filter(s => s.active === true)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    return stats.filter((s) => s.active === true).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   } catch (error) {
     console.error('Error fetching active stats:', error);
     return [];
@@ -192,16 +210,23 @@ export async function getActiveStats(): Promise<SocialStat[]> {
 export function subscribeToStats(callback: (stats: SocialStat[]) => void): Unsubscribe {
   const statsRef = collection(db, STATS_COLLECTION);
 
-  return onSnapshot(statsRef, (snapshot) => {
-    const stats = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as SocialStat));
-    stats.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    callback(stats);
-  }, (error) => {
-    console.error('Error in stats subscription:', error);
-  });
+  return onSnapshot(
+    statsRef,
+    (snapshot) => {
+      const stats = snapshot.docs.map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          }) as SocialStat
+      );
+      stats.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      callback(stats);
+    },
+    (error) => {
+      console.error('Error in stats subscription:', error);
+    }
+  );
 }
 
 export async function createStat(input: SocialStatInput): Promise<string> {
@@ -260,13 +285,13 @@ export async function uploadTestimonialImage(file: File): Promise<string> {
 export async function getNextTestimonialOrder(): Promise<number> {
   const testimonials = await getAllTestimonials();
   if (testimonials.length === 0) return 0;
-  return Math.max(...testimonials.map(t => t.order ?? 0)) + 1;
+  return Math.max(...testimonials.map((t) => t.order ?? 0)) + 1;
 }
 
 export async function getNextStatOrder(): Promise<number> {
   const stats = await getAllStats();
   if (stats.length === 0) return 0;
-  return Math.max(...stats.map(s => s.order ?? 0)) + 1;
+  return Math.max(...stats.map((s) => s.order ?? 0)) + 1;
 }
 
 // ============================================================================

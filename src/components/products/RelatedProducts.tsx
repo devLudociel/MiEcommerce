@@ -33,8 +33,10 @@ export const RelatedProducts = memo(function RelatedProducts({ products }: Relat
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {products.map((product) => {
-          const currentPrice = product.onSale && product.salePrice ? product.salePrice : product.basePrice;
-          const hasDiscount = product.onSale && product.salePrice && product.salePrice < product.basePrice;
+          const currentPrice =
+            product.onSale && product.salePrice ? product.salePrice : product.basePrice;
+          const hasDiscount =
+            product.onSale && product.salePrice && product.salePrice < product.basePrice;
           const discountPercentage = hasDiscount
             ? Math.round(((product.basePrice - product.salePrice!) / product.basePrice) * 100)
             : 0;
@@ -78,9 +80,13 @@ export const RelatedProducts = memo(function RelatedProducts({ products }: Relat
                 </h3>
 
                 <div className="flex items-baseline gap-2">
-                  <span className="text-xl font-bold text-gray-900">€{currentPrice.toFixed(2)}</span>
+                  <span className="text-xl font-bold text-gray-900">
+                    €{currentPrice.toFixed(2)}
+                  </span>
                   {hasDiscount && (
-                    <span className="text-sm text-gray-400 line-through">€{product.basePrice.toFixed(2)}</span>
+                    <span className="text-sm text-gray-400 line-through">
+                      €{product.basePrice.toFixed(2)}
+                    </span>
                   )}
                 </div>
 

@@ -6,7 +6,11 @@ import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { executeStripeOperation } from '../../lib/externalServices';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
 import { z } from 'zod';
-import { checkRateLimit, createRateLimitResponse, RATE_LIMIT_CONFIGS } from '../../lib/rate-limiter';
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_CONFIGS,
+} from '../../lib/rate-limiter';
 
 const logger = createScopedLogger('create-payment-intent');
 
@@ -53,7 +57,10 @@ export const POST: APIRoute = async ({ request }) => {
     const validationResult = paymentIntentSchema.safeParse(rawData);
 
     if (!validationResult.success) {
-      logger.error('[create-payment-intent] Validación Zod falló:', validationResult.error.format());
+      logger.error(
+        '[create-payment-intent] Validación Zod falló:',
+        validationResult.error.format()
+      );
       return new Response(
         JSON.stringify({
           error: 'Datos inválidos',

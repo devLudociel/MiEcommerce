@@ -102,7 +102,7 @@ export default function InteractiveImageEditor({
     if (!isResizing || !canvasRef.current) return;
 
     const deltaY = e.clientY - resizeStart.y;
-    const scaleFactor = 1 + (deltaY / 200); // Sensitivity
+    const scaleFactor = 1 + deltaY / 200; // Sensitivity
     const newScale = Math.max(0.1, Math.min(3, resizeStart.scale * scaleFactor));
 
     onChange({
@@ -127,10 +127,7 @@ export default function InteractiveImageEditor({
     const centerX = imageRect.left + imageRect.width / 2;
     const centerY = imageRect.top + imageRect.height / 2;
 
-    const angle = Math.atan2(
-      e.clientY - centerY,
-      e.clientX - centerX
-    ) * (180 / Math.PI);
+    const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
 
     onChange({
       ...transform,
@@ -143,7 +140,7 @@ export default function InteractiveImageEditor({
     const handleGlobalMouseMove = (e: MouseEvent) => {
       if (isResizing) {
         const deltaY = e.clientY - resizeStart.y;
-        const scaleFactor = 1 + (deltaY / 200);
+        const scaleFactor = 1 + deltaY / 200;
         const newScale = Math.max(0.1, Math.min(3, resizeStart.scale * scaleFactor));
         onChange({ ...transform, scale: newScale });
       }
@@ -340,10 +337,14 @@ export default function InteractiveImageEditor({
 
         {/* Grid de ayuda */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)',
-            backgroundSize: '20px 20px',
-          }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage:
+                'linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)',
+              backgroundSize: '20px 20px',
+            }}
+          />
         </div>
 
         {/* Imagen editable */}
@@ -442,7 +443,9 @@ export default function InteractiveImageEditor({
         </div>
         <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
           <div className="text-xs text-gray-500">Escala</div>
-          <div className="text-sm font-bold text-gray-800">{Math.round(transform.scale * 100)}%</div>
+          <div className="text-sm font-bold text-gray-800">
+            {Math.round(transform.scale * 100)}%
+          </div>
         </div>
         <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
           <div className="text-xs text-gray-500">Rotación</div>
@@ -453,9 +456,8 @@ export default function InteractiveImageEditor({
       {/* Tips */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
         <p className="text-xs text-blue-800">
-          <span className="font-bold">💡 Tips:</span> Arrastra la imagen para moverla •
-          Usa los círculos morados para escalar •
-          Usa el círculo cyan para rotar
+          <span className="font-bold">💡 Tips:</span> Arrastra la imagen para moverla • Usa los
+          círculos morados para escalar • Usa el círculo cyan para rotar
         </p>
       </div>
     </div>

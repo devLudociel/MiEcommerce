@@ -79,7 +79,10 @@ export default function AdminUsersPanel() {
   // Admin emails from environment
   const adminEmails = useMemo(() => {
     const emails = import.meta.env.PUBLIC_ADMIN_EMAILS || '';
-    return emails.split(',').map((e: string) => e.trim().toLowerCase()).filter(Boolean);
+    return emails
+      .split(',')
+      .map((e: string) => e.trim().toLowerCase())
+      .filter(Boolean);
   }, []);
 
   const { confirm, ConfirmDialog } = useConfirmDialog();
@@ -105,10 +108,7 @@ export default function AdminUsersPanel() {
         let lastOrderDate: Date | undefined;
 
         try {
-          const ordersQuery = query(
-            collection(db, 'orders'),
-            where('userId', '==', uid)
-          );
+          const ordersQuery = query(collection(db, 'orders'), where('userId', '==', uid));
           const ordersSnap = await getDocs(ordersQuery);
           ordersCount = ordersSnap.size;
 
@@ -181,16 +181,20 @@ export default function AdminUsersPanel() {
     result.sort((a, b) => {
       let comparison = 0;
       switch (sortBy) {
-        case 'date':
-          const dateA = a.createdAt instanceof Timestamp ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-          const dateB = b.createdAt instanceof Timestamp ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        case 'date': {
+          const dateA =
+            a.createdAt instanceof Timestamp ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+          const dateB =
+            b.createdAt instanceof Timestamp ? b.createdAt.toDate() : new Date(b.createdAt || 0);
           comparison = dateA.getTime() - dateB.getTime();
           break;
-        case 'name':
+        }
+        case 'name': {
           const nameA = a.displayName || a.email || '';
           const nameB = b.displayName || b.email || '';
           comparison = nameA.localeCompare(nameB);
           break;
+        }
         case 'orders':
           comparison = a.ordersCount - b.ordersCount;
           break;
@@ -265,11 +269,21 @@ export default function AdminUsersPanel() {
 
   const handleExportUsers = () => {
     try {
-      const headers = ['Email', 'Nombre', 'Teléfono', 'Fecha Registro', 'Pedidos', 'Total Gastado', 'Estado', 'Rol'];
+      const headers = [
+        'Email',
+        'Nombre',
+        'Teléfono',
+        'Fecha Registro',
+        'Pedidos',
+        'Total Gastado',
+        'Estado',
+        'Rol',
+      ];
       const rows = filteredUsers.map((u) => {
-        const createdAt = u.createdAt instanceof Timestamp
-          ? u.createdAt.toDate().toLocaleDateString('es-ES')
-          : new Date(u.createdAt || 0).toLocaleDateString('es-ES');
+        const createdAt =
+          u.createdAt instanceof Timestamp
+            ? u.createdAt.toDate().toLocaleDateString('es-ES')
+            : new Date(u.createdAt || 0).toLocaleDateString('es-ES');
 
         return [
           u.email || '',
@@ -283,7 +297,9 @@ export default function AdminUsersPanel() {
         ];
       });
 
-      const csv = [headers.join(','), ...rows.map((r) => r.map((c) => `"${c}"`).join(','))].join('\n');
+      const csv = [headers.join(','), ...rows.map((r) => r.map((c) => `"${c}"`).join(','))].join(
+        '\n'
+      );
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
@@ -457,7 +473,12 @@ export default function AdminUsersPanel() {
               >
                 <div className="flex items-center gap-1">
                   Registro
-                  {sortBy === 'date' && (sortOrder === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />)}
+                  {sortBy === 'date' &&
+                    (sortOrder === 'asc' ? (
+                      <ChevronUp className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    ))}
                 </div>
               </th>
               <th
@@ -466,7 +487,12 @@ export default function AdminUsersPanel() {
               >
                 <div className="flex items-center gap-1">
                   Pedidos
-                  {sortBy === 'orders' && (sortOrder === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />)}
+                  {sortBy === 'orders' &&
+                    (sortOrder === 'asc' ? (
+                      <ChevronUp className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    ))}
                 </div>
               </th>
               <th
@@ -475,7 +501,12 @@ export default function AdminUsersPanel() {
               >
                 <div className="flex items-center gap-1">
                   Total Gastado
-                  {sortBy === 'spent' && (sortOrder === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />)}
+                  {sortBy === 'spent' &&
+                    (sortOrder === 'asc' ? (
+                      <ChevronUp className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    ))}
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -488,15 +519,22 @@ export default function AdminUsersPanel() {
           </thead>
           <tbody className="divide-y divide-gray-200">
             {filteredUsers.map((user) => (
-              <tr key={user.uid} className={`hover:bg-gray-50 ${user.isDisabled ? 'opacity-60' : ''}`}>
+              <tr
+                key={user.uid}
+                className={`hover:bg-gray-50 ${user.isDisabled ? 'opacity-60' : ''}`}
+              >
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${user.isAdmin ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-gradient-to-r from-purple-500 to-cyan-500'}`}>
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${user.isAdmin ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-gradient-to-r from-purple-500 to-cyan-500'}`}
+                    >
                       {(user.displayName || user.email || '?')[0].toUpperCase()}
                     </div>
                     <div>
                       <div className="font-semibold text-gray-800 flex items-center gap-2">
-                        {user.displayName || `${user.profile?.firstName || ''} ${user.profile?.lastName || ''}`.trim() || 'Sin nombre'}
+                        {user.displayName ||
+                          `${user.profile?.firstName || ''} ${user.profile?.lastName || ''}`.trim() ||
+                          'Sin nombre'}
                         {user.isAdmin && (
                           <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-medium">
                             Admin
@@ -534,16 +572,12 @@ export default function AdminUsersPanel() {
                   )}
                 </td>
                 <td className="px-6 py-4">
-                  <span className="font-semibold text-gray-800">
-                    €{user.totalSpent.toFixed(2)}
-                  </span>
+                  <span className="font-semibold text-gray-800">€{user.totalSpent.toFixed(2)}</span>
                 </td>
                 <td className="px-6 py-4">
                   <span
                     className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                      user.isDisabled
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-green-100 text-green-700'
+                      user.isDisabled ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                     }`}
                   >
                     {user.isDisabled ? 'Deshabilitado' : 'Activo'}
@@ -567,7 +601,11 @@ export default function AdminUsersPanel() {
                       }`}
                       title={user.isDisabled ? 'Habilitar' : 'Deshabilitar'}
                     >
-                      {user.isDisabled ? <CheckCircle className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
+                      {user.isDisabled ? (
+                        <CheckCircle className="w-4 h-4" />
+                      ) : (
+                        <Ban className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                 </td>
@@ -605,12 +643,16 @@ export default function AdminUsersPanel() {
               {/* User Info */}
               <div className="bg-gray-50 rounded-xl p-4">
                 <div className="flex items-start gap-4">
-                  <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold ${selectedUser.isAdmin ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-gradient-to-r from-purple-500 to-cyan-500'}`}>
+                  <div
+                    className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold ${selectedUser.isAdmin ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-gradient-to-r from-purple-500 to-cyan-500'}`}
+                  >
                     {(selectedUser.displayName || selectedUser.email || '?')[0].toUpperCase()}
                   </div>
                   <div className="flex-1">
                     <h4 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                      {selectedUser.displayName || `${selectedUser.profile?.firstName || ''} ${selectedUser.profile?.lastName || ''}`.trim() || 'Sin nombre'}
+                      {selectedUser.displayName ||
+                        `${selectedUser.profile?.firstName || ''} ${selectedUser.profile?.lastName || ''}`.trim() ||
+                        'Sin nombre'}
                       {selectedUser.isAdmin && (
                         <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-sm font-medium">
                           Admin
@@ -644,15 +686,21 @@ export default function AdminUsersPanel() {
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-4 mt-4">
                   <div className="bg-white rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-purple-600">{selectedUser.ordersCount}</div>
+                    <div className="text-2xl font-bold text-purple-600">
+                      {selectedUser.ordersCount}
+                    </div>
                     <div className="text-xs text-gray-500">Pedidos</div>
                   </div>
                   <div className="bg-white rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-green-600">€{selectedUser.totalSpent.toFixed(2)}</div>
+                    <div className="text-2xl font-bold text-green-600">
+                      €{selectedUser.totalSpent.toFixed(2)}
+                    </div>
                     <div className="text-xs text-gray-500">Total Gastado</div>
                   </div>
                   <div className="bg-white rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-cyan-600">€{selectedUser.creditBalance?.toFixed(2) || '0.00'}</div>
+                    <div className="text-2xl font-bold text-cyan-600">
+                      €{selectedUser.creditBalance?.toFixed(2) || '0.00'}
+                    </div>
                     <div className="text-xs text-gray-500">Saldo Crédito</div>
                   </div>
                 </div>
@@ -667,14 +715,23 @@ export default function AdminUsersPanel() {
                   </h4>
                   <div className="space-y-2">
                     {selectedUser.addresses.map((addr, idx) => (
-                      <div key={addr.id || idx} className="bg-white rounded-lg p-3 border border-gray-200">
+                      <div
+                        key={addr.id || idx}
+                        className="bg-white rounded-lg p-3 border border-gray-200"
+                      >
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-gray-800">{addr.label || `Dirección ${idx + 1}`}</span>
+                          <span className="font-medium text-gray-800">
+                            {addr.label || `Dirección ${idx + 1}`}
+                          </span>
                           {addr.isDefaultShipping && (
-                            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">Envío</span>
+                            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
+                              Envío
+                            </span>
                           )}
                           {addr.isDefaultBilling && (
-                            <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs">Facturación</span>
+                            <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs">
+                              Facturación
+                            </span>
                           )}
                         </div>
                         <div className="text-sm text-gray-600">
@@ -699,7 +756,10 @@ export default function AdminUsersPanel() {
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {selectedUser.taxIds.map((tax, idx) => (
-                      <span key={tax.id || idx} className="px-3 py-1 bg-white rounded-lg border border-gray-200 text-sm">
+                      <span
+                        key={tax.id || idx}
+                        className="px-3 py-1 bg-white rounded-lg border border-gray-200 text-sm"
+                      >
                         {tax.label || 'NIF'}: {tax.value}
                       </span>
                     ))}
@@ -722,25 +782,40 @@ export default function AdminUsersPanel() {
                 ) : (
                   <div className="space-y-2">
                     {userOrders.slice(0, 10).map((order) => (
-                      <div key={order.id} className="bg-white rounded-lg p-3 border border-gray-200 flex items-center justify-between">
+                      <div
+                        key={order.id}
+                        className="bg-white rounded-lg p-3 border border-gray-200 flex items-center justify-between"
+                      >
                         <div>
-                          <div className="font-medium text-gray-800">#{order.id.slice(-8).toUpperCase()}</div>
+                          <div className="font-medium text-gray-800">
+                            #{order.id.slice(-8).toUpperCase()}
+                          </div>
                           <div className="text-sm text-gray-500">
                             {order.itemsCount} producto(s) • {formatDate(order.createdAt)}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-semibold text-gray-800">€{order.total.toFixed(2)}</div>
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                            order.status === 'completed' ? 'bg-green-100 text-green-700' :
-                            order.status === 'processing' ? 'bg-blue-100 text-blue-700' :
-                            order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                            'bg-amber-100 text-amber-700'
-                          }`}>
-                            {order.status === 'completed' ? 'Completado' :
-                             order.status === 'processing' ? 'Procesando' :
-                             order.status === 'cancelled' ? 'Cancelado' :
-                             'Pendiente'}
+                          <div className="font-semibold text-gray-800">
+                            €{order.total.toFixed(2)}
+                          </div>
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs font-medium ${
+                              order.status === 'completed'
+                                ? 'bg-green-100 text-green-700'
+                                : order.status === 'processing'
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : order.status === 'cancelled'
+                                    ? 'bg-red-100 text-red-700'
+                                    : 'bg-amber-100 text-amber-700'
+                            }`}
+                          >
+                            {order.status === 'completed'
+                              ? 'Completado'
+                              : order.status === 'processing'
+                                ? 'Procesando'
+                                : order.status === 'cancelled'
+                                  ? 'Cancelado'
+                                  : 'Pendiente'}
                           </span>
                         </div>
                       </div>

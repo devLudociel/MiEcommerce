@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, getUserOrdersPaginated } from '../../lib/firebase';
-import type { OrderData } from '../../lib/firebase';
+import type { OrderData, PaymentInfo } from '../../lib/firebase';
 import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { logger } from '../../lib/logger';
 import { notify } from '../../lib/notifications';
@@ -39,7 +39,7 @@ export default function OrdersPanel() {
         setLastDoc(result.lastVisible);
         logger.info('[OrdersPanel] Pedidos cargados', {
           count: result.orders.length,
-          hasMore: result.hasMore
+          hasMore: result.hasMore,
         });
       } catch (error) {
         logger.error('[OrdersPanel] Error cargando pedidos', error);
@@ -65,7 +65,7 @@ export default function OrdersPanel() {
       setLastDoc(result.lastVisible);
       logger.info('[OrdersPanel] Más pedidos cargados', {
         count: result.orders.length,
-        total: orders.length + result.orders.length
+        total: orders.length + result.orders.length,
       });
     } catch (error) {
       logger.error('[OrdersPanel] Error cargando más pedidos', error);
@@ -151,6 +151,11 @@ export default function OrdersPanel() {
       default:
         return '📋';
     }
+  };
+
+  const getOrderPaymentMethod = (order: OrderData): PaymentInfo['method'] | undefined => {
+    const legacyOrder = order as OrderData & { paymentMethod?: PaymentInfo['method'] };
+    return order.paymentInfo?.method ?? legacyOrder.paymentMethod;
   };
 
   const formatDate = (timestamp: unknown) => {
@@ -275,11 +280,14 @@ export default function OrdersPanel() {
         </div>
       ) : (
         <div className="space-y-4">
-          {orders.map((order) => (
-            <div
-              key={order.id}
-              className="card p-6 hover:shadow-xl transition-shadow duration-300 border-2 border-transparent hover:border-cyan-200"
-            >
+          {orders.map((order) => {
+            const paymentMethod = getOrderPaymentMethod(order);
+
+            return (
+              <div
+                key={order.id}
+                className="card p-6 hover:shadow-xl transition-shadow duration-300 border-2 border-transparent hover:border-cyan-200"
+              >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
@@ -298,16 +306,13 @@ export default function OrdersPanel() {
                     >
                       {getStatusText(order.status)}
                     </span>
-                    {((order as any).paymentMethod || (order as any).paymentInfo?.method) && (
+                    {paymentMethod && (
                       <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                        {((order as any).paymentMethod || (order as any).paymentInfo?.method) ===
-                        'card'
+                        {paymentMethod === 'card'
                           ? '💳 Tarjeta'
-                          : ((order as any).paymentMethod || (order as any).paymentInfo?.method) ===
-                              'paypal'
+                          : paymentMethod === 'paypal'
                             ? '🅿️ PayPal'
-                            : ((order as any).paymentMethod ||
-                                  (order as any).paymentInfo?.method) === 'transfer'
+                            : paymentMethod === 'transfer'
                               ? '🏦 Transferencia'
                               : '💵 Contra Reembolso'}
                       </span>
@@ -335,26 +340,29 @@ export default function OrdersPanel() {
                   >
                     Ver detalle
                   </a>
-                  {(order.status === 'delivered' || order.status === 'processing' || order.status === 'shipped') && order.items.length > 0 && (
-                    <>
-                      <button
-                        onClick={() => handleReorder(order, false)}
-                        className="btn bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2 rounded-xl font-bold hover:shadow-lg transition-all text-center text-sm flex items-center justify-center gap-1"
-                      >
-                        <span>🔄</span>
-                        Reordenar
-                      </button>
-                      {order.items[0]?.customization && (
+                  {(order.status === 'delivered' ||
+                    order.status === 'processing' ||
+                    order.status === 'shipped') &&
+                    order.items.length > 0 && (
+                      <>
                         <button
-                          onClick={() => handleReorder(order, true)}
-                          className="btn btn-outline border-2 border-gray-300 px-6 py-2 rounded-xl font-bold hover:border-cyan-500 transition-all text-center text-sm flex items-center justify-center gap-1"
+                          onClick={() => handleReorder(order, false)}
+                          className="btn bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2 rounded-xl font-bold hover:shadow-lg transition-all text-center text-sm flex items-center justify-center gap-1"
                         >
-                          <span>✏️</span>
-                          Editar
+                          <span>🔄</span>
+                          Reordenar
                         </button>
-                      )}
-                    </>
-                  )}
+                        {order.items[0]?.customization && (
+                          <button
+                            onClick={() => handleReorder(order, true)}
+                            className="btn btn-outline border-2 border-gray-300 px-6 py-2 rounded-xl font-bold hover:border-cyan-500 transition-all text-center text-sm flex items-center justify-center gap-1"
+                          >
+                            <span>✏️</span>
+                            Editar
+                          </button>
+                        )}
+                      </>
+                    )}
                 </div>
               </div>
 
@@ -379,8 +387,9 @@ export default function OrdersPanel() {
                   )}
                 </div>
               </div>
-            </div>
-          ))}
+              </div>
+            );
+          })}
 
           {/* PERFORMANCE: Load More button for pagination */}
           {hasMore && (

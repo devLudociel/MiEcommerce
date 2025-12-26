@@ -77,9 +77,13 @@ export const ProductInfo = memo(function ProductInfo({
     return { text: 'En stock', color: 'text-green-500', bg: 'bg-green-100' };
   }, [currentVariant.stock]);
 
-  const hasDiscount = currentVariant.originalPrice && currentVariant.originalPrice > currentVariant.price;
+  const hasDiscount =
+    currentVariant.originalPrice && currentVariant.originalPrice > currentVariant.price;
   const discountPercentage = hasDiscount
-    ? Math.round(((currentVariant.originalPrice! - currentVariant.price) / currentVariant.originalPrice!) * 100)
+    ? Math.round(
+        ((currentVariant.originalPrice! - currentVariant.price) / currentVariant.originalPrice!) *
+          100
+      )
     : 0;
 
   return (
@@ -87,7 +91,9 @@ export const ProductInfo = memo(function ProductInfo({
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-          <span className="px-3 py-1 bg-cyan-50 text-cyan-600 rounded-full font-medium">{category}</span>
+          <span className="px-3 py-1 bg-cyan-50 text-cyan-600 rounded-full font-medium">
+            {category}
+          </span>
           <span>•</span>
           <span>{brand}</span>
         </div>
@@ -120,7 +126,9 @@ export const ProductInfo = memo(function ProductInfo({
       {/* Price */}
       <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl p-6 border border-cyan-100">
         <div className="flex items-baseline gap-4 mb-2">
-          <span className="text-5xl font-bold text-gray-900">€{currentVariant.price.toFixed(2)}</span>
+          <span className="text-5xl font-bold text-gray-900">
+            €{currentVariant.price.toFixed(2)}
+          </span>
           {hasDiscount && (
             <>
               <span className="text-2xl text-gray-400 line-through">
@@ -162,7 +170,11 @@ export const ProductInfo = memo(function ProductInfo({
                 aria-label={`Seleccionar color ${variant.colorName}`}
               >
                 {idx === selectedVariant && (
-                  <svg className="w-6 h-6 text-white mx-auto drop-shadow-lg" fill="currentColor" viewBox="0 0 20 20">
+                  <svg
+                    className="w-6 h-6 text-white mx-auto drop-shadow-lg"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
                     <path
                       fillRule="evenodd"
                       d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -178,7 +190,12 @@ export const ProductInfo = memo(function ProductInfo({
 
       {/* Quantity Selector */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-3">Cantidad</label>
+        <label
+          className="block text-sm font-semibold text-gray-700 mb-3"
+          htmlFor="product-quantity"
+        >
+          Cantidad
+        </label>
         <div className="flex items-center gap-4">
           <div className="flex items-center bg-white border-2 border-gray-200 rounded-xl overflow-hidden">
             <button
@@ -189,6 +206,7 @@ export const ProductInfo = memo(function ProductInfo({
               −
             </button>
             <input
+              id="product-quantity"
               type="number"
               min="1"
               max={currentVariant.stock}
@@ -220,7 +238,14 @@ export const ProductInfo = memo(function ProductInfo({
           {isAddingToCart ? (
             <span className="flex items-center justify-center gap-2">
               <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
                 <path
                   className="opacity-75"
                   fill="currentColor"
@@ -288,7 +313,11 @@ export const ProductInfo = memo(function ProductInfo({
           <h3 className="font-semibold text-gray-900 mb-4">Características destacadas:</h3>
           {features.map((feature, idx) => (
             <div key={idx} className="flex items-center gap-3 text-gray-700">
-              <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <svg
+                className="w-5 h-5 text-green-500 flex-shrink-0"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
                 <path
                   fillRule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"

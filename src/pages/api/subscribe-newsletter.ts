@@ -4,7 +4,11 @@ import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { z } from 'zod';
-import { checkRateLimit, createRateLimitResponse, RATE_LIMIT_CONFIGS } from '../../lib/rate-limiter';
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_CONFIGS,
+} from '../../lib/rate-limiter';
 
 // Simple console logger for API routes (avoids import issues)
 const logger = {

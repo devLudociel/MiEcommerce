@@ -43,10 +43,10 @@ export const POST: APIRoute = async ({ request }) => {
     // Check if template exists
     const templateSnap = await templateRef.get();
     if (!templateSnap.exists) {
-      return new Response(
-        JSON.stringify({ error: 'Template not found' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Template not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Increment popularity counter
@@ -57,10 +57,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     logger.info('[increment-usage] Successfully incremented usage');
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     logger.error('[increment-usage] Error:', error);
     return new Response(

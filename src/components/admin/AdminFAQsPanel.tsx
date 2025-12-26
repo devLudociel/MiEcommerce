@@ -18,7 +18,7 @@ import {
   CheckCircle,
   Loader2,
   RefreshCw,
-  Filter
+  Filter,
 } from 'lucide-react';
 import {
   type FAQ,
@@ -37,7 +37,7 @@ import {
   updateCategory,
   deleteCategory,
   migrateDefaultFAQs,
-  DEFAULT_CATEGORIES
+  DEFAULT_CATEGORIES,
 } from '../../lib/faqs';
 
 export default function AdminFAQsPanel() {
@@ -206,7 +206,7 @@ export default function AdminFAQsPanel() {
       await createCategory({
         name: newCategoryName,
         icon: newCategoryIcon,
-        order: categories.length
+        order: categories.length,
       });
       setNewCategoryName('');
       setNewCategoryIcon('📋');
@@ -227,8 +227,8 @@ export default function AdminFAQsPanel() {
   };
 
   const handleDeleteCategory = async (id: string) => {
-    const faqsInCategory = faqs.filter(f =>
-      categories.find(c => c.id === id)?.name.toLowerCase() === f.category
+    const faqsInCategory = faqs.filter(
+      (f) => categories.find((c) => c.id === id)?.name.toLowerCase() === f.category
     );
 
     if (faqsInCategory.length > 0) {
@@ -271,17 +271,16 @@ export default function AdminFAQsPanel() {
   // FILTERED DATA
   // ============================================================================
 
-  const filteredFAQs = filterCategory === 'all'
-    ? faqs
-    : faqs.filter(faq => faq.category === filterCategory);
+  const filteredFAQs =
+    filterCategory === 'all' ? faqs : faqs.filter((faq) => faq.category === filterCategory);
 
   const getCategoryIcon = (categoryName: string) => {
-    const cat = categories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
+    const cat = categories.find((c) => c.name.toLowerCase() === categoryName.toLowerCase());
     return cat?.icon || '📋';
   };
 
   const getCategoryDisplayName = (categoryName: string) => {
-    const cat = categories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
+    const cat = categories.find((c) => c.name.toLowerCase() === categoryName.toLowerCase());
     return cat?.name || categoryName;
   };
 
@@ -391,13 +390,17 @@ export default function AdminFAQsPanel() {
                       <input
                         type="text"
                         value={editingCategory.icon}
-                        onChange={(e) => setEditingCategory({ ...editingCategory, icon: e.target.value })}
+                        onChange={(e) =>
+                          setEditingCategory({ ...editingCategory, icon: e.target.value })
+                        }
                         className="w-12 px-2 py-1 border border-gray-300 rounded text-center"
                       />
                       <input
                         type="text"
                         value={editingCategory.name}
-                        onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                        onChange={(e) =>
+                          setEditingCategory({ ...editingCategory, name: e.target.value })
+                        }
                         className="flex-1 px-2 py-1 border border-gray-300 rounded"
                       />
                       <button
@@ -418,7 +421,7 @@ export default function AdminFAQsPanel() {
                       <span className="text-xl">{cat.icon}</span>
                       <span className="flex-1 font-medium">{cat.name}</span>
                       <span className="text-sm text-gray-500">
-                        {faqs.filter(f => f.category === cat.name.toLowerCase()).length} FAQs
+                        {faqs.filter((f) => f.category === cat.name.toLowerCase()).length} FAQs
                       </span>
                       <button
                         onClick={() => setEditingCategory(cat)}
@@ -452,12 +455,10 @@ export default function AdminFAQsPanel() {
             <div className="p-6 space-y-4">
               {/* Category */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Categoría
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
                 <select
                   value={formData.category}
-                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                 >
                   {categories.map((cat) => (
@@ -470,13 +471,11 @@ export default function AdminFAQsPanel() {
 
               {/* Question */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Pregunta *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Pregunta *</label>
                 <input
                   type="text"
                   value={formData.question}
-                  onChange={(e) => setFormData(prev => ({ ...prev, question: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, question: e.target.value }))}
                   placeholder="¿Cómo puedo...?"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                 />
@@ -484,12 +483,10 @@ export default function AdminFAQsPanel() {
 
               {/* Answer */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Respuesta *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Respuesta *</label>
                 <textarea
                   value={formData.answer}
-                  onChange={(e) => setFormData(prev => ({ ...prev, answer: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, answer: e.target.value }))}
                   placeholder="Escribe una respuesta detallada..."
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
@@ -500,7 +497,7 @@ export default function AdminFAQsPanel() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, active: !prev.active }))}
+                  onClick={() => setFormData((prev) => ({ ...prev, active: !prev.active }))}
                   className={`relative w-12 h-6 rounded-full transition-colors ${
                     formData.active ? 'bg-green-500' : 'bg-gray-300'
                   }`}
@@ -556,7 +553,7 @@ export default function AdminFAQsPanel() {
               Todas ({faqs.length})
             </button>
             {categories.map((cat) => {
-              const count = faqs.filter(f => f.category === cat.name.toLowerCase()).length;
+              const count = faqs.filter((f) => f.category === cat.name.toLowerCase()).length;
               return (
                 <button
                   key={cat.id}
@@ -580,9 +577,7 @@ export default function AdminFAQsPanel() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
               <HelpCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No hay FAQs</h3>
-              <p className="text-gray-500 mb-4">
-                Crea tu primera pregunta frecuente
-              </p>
+              <p className="text-gray-500 mb-4">Crea tu primera pregunta frecuente</p>
               <button
                 onClick={handleCreate}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
@@ -679,10 +674,10 @@ export default function AdminFAQsPanel() {
                 <strong>{faqs.length}</strong> FAQs totales
               </span>
               <span className="text-green-700">
-                <strong>{faqs.filter(f => f.active).length}</strong> activas
+                <strong>{faqs.filter((f) => f.active).length}</strong> activas
               </span>
               <span className="text-gray-600">
-                <strong>{faqs.filter(f => !f.active).length}</strong> ocultas
+                <strong>{faqs.filter((f) => !f.active).length}</strong> ocultas
               </span>
               <span className="text-purple-700">
                 <strong>{categories.length}</strong> categorías

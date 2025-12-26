@@ -269,9 +269,7 @@ function TemplateCard({ template, onSelect }: TemplateCardProps) {
 
       {/* Info */}
       <div className="p-3">
-        <h4 className="font-semibold text-gray-900 text-sm mb-1 line-clamp-1">
-          {template.name}
-        </h4>
+        <h4 className="font-semibold text-gray-900 text-sm mb-1 line-clamp-1">{template.name}</h4>
         <p className="text-xs text-gray-500 line-clamp-2 mb-2">{template.description}</p>
 
         {/* Tags */}

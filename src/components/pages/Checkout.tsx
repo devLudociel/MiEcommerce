@@ -1,6 +1,12 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useStore } from '@nanostores/react';
-import { cartStore, cartLoadingStore, clearCart, updateCartItemQuantity, removeFromCart } from '../../store/cartStore';
+import {
+  cartStore,
+  cartLoadingStore,
+  clearCart,
+  updateCartItemQuantity,
+  removeFromCart,
+} from '../../store/cartStore';
 import type { CartItem } from '../../store/cartStore';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { shippingInfoSchema } from '../../lib/validation/schemas';
@@ -65,10 +71,7 @@ interface AppliedCoupon {
 }
 
 // Canary Islands only - shipping is currently restricted to these provinces
-const CANARY_PROVINCES = [
-  'Las Palmas',
-  'Santa Cruz de Tenerife',
-];
+const CANARY_PROVINCES = ['Las Palmas', 'Santa Cruz de Tenerife'];
 
 export default function Checkout() {
   const cart = useStore(cartStore);
@@ -156,7 +159,7 @@ export default function Checkout() {
 
       // Track begin checkout in analytics
       trackBeginCheckout(
-        cart.items.map(item => ({
+        cart.items.map((item) => ({
           id: item.id,
           name: item.name,
           price: item.price,
@@ -637,18 +640,21 @@ export default function Checkout() {
   }, [appliedCoupon]);
 
   // Handler for removing cart items with confirmation
-  const handleRemoveCartItem = useCallback(async (item: CartItem) => {
-    const confirmed = await confirm({
-      title: '¿Eliminar del carrito?',
-      message: `¿Estás seguro de que quieres eliminar "${item.name}" del carrito?`,
-      type: 'warning',
-      confirmText: 'Eliminar',
-      cancelText: 'Cancelar',
-    });
-    if (confirmed) {
-      removeFromCart(item.id, item.variantId);
-    }
-  }, [confirm]);
+  const handleRemoveCartItem = useCallback(
+    async (item: CartItem) => {
+      const confirmed = await confirm({
+        title: '¿Eliminar del carrito?',
+        message: `¿Estás seguro de que quieres eliminar "${item.name}" del carrito?`,
+        type: 'warning',
+        confirmText: 'Eliminar',
+        cancelText: 'Cancelar',
+      });
+      if (confirmed) {
+        removeFromCart(item.id, item.variantId);
+      }
+    },
+    [confirm]
+  );
 
   // PERFORMANCE: Memoize order placement handler
   const handlePlaceOrder = useCallback(async () => {
@@ -659,7 +665,9 @@ export default function Checkout() {
 
     // Validate Canary Islands postal code
     if (!isCanaryIslandsPostalCode(shippingInfo.zipCode)) {
-      notify.error('Lo sentimos, actualmente solo realizamos envíos a las Islas Canarias (códigos postales 35000-35999 y 38000-38999)');
+      notify.error(
+        'Lo sentimos, actualmente solo realizamos envíos a las Islas Canarias (códigos postales 35000-35999 y 38000-38999)'
+      );
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -750,7 +758,7 @@ export default function Checkout() {
         paymentMethod: paymentInfo.method,
         subtotal,
         bundleDiscount,
-        bundleDiscountDetails: bundleDiscounts.appliedDiscounts.map(d => ({
+        bundleDiscountDetails: bundleDiscounts.appliedDiscounts.map((d) => ({
           bundleId: d.bundleId,
           bundleName: d.bundleName,
           savedAmount: d.savedAmount,
@@ -914,7 +922,9 @@ export default function Checkout() {
               {/* Saved Addresses Selector */}
               {showAddressSelector && savedAddresses.length > 0 && (
                 <div className="mb-6 p-4 bg-cyan-50 rounded-lg border border-cyan-100">
-                  <p className="text-sm font-medium text-gray-700 mb-3">Selecciona una dirección:</p>
+                  <p className="text-sm font-medium text-gray-700 mb-3">
+                    Selecciona una dirección:
+                  </p>
                   <div className="space-y-2">
                     {savedAddresses.map((addr) => (
                       <button
@@ -941,10 +951,14 @@ export default function Checkout() {
               {/* Shipping Form */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                    htmlFor="shipping-first-name"
+                  >
                     Nombre *
                   </label>
                   <input
+                    id="shipping-first-name"
                     type="text"
                     value={shippingInfo.firstName}
                     onChange={(e) =>
@@ -957,15 +971,17 @@ export default function Checkout() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                    htmlFor="shipping-last-name"
+                  >
                     Apellidos *
                   </label>
                   <input
+                    id="shipping-last-name"
                     type="text"
                     value={shippingInfo.lastName}
-                    onChange={(e) =>
-                      setShippingInfo({ ...shippingInfo, lastName: e.target.value })
-                    }
+                    onChange={(e) => setShippingInfo({ ...shippingInfo, lastName: e.target.value })}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     placeholder="Tus apellidos"
                     required
@@ -973,15 +989,17 @@ export default function Checkout() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                    htmlFor="shipping-email"
+                  >
                     Email *
                   </label>
                   <input
+                    id="shipping-email"
                     type="email"
                     value={shippingInfo.email}
-                    onChange={(e) =>
-                      setShippingInfo({ ...shippingInfo, email: e.target.value })
-                    }
+                    onChange={(e) => setShippingInfo({ ...shippingInfo, email: e.target.value })}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     placeholder="tu@email.com"
                     required
@@ -989,15 +1007,17 @@ export default function Checkout() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                    htmlFor="shipping-phone"
+                  >
                     Teléfono *
                   </label>
                   <input
+                    id="shipping-phone"
                     type="tel"
                     value={shippingInfo.phone}
-                    onChange={(e) =>
-                      setShippingInfo({ ...shippingInfo, phone: e.target.value })
-                    }
+                    onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value })}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     placeholder="+34 600 000 000"
                     required
@@ -1005,10 +1025,14 @@ export default function Checkout() {
                 </div>
 
                 <div className="md:col-span-2 relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                    htmlFor="shipping-address"
+                  >
                     Dirección *
                   </label>
                   <input
+                    id="shipping-address"
                     type="text"
                     value={shippingInfo.address}
                     onChange={(e) => {
@@ -1043,15 +1067,17 @@ export default function Checkout() {
                 </div>
 
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                    htmlFor="shipping-zip"
+                  >
                     Código Postal *
                   </label>
                   <input
+                    id="shipping-zip"
                     type="text"
                     value={shippingInfo.zipCode}
-                    onChange={(e) =>
-                      setShippingInfo({ ...shippingInfo, zipCode: e.target.value })
-                    }
+                    onChange={(e) => setShippingInfo({ ...shippingInfo, zipCode: e.target.value })}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     placeholder="28001"
                     required
@@ -1064,15 +1090,17 @@ export default function Checkout() {
                 </div>
 
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                    htmlFor="shipping-city"
+                  >
                     Ciudad *
                   </label>
                   <input
+                    id="shipping-city"
                     type="text"
                     value={shippingInfo.city}
-                    onChange={(e) =>
-                      setShippingInfo({ ...shippingInfo, city: e.target.value })
-                    }
+                    onChange={(e) => setShippingInfo({ ...shippingInfo, city: e.target.value })}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     placeholder="Madrid"
                     required
@@ -1098,14 +1126,16 @@ export default function Checkout() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                    htmlFor="shipping-state"
+                  >
                     Provincia *
                   </label>
                   <select
+                    id="shipping-state"
                     value={shippingInfo.state}
-                    onChange={(e) =>
-                      setShippingInfo({ ...shippingInfo, state: e.target.value })
-                    }
+                    onChange={(e) => setShippingInfo({ ...shippingInfo, state: e.target.value })}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     required
                   >
@@ -1122,27 +1152,33 @@ export default function Checkout() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">País *</label>
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                    htmlFor="shipping-country"
+                  >
+                    País *
+                  </label>
                   <input
+                    id="shipping-country"
                     type="text"
                     value={shippingInfo.country}
-                    onChange={(e) =>
-                      setShippingInfo({ ...shippingInfo, country: e.target.value })
-                    }
+                    onChange={(e) => setShippingInfo({ ...shippingInfo, country: e.target.value })}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     required
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                    htmlFor="shipping-notes"
+                  >
                     Notas adicionales (opcional)
                   </label>
                   <textarea
+                    id="shipping-notes"
                     value={shippingInfo.notes || ''}
-                    onChange={(e) =>
-                      setShippingInfo({ ...shippingInfo, notes: e.target.value })
-                    }
+                    onChange={(e) => setShippingInfo({ ...shippingInfo, notes: e.target.value })}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     rows={3}
                     placeholder="Instrucciones especiales de entrega..."
@@ -1156,8 +1192,12 @@ export default function Checkout() {
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Información de Facturación</h2>
 
               <div className="mb-4">
-                <label className="flex items-center space-x-3 cursor-pointer">
+                <label
+                  className="flex items-center space-x-3 cursor-pointer"
+                  htmlFor="billing-same-as-shipping"
+                >
                   <input
+                    id="billing-same-as-shipping"
                     type="checkbox"
                     checked={useSameAddress}
                     onChange={(e) => setUseSameAddress(e.target.checked)}
@@ -1172,10 +1212,14 @@ export default function Checkout() {
               {!useSameAddress && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                      htmlFor="billing-fiscal-name"
+                    >
                       Nombre Fiscal
                     </label>
                     <input
+                      id="billing-fiscal-name"
                       type="text"
                       value={billingInfo.fiscalName}
                       onChange={(e) =>
@@ -1186,54 +1230,64 @@ export default function Checkout() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                      htmlFor="billing-address"
+                    >
                       Dirección
                     </label>
                     <input
+                      id="billing-address"
                       type="text"
                       value={billingInfo.address}
-                      onChange={(e) =>
-                        setBillingInfo({ ...billingInfo, address: e.target.value })
-                      }
+                      onChange={(e) => setBillingInfo({ ...billingInfo, address: e.target.value })}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                      htmlFor="billing-zip"
+                    >
                       Código Postal
                     </label>
                     <input
+                      id="billing-zip"
                       type="text"
                       value={billingInfo.zipCode}
-                      onChange={(e) =>
-                        setBillingInfo({ ...billingInfo, zipCode: e.target.value })
-                      }
+                      onChange={(e) => setBillingInfo({ ...billingInfo, zipCode: e.target.value })}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Ciudad</label>
+                    <label
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                      htmlFor="billing-city"
+                    >
+                      Ciudad
+                    </label>
                     <input
+                      id="billing-city"
                       type="text"
                       value={billingInfo.city}
-                      onChange={(e) =>
-                        setBillingInfo({ ...billingInfo, city: e.target.value })
-                      }
+                      onChange={(e) => setBillingInfo({ ...billingInfo, city: e.target.value })}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                      htmlFor="billing-state"
+                    >
                       Provincia
                     </label>
                     <select
+                      id="billing-state"
                       value={billingInfo.state}
-                      onChange={(e) =>
-                        setBillingInfo({ ...billingInfo, state: e.target.value })
-                      }
+                      onChange={(e) => setBillingInfo({ ...billingInfo, state: e.target.value })}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     >
                       <option value="">Selecciona una provincia</option>
@@ -1246,13 +1300,17 @@ export default function Checkout() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">País</label>
+                    <label
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                      htmlFor="billing-country"
+                    >
+                      País
+                    </label>
                     <input
+                      id="billing-country"
                       type="text"
                       value={billingInfo.country}
-                      onChange={(e) =>
-                        setBillingInfo({ ...billingInfo, country: e.target.value })
-                      }
+                      onChange={(e) => setBillingInfo({ ...billingInfo, country: e.target.value })}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     />
                   </div>
@@ -1260,10 +1318,14 @@ export default function Checkout() {
               )}
 
               <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                  htmlFor="billing-nif"
+                >
                   NIF/CIF (opcional)
                 </label>
                 <input
+                  id="billing-nif"
                   type="text"
                   value={billingInfo.nifCif}
                   onChange={(e) => setBillingInfo({ ...billingInfo, nifCif: e.target.value })}
@@ -1290,8 +1352,13 @@ export default function Checkout() {
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Método de Pago</h2>
 
               <div className="space-y-3 mb-6">
-                <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-cyan-500 transition-all">
+                <label
+                  className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-cyan-500 transition-all"
+                  htmlFor="payment-card"
+                  aria-label="Tarjeta de Crédito/Débito"
+                >
                   <input
+                    id="payment-card"
                     type="radio"
                     name="paymentMethod"
                     value="card"
@@ -1307,8 +1374,13 @@ export default function Checkout() {
                   </div>
                 </label>
 
-                <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-cyan-500 transition-all opacity-50">
+                <label
+                  className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-cyan-500 transition-all opacity-50"
+                  htmlFor="payment-paypal"
+                  aria-label="PayPal"
+                >
                   <input
+                    id="payment-paypal"
                     type="radio"
                     name="paymentMethod"
                     value="paypal"
@@ -1321,8 +1393,13 @@ export default function Checkout() {
                   </div>
                 </label>
 
-                <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-cyan-500 transition-all">
+                <label
+                  className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-cyan-500 transition-all"
+                  htmlFor="payment-transfer"
+                  aria-label="Transferencia Bancaria"
+                >
                   <input
+                    id="payment-transfer"
                     type="radio"
                     name="paymentMethod"
                     value="transfer"
@@ -1334,9 +1411,7 @@ export default function Checkout() {
                   />
                   <div className="ml-3 flex-1">
                     <span className="font-medium text-gray-900">Transferencia Bancaria</span>
-                    <div className="text-sm text-gray-500 mt-1">
-                      Enviaremos los datos por email
-                    </div>
+                    <div className="text-sm text-gray-500 mt-1">Enviaremos los datos por email</div>
                   </div>
                 </label>
               </div>
@@ -1351,8 +1426,12 @@ export default function Checkout() {
 
             {/* Terms and Submit */}
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-              <label className="flex items-start space-x-3 cursor-pointer mb-6">
+              <label
+                className="flex items-start space-x-3 cursor-pointer mb-6"
+                htmlFor="checkout-accept-terms"
+              >
                 <input
+                  id="checkout-accept-terms"
                   type="checkbox"
                   checked={acceptTerms}
                   onChange={(e) => setAcceptTerms(e.target.checked)}
@@ -1395,7 +1474,10 @@ export default function Checkout() {
               {/* Cart Items */}
               <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
                 {cart.items.map((item) => (
-                  <div key={`${item.id}-${item.variantId || 'no-variant'}`} className="relative bg-gray-50 rounded-lg p-3 border border-gray-200 hover:border-cyan-300 transition-all">
+                  <div
+                    key={`${item.id}-${item.variantId || 'no-variant'}`}
+                    className="relative bg-gray-50 rounded-lg p-3 border border-gray-200 hover:border-cyan-300 transition-all"
+                  >
                     {/* Delete Button */}
                     <button
                       onClick={() => handleRemoveCartItem(item)}
@@ -1412,7 +1494,9 @@ export default function Checkout() {
                         className="w-20 h-20 object-cover rounded-lg border border-gray-200"
                       />
                       <div className="flex-1 min-w-0 pr-8">
-                        <h3 className="font-semibold text-gray-900 text-sm mb-1 truncate">{item.name}</h3>
+                        <h3 className="font-semibold text-gray-900 text-sm mb-1 truncate">
+                          {item.name}
+                        </h3>
                         {item.variantName && (
                           <p className="text-xs text-gray-500 mb-1">Variante: {item.variantName}</p>
                         )}
@@ -1420,7 +1504,9 @@ export default function Checkout() {
                         {/* Quantity Controls */}
                         <div className="flex items-center gap-2 mb-2">
                           <button
-                            onClick={() => updateCartItemQuantity(item.id, item.variantId, item.quantity - 1)}
+                            onClick={() =>
+                              updateCartItemQuantity(item.id, item.variantId, item.quantity - 1)
+                            }
                             disabled={item.quantity <= 1}
                             className="p-1 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                             title="Disminuir cantidad"
@@ -1431,7 +1517,9 @@ export default function Checkout() {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => updateCartItemQuantity(item.id, item.variantId, item.quantity + 1)}
+                            onClick={() =>
+                              updateCartItemQuantity(item.id, item.variantId, item.quantity + 1)
+                            }
                             className="p-1 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-all"
                             title="Aumentar cantidad"
                           >
@@ -1502,7 +1590,11 @@ export default function Checkout() {
               {/* Wallet Toggle */}
               {walletBalance > 0 && (
                 <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-                  <label className="flex items-center justify-between cursor-pointer">
+                  <label
+                    className="flex items-center justify-between cursor-pointer"
+                    htmlFor="checkout-use-wallet"
+                    aria-label="Usar saldo Monedero"
+                  >
                     <div className="flex-1">
                       <div className="font-medium text-gray-900 text-sm">Usar saldo Monedero</div>
                       <div className="text-xs text-gray-600 mt-1">
@@ -1510,6 +1602,7 @@ export default function Checkout() {
                       </div>
                     </div>
                     <input
+                      id="checkout-use-wallet"
                       type="checkbox"
                       checked={useWallet}
                       onChange={(e) => setUseWallet(e.target.checked)}
@@ -1589,21 +1682,21 @@ export default function Checkout() {
                 <div className="border-t border-gray-200 pt-3 mt-3">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-bold text-gray-900">Total:</span>
-                    <span className="text-2xl font-black text-cyan-600">
-                      {total.toFixed(2)} €
-                    </span>
+                    <span className="text-2xl font-black text-cyan-600">{total.toFixed(2)} €</span>
                   </div>
                 </div>
               </div>
 
               {/* Free Shipping Progress */}
-              {selectedShippingQuote && !selectedShippingQuote.isFree && selectedShippingQuote.originalPrice > 0 && (
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <p className="text-xs text-blue-800 font-medium">
-                    Consulta los métodos de envío disponibles para tu código postal
-                  </p>
-                </div>
-              )}
+              {selectedShippingQuote &&
+                !selectedShippingQuote.isFree &&
+                selectedShippingQuote.originalPrice > 0 && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-xs text-blue-800 font-medium">
+                      Consulta los métodos de envío disponibles para tu código postal
+                    </p>
+                  </div>
+                )}
             </div>
           </div>
         </div>

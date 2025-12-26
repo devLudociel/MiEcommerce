@@ -93,7 +93,9 @@ export default function ShareDesignButton({
   };
 
   const shareViaWhatsApp = () => {
-    const text = encodeURIComponent(`¡Mira mi diseño personalizado de ${productName}! 🎨\n${shareUrl}`);
+    const text = encodeURIComponent(
+      `¡Mira mi diseño personalizado de ${productName}! 🎨\n${shareUrl}`
+    );
     const whatsappUrl = `https://wa.me/?text=${text}`;
     window.open(whatsappUrl, '_blank');
     trackShare('whatsapp');
@@ -170,11 +172,15 @@ export default function ShareDesignButton({
                 <>
                   {/* Copy Link Section */}
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                      htmlFor="share-link"
+                    >
                       Enlace para compartir
                     </label>
                     <div className="flex gap-2">
                       <input
+                        id="share-link"
                         type="text"
                         value={shareUrl}
                         readOnly

@@ -95,6 +95,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
       {/* Ordenar por */}
       <div style={{ marginBottom: '1.5rem' }}>
         <label
+          htmlFor="product-filters-sort"
           style={{
             display: 'block',
             fontWeight: '500',
@@ -105,6 +106,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
           Ordenar por
         </label>
         <select
+          id="product-filters-sort"
           value={filters.sortBy}
           onChange={(e) => updateFilter('sortBy', e.target.value)}
           style={{
@@ -203,7 +205,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
       {/* Tags */}
       {availableTags.length > 0 && (
         <div style={{ marginBottom: '1.5rem' }}>
-          <label
+          <p
             style={{
               display: 'block',
               fontWeight: '500',
@@ -212,7 +214,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
             }}
           >
             Etiquetas
-          </label>
+          </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             {availableTags.map((tag) => (
               <button

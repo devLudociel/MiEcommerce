@@ -16,7 +16,7 @@ import {
   getInitials,
   type CustomerReview,
   type ReviewStatus,
-  type ReviewStats
+  type ReviewStats,
 } from '../../lib/reviews';
 
 type TabType = 'pending' | 'approved' | 'rejected' | 'all';
@@ -52,7 +52,7 @@ export default function AdminReviewsPanel() {
   }, [reviews]);
 
   // Filter reviews by tab
-  const filteredReviews = reviews.filter(review => {
+  const filteredReviews = reviews.filter((review) => {
     if (activeTab === 'all') return true;
     return review.status === activeTab;
   });
@@ -61,13 +61,13 @@ export default function AdminReviewsPanel() {
   const handleApprove = async (reviewId: string, featured: boolean = false) => {
     if (!user?.uid) return;
 
-    setProcessingIds(prev => new Set(prev).add(reviewId));
+    setProcessingIds((prev) => new Set(prev).add(reviewId));
     try {
       await approveReview(reviewId, user.uid, featured);
     } catch (error) {
       console.error('Error approving review:', error);
     } finally {
-      setProcessingIds(prev => {
+      setProcessingIds((prev) => {
         const next = new Set(prev);
         next.delete(reviewId);
         return next;
@@ -79,7 +79,7 @@ export default function AdminReviewsPanel() {
   const handleReject = async (reviewId: string) => {
     if (!user?.uid) return;
 
-    setProcessingIds(prev => new Set(prev).add(reviewId));
+    setProcessingIds((prev) => new Set(prev).add(reviewId));
     try {
       await rejectReview(reviewId, user.uid, rejectReason);
       setShowRejectModal(null);
@@ -87,7 +87,7 @@ export default function AdminReviewsPanel() {
     } catch (error) {
       console.error('Error rejecting review:', error);
     } finally {
-      setProcessingIds(prev => {
+      setProcessingIds((prev) => {
         const next = new Set(prev);
         next.delete(reviewId);
         return next;
@@ -99,13 +99,13 @@ export default function AdminReviewsPanel() {
   const handleDelete = async (reviewId: string) => {
     if (!confirm('¿Estás seguro de que quieres eliminar esta reseña permanentemente?')) return;
 
-    setProcessingIds(prev => new Set(prev).add(reviewId));
+    setProcessingIds((prev) => new Set(prev).add(reviewId));
     try {
       await deleteReview(reviewId);
     } catch (error) {
       console.error('Error deleting review:', error);
     } finally {
-      setProcessingIds(prev => {
+      setProcessingIds((prev) => {
         const next = new Set(prev);
         next.delete(reviewId);
         return next;
@@ -115,13 +115,13 @@ export default function AdminReviewsPanel() {
 
   // Handle toggle featured
   const handleToggleFeatured = async (reviewId: string, currentFeatured: boolean) => {
-    setProcessingIds(prev => new Set(prev).add(reviewId));
+    setProcessingIds((prev) => new Set(prev).add(reviewId));
     try {
       await toggleFeatured(reviewId, !currentFeatured);
     } catch (error) {
       console.error('Error toggling featured:', error);
     } finally {
-      setProcessingIds(prev => {
+      setProcessingIds((prev) => {
         const next = new Set(prev);
         next.delete(reviewId);
         return next;
@@ -133,7 +133,7 @@ export default function AdminReviewsPanel() {
   const handleAddResponse = async (reviewId: string) => {
     if (!user?.uid || !responseText.trim()) return;
 
-    setProcessingIds(prev => new Set(prev).add(reviewId));
+    setProcessingIds((prev) => new Set(prev).add(reviewId));
     try {
       await addBusinessResponse(reviewId, responseText.trim(), user.uid);
       setResponseText('');
@@ -141,7 +141,7 @@ export default function AdminReviewsPanel() {
     } catch (error) {
       console.error('Error adding response:', error);
     } finally {
-      setProcessingIds(prev => {
+      setProcessingIds((prev) => {
         const next = new Set(prev);
         next.delete(reviewId);
         return next;
@@ -153,7 +153,8 @@ export default function AdminReviewsPanel() {
   const renderStars = (rating: number) => {
     return (
       <span className="text-yellow-400">
-        {'⭐'.repeat(rating)}{'☆'.repeat(5 - rating)}
+        {'⭐'.repeat(rating)}
+        {'☆'.repeat(5 - rating)}
       </span>
     );
   };
@@ -163,12 +164,12 @@ export default function AdminReviewsPanel() {
     const badges = {
       pending: 'bg-yellow-100 text-yellow-800',
       approved: 'bg-green-100 text-green-800',
-      rejected: 'bg-red-100 text-red-800'
+      rejected: 'bg-red-100 text-red-800',
     };
     const labels = {
       pending: 'Pendiente',
       approved: 'Aprobada',
-      rejected: 'Rechazada'
+      rejected: 'Rechazada',
     };
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${badges[status]}`}>
@@ -228,7 +229,7 @@ export default function AdminReviewsPanel() {
               { id: 'approved', label: 'Aprobadas', count: stats?.approvedCount },
               { id: 'rejected', label: 'Rechazadas', count: stats?.rejectedCount },
               { id: 'all', label: 'Todas', count: stats?.totalReviews },
-            ].map(tab => (
+            ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as TabType)}
@@ -240,9 +241,13 @@ export default function AdminReviewsPanel() {
               >
                 {tab.label}
                 {tab.count !== undefined && tab.count > 0 && (
-                  <span className={`px-2 py-0.5 rounded-full text-xs ${
-                    activeTab === tab.id ? 'bg-cyan-100 text-cyan-700' : 'bg-gray-100 text-gray-600'
-                  }`}>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs ${
+                      activeTab === tab.id
+                        ? 'bg-cyan-100 text-cyan-700'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
                     {tab.count}
                   </span>
                 )}
@@ -259,11 +264,13 @@ export default function AdminReviewsPanel() {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredReviews.map(review => (
+                {filteredReviews.map((review) => (
                   <div
                     key={review.id}
                     className={`border rounded-xl p-5 transition-all ${
-                      review.featured ? 'border-yellow-300 bg-yellow-50/50' : 'border-gray-200 bg-white'
+                      review.featured
+                        ? 'border-yellow-300 bg-yellow-50/50'
+                        : 'border-gray-200 bg-white'
                     } ${processingIds.has(review.id) ? 'opacity-50' : ''}`}
                   >
                     {/* Review Header */}
@@ -291,9 +298,7 @@ export default function AdminReviewsPanel() {
                     {/* Rating & Date */}
                     <div className="flex items-center gap-3 mb-2">
                       {renderStars(review.rating)}
-                      <span className="text-sm text-gray-500">
-                        {getTimeAgo(review.createdAt)}
-                      </span>
+                      <span className="text-sm text-gray-500">{getTimeAgo(review.createdAt)}</span>
                       {review.orderId && (
                         <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
                           Pedido #{review.orderId.slice(0, 8)}
@@ -360,7 +365,9 @@ export default function AdminReviewsPanel() {
                           </button>
                           {!review.businessResponse && (
                             <button
-                              onClick={() => setExpandedReview(expandedReview === review.id ? null : review.id)}
+                              onClick={() =>
+                                setExpandedReview(expandedReview === review.id ? null : review.id)
+                              }
                               className="px-4 py-2 bg-cyan-100 text-cyan-700 text-sm font-medium rounded-lg hover:bg-cyan-200 transition-colors"
                             >
                               💬 Responder

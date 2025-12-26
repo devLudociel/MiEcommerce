@@ -19,10 +19,7 @@ export { GA4, FB };
 /**
  * Initialize all analytics platforms
  */
-export function initAnalytics(config: {
-  ga4MeasurementId?: string;
-  facebookPixelId?: string;
-}) {
+export function initAnalytics(config: { ga4MeasurementId?: string; facebookPixelId?: string }) {
   if (config.ga4MeasurementId) {
     GA4.initGA4(config.ga4MeasurementId);
   }
@@ -150,10 +147,7 @@ export function trackShareDesign(productName: string, method: string = 'link') {
 /**
  * Track custom event (advanced use)
  */
-export function trackCustomEvent(
-  eventName: string,
-  parameters?: Record<string, any>
-) {
+export function trackCustomEvent(eventName: string, parameters?: Record<string, any>) {
   GA4.trackCustomEvent(eventName, parameters);
   FB.trackFBCustomEvent(eventName, parameters);
 }

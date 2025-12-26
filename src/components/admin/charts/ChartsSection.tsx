@@ -64,14 +64,20 @@ export default function ChartsSection({
                 <XAxis
                   dataKey="date"
                   tickFormatter={(value) =>
-                    new Date(value).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })
+                    new Date(value).toLocaleDateString('es-ES', {
+                      weekday: 'short',
+                      day: 'numeric',
+                    })
                   }
                   stroke="#9ca3af"
                   style={{ fontSize: '12px' }}
                 />
                 <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} />
                 <Tooltip
-                  formatter={(value: number | string) => [`€${parseFloat(String(value)).toFixed(2)}`, 'Ingresos']}
+                  formatter={(value: number | string) => [
+                    `€${parseFloat(String(value)).toFixed(2)}`,
+                    'Ingresos',
+                  ]}
                   labelFormatter={(label) =>
                     new Date(label).toLocaleDateString('es-ES', {
                       weekday: 'long',
@@ -141,7 +147,8 @@ export default function ChartsSection({
               <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} />
               <Tooltip
                 formatter={(value: number | string, name: string) => {
-                  if (name === 'revenue') return [`€${parseFloat(String(value)).toFixed(2)}`, 'Ingresos'];
+                  if (name === 'revenue')
+                    return [`€${parseFloat(String(value)).toFixed(2)}`, 'Ingresos'];
                   return [value, 'Pedidos'];
                 }}
                 contentStyle={{
@@ -151,13 +158,13 @@ export default function ChartsSection({
                 }}
               />
               <Legend />
-              <Bar dataKey="revenue" name="Ingresos (�)" fill={COLORS.primary} radius={[8, 8, 0, 0]} />
               <Bar
-                dataKey="orders"
-                name="Pedidos"
-                fill={COLORS.secondary}
+                dataKey="revenue"
+                name="Ingresos (�)"
+                fill={COLORS.primary}
                 radius={[8, 8, 0, 0]}
               />
+              <Bar dataKey="orders" name="Pedidos" fill={COLORS.secondary} radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         ) : (

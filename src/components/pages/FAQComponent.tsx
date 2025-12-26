@@ -6,21 +6,24 @@ const defaultFAQs: Omit<FAQ, 'id' | 'createdAt' | 'updatedAt'>[] = [
   {
     category: 'pedidos',
     question: '¿Cómo puedo personalizar un producto?',
-    answer: 'Es muy sencillo: Selecciona el producto que te guste, haz clic en "Personalizar", sube tu logo o imagen, añade texto si lo deseas, y previsualiza el resultado en tiempo real.',
+    answer:
+      'Es muy sencillo: Selecciona el producto que te guste, haz clic en "Personalizar", sube tu logo o imagen, añade texto si lo deseas, y previsualiza el resultado en tiempo real.',
     order: 0,
     active: true,
   },
   {
     category: 'envios',
     question: '¿Cuánto tarda la producción y el envío?',
-    answer: 'La producción tarda entre 3-5 días hábiles. El envío estándar tarda 2-3 días adicionales.',
+    answer:
+      'La producción tarda entre 3-5 días hábiles. El envío estándar tarda 2-3 días adicionales.',
     order: 1,
     active: true,
   },
   {
     category: 'pagos',
     question: '¿Qué métodos de pago aceptan?',
-    answer: 'Aceptamos tarjetas de crédito y débito, PayPal, transferencia bancaria y pago contra reembolso.',
+    answer:
+      'Aceptamos tarjetas de crédito y débito, PayPal, transferencia bancaria y pago contra reembolso.',
     order: 2,
     active: true,
   },
@@ -47,7 +50,7 @@ export default function FAQComponent() {
       try {
         const [loadedFAQs, loadedCategories] = await Promise.all([
           getActiveFAQs(),
-          getAllCategories()
+          getAllCategories(),
         ]);
 
         if (loadedFAQs.length > 0) {
@@ -69,11 +72,11 @@ export default function FAQComponent() {
 
   const allCategories = [
     { id: 'all', name: 'Todas', icon: '📋' },
-    ...categories.map(c => ({
+    ...categories.map((c) => ({
       id: c.name.toLowerCase(),
       name: c.name,
-      icon: c.icon
-    }))
+      icon: c.icon,
+    })),
   ];
 
   const filteredFAQs =

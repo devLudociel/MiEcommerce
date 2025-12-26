@@ -30,7 +30,8 @@ export function Skeleton({
 
   const animationClasses = {
     pulse: 'animate-pulse',
-    shimmer: 'animate-shimmer bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%]',
+    shimmer:
+      'animate-shimmer bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%]',
     none: '',
   };
 

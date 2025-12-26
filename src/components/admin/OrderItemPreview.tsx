@@ -8,7 +8,12 @@
  */
 
 import React, { useState } from 'react';
-import { FRONT_POSITIONS, BACK_POSITIONS, getContainerTransform, type PresetPosition } from '../../constants/textilePositions';
+import {
+  FRONT_POSITIONS,
+  BACK_POSITIONS,
+  getContainerTransform,
+  type PresetPosition,
+} from '../../constants/textilePositions';
 
 interface ImageTransform {
   x: number;
@@ -79,27 +84,27 @@ export default function OrderItemPreview({ item }: OrderItemPreviewProps) {
   const values = item.customization.values;
 
   // Buscar color seleccionado
-  const colorField = values.find((v: CustomizationValue) =>
-    v.fieldLabel?.toLowerCase().includes('color') ||
-    v.fieldId?.toLowerCase().includes('color')
+  const colorField = values.find(
+    (v: CustomizationValue) =>
+      v.fieldLabel?.toLowerCase().includes('color') || v.fieldId?.toLowerCase().includes('color')
   );
   const selectedColor = colorField?.value?.toLowerCase();
 
   // Buscar imágenes subidas
-  const frontImageField = values.find((v: CustomizationValue) =>
-    v.imageUrl && (
-      v.fieldLabel?.toLowerCase().includes('front') ||
-      v.fieldLabel?.toLowerCase().includes('frontal') ||
-      v.fieldLabel?.toLowerCase().includes('delantera')
-    )
+  const frontImageField = values.find(
+    (v: CustomizationValue) =>
+      v.imageUrl &&
+      (v.fieldLabel?.toLowerCase().includes('front') ||
+        v.fieldLabel?.toLowerCase().includes('frontal') ||
+        v.fieldLabel?.toLowerCase().includes('delantera'))
   );
 
-  const backImageField = values.find((v: CustomizationValue) =>
-    v.imageUrl && (
-      v.fieldLabel?.toLowerCase().includes('back') ||
-      v.fieldLabel?.toLowerCase().includes('trasera') ||
-      v.fieldLabel?.toLowerCase().includes('espalda')
-    )
+  const backImageField = values.find(
+    (v: CustomizationValue) =>
+      v.imageUrl &&
+      (v.fieldLabel?.toLowerCase().includes('back') ||
+        v.fieldLabel?.toLowerCase().includes('trasera') ||
+        v.fieldLabel?.toLowerCase().includes('espalda'))
   );
 
   // Si no hay imágenes subidas, no mostrar preview
@@ -177,7 +182,10 @@ export default function OrderItemPreview({ item }: OrderItemPreviewProps) {
       </div>
 
       {/* Mockup Preview - Vista de producción realista */}
-      <div className="relative w-full bg-white rounded-lg border-2 border-gray-200 overflow-hidden" style={{ aspectRatio: '1/1', maxWidth: '500px', margin: '0 auto' }}>
+      <div
+        className="relative w-full bg-white rounded-lg border-2 border-gray-200 overflow-hidden"
+        style={{ aspectRatio: '1/1', maxWidth: '500px', margin: '0 auto' }}
+      >
         {/* Base image (mockup de camiseta) */}
         {activeBaseImage ? (
           <img
@@ -189,13 +197,16 @@ export default function OrderItemPreview({ item }: OrderItemPreviewProps) {
           /* Área de impresión simulada si no hay mockup base */
           <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100">
             {/* Grid de referencia para producción */}
-            <div className="absolute inset-0" style={{
-              backgroundImage: `
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `
                 linear-gradient(to right, rgba(200,200,200,0.1) 1px, transparent 1px),
                 linear-gradient(to bottom, rgba(200,200,200,0.1) 1px, transparent 1px)
               `,
-              backgroundSize: '20px 20px'
-            }} />
+                backgroundSize: '20px 20px',
+              }}
+            />
 
             {/* Área de impresión destacada (centro) */}
             <div className="absolute inset-[15%] border-2 border-dashed border-purple-300 rounded-lg bg-white/50 flex items-center justify-center">
@@ -213,7 +224,7 @@ export default function OrderItemPreview({ item }: OrderItemPreviewProps) {
             className="absolute inset-0 flex items-center justify-center pointer-events-none"
             style={{
               zIndex: 10,
-              overflow: 'hidden'
+              overflow: 'hidden',
             }}
           >
             <div
@@ -279,9 +290,7 @@ export default function OrderItemPreview({ item }: OrderItemPreviewProps) {
             <div className="flex items-start gap-2">
               <span className="text-lg">⚠️</span>
               <div className="flex-1">
-                <p className="font-bold text-yellow-900 text-sm mb-0.5">
-                  Posición Personalizada
-                </p>
+                <p className="font-bold text-yellow-900 text-sm mb-0.5">Posición Personalizada</p>
                 <p className="text-yellow-700 text-xs">
                   Esta posición NO coincide con ningún preset estándar.
                 </p>
@@ -320,17 +329,25 @@ export default function OrderItemPreview({ item }: OrderItemPreviewProps) {
           </div>
 
           {/* Alertas de producción */}
-          {(activeTransform.scale > 2 || activeTransform.scale < 0.3 || Math.abs(activeTransform.rotation) > 45) && (
+          {(activeTransform.scale > 2 ||
+            activeTransform.scale < 0.3 ||
+            Math.abs(activeTransform.rotation) > 45) && (
             <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
               <p className="text-red-800 text-[10px] font-bold flex items-center gap-1">
                 <span>⚠️</span> ADVERTENCIAS DE PRODUCCIÓN:
               </p>
               <ul className="mt-1 space-y-0.5 text-[10px] text-red-700">
                 {activeTransform.scale > 2 && (
-                  <li>• Escala muy grande ({(activeTransform.scale * 100).toFixed(0)}%) - Puede perder calidad</li>
+                  <li>
+                    • Escala muy grande ({(activeTransform.scale * 100).toFixed(0)}%) - Puede perder
+                    calidad
+                  </li>
                 )}
                 {activeTransform.scale < 0.3 && (
-                  <li>• Escala muy pequeña ({(activeTransform.scale * 100).toFixed(0)}%) - Difícil de imprimir</li>
+                  <li>
+                    • Escala muy pequeña ({(activeTransform.scale * 100).toFixed(0)}%) - Difícil de
+                    imprimir
+                  </li>
                 )}
                 {Math.abs(activeTransform.rotation) > 45 && (
                   <li>• Rotación extrema ({activeTransform.rotation}°) - Verificar orientación</li>
@@ -344,7 +361,11 @@ export default function OrderItemPreview({ item }: OrderItemPreviewProps) {
         {selectedColor && (
           <div className="p-2 bg-purple-50 border border-purple-200 rounded text-[10px] text-purple-800">
             <p className="font-bold mb-0.5">💡 Instrucción rápida:</p>
-            <p>Imprimir en producto color <span className="font-bold uppercase">{selectedColor}</span> usando las coordenadas exactas arriba.</p>
+            <p>
+              Imprimir en producto color{' '}
+              <span className="font-bold uppercase">{selectedColor}</span> usando las coordenadas
+              exactas arriba.
+            </p>
           </div>
         )}
       </div>

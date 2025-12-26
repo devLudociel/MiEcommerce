@@ -186,9 +186,7 @@ export default function AddReviewForm({ productId, onReviewAdded }: AddReviewFor
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Selector de rating */}
           <div>
-            <label className="block text-base font-semibold text-gray-700 mb-3">
-              Tu calificación
-            </label>
+            <p className="block text-base font-semibold text-gray-700 mb-3">Tu calificación</p>
             <div className="flex items-center gap-3 mb-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button

@@ -1,4 +1,4 @@
-import type { OrderData, TrackingEvent } from '../../lib/firebase';
+import type { OrderData } from '../../lib/firebase';
 import { getCarrierInfo } from '../../lib/firebase';
 
 interface ShipmentTrackingProps {
@@ -189,7 +189,6 @@ export default function ShipmentTracking({ order }: ShipmentTrackingProps) {
             <div className="space-y-6">
               {sortedHistory.map((event, index) => {
                 const info = getStatusInfo(event.status);
-                const isLast = index === sortedHistory.length - 1;
 
                 return (
                   <div key={index} className="relative pl-12">

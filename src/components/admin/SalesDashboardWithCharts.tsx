@@ -134,7 +134,10 @@ export default function SalesDashboardWithCharts() {
 
         // Ventas mensuales (últimos 12 meses)
         if (orderDate >= new Date(now.getFullYear() - 1, now.getMonth(), 1)) {
-          const monthKey = orderDate.toLocaleDateString('es-ES', { year: 'numeric', month: 'short' });
+          const monthKey = orderDate.toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'short',
+          });
           if (!monthlyOrders[monthKey]) {
             monthlyOrders[monthKey] = { revenue: 0, orders: 0 };
           }

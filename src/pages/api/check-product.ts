@@ -27,13 +27,13 @@ export const GET: APIRoute = async ({ request, url }) => {
     return new Response(
       JSON.stringify({
         error: 'Demasiadas solicitudes. Por favor, inténtalo de nuevo más tarde.',
-        retryAfter: Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)
+        retryAfter: Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000),
       }),
       {
         status: 429,
         headers: {
           'Content-Type': 'application/json',
-          'Retry-After': String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000))
+          'Retry-After': String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)),
         },
       }
     );
@@ -46,7 +46,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     if (!slug) {
       return new Response(JSON.stringify({ error: 'Missing slug parameter' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
@@ -75,7 +75,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     if (!productData || !productId) {
       return new Response(JSON.stringify({ error: 'Product not found' }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
@@ -157,85 +157,94 @@ export const GET: APIRoute = async ({ request, url }) => {
       try {
         const productRef = doc(db, 'products', productId);
         await updateDoc(productRef, {
-          customizationSchemaId: detectedSchemaId
+          customizationSchemaId: detectedSchemaId,
         });
 
-        return new Response(JSON.stringify({
-          success: true,
-          message: 'Product updated successfully',
-          product: {
-            id: productId,
-            name: productData.name,
-            slug: productData.slug,
-            categoryId: productData.categoryId,
-            subcategoryId: productData.subcategoryId,
-            customizationSchemaId: detectedSchemaId,
-            tags: productData.tags
-          },
-          schema: {
-            detected: true,
-            schemaId: detectedSchemaId,
-            detectionMethod,
-            exists: schemaExists,
-            fieldsCount: schemaFields
-          },
-          action: 'fixed'
-        }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: 'Product updated successfully',
+            product: {
+              id: productId,
+              name: productData.name,
+              slug: productData.slug,
+              categoryId: productData.categoryId,
+              subcategoryId: productData.subcategoryId,
+              customizationSchemaId: detectedSchemaId,
+              tags: productData.tags,
+            },
+            schema: {
+              detected: true,
+              schemaId: detectedSchemaId,
+              detectionMethod,
+              exists: schemaExists,
+              fieldsCount: schemaFields,
+            },
+            action: 'fixed',
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
       } catch (e: unknown) {
         const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-        return new Response(JSON.stringify({
-          error: 'Failed to update product',
-          details: errorMessage
-        }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        return new Response(
+          JSON.stringify({
+            error: 'Failed to update product',
+            details: errorMessage,
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
       }
     }
 
     // 5. Retornar información
-    return new Response(JSON.stringify({
-      success: true,
-      product: {
-        id: productId,
-        name: productData.name,
-        slug: productData.slug,
-        categoryId: productData.categoryId,
-        subcategoryId: productData.subcategoryId,
-        customizationSchemaId: productData.customizationSchemaId,
-        tags: productData.tags
-      },
-      schema: {
-        detected: !!detectedSchemaId,
-        schemaId: detectedSchemaId,
-        detectionMethod,
-        exists: schemaExists,
-        fieldsCount: schemaFields
-      },
-      recommendations: detectedSchemaId ? (
-        schemaExists ?
-        'Product is correctly configured! It should use the dynamic customizer.' :
-        `Schema ID detected (${detectedSchemaId}) but schema not found in Firebase. Create it in /admin/customization`
-      ) : (
-        'No schema detected. Update product categoryId/subcategoryId to include: camisetas, cuadros, resina, or tazas'
-      )
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
-
+    return new Response(
+      JSON.stringify({
+        success: true,
+        product: {
+          id: productId,
+          name: productData.name,
+          slug: productData.slug,
+          categoryId: productData.categoryId,
+          subcategoryId: productData.subcategoryId,
+          customizationSchemaId: productData.customizationSchemaId,
+          tags: productData.tags,
+        },
+        schema: {
+          detected: !!detectedSchemaId,
+          schemaId: detectedSchemaId,
+          detectionMethod,
+          exists: schemaExists,
+          fieldsCount: schemaFields,
+        },
+        recommendations: detectedSchemaId
+          ? schemaExists
+            ? 'Product is correctly configured! It should use the dynamic customizer.'
+            : `Schema ID detected (${detectedSchemaId}) but schema not found in Firebase. Create it in /admin/customization`
+          : 'No schema detected. Update product categoryId/subcategoryId to include: camisetas, cuadros, resina, or tazas',
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[check-product] Internal server error:', error);
-    return new Response(JSON.stringify({
-      error: 'Internal server error',
-      details: errorMessage
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({
+        error: 'Internal server error',
+        details: errorMessage,
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 };

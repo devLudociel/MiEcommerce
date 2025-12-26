@@ -47,9 +47,10 @@ export const apiLogger = {
    * Log error message
    */
   error: (message: string, error?: unknown): void => {
-    const errorData = error instanceof Error
-      ? { message: error.message, stack: error.stack }
-      : { error: String(error) };
+    const errorData =
+      error instanceof Error
+        ? { message: error.message, stack: error.stack }
+        : { error: String(error) };
     console.error(formatLog('error', message, errorData));
   },
 
@@ -73,13 +74,9 @@ export const apiLogger = {
  */
 export function createScopedLogger(scope: string) {
   return {
-    info: (message: string, data?: LogData) =>
-      apiLogger.info(`[${scope}] ${message}`, data),
-    warn: (message: string, data?: LogData) =>
-      apiLogger.warn(`[${scope}] ${message}`, data),
-    error: (message: string, error?: unknown) =>
-      apiLogger.error(`[${scope}] ${message}`, error),
-    debug: (message: string, data?: LogData) =>
-      apiLogger.debug(`[${scope}] ${message}`, data),
+    info: (message: string, data?: LogData) => apiLogger.info(`[${scope}] ${message}`, data),
+    warn: (message: string, data?: LogData) => apiLogger.warn(`[${scope}] ${message}`, data),
+    error: (message: string, error?: unknown) => apiLogger.error(`[${scope}] ${message}`, error),
+    debug: (message: string, data?: LogData) => apiLogger.debug(`[${scope}] ${message}`, data),
   };
 }

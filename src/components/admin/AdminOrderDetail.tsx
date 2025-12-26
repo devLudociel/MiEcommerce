@@ -6,7 +6,12 @@ import { useAuth } from '../hooks/useAuth';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import OrderItemPreview from './OrderItemPreview';
-import { FRONT_POSITIONS, BACK_POSITIONS, getContainerTransform, type PresetPosition } from '../../constants/textilePositions';
+import {
+  FRONT_POSITIONS,
+  BACK_POSITIONS,
+  getContainerTransform,
+  type PresetPosition,
+} from '../../constants/textilePositions';
 import JSZip from 'jszip';
 
 // Interfaces for order items and customization
@@ -68,9 +73,7 @@ function detectPresetPosition(
     labelLower.includes('frente') ||
     labelLower.includes('delantera');
   const isBack =
-    labelLower.includes('back') ||
-    labelLower.includes('trasera') ||
-    labelLower.includes('espalda');
+    labelLower.includes('back') || labelLower.includes('trasera') || labelLower.includes('espalda');
 
   // Si no podemos determinar el lado, no detectamos preset
   if (!isFront && !isBack) return null;
@@ -169,11 +172,7 @@ export default function AdminOrderDetail() {
         },
       });
       if (res.status === 401 || res.status === 403) {
-        showModal(
-          'error',
-          'Sin autorización',
-          'No tienes permisos para ver este pedido.'
-        );
+        showModal('error', 'Sin autorización', 'No tienes permisos para ver este pedido.');
         setTimeout(() => {
           window.location.href = '/admin/orders';
         }, 2000);
@@ -455,7 +454,9 @@ export default function AdminOrderDetail() {
             if (field.imageUrl) {
               fieldIndex++;
               const sanitizedItemName = item.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-              const sanitizedFieldLabel = field.fieldLabel.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+              const sanitizedFieldLabel = field.fieldLabel
+                .replace(/[^a-zA-Z0-9]/g, '-')
+                .toLowerCase();
               const fileName = `${itemIndex}_${sanitizedItemName}_${fieldIndex}_${sanitizedFieldLabel}.jpg`;
               imageData.push({ url: field.imageUrl, name: fileName });
             }
@@ -512,9 +513,10 @@ export default function AdminOrderDetail() {
       link.remove();
       URL.revokeObjectURL(zipUrl);
 
-      const message = failCount > 0
-        ? `${successCount} imágenes descargadas (${failCount} fallaron)`
-        : `${successCount} imágenes descargadas correctamente`;
+      const message =
+        failCount > 0
+          ? `${successCount} imágenes descargadas (${failCount} fallaron)`
+          : `${successCount} imágenes descargadas correctamente`;
 
       notify.success(message);
       logger.info('[AdminOrderDetail] Bulk download completed', { successCount, failCount });
@@ -601,7 +603,9 @@ export default function AdminOrderDetail() {
                   return (
                     <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
                       <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm font-bold text-gray-700">Progreso de Producción</span>
+                        <span className="text-sm font-bold text-gray-700">
+                          Progreso de Producción
+                        </span>
                         <span className="text-xs text-gray-500">{total} producto(s) total</span>
                       </div>
 
@@ -683,10 +687,10 @@ export default function AdminOrderDetail() {
                                 item.productionStatus === 'shipped'
                                   ? 'bg-blue-100 border-blue-300 text-blue-800'
                                   : item.productionStatus === 'ready'
-                                  ? 'bg-green-100 border-green-300 text-green-800'
-                                  : item.productionStatus === 'in_production'
-                                  ? 'bg-yellow-100 border-yellow-300 text-yellow-800'
-                                  : 'bg-gray-100 border-gray-300 text-gray-700'
+                                    ? 'bg-green-100 border-green-300 text-green-800'
+                                    : item.productionStatus === 'in_production'
+                                      ? 'bg-yellow-100 border-yellow-300 text-yellow-800'
+                                      : 'bg-gray-100 border-gray-300 text-gray-700'
                               }`}
                             >
                               <option value="pending">⏳ Pendiente</option>
@@ -712,79 +716,106 @@ export default function AdminOrderDetail() {
                             {/* Valores de personalización */}
                             {item.customization.values && (
                               <div className="space-y-2 mt-2">
-                                {item.customization.values.map((field: CustomizationField, idx: number) => (
-                                  <div key={idx} className="text-sm">
-                                    <span className="font-semibold text-gray-700">{field.fieldLabel}:</span>
+                                {item.customization.values.map(
+                                  (field: CustomizationField, idx: number) => (
+                                    <div key={idx} className="text-sm">
+                                      <span className="font-semibold text-gray-700">
+                                        {field.fieldLabel}:
+                                      </span>
 
-                                    {/* Si tiene imagen, mostrarla */}
-                                    {field.imageUrl ? (
-                                      <div className="mt-2 ml-4">
-                                        <div className="flex items-start gap-3">
-                                          <img
-                                            src={field.imageUrl}
-                                            alt={field.fieldLabel}
-                                            className="w-32 h-32 object-contain border-2 border-purple-200 rounded-lg bg-white flex-shrink-0"
-                                          />
+                                      {/* Si tiene imagen, mostrarla */}
+                                      {field.imageUrl ? (
+                                        <div className="mt-2 ml-4">
+                                          <div className="flex items-start gap-3">
+                                            <img
+                                              src={field.imageUrl}
+                                              alt={field.fieldLabel}
+                                              className="w-32 h-32 object-contain border-2 border-purple-200 rounded-lg bg-white flex-shrink-0"
+                                            />
 
-                                          {/* Botón de descarga */}
-                                          <button
-                                            onClick={() => handleImageDownload(field.imageUrl, field.fieldLabel, item.name)}
-                                            className="px-3 py-2 bg-cyan-500 text-white rounded-lg font-bold hover:bg-cyan-600 transition-all flex items-center gap-2 text-sm flex-shrink-0"
-                                            title="Descargar imagen del cliente para editar y producir"
-                                          >
-                                            <Icon name="download" className="w-4 h-4" />
-                                            Descargar
-                                          </button>
+                                            {/* Botón de descarga */}
+                                            <button
+                                              onClick={() =>
+                                                handleImageDownload(
+                                                  field.imageUrl,
+                                                  field.fieldLabel,
+                                                  item.name
+                                                )
+                                              }
+                                              className="px-3 py-2 bg-cyan-500 text-white rounded-lg font-bold hover:bg-cyan-600 transition-all flex items-center gap-2 text-sm flex-shrink-0"
+                                              title="Descargar imagen del cliente para editar y producir"
+                                            >
+                                              <Icon name="download" className="w-4 h-4" />
+                                              Descargar
+                                            </button>
+                                          </div>
+
+                                          {/* Mostrar transformaciones si existen */}
+                                          {field.imageTransform &&
+                                            (() => {
+                                              const detectedPreset = detectPresetPosition(
+                                                field.imageTransform,
+                                                field.fieldLabel
+                                              );
+                                              return (
+                                                <div className="mt-2 text-xs space-y-1">
+                                                  {/* Mostrar preset detectado */}
+                                                  {detectedPreset ? (
+                                                    <div className="p-2 bg-green-100 border border-green-300 rounded">
+                                                      <p className="font-bold text-green-800 flex items-center gap-1">
+                                                        📍 {detectedPreset.label}
+                                                      </p>
+                                                      <p className="text-green-700 italic">
+                                                        {detectedPreset.description}
+                                                      </p>
+                                                    </div>
+                                                  ) : (
+                                                    <div className="p-2 bg-yellow-100 border border-yellow-300 rounded">
+                                                      <p className="font-bold text-yellow-800">
+                                                        ⚠️ Posición personalizada
+                                                      </p>
+                                                    </div>
+                                                  )}
+
+                                                  {/* Coordenadas técnicas */}
+                                                  <div className="text-gray-600 space-y-0.5">
+                                                    <p>
+                                                      • X={field.imageTransform.x.toFixed(1)}%, Y=
+                                                      {field.imageTransform.y.toFixed(1)}%
+                                                    </p>
+                                                    <p>
+                                                      • Escala:{' '}
+                                                      {(field.imageTransform.scale * 100).toFixed(
+                                                        0
+                                                      )}
+                                                      %
+                                                    </p>
+                                                    {field.imageTransform.rotation !== 0 && (
+                                                      <p>
+                                                        • Rotación: {field.imageTransform.rotation}°
+                                                      </p>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              );
+                                            })()}
                                         </div>
+                                      ) : (
+                                        /* Si es un valor simple (color, talla, etc.) */
+                                        <span className="ml-2 text-gray-600">
+                                          {field.displayValue || field.value}
+                                        </span>
+                                      )}
 
-                                        {/* Mostrar transformaciones si existen */}
-                                        {field.imageTransform && (() => {
-                                          const detectedPreset = detectPresetPosition(field.imageTransform, field.fieldLabel);
-                                          return (
-                                            <div className="mt-2 text-xs space-y-1">
-                                              {/* Mostrar preset detectado */}
-                                              {detectedPreset ? (
-                                                <div className="p-2 bg-green-100 border border-green-300 rounded">
-                                                  <p className="font-bold text-green-800 flex items-center gap-1">
-                                                    📍 {detectedPreset.label}
-                                                  </p>
-                                                  <p className="text-green-700 italic">{detectedPreset.description}</p>
-                                                </div>
-                                              ) : (
-                                                <div className="p-2 bg-yellow-100 border border-yellow-300 rounded">
-                                                  <p className="font-bold text-yellow-800">
-                                                    ⚠️ Posición personalizada
-                                                  </p>
-                                                </div>
-                                              )}
-
-                                              {/* Coordenadas técnicas */}
-                                              <div className="text-gray-600 space-y-0.5">
-                                                <p>• X={field.imageTransform.x.toFixed(1)}%, Y={field.imageTransform.y.toFixed(1)}%</p>
-                                                <p>• Escala: {(field.imageTransform.scale * 100).toFixed(0)}%</p>
-                                                {field.imageTransform.rotation !== 0 && (
-                                                  <p>• Rotación: {field.imageTransform.rotation}°</p>
-                                                )}
-                                              </div>
-                                            </div>
-                                          );
-                                        })()}
-                                      </div>
-                                    ) : (
-                                      /* Si es un valor simple (color, talla, etc.) */
-                                      <span className="ml-2 text-gray-600">
-                                        {field.displayValue || field.value}
-                                      </span>
-                                    )}
-
-                                    {/* Mostrar precio adicional si existe */}
-                                    {field.priceModifier && field.priceModifier > 0 && (
-                                      <span className="ml-2 text-xs text-green-600">
-                                        (+{eur(field.priceModifier)})
-                                      </span>
-                                    )}
-                                  </div>
-                                ))}
+                                      {/* Mostrar precio adicional si existe */}
+                                      {field.priceModifier && field.priceModifier > 0 && (
+                                        <span className="ml-2 text-xs text-green-600">
+                                          (+{eur(field.priceModifier)})
+                                        </span>
+                                      )}
+                                    </div>
+                                  )
+                                )}
                               </div>
                             )}
 
@@ -809,7 +840,9 @@ export default function AdminOrderDetail() {
                         <div className="mt-4 pt-4 border-t border-gray-200">
                           <div className="flex items-center gap-2 mb-2">
                             <Icon name="pen" className="w-4 h-4 text-orange-600" />
-                            <span className="font-bold text-sm text-gray-700">Notas de Producción (Interno)</span>
+                            <span className="font-bold text-sm text-gray-700">
+                              Notas de Producción (Interno)
+                            </span>
                           </div>
 
                           {editingNotes[index] ? (
@@ -817,7 +850,9 @@ export default function AdminOrderDetail() {
                             <div className="space-y-2">
                               <textarea
                                 value={notesContent[index] || ''}
-                                onChange={(e) => setNotesContent({ ...notesContent, [index]: e.target.value })}
+                                onChange={(e) =>
+                                  setNotesContent({ ...notesContent, [index]: e.target.value })
+                                }
                                 placeholder="Ej: Usar tela premium, Cliente pidió entrega urgente, Revisar colores antes de imprimir..."
                                 className="w-full px-3 py-2 border-2 border-orange-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none resize-none text-sm"
                                 rows={3}
@@ -843,9 +878,13 @@ export default function AdminOrderDetail() {
                             <div>
                               {item.productionNotes ? (
                                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 relative group">
-                                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{item.productionNotes}</p>
+                                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                    {item.productionNotes}
+                                  </p>
                                   <button
-                                    onClick={() => handleStartEditNotes(index, item.productionNotes)}
+                                    onClick={() =>
+                                      handleStartEditNotes(index, item.productionNotes)
+                                    }
                                     className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 bg-orange-500 text-white rounded text-xs font-bold hover:bg-orange-600"
                                   >
                                     Editar
@@ -974,7 +1013,7 @@ export default function AdminOrderDetail() {
                   {(() => {
                     const imageCount = (order.items || []).reduce((count, item) => {
                       if (item.customization?.values) {
-                        return count + item.customization.values.filter(f => f.imageUrl).length;
+                        return count + item.customization.values.filter((f) => f.imageUrl).length;
                       }
                       return count;
                     }, 0);

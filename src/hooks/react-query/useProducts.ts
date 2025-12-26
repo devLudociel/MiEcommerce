@@ -1,6 +1,14 @@
 // src/hooks/react-query/useProducts.ts
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { collection, query, where, limit as firestoreLimit, getDocs, doc, getDoc } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  where,
+  limit as firestoreLimit,
+  getDocs,
+  doc,
+  getDoc,
+} from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { queryKeys } from '../../lib/react-query/queryClient';
 import { logger } from '../../lib/logger';
@@ -90,7 +98,7 @@ async function fetchProducts(filters: ProductFilters = {}): Promise<Product[]> {
 
     // Exclude specific IDs (client-side filter for related products)
     if (filters.excludeIds && filters.excludeIds.length > 0) {
-      products = products.filter(p => !filters.excludeIds!.includes(p.id));
+      products = products.filter((p) => !filters.excludeIds!.includes(p.id));
     }
 
     logger.debug('[useProducts] Fetched products', { count: products.length });
@@ -113,7 +121,11 @@ async function fetchProduct(identifier: string, bySlug: boolean = false): Promis
 
     if (bySlug) {
       // Search by slug
-      const q = query(collection(db, 'products'), where('slug', '==', identifier), firestoreLimit(1));
+      const q = query(
+        collection(db, 'products'),
+        where('slug', '==', identifier),
+        firestoreLimit(1)
+      );
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
@@ -184,7 +196,9 @@ export function useProducts(filters: ProductFilters = {}) {
  */
 export function useProduct(identifier: string, bySlug: boolean = false) {
   return useQuery({
-    queryKey: bySlug ? queryKeys.products.detail(`slug:${identifier}`) : queryKeys.products.detail(identifier),
+    queryKey: bySlug
+      ? queryKeys.products.detail(`slug:${identifier}`)
+      : queryKeys.products.detail(identifier),
     queryFn: () => fetchProduct(identifier, bySlug),
     enabled: !!identifier, // Only fetch if identifier exists
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -205,16 +219,21 @@ export function useProduct(identifier: string, bySlug: boolean = false) {
  * @example
  * const { data: related, isLoading } = useRelatedProducts('general', 'currentProductId', 4);
  */
-export function useRelatedProducts(categoryOrId?: string, excludeProductId?: string, limit: number = 4) {
+export function useRelatedProducts(
+  categoryOrId?: string,
+  excludeProductId?: string,
+  limit: number = 4
+) {
   return useQuery({
     queryKey: queryKeys.products.related(categoryOrId || '', excludeProductId || ''),
-    queryFn: () => fetchProducts({
-      // Try both category filters - categoryId first, then category string
-      // Most products use category string field (e.g., 'general', 'tech')
-      category: categoryOrId,
-      excludeIds: excludeProductId ? [excludeProductId] : [],
-      limit: limit + 1, // Fetch one extra to ensure we have enough after exclusion
-    }),
+    queryFn: () =>
+      fetchProducts({
+        // Try both category filters - categoryId first, then category string
+        // Most products use category string field (e.g., 'general', 'tech')
+        category: categoryOrId,
+        excludeIds: excludeProductId ? [excludeProductId] : [],
+        limit: limit + 1, // Fetch one extra to ensure we have enough after exclusion
+      }),
     enabled: !!categoryOrId, // Only fetch if category exists
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes

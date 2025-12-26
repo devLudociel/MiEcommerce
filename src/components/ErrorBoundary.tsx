@@ -104,8 +104,8 @@ export default class ErrorBoundary extends Component<Props, State> {
 
             {/* Description */}
             <p className="text-gray-600 text-center mb-6">
-              Ha ocurrido un error inesperado. No te preocupes, nuestro equipo ha sido notificado
-              y estamos trabajando para solucionarlo.
+              Ha ocurrido un error inesperado. No te preocupes, nuestro equipo ha sido notificado y
+              estamos trabajando para solucionarlo.
             </p>
 
             {/* Error details (only in development) */}

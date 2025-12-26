@@ -1,5 +1,5 @@
 // src/components/account/WalletPanel.tsx
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { logger } from '../../lib/logger';
 import { notify } from '../../lib/notifications';
@@ -23,16 +23,7 @@ export default function WalletPanel() {
   const [wallet, setWallet] = useState<WalletData>({ balance: 0, transactions: [] });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
-    loadWallet();
-  }, [user]);
-
-  const loadWallet = async () => {
+  const loadWallet = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -91,7 +82,16 @@ export default function WalletPanel() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    loadWallet();
+  }, [loadWallet, user]);
 
   const getTransactionIcon = (type: string) => {
     switch (type) {

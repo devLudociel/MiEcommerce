@@ -18,7 +18,8 @@ export default function TestInteractiveEditorApp() {
   });
 
   // Imagen de producto de ejemplo (taza)
-  const productImage = 'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=400&h=400&fit=crop';
+  const productImage =
+    'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=400&h=400&fit=crop';
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -54,7 +55,9 @@ export default function TestInteractiveEditorApp() {
       transform: imageTransform,
     };
     console.log('📦 Exported data:', data);
-    alert(`✅ Datos exportados a consola!\n\nTransform:\nX: ${Math.round(imageTransform.x)}%\nY: ${Math.round(imageTransform.y)}%\nEscala: ${Math.round(imageTransform.scale * 100)}%\nRotación: ${Math.round(imageTransform.rotation)}°`);
+    alert(
+      `✅ Datos exportados a consola!\n\nTransform:\nX: ${Math.round(imageTransform.x)}%\nY: ${Math.round(imageTransform.y)}%\nEscala: ${Math.round(imageTransform.scale * 100)}%\nRotación: ${Math.round(imageTransform.rotation)}°`
+    );
   };
 
   return (
@@ -63,20 +66,13 @@ export default function TestInteractiveEditorApp() {
       {!uploadedImage ? (
         <div className="bg-white rounded-xl border-2 border-gray-200 p-8 shadow-lg">
           <label className="block cursor-pointer">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
+            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
             <div className="border-2 border-dashed border-purple-300 rounded-xl p-12 text-center hover:border-purple-500 hover:bg-purple-50 transition-all">
               <Upload className="w-16 h-16 text-purple-400 mx-auto mb-4" />
               <p className="text-xl font-semibold text-gray-700 mb-2">
                 Haz click para subir una imagen de prueba
               </p>
-              <p className="text-gray-500">
-                PNG, JPG, GIF (cualquier tamaño)
-              </p>
+              <p className="text-gray-500">PNG, JPG, GIF (cualquier tamaño)</p>
             </div>
           </label>
         </div>
@@ -85,9 +81,7 @@ export default function TestInteractiveEditorApp() {
           {/* Editor */}
           <div className="bg-white rounded-xl border-2 border-gray-200 p-6 shadow-lg">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">
-                Editor Interactivo
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-800">Editor Interactivo</h2>
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleExport}
@@ -140,16 +134,16 @@ export default function TestInteractiveEditorApp() {
                 </div>
                 <div className="flex justify-between items-center bg-gray-50 rounded-lg p-3">
                   <span className="text-gray-600">transform.rotation</span>
-                  <span className="font-bold text-gray-800">{imageTransform.rotation.toFixed(2)}°</span>
+                  <span className="font-bold text-gray-800">
+                    {imageTransform.rotation.toFixed(2)}°
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Testing Checklist */}
             <div className="bg-white rounded-xl border-2 border-green-200 p-6 shadow-lg">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">
-                ✅ Checklist de Pruebas
-              </h3>
+              <h3 className="text-lg font-bold text-gray-800 mb-4">✅ Checklist de Pruebas</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-start gap-2">
                   <input type="checkbox" className="mt-1" id="test1" />
@@ -217,12 +211,10 @@ export default function TestInteractiveEditorApp() {
 
           {/* Feedback Section */}
           <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl border-2 border-purple-300 p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-3">
-              💬 ¿Qué te parece el editor?
-            </h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-3">💬 ¿Qué te parece el editor?</h3>
             <p className="text-gray-700 mb-4">
-              Compara esta experiencia con usar sliders. ¿Es más rápido? ¿Más intuitivo?
-              ¿Funciona bien en móvil?
+              Compara esta experiencia con usar sliders. ¿Es más rápido? ¿Más intuitivo? ¿Funciona
+              bien en móvil?
             </p>
             <div className="flex flex-wrap gap-3">
               <button className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium">

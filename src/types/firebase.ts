@@ -283,7 +283,14 @@ export interface AppliedBundleDiscount {
 /**
  * Special tag types with predefined behavior
  */
-export type SpecialTagType = 'nuevo' | 'oferta' | 'destacado' | 'agotado' | 'exclusivo' | 'limitado' | 'custom';
+export type SpecialTagType =
+  | 'nuevo'
+  | 'oferta'
+  | 'destacado'
+  | 'agotado'
+  | 'exclusivo'
+  | 'limitado'
+  | 'custom';
 
 /**
  * Product tag with customizable appearance

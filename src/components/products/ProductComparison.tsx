@@ -28,11 +28,7 @@ export default function ProductComparison() {
       render: (item) => (
         <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100">
           {item.image ? (
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-full h-full object-cover"
-            />
+            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400">
               Sin imagen
@@ -58,9 +54,7 @@ export default function ProductComparison() {
       key: 'price',
       render: (item) => (
         <div>
-          <span className="text-2xl font-bold text-gray-900">
-            €{item.price.toFixed(2)}
-          </span>
+          <span className="text-2xl font-bold text-gray-900">€{item.price.toFixed(2)}</span>
           {item.originalPrice && item.originalPrice > item.price && (
             <span className="ml-2 text-sm text-gray-400 line-through">
               €{item.originalPrice.toFixed(2)}
@@ -99,10 +93,7 @@ export default function ProductComparison() {
         <div className="flex flex-wrap gap-1">
           {item.tags && item.tags.length > 0 ? (
             item.tags.slice(0, 4).map((tag, idx) => (
-              <span
-                key={idx}
-                className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs"
-              >
+              <span key={idx} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
                 {tag}
               </span>
             ))
@@ -153,11 +144,10 @@ export default function ProductComparison() {
           <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <GitCompareArrows className="w-10 h-10 text-purple-500" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-3">
-            No hay productos para comparar
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">No hay productos para comparar</h2>
           <p className="text-gray-600 mb-6">
-            Agrega productos al comparador desde las páginas de productos o el catálogo para ver sus características lado a lado.
+            Agrega productos al comparador desde las páginas de productos o el catálogo para ver sus
+            características lado a lado.
           </p>
           <a
             href="/productos"
@@ -179,11 +169,10 @@ export default function ProductComparison() {
           <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <GitCompareArrows className="w-10 h-10 text-amber-500" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-3">
-            Agrega más productos
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">Agrega más productos</h2>
           <p className="text-gray-600 mb-6">
-            Necesitas al menos 2 productos para poder compararlos. Actualmente tienes 1 producto seleccionado.
+            Necesitas al menos 2 productos para poder compararlos. Actualmente tienes 1 producto
+            seleccionado.
           </p>
           <div className="flex items-center justify-center gap-4 mb-6">
             <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-purple-300">
@@ -223,9 +212,7 @@ export default function ProductComparison() {
             <GitCompareArrows className="w-8 h-8 text-purple-500" />
             Comparar Productos
           </h1>
-          <p className="text-gray-600 mt-1">
-            Comparando {count} productos lado a lado
-          </p>
+          <p className="text-gray-600 mt-1">Comparando {count} productos lado a lado</p>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -269,13 +256,8 @@ export default function ProductComparison() {
             </thead>
             <tbody>
               {comparisonRows.map((row, rowIdx) => (
-                <tr
-                  key={row.key}
-                  className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}
-                >
-                  <td className="px-6 py-4 font-medium text-gray-700 align-top">
-                    {row.label}
-                  </td>
+                <tr key={row.key} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                  <td className="px-6 py-4 font-medium text-gray-700 align-top">{row.label}</td>
                   {items.map((item) => (
                     <td key={item.id} className="px-4 py-4 align-top">
                       {row.render ? row.render(item) : (item[row.key] as string) || '-'}

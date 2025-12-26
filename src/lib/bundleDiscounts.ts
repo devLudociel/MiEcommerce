@@ -45,9 +45,7 @@ export async function getActiveBundleDiscounts(): Promise<BundleDiscount[]> {
     const discountsRef = collection(db, 'bundleDiscounts');
 
     // Obtener todos los descuentos activos
-    const snapshot = await getDocs(
-      query(discountsRef, where('active', '==', true))
-    );
+    const snapshot = await getDocs(query(discountsRef, where('active', '==', true)));
 
     const discounts = snapshot.docs
       .map((doc) => ({
@@ -78,10 +76,7 @@ export async function getActiveBundleDiscounts(): Promise<BundleDiscount[]> {
 // VERIFICAR SI DESCUENTO APLICA A PRODUCTO
 // ============================================================================
 
-function discountAppliesToProduct(
-  discount: BundleDiscount,
-  productInfo: ProductInfo
-): boolean {
+function discountAppliesToProduct(discount: BundleDiscount, productInfo: ProductInfo): boolean {
   switch (discount.applyTo) {
     case 'all':
       return true;
@@ -93,9 +88,7 @@ function discountAppliesToProduct(
       return discount.productIds?.includes(productInfo.id) || false;
 
     case 'tags':
-      return (
-        productInfo.tags?.some((tag) => discount.tagIds?.includes(tag)) || false
-      );
+      return productInfo.tags?.some((tag) => discount.tagIds?.includes(tag)) || false;
 
     default:
       return false;
@@ -115,10 +108,7 @@ export async function calculateBundleDiscounts(
   let totalDiscount = 0;
 
   // Calcular total original
-  const originalTotal = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const originalTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   // Crear copia de items para tracking
   const itemsRemaining = new Map<string, number>();
@@ -228,10 +218,7 @@ function applyDiscountType(
       }
 
       result.savedAmount = saved;
-      result.originalPrice = eligibleItems.reduce(
-        (sum, i) => sum + i.price * i.quantity,
-        0
-      );
+      result.originalPrice = eligibleItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
       result.discountedPrice = result.originalPrice - saved;
       break;
     }
@@ -260,10 +247,7 @@ function applyDiscountType(
       }
 
       result.savedAmount = saved;
-      result.originalPrice = eligibleItems.reduce(
-        (sum, i) => sum + i.price * i.quantity,
-        0
-      );
+      result.originalPrice = eligibleItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
       result.discountedPrice = result.originalPrice - saved;
       break;
     }
@@ -310,10 +294,7 @@ function applyDiscountType(
 
       if (totalEligibleQuantity < minQty) return result;
 
-      const originalPrice = eligibleItems.reduce(
-        (sum, i) => sum + i.price * i.quantity,
-        0
-      );
+      const originalPrice = eligibleItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
       const saved = originalPrice * (discountPct / 100);
 
       result.productIds = eligibleItems.map((i) => i.id);
@@ -331,9 +312,7 @@ function applyDiscountType(
 // HELPER PARA OBTENER INFO DE PRODUCTOS
 // ============================================================================
 
-export async function getProductInfoForCart(
-  items: CartItem[]
-): Promise<Map<string, ProductInfo>> {
+export async function getProductInfoForCart(items: CartItem[]): Promise<Map<string, ProductInfo>> {
   const productInfoMap = new Map<string, ProductInfo>();
 
   try {
@@ -372,8 +351,8 @@ export async function getProductInfoForCart(
       count: productInfoMap.size,
       products: Array.from(productInfoMap.entries()).map(([id, info]) => ({
         id,
-        categoryId: info.categoryId
-      }))
+        categoryId: info.categoryId,
+      })),
     });
   } catch (error) {
     logger.error('[BundleDiscounts] Error getting product info', error);
@@ -401,10 +380,7 @@ interface UseBundleDiscountsOptions {
   enabled?: boolean;
 }
 
-export function useBundleDiscounts(
-  items: CartItem[],
-  options: UseBundleDiscountsOptions = {}
-) {
+export function useBundleDiscounts(items: CartItem[], options: UseBundleDiscountsOptions = {}) {
   const { enabled = true } = options;
   const [result, setResult] = useState<BundleDiscountResult>({
     appliedDiscounts: [],

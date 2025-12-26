@@ -68,9 +68,7 @@ export default function MugCanvas3D({
     ? MUG_PRINT_DIMENSIONS['360']
     : MUG_PRINT_DIMENSIONS.double_side.front;
 
-  const elements = isPrint360
-    ? customization.elements || []
-    : customization.frontElements || [];
+  const elements = isPrint360 ? customization.elements || [] : customization.frontElements || [];
 
   // ============================================
   // OPTIMIZATION 2: Memoize Texture Generation Key
@@ -323,9 +321,7 @@ export default function MugCanvas3D({
                 <button
                   onClick={() => setViewMode('2d')}
                   className={`px-3 py-2 text-xs font-bold transition-colors ${
-                    viewMode === '2d'
-                      ? 'bg-white text-purple-600'
-                      : 'text-white hover:bg-white/10'
+                    viewMode === '2d' ? 'bg-white text-purple-600' : 'text-white hover:bg-white/10'
                   }`}
                   title="Vista 2D"
                 >
@@ -334,9 +330,7 @@ export default function MugCanvas3D({
                 <button
                   onClick={() => setViewMode('3d')}
                   className={`px-3 py-2 text-xs font-bold transition-colors ${
-                    viewMode === '3d'
-                      ? 'bg-white text-purple-600'
-                      : 'text-white hover:bg-white/10'
+                    viewMode === '3d' ? 'bg-white text-purple-600' : 'text-white hover:bg-white/10'
                   }`}
                   title="Vista 3D"
                 >
@@ -581,9 +575,13 @@ export default function MugCanvas3D({
                           Área de impresión
                         </div>
                         <div className="text-sm text-gray-700">
-                          <span className="font-bold text-purple-600">{dimensions.width * 10}mm</span>
+                          <span className="font-bold text-purple-600">
+                            {dimensions.width * 10}mm
+                          </span>
                           {' × '}
-                          <span className="font-bold text-purple-600">{dimensions.height * 10}mm</span>
+                          <span className="font-bold text-purple-600">
+                            {dimensions.height * 10}mm
+                          </span>
                           <span className="text-gray-500 ml-2">
                             ({dimensions.width}cm × {dimensions.height}cm)
                           </span>

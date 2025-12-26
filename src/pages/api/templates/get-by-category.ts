@@ -21,10 +21,10 @@ export const GET: APIRoute = async ({ request, url }) => {
     const premiumOnly = url.searchParams.get('premiumOnly') === 'true';
 
     if (!categoryId) {
-      return new Response(
-        JSON.stringify({ error: 'category parameter is required' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'category parameter is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     logger.info('[get-by-category] Fetching templates for category:', categoryId);
@@ -49,10 +49,10 @@ export const GET: APIRoute = async ({ request, url }) => {
 
     logger.info(`[get-by-category] Found ${templates.length} templates`);
 
-    return new Response(
-      JSON.stringify({ templates }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ templates }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     logger.error('[get-by-category] Error:', error);
     return new Response(

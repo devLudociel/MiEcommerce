@@ -103,11 +103,7 @@ export default function AdminDashboard() {
       const ordersRef = collection(db, 'orders');
 
       // Ordenar por fecha descendente y limitar
-      const ordersQuery = query(
-        ordersRef,
-        orderBy('createdAt', 'desc'),
-        limit(ordersLimit)
-      );
+      const ordersQuery = query(ordersRef, orderBy('createdAt', 'desc'), limit(ordersLimit));
 
       const ordersSnapshot = await getDocs(ordersQuery);
 
@@ -330,9 +326,12 @@ export default function AdminDashboard() {
       <div className="mb-6 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl p-6 text-white shadow-xl">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold mb-2">📊 Nuevo Dashboard con Gráficos Interactivos</h2>
+            <h2 className="text-2xl font-bold mb-2">
+              📊 Nuevo Dashboard con Gráficos Interactivos
+            </h2>
             <p className="text-white/90 mb-4">
-              Visualiza tus ventas con gráficos de línea, área, barras y circular. Análisis completo de tu negocio.
+              Visualiza tus ventas con gráficos de línea, área, barras y circular. Análisis completo
+              de tu negocio.
             </p>
             <a
               href="/admin/dashboard-ventas"
@@ -732,10 +731,7 @@ export default function AdminDashboard() {
           <p className="text-sm text-blue-800">
             📊 Mostrando estadísticas basadas en los últimos <strong>{ordersLimit} pedidos</strong>
             {stats.totalOrders >= ordersLimit && (
-              <span className="text-blue-600">
-                {' '}
-                (puede haber más pedidos en la base de datos)
-              </span>
+              <span className="text-blue-600"> (puede haber más pedidos en la base de datos)</span>
             )}
           </p>
         </div>

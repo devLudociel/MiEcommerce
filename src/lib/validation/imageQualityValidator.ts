@@ -90,7 +90,9 @@ function calculateDPI(width: number, height: number, printSizeInches: number = 1
 /**
  * Obtiene las dimensiones reales de una imagen desde su URL o File
  */
-async function getImageDimensions(source: string | File): Promise<{ width: number; height: number; fileSize: number }> {
+async function getImageDimensions(
+  source: string | File
+): Promise<{ width: number; height: number; fileSize: number }> {
   return new Promise((resolve, reject) => {
     const img = new Image();
 
@@ -172,19 +174,35 @@ export async function validateImageQuality(
     }
 
     // Advertencias para dimensiones por debajo de lo recomendado
-    if (config.recommendedWidth && width < config.recommendedWidth && width >= (config.minWidth || 0)) {
-      warnings.push(`Ancho por debajo de lo recomendado. Se sugiere ${config.recommendedWidth}px o más`);
+    if (
+      config.recommendedWidth &&
+      width < config.recommendedWidth &&
+      width >= (config.minWidth || 0)
+    ) {
+      warnings.push(
+        `Ancho por debajo de lo recomendado. Se sugiere ${config.recommendedWidth}px o más`
+      );
     }
-    if (config.recommendedHeight && height < config.recommendedHeight && height >= (config.minHeight || 0)) {
-      warnings.push(`Alto por debajo de lo recomendado. Se sugiere ${config.recommendedHeight}px o más`);
+    if (
+      config.recommendedHeight &&
+      height < config.recommendedHeight &&
+      height >= (config.minHeight || 0)
+    ) {
+      warnings.push(
+        `Alto por debajo de lo recomendado. Se sugiere ${config.recommendedHeight}px o más`
+      );
     }
     if (config.recommendedDPI && dpi < config.recommendedDPI && dpi >= (config.minDPI || 0)) {
-      warnings.push(`DPI por debajo de lo recomendado (${dpi} DPI). Se sugiere ${config.recommendedDPI} DPI para mejor calidad`);
+      warnings.push(
+        `DPI por debajo de lo recomendado (${dpi} DPI). Se sugiere ${config.recommendedDPI} DPI para mejor calidad`
+      );
     }
 
     // Validar tamaño de archivo
     if (config.maxFileSize && fileSizeMB > config.maxFileSize) {
-      warnings.push(`Archivo muy grande (${fileSizeMB.toFixed(1)} MB). Máximo recomendado: ${config.maxFileSize} MB`);
+      warnings.push(
+        `Archivo muy grande (${fileSizeMB.toFixed(1)} MB). Máximo recomendado: ${config.maxFileSize} MB`
+      );
       recommendations.push('Considera comprimir la imagen sin perder calidad');
     }
 
@@ -201,7 +219,10 @@ export async function validateImageQuality(
       quality = 'poor';
     } else if (warnings.length > 0) {
       quality = 'acceptable';
-    } else if (dpi >= (config.recommendedDPI || 300) && width >= (config.recommendedWidth || 3000)) {
+    } else if (
+      dpi >= (config.recommendedDPI || 300) &&
+      width >= (config.recommendedWidth || 3000)
+    ) {
       quality = 'excellent';
     } else {
       quality = 'good';
@@ -266,7 +287,11 @@ export async function validateImageQuality(
 export function getQualityPresetForCategory(categoryId: string): QualityConfig {
   const categoryLower = categoryId.toLowerCase();
 
-  if (categoryLower.includes('textil') || categoryLower.includes('camiseta') || categoryLower.includes('sudadera')) {
+  if (
+    categoryLower.includes('textil') ||
+    categoryLower.includes('camiseta') ||
+    categoryLower.includes('sudadera')
+  ) {
     return QUALITY_PRESETS.textile;
   }
 
@@ -274,11 +299,19 @@ export function getQualityPresetForCategory(categoryId: string): QualityConfig {
     return QUALITY_PRESETS.print3d;
   }
 
-  if (categoryLower.includes('taza') || categoryLower.includes('llavero') || categoryLower.includes('peque')) {
+  if (
+    categoryLower.includes('taza') ||
+    categoryLower.includes('llavero') ||
+    categoryLower.includes('peque')
+  ) {
     return QUALITY_PRESETS.small;
   }
 
-  if (categoryLower.includes('cuadro') || categoryLower.includes('lienzo') || categoryLower.includes('poster')) {
+  if (
+    categoryLower.includes('cuadro') ||
+    categoryLower.includes('lienzo') ||
+    categoryLower.includes('poster')
+  ) {
     return QUALITY_PRESETS.large;
   }
 

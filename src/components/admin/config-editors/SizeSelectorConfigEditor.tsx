@@ -8,7 +8,10 @@ interface SizeSelectorConfigEditorProps {
 
 const COMMON_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 
-export default function SizeSelectorConfigEditor({ sizes, onChange }: SizeSelectorConfigEditorProps) {
+export default function SizeSelectorConfigEditor({
+  sizes,
+  onChange,
+}: SizeSelectorConfigEditorProps) {
   const [showAddSize, setShowAddSize] = useState(false);
   const [newSize, setNewSize] = useState('');
 
@@ -154,7 +157,6 @@ export default function SizeSelectorConfigEditor({ sizes, onChange }: SizeSelect
                 onKeyPress={(e) => e.key === 'Enter' && handleAddSize()}
                 placeholder="Ej: 3XL, 42, 10-12"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent uppercase"
-                autoFocus
               />
               <p className="text-xs text-gray-500 mt-1">
                 Se convertirá automáticamente a mayúsculas

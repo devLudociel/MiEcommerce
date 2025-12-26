@@ -11,7 +11,10 @@ interface ColorSelectorConfigEditorProps {
   onChange: (colors: ColorOption[]) => void;
 }
 
-export default function ColorSelectorConfigEditor({ colors, onChange }: ColorSelectorConfigEditorProps) {
+export default function ColorSelectorConfigEditor({
+  colors,
+  onChange,
+}: ColorSelectorConfigEditorProps) {
   const [showAddColor, setShowAddColor] = useState(false);
   const [newColor, setNewColor] = useState<ColorOption>({
     id: '',
@@ -53,7 +56,11 @@ export default function ColorSelectorConfigEditor({ colors, onChange }: ColorSel
     onChange(
       colors.map((c) =>
         c.id === colorId
-          ? { ...c, ...updates, id: updates.name ? updates.name.toLowerCase().replace(/\s+/g, '_') : c.id }
+          ? {
+              ...c,
+              ...updates,
+              id: updates.name ? updates.name.toLowerCase().replace(/\s+/g, '_') : c.id,
+            }
           : c
       )
     );

@@ -33,10 +33,10 @@ export async function verifyAuthToken(request: Request): Promise<AuthResult> {
       logger.warn('[verifyAuthToken] Missing or invalid authorization header');
       return {
         success: false,
-        error: new Response(
-          JSON.stringify({ error: 'Autenticación requerida' }),
-          { status: 401, headers: { 'Content-Type': 'application/json' } }
-        ),
+        error: new Response(JSON.stringify({ error: 'Autenticación requerida' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }),
       };
     }
 
@@ -55,20 +55,20 @@ export async function verifyAuthToken(request: Request): Promise<AuthResult> {
       logger.error('[verifyAuthToken] Token verification failed:', verificationError);
       return {
         success: false,
-        error: new Response(
-          JSON.stringify({ error: 'Token inválido o expirado' }),
-          { status: 401, headers: { 'Content-Type': 'application/json' } }
-        ),
+        error: new Response(JSON.stringify({ error: 'Token inválido o expirado' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }),
       };
     }
   } catch (error) {
     logger.error('[verifyAuthToken] Unexpected error:', error);
     return {
       success: false,
-      error: new Response(
-        JSON.stringify({ error: 'Error de autenticación' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      ),
+      error: new Response(JSON.stringify({ error: 'Error de autenticación' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }),
     };
   }
 }

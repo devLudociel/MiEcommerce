@@ -44,9 +44,7 @@ export default function MugOptionsPanel({
 
       {/* Material */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-3">
-          Material
-        </label>
+        <label className="block text-sm font-semibold text-gray-700 mb-3">Material</label>
         <div className="grid grid-cols-2 gap-3">
           {MUG_MATERIALS.map((material) => {
             const isSelected = customization.material === material.id;
@@ -61,8 +59,8 @@ export default function MugOptionsPanel({
                   isSelected
                     ? 'border-purple-500 bg-purple-50 shadow-md'
                     : isDisabled
-                    ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
-                    : 'border-gray-300 hover:border-purple-300 hover:shadow-sm'
+                      ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                      : 'border-gray-300 hover:border-purple-300 hover:shadow-sm'
                 }`}
               >
                 {isSelected && (
@@ -87,9 +85,7 @@ export default function MugOptionsPanel({
 
       {/* Área de diseño */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-3">
-          Área de diseño
-        </label>
+        <label className="block text-sm font-semibold text-gray-700 mb-3">Área de diseño</label>
         <div className="grid grid-cols-2 gap-3">
           {MUG_PRINT_AREAS.map((area) => {
             const isSelected = customization.printArea === area.id;
@@ -125,9 +121,7 @@ export default function MugOptionsPanel({
 
       {/* Color */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-3">
-          Color
-        </label>
+        <label className="block text-sm font-semibold text-gray-700 mb-3">Color</label>
         <div className="grid grid-cols-2 gap-3">
           {MUG_COLORS.filter((c) =>
             customization.material === 'magic' ? c.isMagic : !c.isMagic
@@ -299,9 +293,7 @@ export default function MugOptionsPanel({
       {/* Tamaño (opcional) */}
       {customization.size !== undefined && (
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-3">
-            Tamaño
-          </label>
+          <label className="block text-sm font-semibold text-gray-700 mb-3">Tamaño</label>
           <div className="space-y-2">
             {MUG_SIZES.map((size) => {
               const isSelected = customization.size === size.value;
@@ -351,9 +343,7 @@ export default function MugOptionsPanel({
               <span className="text-gray-500 line-through text-lg">
                 {formatPrice(originalPrice)}
               </span>
-              <span className="text-3xl font-bold text-purple-600">
-                {formatPrice(totalPrice)}
-              </span>
+              <span className="text-3xl font-bold text-purple-600">{formatPrice(totalPrice)}</span>
             </div>
           </div>
           <div className="text-xs text-gray-500 text-right">(IVA incl.)</div>

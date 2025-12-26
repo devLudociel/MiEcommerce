@@ -34,13 +34,16 @@ export const OptimizedImage = memo(function OptimizedImage({
   const [imageError, setImageError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  const handleError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget;
-    if (!imageError) {
-      setImageError(true);
-      img.src = fallbackSrc;
-    }
-  }, [imageError, fallbackSrc]);
+  const handleError = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      const img = e.currentTarget;
+      if (!imageError) {
+        setImageError(true);
+        img.src = fallbackSrc;
+      }
+    },
+    [imageError, fallbackSrc]
+  );
 
   const handleLoad = useCallback(() => {
     setIsLoaded(true);

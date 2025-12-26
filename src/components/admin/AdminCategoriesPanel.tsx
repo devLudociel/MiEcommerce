@@ -156,7 +156,8 @@ export default function AdminCategoriesPanel() {
   const importNavbarCategories = async () => {
     const confirmed = await confirm({
       title: '¿Importar categorías?',
-      message: '¿Importar todas las categorías del navbar? Esto creará las categorías que no existan.',
+      message:
+        '¿Importar todas las categorías del navbar? Esto creará las categorías que no existan.',
       type: 'info',
       confirmText: 'Importar',
       cancelText: 'Cancelar',
@@ -170,9 +171,7 @@ export default function AdminCategoriesPanel() {
 
       // Obtener categorías existentes
       const existingCategoriesSnapshot = await getDocs(collection(db, 'categories'));
-      const existingSlugs = new Set(
-        existingCategoriesSnapshot.docs.map(doc => doc.data().slug)
-      );
+      const existingSlugs = new Set(existingCategoriesSnapshot.docs.map((doc) => doc.data().slug));
 
       // Procesar todas las categorías y subcategorías del navbar
       for (const mainCategory of navbarCategories) {
@@ -214,7 +213,9 @@ export default function AdminCategoriesPanel() {
       // Ejecutar el batch
       await batch.commit();
 
-      notify.success(`Importación completa: ${imported} categorías agregadas, ${skipped} ya existían`);
+      notify.success(
+        `Importación completa: ${imported} categorías agregadas, ${skipped} ya existían`
+      );
       logger.info('[AdminCategories] Navbar categories imported', { imported, skipped });
     } catch (error) {
       logger.error('[AdminCategories] Error importing navbar categories', error);
@@ -380,9 +381,7 @@ export default function AdminCategoriesPanel() {
 
               {/* Descripción */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Descripción
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}

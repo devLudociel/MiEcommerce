@@ -1,6 +1,6 @@
 // src/components/customizer/mug/SimpleMugCustomizer.tsx
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ShoppingCart,
   Upload,
@@ -66,6 +66,7 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
     scale: 0.6,
     rotation: 0,
   });
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -153,7 +154,7 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
         customization: {
           ...customizationData,
           uploadedImage: uploadedImage ? '[base64 image data]' : null,
-        }
+        },
       });
       notify.success('Taza anadida al carrito!');
 
@@ -170,21 +171,24 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
 
   const handleNextStep = useCallback(() => {
     if (currentStep < WIZARD_STEPS.length - 1) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep((prev) => prev + 1);
     }
   }, [currentStep]);
 
   const handlePrevStep = useCallback(() => {
     if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep((prev) => prev - 1);
     }
   }, [currentStep]);
 
-  const goToStep = useCallback((index: number) => {
-    if (index <= currentStep + 1) {
-      setCurrentStep(index);
-    }
-  }, [currentStep]);
+  const goToStep = useCallback(
+    (index: number) => {
+      if (index <= currentStep + 1) {
+        setCurrentStep(index);
+      }
+    },
+    [currentStep]
+  );
 
   const canProceed = uploadedImage || customText.trim();
 
@@ -268,35 +272,30 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
   const ImageUploader = () => (
     <div>
       {!uploadedImage ? (
-        <label
-          className="block cursor-pointer group"
-          tabIndex={0}
-          role="button"
-          aria-label="Subir imagen para personalizacion"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              e.currentTarget.querySelector('input')?.click();
-            }
-          }}
-        >
+        <div>
           <input
             type="file"
             accept="image/*"
             onChange={handleImageUpload}
             className="sr-only"
             aria-label="Seleccionar archivo de imagen"
+            ref={fileInputRef}
           />
-          <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 sm:p-8 text-center hover:border-purple-400 hover:bg-purple-50 transition-all group-focus:ring-4 group-focus:ring-purple-300 group-focus:border-purple-500">
-            <Upload className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-2 sm:mb-3 group-hover:text-purple-500 transition-colors" />
-            <p className="text-sm sm:text-base text-gray-600 font-medium mb-1">
-              Toca para subir una imagen
-            </p>
-            <p className="text-xs sm:text-sm text-gray-500">
-              PNG, JPG, GIF (max. 10MB)
-            </p>
-          </div>
-        </label>
+          <button
+            type="button"
+            className="block w-full cursor-pointer group text-left"
+            aria-label="Subir imagen para personalizacion"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 sm:p-8 text-center hover:border-purple-400 hover:bg-purple-50 transition-all group-focus-visible:ring-4 group-focus-visible:ring-purple-300 group-focus-visible:border-purple-500">
+              <Upload className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-2 sm:mb-3 group-hover:text-purple-500 transition-colors" />
+              <p className="text-sm sm:text-base text-gray-600 font-medium mb-1">
+                Toca para subir una imagen
+              </p>
+              <p className="text-xs sm:text-sm text-gray-500">PNG, JPG, GIF (max. 10MB)</p>
+            </div>
+          </button>
+        </div>
       ) : (
         <div className="relative">
           <img
@@ -308,8 +307,18 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
             onClick={handleRemoveImage}
             className="absolute top-2 right-2 bg-red-500 text-white p-1.5 sm:p-2 rounded-full hover:bg-red-600 transition-colors shadow-lg"
           >
-            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-3 h-3 sm:w-4 sm:h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
           <div className="mt-2 flex items-center gap-2 text-xs sm:text-sm text-green-600">
@@ -350,10 +359,18 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
 
   // Resumen de precio
   const PriceSummary = ({ compact = false }: { compact?: boolean }) => (
-    <div className={`bg-gradient-to-r from-purple-50 to-cyan-50 rounded-xl ${compact ? 'p-3' : 'p-4 sm:p-6'} border-2 border-purple-200`}>
+    <div
+      className={`bg-gradient-to-r from-purple-50 to-cyan-50 rounded-xl ${compact ? 'p-3' : 'p-4 sm:p-6'} border-2 border-purple-200`}
+    >
       <div className="flex items-baseline justify-between">
-        <span className={`text-gray-600 font-medium ${compact ? 'text-sm' : 'text-sm sm:text-base'}`}>Total:</span>
-        <span className={`font-bold text-purple-600 ${compact ? 'text-xl' : 'text-2xl sm:text-3xl'}`}>
+        <span
+          className={`text-gray-600 font-medium ${compact ? 'text-sm' : 'text-sm sm:text-base'}`}
+        >
+          Total:
+        </span>
+        <span
+          className={`font-bold text-purple-600 ${compact ? 'text-xl' : 'text-2xl sm:text-3xl'}`}
+        >
           {formatPrice(totalPrice)}
         </span>
       </div>
@@ -379,9 +396,7 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
         <div className="max-w-lg mx-auto">
           {/* Header compacto */}
           <div className="text-center mb-4">
-            <h1 className="text-xl font-bold text-gray-800">
-              Personaliza tu Taza
-            </h1>
+            <h1 className="text-xl font-bold text-gray-800">Personaliza tu Taza</h1>
             <p className="text-sm text-gray-600">{product.name}</p>
           </div>
 
@@ -408,18 +423,26 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
                               : 'bg-gray-200 text-gray-400'
                         }`}
                       >
-                        {index < currentStep ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+                        {index < currentStep ? (
+                          <Check className="w-5 h-5" />
+                        ) : (
+                          <Icon className="w-5 h-5" />
+                        )}
                       </div>
-                      <span className={`text-[10px] font-medium ${
-                        index === currentStep ? 'text-purple-600' : 'text-gray-500'
-                      }`}>
+                      <span
+                        className={`text-[10px] font-medium ${
+                          index === currentStep ? 'text-purple-600' : 'text-gray-500'
+                        }`}
+                      >
                         {step.shortTitle}
                       </span>
                     </button>
                     {index < WIZARD_STEPS.length - 1 && (
-                      <div className={`flex-1 h-0.5 mx-1 ${
-                        index < currentStep ? 'bg-green-500' : 'bg-gray-200'
-                      }`} />
+                      <div
+                        className={`flex-1 h-0.5 mx-1 ${
+                          index < currentStep ? 'bg-green-500' : 'bg-gray-200'
+                        }`}
+                      />
                     )}
                   </React.Fragment>
                 );
@@ -490,7 +513,8 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
                   <div className="flex items-start gap-2">
                     <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-blue-800">
-                      Te enviaremos una vista previa por email para que la apruebes antes de producir.
+                      Te enviaremos una vista previa por email para que la apruebes antes de
+                      producir.
                     </p>
                   </div>
                 </div>
@@ -565,9 +589,7 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
           <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 mb-2 sm:mb-4">
             Personaliza tu Taza
           </h1>
-          <p className="text-base sm:text-lg text-gray-600">
-            {product.name}
-          </p>
+          <p className="text-base sm:text-lg text-gray-600">{product.name}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
@@ -587,8 +609,8 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
                 <div className="text-xs sm:text-sm text-blue-900">
                   <p className="font-semibold mb-1">Vista previa por email</p>
                   <p>
-                    Te enviaremos una vista previa del diseno final para que lo apruebes
-                    antes de iniciar la produccion.
+                    Te enviaremos una vista previa del diseno final para que lo apruebes antes de
+                    iniciar la produccion.
                   </p>
                 </div>
               </div>

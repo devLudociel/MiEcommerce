@@ -219,7 +219,10 @@ export default function AdminPagesPanel() {
           description: galleryFormData.description,
           imageUrl: galleryFormData.imageUrl,
           category: galleryFormData.category,
-          tags: galleryFormData.tags.split(',').map((t) => t.trim()).filter(Boolean),
+          tags: galleryFormData.tags
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean),
         };
 
         if (editingGalleryItem) {
@@ -241,7 +244,10 @@ export default function AdminPagesPanel() {
           // Blog-specific fields - conditionally added
           ...(formData.type === 'blog' && {
             excerpt: formData.excerpt,
-            tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
+            tags: formData.tags
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean),
             category: formData.category,
           }),
         };
@@ -307,7 +313,10 @@ export default function AdminPagesPanel() {
       {/* Tabs */}
       <div className="flex gap-4 mb-6 border-b border-gray-200">
         <button
-          onClick={() => { setActiveTab('pages'); setShowForm(false); }}
+          onClick={() => {
+            setActiveTab('pages');
+            setShowForm(false);
+          }}
           className={`px-6 py-3 font-semibold transition-colors border-b-2 ${
             activeTab === 'pages'
               ? 'border-cyan-500 text-cyan-600'
@@ -317,7 +326,10 @@ export default function AdminPagesPanel() {
           📄 Páginas
         </button>
         <button
-          onClick={() => { setActiveTab('blog'); setShowForm(false); }}
+          onClick={() => {
+            setActiveTab('blog');
+            setShowForm(false);
+          }}
           className={`px-6 py-3 font-semibold transition-colors border-b-2 ${
             activeTab === 'blog'
               ? 'border-cyan-500 text-cyan-600'
@@ -327,7 +339,10 @@ export default function AdminPagesPanel() {
           📝 Blog
         </button>
         <button
-          onClick={() => { setActiveTab('gallery'); setShowForm(false); }}
+          onClick={() => {
+            setActiveTab('gallery');
+            setShowForm(false);
+          }}
           className={`px-6 py-3 font-semibold transition-colors border-b-2 ${
             activeTab === 'gallery'
               ? 'border-cyan-500 text-cyan-600'
@@ -350,7 +365,12 @@ export default function AdminPagesPanel() {
           }}
           className="px-6 py-3 bg-cyan-600 text-white font-semibold rounded-xl hover:bg-cyan-700 transition-colors"
         >
-          + {activeTab === 'gallery' ? 'Nueva Imagen' : activeTab === 'blog' ? 'Nuevo Post' : 'Nueva Página'}
+          +{' '}
+          {activeTab === 'gallery'
+            ? 'Nueva Imagen'
+            : activeTab === 'blog'
+              ? 'Nuevo Post'
+              : 'Nueva Página'}
         </button>
 
         {activeTab === 'pages' && pages.length === 0 && (
@@ -375,13 +395,13 @@ export default function AdminPagesPanel() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Título *
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Título *</label>
                 <input
                   type="text"
                   value={galleryFormData.title}
-                  onChange={(e) => setGalleryFormData({ ...galleryFormData, title: e.target.value })}
+                  onChange={(e) =>
+                    setGalleryFormData({ ...galleryFormData, title: e.target.value })
+                  }
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl"
                   required
                 />
@@ -393,16 +413,16 @@ export default function AdminPagesPanel() {
                 </label>
                 <textarea
                   value={galleryFormData.description}
-                  onChange={(e) => setGalleryFormData({ ...galleryFormData, description: e.target.value })}
+                  onChange={(e) =>
+                    setGalleryFormData({ ...galleryFormData, description: e.target.value })
+                  }
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl"
                   rows={3}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Imagen *
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Imagen *</label>
                 <input
                   type="file"
                   accept="image/*"
@@ -411,18 +431,22 @@ export default function AdminPagesPanel() {
                   disabled={uploading}
                 />
                 {galleryFormData.imageUrl && (
-                  <img src={galleryFormData.imageUrl} alt="Preview" className="mt-4 w-64 h-64 object-cover rounded-xl" />
+                  <img
+                    src={galleryFormData.imageUrl}
+                    alt="Preview"
+                    className="mt-4 w-64 h-64 object-cover rounded-xl"
+                  />
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Categoría
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Categoría</label>
                 <input
                   type="text"
                   value={galleryFormData.category}
-                  onChange={(e) => setGalleryFormData({ ...galleryFormData, category: e.target.value })}
+                  onChange={(e) =>
+                    setGalleryFormData({ ...galleryFormData, category: e.target.value })
+                  }
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl"
                   placeholder="Impresión 3D, Textil, Sublimación..."
                 />
@@ -476,7 +500,10 @@ export default function AdminPagesPanel() {
                     setFormData({
                       ...formData,
                       title: e.target.value,
-                      slug: e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, ''),
+                      slug: e.target.value
+                        .toLowerCase()
+                        .replace(/\s+/g, '-')
+                        .replace(/[^\w-]/g, ''),
                     });
                   }}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl"
@@ -485,7 +512,9 @@ export default function AdminPagesPanel() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Slug (URL) *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Slug (URL) *
+                </label>
                 <input
                   type="text"
                   value={formData.slug}
@@ -496,7 +525,9 @@ export default function AdminPagesPanel() {
               </div>
 
               <div className="col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Contenido *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Contenido *
+                </label>
                 <textarea
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
@@ -508,7 +539,9 @@ export default function AdminPagesPanel() {
               </div>
 
               <div className="col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Meta Descripción</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Meta Descripción
+                </label>
                 <textarea
                   value={formData.metaDescription}
                   onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
@@ -521,7 +554,9 @@ export default function AdminPagesPanel() {
               {activeTab === 'blog' && (
                 <>
                   <div className="col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Extracto</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Extracto
+                    </label>
                     <textarea
                       value={formData.excerpt}
                       onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
@@ -543,7 +578,9 @@ export default function AdminPagesPanel() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Categoría</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Categoría
+                    </label>
                     <input
                       type="text"
                       value={formData.category}
@@ -569,7 +606,9 @@ export default function AdminPagesPanel() {
               )}
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Imagen Destacada</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Imagen Destacada
+                </label>
                 <input
                   type="file"
                   accept="image/*"
@@ -578,7 +617,11 @@ export default function AdminPagesPanel() {
                   disabled={uploading}
                 />
                 {formData.featuredImage && (
-                  <img src={formData.featuredImage} alt="Preview" className="mt-4 w-full h-48 object-cover rounded-xl" />
+                  <img
+                    src={formData.featuredImage}
+                    alt="Preview"
+                    className="mt-4 w-full h-48 object-cover rounded-xl"
+                  />
                 )}
               </div>
 
@@ -652,11 +695,17 @@ export default function AdminPagesPanel() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Título</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                    Título
+                  </th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Slug</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Estado</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                    Estado
+                  </th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Fecha</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Acciones</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -696,6 +745,7 @@ export default function AdminPagesPanel() {
                           href={`/${page.slug}`}
                           target="_blank"
                           className="px-3 py-1 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700"
+                          rel="noreferrer"
                         >
                           Ver
                         </a>
@@ -710,7 +760,9 @@ export default function AdminPagesPanel() {
           {((activeTab === 'gallery' && galleryItems.length === 0) ||
             (activeTab !== 'gallery' && displayedPages.length === 0)) && (
             <div className="text-center py-12 text-gray-600">
-              No hay {activeTab === 'gallery' ? 'imágenes' : activeTab === 'blog' ? 'posts' : 'páginas'} creadas
+              No hay{' '}
+              {activeTab === 'gallery' ? 'imágenes' : activeTab === 'blog' ? 'posts' : 'páginas'}{' '}
+              creadas
             </div>
           )}
         </div>

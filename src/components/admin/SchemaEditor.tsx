@@ -16,7 +16,17 @@ import type {
   NumberInputConfig,
   DimensionsInputConfig,
 } from '../../types/customization';
-import { Plus, Trash2, GripVertical, Save, X, ChevronDown, ChevronUp, Upload, Loader } from 'lucide-react';
+import {
+  Plus,
+  Trash2,
+  GripVertical,
+  Save,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Upload,
+  Loader,
+} from 'lucide-react';
 import { notify } from '../../lib/notifications';
 import ColorSelectorConfigEditor from './config-editors/ColorSelectorConfigEditor';
 import SizeSelectorConfigEditor from './config-editors/SizeSelectorConfigEditor';
@@ -47,7 +57,12 @@ const fieldTypeOptions: Array<{ value: FieldType; label: string; icon: string }>
   { value: 'dimensions_input', label: 'Dimensiones (Alto x Ancho)', icon: '📐' },
 ];
 
-export default function SchemaEditor({ category, initialSchema, onSave, onCancel }: SchemaEditorProps) {
+export default function SchemaEditor({
+  category,
+  initialSchema,
+  onSave,
+  onCancel,
+}: SchemaEditorProps) {
   const [fields, setFields] = useState<CustomizationField[]>(initialSchema?.fields || []);
   const [showAddField, setShowAddField] = useState(false);
 
@@ -144,7 +159,8 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
   const handleRemoveField = async (fieldId: string) => {
     const confirmed = await confirm({
       title: '¿Eliminar campo?',
-      message: '¿Estás seguro de que quieres eliminar este campo? Esta acción no se puede deshacer.',
+      message:
+        '¿Estás seguro de que quieres eliminar este campo? Esta acción no se puede deshacer.',
       type: 'warning',
       confirmText: 'Eliminar',
       cancelText: 'Cancelar',
@@ -336,9 +352,7 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-500 to-cyan-500 p-6">
-        <h2 className="text-2xl font-bold text-white mb-1">
-          ✏️ Editando Schema: {category.name}
-        </h2>
+        <h2 className="text-2xl font-bold text-white mb-1">✏️ Editando Schema: {category.name}</h2>
         <p className="text-purple-100">
           Configura los campos de personalización que verán tus clientes
         </p>
@@ -353,8 +367,8 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
             Configuración de Preview Visual
           </h4>
           <p className="text-sm text-blue-700 mb-4">
-            Configura las imágenes que se mostrarán en el preview. Si tienes un campo de
-            selector de colores, cada color puede tener su propia imagen.
+            Configura las imágenes que se mostrarán en el preview. Si tienes un campo de selector de
+            colores, cada color puede tener su propia imagen.
           </p>
 
           {/* Default Image */}
@@ -504,7 +518,8 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
           </div>
 
           <div className="mt-3 p-2 bg-blue-100 rounded text-xs text-blue-800">
-            ℹ️ <strong>Para textiles:</strong> Si subes imágenes frontal y trasera, el sistema mostrará automáticamente un toggle para que el cliente pueda ver ambos lados.
+            ℹ️ <strong>Para textiles:</strong> Si subes imágenes frontal y trasera, el sistema
+            mostrará automáticamente un toggle para que el cliente pueda ver ambos lados.
           </div>
         </div>
 
@@ -588,7 +603,9 @@ export default function SchemaEditor({ category, initialSchema, onSave, onCancel
                           <input
                             type="checkbox"
                             checked={field.required}
-                            onChange={(e) => handleUpdateField(field.id, { required: e.target.checked })}
+                            onChange={(e) =>
+                              handleUpdateField(field.id, { required: e.target.checked })
+                            }
                             className="w-4 h-4 text-purple-500 rounded focus:ring-2 focus:ring-purple-500"
                           />
                           <span className="text-sm font-medium text-gray-700">Obligatorio</span>

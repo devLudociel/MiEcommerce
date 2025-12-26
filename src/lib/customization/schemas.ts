@@ -32,9 +32,7 @@ export async function saveCustomizationSchema(
 
     // Check if schema already exists to preserve createdAt
     const existingDoc = await getDoc(schemaRef);
-    const createdAt = existingDoc.exists()
-      ? existingDoc.data().createdAt
-      : Timestamp.now();
+    const createdAt = existingDoc.exists() ? existingDoc.data().createdAt : Timestamp.now();
 
     await setDoc(schemaRef, {
       schema,
@@ -44,7 +42,10 @@ export async function saveCustomizationSchema(
       createdAt,
     });
 
-    logger.info('[saveCustomizationSchema] Schema saved successfully', { categoryId, categoryName });
+    logger.info('[saveCustomizationSchema] Schema saved successfully', {
+      categoryId,
+      categoryName,
+    });
   } catch (error) {
     logger.error('[saveCustomizationSchema] Error saving schema', error);
     throw new Error('Error al guardar el esquema de personalización');
@@ -98,7 +99,9 @@ export async function loadAllCustomizationSchemas(): Promise<Record<string, Stor
       };
     });
 
-    logger.info('[loadAllCustomizationSchemas] Loaded schemas', { count: Object.keys(schemas).length });
+    logger.info('[loadAllCustomizationSchemas] Loaded schemas', {
+      count: Object.keys(schemas).length,
+    });
     return schemas;
   } catch (error) {
     logger.error('[loadAllCustomizationSchemas] Error loading schemas', error);
@@ -143,7 +146,7 @@ export async function getSchemaForProduct(
         if (customSchema) {
           logger.debug('[getSchemaForProduct] Using custom schema', {
             productId,
-            schemaId: productData.customizationSchemaId
+            schemaId: productData.customizationSchemaId,
           });
           return customSchema.schema;
         }

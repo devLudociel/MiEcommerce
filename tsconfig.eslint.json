@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/**/*",
+    "scripts/**/*",
+    "tests/**/*",
+    "vitest.config.ts",
+    "playwright.config.ts"
+  ],
+  "exclude": ["node_modules", "dist", ".astro"]
+}

@@ -69,7 +69,7 @@ export async function validateImageDimensions(
   if (!allowedFormats.includes(file.type)) {
     return {
       valid: false,
-      message: `Formato no soportado. Usa: ${allowedFormats.map(f => f.split('/')[1].toUpperCase()).join(', ')}`,
+      message: `Formato no soportado. Usa: ${allowedFormats.map((f) => f.split('/')[1].toUpperCase()).join(', ')}`,
       quality: 'low',
     };
   }
@@ -156,7 +156,7 @@ export function calculatePrintQuality(
   printAreaCm: number = 10
 ): 'low' | 'medium' | 'high' {
   const printDPI = 300; // DPI profesional para impresión
-  const pixelsNeeded = (printAreaCm * printDPI * 0.393701) * scale; // cm to inches
+  const pixelsNeeded = printAreaCm * printDPI * 0.393701 * scale; // cm to inches
   const actualPixels = Math.min(imageWidth, imageHeight) * scale;
 
   // Calidad alta: 150% o más de los píxeles necesarios

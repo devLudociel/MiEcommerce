@@ -67,17 +67,16 @@ export function generateDesignPreviewHTML(
   }
 
   // Check if we have image uploads
-  const imageFields = fields.filter(([_, field]) => field.type === 'image-upload' && field.value?.url);
+  const imageFields = fields.filter(
+    ([_, field]) => field.type === 'image-upload' && field.value?.url
+  );
 
   // Check if we have text fields
   const textFields = fields.filter(([_, field]) => field.type === 'text' && field.value);
 
   // Check if we have other customizations
   const otherFields = fields.filter(
-    ([_, field]) =>
-      field.type !== 'image-upload' &&
-      field.type !== 'text' &&
-      field.value
+    ([_, field]) => field.type !== 'image-upload' && field.type !== 'text' && field.value
   );
 
   return `
@@ -86,58 +85,94 @@ export function generateDesignPreviewHTML(
         ✨ Diseño Personalizado
       </div>
 
-      ${previewImageUrl ? `
+      ${
+        previewImageUrl
+          ? `
         <div style="margin-bottom: 15px; text-align: center;">
           <img src="${previewImageUrl}" alt="Preview de ${itemName}" style="max-width: 300px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
         </div>
-      ` : ''}
+      `
+          : ''
+      }
 
-      ${imageFields.length > 0 ? `
+      ${
+        imageFields.length > 0
+          ? `
         <div style="margin-bottom: 12px;">
           <div style="font-size: 12px; color: #7c3aed; font-weight: bold; margin-bottom: 8px;">🖼️ Imágenes Cargadas:</div>
-          ${imageFields.map(([key, field]) => `
+          ${imageFields
+            .map(
+              ([key, field]) => `
             <div style="margin-bottom: 8px; background-color: white; padding: 10px; border-radius: 6px;">
               <div style="font-size: 11px; color: #6b7280; margin-bottom: 5px;">${field.label}:</div>
-              ${field.value?.url ? `
+              ${
+                field.value?.url
+                  ? `
                 <img src="${field.value.url}" alt="${field.label}" style="max-width: 200px; height: auto; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.1);" />
-                ${field.value?.transform ? `
+                ${
+                  field.value?.transform
+                    ? `
                   <div style="font-size: 10px; color: #9ca3af; margin-top: 4px;">
                     Position: X=${Math.round(field.value.transform.x)}%, Y=${Math.round(field.value.transform.y)}%
                     ${field.value.transform.scale ? `, Scale=${Math.round(field.value.transform.scale * 100)}%` : ''}
                     ${field.value.transform.rotation ? `, Rotation=${Math.round(field.value.transform.rotation)}°` : ''}
                   </div>
-                ` : ''}
-              ` : '<div style="font-size: 11px; color: #9ca3af;">No especificada</div>'}
+                `
+                    : ''
+                }
+              `
+                  : '<div style="font-size: 11px; color: #9ca3af;">No especificada</div>'
+              }
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
-      ` : ''}
+      `
+          : ''
+      }
 
-      ${textFields.length > 0 ? `
+      ${
+        textFields.length > 0
+          ? `
         <div style="margin-bottom: 12px;">
           <div style="font-size: 12px; color: #7c3aed; font-weight: bold; margin-bottom: 8px;">✍️ Textos Personalizados:</div>
-          ${textFields.map(([key, field]) => `
+          ${textFields
+            .map(
+              ([key, field]) => `
             <div style="background-color: white; padding: 8px 12px; border-radius: 6px; margin-bottom: 6px;">
               <div style="font-size: 11px; color: #6b7280;">${field.label}:</div>
               <div style="font-size: 13px; color: #1f2937; font-weight: 500; margin-top: 3px;">"${field.value}"</div>
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
-      ` : ''}
+      `
+          : ''
+      }
 
-      ${otherFields.length > 0 ? `
+      ${
+        otherFields.length > 0
+          ? `
         <div style="margin-bottom: 8px;">
           <div style="font-size: 12px; color: #7c3aed; font-weight: bold; margin-bottom: 8px;">⚙️ Opciones Seleccionadas:</div>
           <div style="background-color: white; padding: 10px; border-radius: 6px;">
-            ${otherFields.map(([key, field]) => `
+            ${otherFields
+              .map(
+                ([key, field]) => `
               <div style="font-size: 11px; color: #6b7280; margin-bottom: 4px;">
                 <strong>${field.label}:</strong>
                 <span style="color: #1f2937;">${formatFieldValue(field)}</span>
               </div>
-            `).join('')}
+            `
+              )
+              .join('')}
           </div>
         </div>
-      ` : ''}
+      `
+          : ''
+      }
 
       <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e9d5ff; font-size: 11px; color: #7c3aed; text-align: center;">
         💡 Revisaremos tu diseño antes de la producción
@@ -168,7 +203,9 @@ function formatFieldValue(field: CustomizationField): string {
 /**
  * Generate summary text of customizations
  */
-export function generateCustomizationSummary(customization: ProductCustomization | null | undefined): string {
+export function generateCustomizationSummary(
+  customization: ProductCustomization | null | undefined
+): string {
   if (!customization || !customization.fields) {
     return '';
   }

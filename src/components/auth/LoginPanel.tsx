@@ -74,7 +74,9 @@ export default function LoginPanel() {
   // Helper to detect mobile device
   const isMobileDevice = () => {
     if (typeof window === 'undefined') return false;
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
   };
 
   // Check for redirect result on mount (for mobile)
@@ -93,7 +95,7 @@ export default function LoginPanel() {
         logger.info('[LoginPanel] Checking for redirect result...', {
           expectingRedirect: !!expectingRedirect,
           userAgent: navigator.userAgent,
-          currentUrl: window.location.href
+          currentUrl: window.location.href,
         });
 
         const result = await getRedirectResult(auth);
@@ -103,7 +105,7 @@ export default function LoginPanel() {
             email: result.user.email,
             uid: result.user.uid,
             providerId: result.providerId,
-            operationType: result.operationType
+            operationType: result.operationType,
           });
 
           // Clear the redirect flag
@@ -112,7 +114,7 @@ export default function LoginPanel() {
           setRedirecting(true);
 
           // Wait a bit for auth state to settle
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
 
           // Get redirect URL
           const adminEmails = (import.meta.env.PUBLIC_ADMIN_EMAILS || '')
@@ -130,7 +132,7 @@ export default function LoginPanel() {
           if (expectingRedirect) {
             logger.warn('[LoginPanel] ⚠️ Expected redirect result but got null', {
               authState: auth.currentUser ? 'user exists' : 'no user',
-              currentUserEmail: auth.currentUser?.email
+              currentUserEmail: auth.currentUser?.email,
             });
 
             // Clear the flag
@@ -156,12 +158,17 @@ export default function LoginPanel() {
           }
         }
       } catch (error: unknown) {
-        const firebaseError = error as { code?: string; message?: string; stack?: string; name?: string };
+        const firebaseError = error as {
+          code?: string;
+          message?: string;
+          stack?: string;
+          name?: string;
+        };
         logger.error('[LoginPanel] ❌ Redirect result error', {
           code: firebaseError?.code,
           message: firebaseError?.message,
           stack: firebaseError?.stack,
-          name: firebaseError?.name
+          name: firebaseError?.name,
         });
 
         // Clear the redirect flag on error
@@ -228,7 +235,11 @@ export default function LoginPanel() {
       } catch (e: unknown) {
         const firebaseErr = e as { code?: string; message?: string };
         const code = firebaseErr?.code || '';
-        logger.warn('[LoginPanel] signInWithGoogle popup error', { code, message: firebaseErr?.message, isMobile });
+        logger.warn('[LoginPanel] signInWithGoogle popup error', {
+          code,
+          message: firebaseErr?.message,
+          isMobile,
+        });
 
         // Only show popup-blocked error on desktop
         if (!isMobile) {
@@ -259,7 +270,11 @@ export default function LoginPanel() {
       }
     } catch (error: unknown) {
       logger.error('[LoginPanel] signInWithGoogle fatal error', error);
-      setError(isFirebaseError(error) ? error.message || 'Error iniciando sesión con Google' : 'Error iniciando sesión con Google');
+      setError(
+        isFirebaseError(error)
+          ? error.message || 'Error iniciando sesión con Google'
+          : 'Error iniciando sesión con Google'
+      );
     } finally {
       setLoading(false);
     }
@@ -306,7 +321,9 @@ export default function LoginPanel() {
       await redirectAfterLogin();
     } catch (error: unknown) {
       const code = isFirebaseError(error) ? error.code || '' : '';
-      let errorMessage = isFirebaseError(error) ? error.message || 'Error de autenticación' : 'Error de autenticación';
+      let errorMessage = isFirebaseError(error)
+        ? error.message || 'Error de autenticación'
+        : 'Error de autenticación';
 
       if (code.includes('auth/email-already-in-use')) {
         errorMessage = 'Este email ya está registrado. Intenta iniciar sesión.';
@@ -397,7 +414,11 @@ export default function LoginPanel() {
       await signOut(auth);
       await signInWithGoogle(true);
     } catch (error: unknown) {
-      setError(isFirebaseError(error) ? error.message || 'No se pudo cambiar de cuenta' : 'No se pudo cambiar de cuenta');
+      setError(
+        isFirebaseError(error)
+          ? error.message || 'No se pudo cambiar de cuenta'
+          : 'No se pudo cambiar de cuenta'
+      );
     } finally {
       setLoading(false);
     }
@@ -569,7 +590,10 @@ export default function LoginPanel() {
                   className="space-y-4"
                 >
                   <div>
-                    <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-semibold text-gray-700 mb-2"
+                    >
                       📧 Email
                     </label>
                     <input
@@ -585,7 +609,10 @@ export default function LoginPanel() {
                   </div>
 
                   <div>
-                    <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label
+                      htmlFor="password"
+                      className="block text-sm font-semibold text-gray-700 mb-2"
+                    >
                       🔒 Contraseña
                     </label>
                     <div className="relative">
@@ -612,7 +639,10 @@ export default function LoginPanel() {
 
                   {tabMode === 'register' && (
                     <div>
-                      <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label
+                        htmlFor="confirmPassword"
+                        className="block text-sm font-semibold text-gray-700 mb-2"
+                      >
                         🔒 Confirmar Contraseña
                       </label>
                       <div className="relative">
@@ -630,7 +660,9 @@ export default function LoginPanel() {
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-2xl hover:scale-110 transition-transform"
-                          aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                          aria-label={
+                            showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
+                          }
                         >
                           {showConfirmPassword ? '🙈' : '👁️'}
                         </button>
@@ -656,7 +688,9 @@ export default function LoginPanel() {
                         {tabMode === 'register' ? 'Creando cuenta...' : 'Iniciando sesión...'}
                       </span>
                     ) : (
-                      <span>{tabMode === 'register' ? '✨ Crear mi cuenta' : '🚀 Iniciar sesión'}</span>
+                      <span>
+                        {tabMode === 'register' ? '✨ Crear mi cuenta' : '🚀 Iniciar sesión'}
+                      </span>
                     )}
                   </button>
 

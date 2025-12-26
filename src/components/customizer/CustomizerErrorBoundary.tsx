@@ -70,7 +70,8 @@ export default class CustomizerErrorBoundary extends Component<Props, State> {
             </div>
             <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
               <p className="text-sm text-yellow-800">
-                <strong>💡 Tip:</strong> Abre la consola del navegador (F12) para ver más detalles del error.
+                <strong>💡 Tip:</strong> Abre la consola del navegador (F12) para ver más detalles
+                del error.
               </p>
             </div>
           </div>

@@ -13,7 +13,11 @@ import { ProductTabs } from '../products/ProductTabs';
 import { RelatedProducts } from '../products/RelatedProducts';
 import NotifyWhenAvailable from '../products/NotifyWhenAvailable';
 // Analytics tracking
-import { trackProductView, trackAddToCart as trackAnalyticsAddToCart, trackCustomizeProduct } from '../../lib/analytics';
+import {
+  trackProductView,
+  trackAddToCart as trackAnalyticsAddToCart,
+  trackCustomizeProduct,
+} from '../../lib/analytics';
 // React Query hooks
 import { useProduct, useRelatedProducts } from '../../hooks/react-query/useProducts';
 
@@ -142,7 +146,7 @@ export default function ProductDetail({ id, slug }: Props) {
   const {
     data: productData,
     isLoading: productLoading,
-    error: productError
+    error: productError,
   } = useProduct(identifier, !!slug);
 
   // Convert React Query data to UI format
@@ -308,7 +312,11 @@ export default function ProductDetail({ id, slug }: Props) {
 
   const handleToggleWishlist = useCallback(() => {
     if (uiProduct) {
-      toggleWishlist({ id: uiProduct.id, name: uiProduct.name, image: uiProduct.images[0]?.url || '' });
+      toggleWishlist({
+        id: uiProduct.id,
+        name: uiProduct.name,
+        image: uiProduct.images[0]?.url || '',
+      });
     }
   }, [uiProduct]);
 

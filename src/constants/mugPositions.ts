@@ -100,7 +100,7 @@ export const MUG_POSITIONS: MugPresetPosition[] = [
  * Buscar posición por ID
  */
 export function getMugPositionById(id: string): MugPresetPosition | undefined {
-  return MUG_POSITIONS.find(pos => pos.id === id);
+  return MUG_POSITIONS.find((pos) => pos.id === id);
 }
 
 /**

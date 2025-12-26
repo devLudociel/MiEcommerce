@@ -1,5 +1,15 @@
 import { useState } from 'react';
-import { Upload, Plus, Trash2, Save, Loader, FileArchive, X, Image as ImageIcon, CheckCircle } from 'lucide-react';
+import {
+  Upload,
+  Plus,
+  Trash2,
+  Save,
+  Loader,
+  FileArchive,
+  X,
+  Image as ImageIcon,
+  CheckCircle,
+} from 'lucide-react';
 import { logger } from '../../lib/logger';
 import { notify } from '../../lib/notifications';
 import { storage, auth } from '../../lib/firebase';
@@ -32,7 +42,10 @@ export default function DigitalProductCreator() {
   const [creating, setCreating] = useState(false);
 
   // Upload file to Firebase Storage
-  const uploadFileToStorage = async (file: File, folder: string): Promise<{ url: string; size: number; type: string }> => {
+  const uploadFileToStorage = async (
+    file: File,
+    folder: string
+  ): Promise<{ url: string; size: number; type: string }> => {
     // Get current user ID
     const currentUser = auth.currentUser;
     if (!currentUser) {
@@ -132,9 +145,7 @@ export default function DigitalProductCreator() {
   };
 
   const updateFileDescription = (fileId: string, description: string) => {
-    setDigitalFiles((prev) =>
-      prev.map((f) => (f.id === fileId ? { ...f, description } : f))
-    );
+    setDigitalFiles((prev) => prev.map((f) => (f.id === fileId ? { ...f, description } : f)));
   };
 
   const removeProductImage = (index: number) => {
@@ -260,9 +271,7 @@ export default function DigitalProductCreator() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Descripción *
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Descripción *</label>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -291,7 +300,8 @@ export default function DigitalProductCreator() {
             Imágenes del producto * (preview para la tienda)
           </label>
           <p className="text-xs text-gray-500 mb-3">
-            Sube imágenes que muestren el contenido del pack. Los clientes verán estas imágenes en la tienda.
+            Sube imágenes que muestren el contenido del pack. Los clientes verán estas imágenes en
+            la tienda.
           </p>
 
           <label className="flex items-center justify-center w-full px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors mb-3">
@@ -304,9 +314,7 @@ export default function DigitalProductCreator() {
               ) : (
                 <>
                   <ImageIcon className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                  <p className="text-sm text-gray-600">
-                    Click para subir imagen de preview
-                  </p>
+                  <p className="text-sm text-gray-600">Click para subir imagen de preview</p>
                   <p className="text-xs text-gray-500">PNG, JPG, JPEG</p>
                 </>
               )}
@@ -380,7 +388,8 @@ export default function DigitalProductCreator() {
             Archivos descargables * (lo que recibe el cliente)
           </label>
           <p className="text-xs text-gray-500 mb-3">
-            Sube los archivos que el cliente podrá descargar después de la compra (ZIP, PNG, JPG, PDF, SVG)
+            Sube los archivos que el cliente podrá descargar después de la compra (ZIP, PNG, JPG,
+            PDF, SVG)
           </p>
 
           <div className="mb-4">
@@ -394,9 +403,7 @@ export default function DigitalProductCreator() {
                 ) : (
                   <>
                     <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                    <p className="text-sm text-gray-600">
-                      Click para subir archivo descargable
-                    </p>
+                    <p className="text-sm text-gray-600">Click para subir archivo descargable</p>
                     <p className="text-xs text-gray-500">ZIP, PNG, JPG, PDF, SVG (máx 100MB)</p>
                   </>
                 )}

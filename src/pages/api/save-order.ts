@@ -2,7 +2,11 @@
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
-import { checkRateLimit, createRateLimitResponse, RATE_LIMIT_CONFIGS } from '../../lib/rate-limiter';
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_CONFIGS,
+} from '../../lib/rate-limiter';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { finalizeOrder } from '../../lib/orders/finalizeOrder';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
@@ -101,7 +105,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!validationResult.success) {
       // LOG: Mostrar errores de validación detallados
-      const errorDetails = validationResult.error.issues.map(issue => ({
+      const errorDetails = validationResult.error.issues.map((issue) => ({
         path: issue.path.join('.'),
         message: issue.message,
         code: issue.code,
@@ -203,7 +207,8 @@ export const POST: APIRoute = async ({ request }) => {
     const orderStatus = String(orderData.status || 'pending');
     const shouldDeferPostPaymentActions =
       paymentMethod === 'card' &&
-      (orderStatus === 'pending' || String(orderData.paymentStatus || '').toLowerCase() === 'pending');
+      (orderStatus === 'pending' ||
+        String(orderData.paymentStatus || '').toLowerCase() === 'pending');
 
     if (shouldDeferPostPaymentActions) {
       logger.info(
@@ -218,7 +223,10 @@ export const POST: APIRoute = async ({ request }) => {
           requestUrl: request.url,
         });
       } catch (finalizeError) {
-        logger.error('[save-order] Error running post-payment actions. Rolling back order.', finalizeError);
+        logger.error(
+          '[save-order] Error running post-payment actions. Rolling back order.',
+          finalizeError
+        );
         await docRef.delete();
         throw finalizeError;
       }

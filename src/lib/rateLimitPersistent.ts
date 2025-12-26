@@ -158,7 +158,10 @@ export async function rateLimitPersistent(
 
     return result;
   } catch (error) {
-    console.error('[rateLimitPersistent] Firestore error, falling back to in-memory rate limiting:', error);
+    console.error(
+      '[rateLimitPersistent] Firestore error, falling back to in-memory rate limiting:',
+      error
+    );
 
     // SECURITY FIX: Fallback to in-memory rate limiting instead of failing open
     // This ensures we still have some rate limiting protection even if Firestore is down

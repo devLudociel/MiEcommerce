@@ -15,7 +15,9 @@ interface DigitalProductsHomeWithProviderProps {
   maxItems?: number;
 }
 
-export default function DigitalProductsHomeWithProvider({ maxItems = 4 }: DigitalProductsHomeWithProviderProps) {
+export default function DigitalProductsHomeWithProvider({
+  maxItems = 4,
+}: DigitalProductsHomeWithProviderProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <DigitalProductsHome maxItems={maxItems} />

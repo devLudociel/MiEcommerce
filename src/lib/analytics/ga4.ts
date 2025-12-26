@@ -39,8 +39,8 @@ export function initGA4(measurementId: string) {
   window.dataLayer = window.dataLayer || [];
 
   // gtag function
-  window.gtag = function gtag() {
-    window.dataLayer!.push(arguments);
+  window.gtag = (...args: unknown[]) => {
+    window.dataLayer!.push(args);
   };
 
   // Initialize
@@ -247,10 +247,7 @@ export function trackUserRegistration(method: string = 'email') {
 /**
  * Track custom event
  */
-export function trackCustomEvent(
-  eventName: string,
-  parameters?: Record<string, any>
-) {
+export function trackCustomEvent(eventName: string, parameters?: Record<string, any>) {
   if (!window.gtag) return;
 
   window.gtag('event', eventName, parameters);

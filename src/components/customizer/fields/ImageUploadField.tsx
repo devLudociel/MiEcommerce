@@ -1,11 +1,19 @@
 import React, { useRef, useState } from 'react';
 import { Upload, Loader, X } from 'lucide-react';
-import type { ImageUploadConfig, CustomizationValue, ImageTransform } from '../../../types/customization';
+import type {
+  ImageUploadConfig,
+  CustomizationValue,
+  ImageTransform,
+} from '../../../types/customization';
 import { uploadCustomImage, auth } from '../../../lib/firebase';
 import { compressImage, validateImageFile, fileToBase64 } from '../../../utils/imageCompression';
 import { logger } from '../../../lib/logger';
 import InteractiveImageEditor from '../InteractiveImageEditor';
-import { validateImageQuality, getQualityPresetForCategory, type ImageQualityResult } from '../../../lib/validation/imageQualityValidator';
+import {
+  validateImageQuality,
+  getQualityPresetForCategory,
+  type ImageQualityResult,
+} from '../../../lib/validation/imageQualityValidator';
 import ImageQualityBadge from '../../common/ImageQualityBadge';
 
 interface ImageUploadFieldProps {
@@ -36,7 +44,8 @@ export default function ImageUploadField({
     maxSizeMB: config.maxSizeMB || 5,
     allowedFormats: config.allowedFormats || ['jpg', 'jpeg', 'png'],
     showPreview: config.showPreview !== undefined ? config.showPreview : true,
-    showPositionControls: config.showPositionControls !== undefined ? config.showPositionControls : true,
+    showPositionControls:
+      config.showPositionControls !== undefined ? config.showPositionControls : true,
     helpText: config.helpText,
   };
 
@@ -238,9 +247,7 @@ export default function ImageUploadField({
                 Formatos: {safeConfig.allowedFormats.join(', ').toUpperCase()} • Máx:{' '}
                 {safeConfig.maxSizeMB}MB
               </p>
-              <p className="text-xs text-gray-400">
-                Pulsa Enter o Espacio para abrir
-              </p>
+              <p className="text-xs text-gray-400">Pulsa Enter o Espacio para abrir</p>
             </>
           )}
         </div>
@@ -250,11 +257,7 @@ export default function ImageUploadField({
       {preview && safeConfig.showPreview && (
         <div className="relative">
           <div className="border-2 border-purple-200 rounded-xl overflow-hidden bg-gray-50">
-            <img
-              src={preview}
-              alt="Preview"
-              className="w-full h-auto max-h-96 object-contain"
-            />
+            <img src={preview} alt="Preview" className="w-full h-auto max-h-96 object-contain" />
           </div>
 
           {/* Remove button */}

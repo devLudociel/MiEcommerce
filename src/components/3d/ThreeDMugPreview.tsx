@@ -42,18 +42,10 @@ function StudioLighting() {
       />
 
       {/* Luz de relleno (Fill Light) - más suave y fría */}
-      <directionalLight
-        position={[-5, 4, 5]}
-        intensity={1.2}
-        color="#e8f0ff"
-      />
+      <directionalLight position={[-5, 4, 5]} intensity={1.2} color="#e8f0ff" />
 
       {/* Luz trasera (Rim Light) - más cálida y potente */}
-      <directionalLight
-        position={[-3, 3, -5]}
-        intensity={1.8}
-        color="#fff5e6"
-      />
+      <directionalLight position={[-3, 3, -5]} intensity={1.8} color="#fff5e6" />
 
       {/* Luces de acento para reflejos espectaculares */}
       <pointLight position={[4, 6, 4]} intensity={1.2} color="#ffffff" />
@@ -73,10 +65,7 @@ function StudioLighting() {
       />
 
       {/* Luces hemisféricas para ambiente completo */}
-      <hemisphereLight
-        args={['#ffffff', '#606060', 0.8]}
-        position={[0, 10, 0]}
-      />
+      <hemisphereLight args={['#ffffff', '#606060', 0.8]} position={[0, 10, 0]} />
     </>
   );
 }
@@ -88,7 +77,7 @@ function ProceduralMugModel({
   imageUrl,
   productType = 'mug',
   productColor = '#ffffff',
-  mugColors
+  mugColors,
 }: {
   imageUrl?: string;
   productType: 'mug' | 'thermos' | 'bottle';
@@ -156,7 +145,7 @@ function ProceduralMugModel({
           radialSegments: 96,
           hasHandle: false,
           capRadius: 0.48,
-          baseRadius: 0.47
+          baseRadius: 0.47,
         };
       case 'bottle':
         return {
@@ -164,18 +153,18 @@ function ProceduralMugModel({
           height: 4.4,
           radialSegments: 96,
           hasHandle: false,
-          capRadius: 0.70,
-          baseRadius: 0.80
+          capRadius: 0.7,
+          baseRadius: 0.8,
         };
       case 'mug':
       default:
         return {
-          radius: 1.16,  // Aumentado 2x para mejor visibilidad
-          height: 3.0,   // Aumentado 2x
+          radius: 1.16, // Aumentado 2x para mejor visibilidad
+          height: 3.0, // Aumentado 2x
           radialSegments: 96,
           hasHandle: true,
-          capRadius: 1.24,  // Aumentado 2x
-          baseRadius: 1.20  // Aumentado 2x
+          capRadius: 1.24, // Aumentado 2x
+          baseRadius: 1.2, // Aumentado 2x
         };
     }
   }, [productType]);
@@ -211,7 +200,9 @@ function ProceduralMugModel({
 
   // Material metálico/asa - Cromado espejado ultra brillante
   const handleMaterial = useMemo(() => {
-    const handleColor = mugColors?.handle ? new THREE.Color(mugColors.handle) : new THREE.Color(0xe8e8e8);
+    const handleColor = mugColors?.handle
+      ? new THREE.Color(mugColors.handle)
+      : new THREE.Color(0xe8e8e8);
 
     return new THREE.MeshPhysicalMaterial({
       color: handleColor,
@@ -227,7 +218,9 @@ function ProceduralMugModel({
 
   // Material del interior
   const interiorMaterial = useMemo(() => {
-    const interiorColor = mugColors?.interior ? new THREE.Color(mugColors.interior) : new THREE.Color(0x2a2a2a);
+    const interiorColor = mugColors?.interior
+      ? new THREE.Color(mugColors.interior)
+      : new THREE.Color(0x2a2a2a);
 
     return new THREE.MeshPhysicalMaterial({
       color: interiorColor,
@@ -241,12 +234,14 @@ function ProceduralMugModel({
     <group ref={groupRef}>
       {/* Cuerpo principal */}
       <mesh material={bodyMaterial} castShadow receiveShadow>
-        <cylinderGeometry args={[
-          dimensions.radius,
-          dimensions.radius,
-          dimensions.height,
-          dimensions.radialSegments,
-        ]} />
+        <cylinderGeometry
+          args={[
+            dimensions.radius,
+            dimensions.radius,
+            dimensions.height,
+            dimensions.radialSegments,
+          ]}
+        />
       </mesh>
 
       {/* Asa (solo tazas) */}
@@ -265,8 +260,14 @@ function ProceduralMugModel({
       )}
 
       {/* Base */}
-      <mesh position={[0, -dimensions.height / 2 - 0.06, 0]} receiveShadow material={handleMaterial}>
-        <cylinderGeometry args={[dimensions.baseRadius, dimensions.baseRadius, 0.12, dimensions.radialSegments]} />
+      <mesh
+        position={[0, -dimensions.height / 2 - 0.06, 0]}
+        receiveShadow
+        material={handleMaterial}
+      >
+        <cylinderGeometry
+          args={[dimensions.baseRadius, dimensions.baseRadius, 0.12, dimensions.radialSegments]}
+        />
       </mesh>
 
       {/* Anillo inferior */}
@@ -276,7 +277,9 @@ function ProceduralMugModel({
 
       {/* Borde superior */}
       <mesh position={[0, dimensions.height / 2, 0]} material={handleMaterial}>
-        <cylinderGeometry args={[dimensions.capRadius, dimensions.radius, 0.16, dimensions.radialSegments]} />
+        <cylinderGeometry
+          args={[dimensions.capRadius, dimensions.radius, 0.16, dimensions.radialSegments]}
+        />
       </mesh>
 
       {/* Anillo superior */}
@@ -285,8 +288,19 @@ function ProceduralMugModel({
       </mesh>
 
       {/* Interior visible - Acabado mate oscuro */}
-      <mesh position={[0, dimensions.height / 2 - 0.04, 0]} rotation={[Math.PI, 0, 0]} material={interiorMaterial}>
-        <cylinderGeometry args={[dimensions.capRadius - 0.1, dimensions.capRadius - 0.1, 0.08, dimensions.radialSegments]} />
+      <mesh
+        position={[0, dimensions.height / 2 - 0.04, 0]}
+        rotation={[Math.PI, 0, 0]}
+        material={interiorMaterial}
+      >
+        <cylinderGeometry
+          args={[
+            dimensions.capRadius - 0.1,
+            dimensions.capRadius - 0.1,
+            0.08,
+            dimensions.radialSegments,
+          ]}
+        />
       </mesh>
     </group>
   );
@@ -299,7 +313,7 @@ function GLBModel({
   modelPath,
   imageUrl,
   productType,
-  mugColors
+  mugColors,
 }: {
   modelPath: string;
   imageUrl?: string;
@@ -383,8 +397,15 @@ function GLBModel({
 
             // Determinar si es el asa, interior o cuerpo
             const isHandle = meshName.includes('handle') || meshName.includes('asa');
-            const isInterior = meshName.includes('interior') || meshName.includes('inside') || meshName.includes('inner');
-            const isBody = meshName.includes('body') || meshName.includes('cylinder') || meshName.includes('cup') || meshName.includes('mug');
+            const isInterior =
+              meshName.includes('interior') ||
+              meshName.includes('inside') ||
+              meshName.includes('inner');
+            const isBody =
+              meshName.includes('body') ||
+              meshName.includes('cylinder') ||
+              meshName.includes('cup') ||
+              meshName.includes('mug');
 
             // Aplicar textura SOLO al cuerpo de la taza (no al asa ni al interior)
             if (texture && isBody) {
@@ -411,7 +432,11 @@ function GLBModel({
               }
             }
 
-            if (meshName.includes('body') || meshName.includes('cylinder') || !meshName.includes('metal')) {
+            if (
+              meshName.includes('body') ||
+              meshName.includes('cylinder') ||
+              !meshName.includes('metal')
+            ) {
               // Material cerámico esmaltado ultra brillante
               newMaterial.metalness = 0.02;
               newMaterial.roughness = 0.08;
@@ -469,9 +494,12 @@ function GLBModel({
                   mat.dispose();
                   // Dispose textures
                   if (mat.map) mat.map.dispose();
-                  if ('normalMap' in mat && mat.normalMap) (mat.normalMap as THREE.Texture).dispose();
-                  if ('roughnessMap' in mat && mat.roughnessMap) (mat.roughnessMap as THREE.Texture).dispose();
-                  if ('metalnessMap' in mat && mat.metalnessMap) (mat.metalnessMap as THREE.Texture).dispose();
+                  if ('normalMap' in mat && mat.normalMap)
+                    (mat.normalMap as THREE.Texture).dispose();
+                  if ('roughnessMap' in mat && mat.roughnessMap)
+                    (mat.roughnessMap as THREE.Texture).dispose();
+                  if ('metalnessMap' in mat && mat.metalnessMap)
+                    (mat.metalnessMap as THREE.Texture).dispose();
                 }
               });
             }
@@ -492,10 +520,13 @@ function GLBModel({
   // Escalar según tipo - Aumentado masivamente para mejor visualización
   const scale = useMemo(() => {
     switch (productType) {
-      case 'thermos': return 5.0;
-      case 'bottle': return 4.0;
+      case 'thermos':
+        return 5.0;
+      case 'bottle':
+        return 4.0;
       case 'mug':
-      default: return 8.0; // Aumentado al doble (4.0 → 8.0) para mayor visibilidad
+      default:
+        return 8.0; // Aumentado al doble (4.0 → 8.0) para mayor visibilidad
     }
   }, [productType]);
 
@@ -515,7 +546,7 @@ function ModelWithFallback({
   productType,
   useGLB,
   productColor,
-  mugColors
+  mugColors,
 }: {
   modelPath: string;
   imageUrl?: string;
@@ -524,15 +555,26 @@ function ModelWithFallback({
   productColor?: string;
   mugColors?: Mug3DColors;
 }) {
-  const [error, setError] = useState(false);
+  const [error, _setError] = useState(false);
 
   if (!useGLB || error) {
     console.log('[ModelWithFallback] Using procedural model');
-    return <ProceduralMugModel imageUrl={imageUrl} productType={productType} productColor={productColor} mugColors={mugColors} />;
+    return (
+      <ProceduralMugModel
+        imageUrl={imageUrl}
+        productType={productType}
+        productColor={productColor}
+        mugColors={mugColors}
+      />
+    );
   }
 
   return (
-    <ErrorBoundary fallback={<ProceduralMugModel imageUrl={imageUrl} productType={productType} mugColors={mugColors} />}>
+    <ErrorBoundary
+      fallback={
+        <ProceduralMugModel imageUrl={imageUrl} productType={productType} mugColors={mugColors} />
+      }
+    >
       <Suspense fallback={<LoadingFallback />}>
         <GLBModel
           modelPath={modelPath}
@@ -552,12 +594,12 @@ class ErrorBoundary extends React.Component<
   { children: React.ReactNode; fallback: React.ReactNode },
   { hasError: boolean }
 > {
-  constructor(props: any) {
+  constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: any) {
+  static getDerivedStateFromError(error: unknown) {
     console.error('[ErrorBoundary] GLB load failed, using fallback:', error);
     return { hasError: true };
   }
@@ -585,17 +627,27 @@ export default function ThreeDMugPreview({
   backgroundColor = '#f5f5f5',
   productColor = '#ffffff',
   autoRotate = false,
-  mugColors
+  mugColors,
 }: ThreeDMugPreviewProps) {
-  console.log('[ThreeDMugPreview] Rendering with:', { imageUrl, productType, backgroundColor, productColor, autoRotate, mugColors });
+  console.log('[ThreeDMugPreview] Rendering with:', {
+    imageUrl,
+    productType,
+    backgroundColor,
+    productColor,
+    autoRotate,
+    mugColors,
+  });
 
   // Determinar qué modelo cargar
   const modelPath = useMemo(() => {
     switch (productType) {
-      case 'thermos': return '/models/thermos.glb';
-      case 'bottle': return '/models/bottle.glb';
+      case 'thermos':
+        return '/models/thermos.glb';
+      case 'bottle':
+        return '/models/bottle.glb';
       case 'mug':
-      default: return '/models/mug.glb';
+      default:
+        return '/models/mug.glb';
     }
   }, [productType]);
 
@@ -603,7 +655,16 @@ export default function ThreeDMugPreview({
   const [useGLB] = useState(true);
 
   return (
-    <div style={{ width: '100%', height: '500px', background: backgroundColor, borderRadius: '12px', overflow: 'hidden', position: 'relative' }}>
+    <div
+      style={{
+        width: '100%',
+        height: '500px',
+        background: backgroundColor,
+        borderRadius: '12px',
+        overflow: 'hidden',
+        position: 'relative',
+      }}
+    >
       <Canvas
         shadows
         camera={{ position: [0, 1, 3.5], fov: 45 }}
@@ -678,47 +739,48 @@ export default function ThreeDMugPreview({
             mipmapBlur={true}
             radius={0.8}
           />
-          <ToneMapping
-            mode={ToneMappingMode.ACES_FILMIC}
-            resolution={256}
-          />
+          <ToneMapping mode={ToneMappingMode.ACES_FILMIC} resolution={256} />
         </EffectComposer>
       </Canvas>
 
       {/* Badge cuando hay imagen */}
       {imageUrl && (
-        <div style={{
-          position: 'absolute',
-          top: '12px',
-          right: '12px',
-          background: 'linear-gradient(135deg, #10b981, #059669)',
-          color: 'white',
-          padding: '8px 14px',
-          borderRadius: '24px',
-          fontSize: '12px',
-          fontWeight: '600',
-          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            background: 'linear-gradient(135deg, #10b981, #059669)',
+            color: 'white',
+            padding: '8px 14px',
+            borderRadius: '24px',
+            fontSize: '12px',
+            fontWeight: '600',
+            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+          }}
+        >
           ✓ Diseño aplicado
         </div>
       )}
 
       {/* Controles */}
-      <div style={{
-        position: 'absolute',
-        bottom: '16px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        background: 'rgba(0, 0, 0, 0.8)',
-        color: 'white',
-        padding: '10px 20px',
-        borderRadius: '28px',
-        fontSize: '13px',
-        fontWeight: '500',
-        pointerEvents: 'none',
-        backdropFilter: 'blur(10px)',
-        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
-      }}>
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '16px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(0, 0, 0, 0.8)',
+          color: 'white',
+          padding: '10px 20px',
+          borderRadius: '28px',
+          fontSize: '13px',
+          fontWeight: '500',
+          pointerEvents: 'none',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+        }}
+      >
         🖱️ Arrastra para rotar • 🔍 Scroll para zoom
       </div>
     </div>

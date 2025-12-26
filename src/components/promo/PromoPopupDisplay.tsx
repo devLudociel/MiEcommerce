@@ -2,7 +2,7 @@
 // Componente para mostrar popups promocionales
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Gift, Sparkles, Truck, Tag } from 'lucide-react';
+import { X, Gift, Sparkles, Tag } from 'lucide-react';
 import {
   type PromoPopup,
   getActivePopups,
@@ -36,6 +36,13 @@ export default function PromoPopupDisplay() {
     loadPopups();
   }, []);
 
+  const showPopup = useCallback((popup: PromoPopup) => {
+    setActivePopup(popup);
+    setIsVisible(true);
+    setPopupLastShown(popup.id);
+    incrementPopupStat(popup.id, 'impressions');
+  }, []);
+
   // Find and show appropriate popup
   useEffect(() => {
     if (authLoading || popups.length === 0) return;
@@ -56,7 +63,8 @@ export default function PromoPopupDisplay() {
           return () => clearTimeout(timer);
         } else if (popup.trigger === 'scroll' && popup.triggerScrollPercent) {
           const handleScroll = () => {
-            const scrollPercent = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+            const scrollPercent =
+              (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
             if (scrollPercent >= (popup.triggerScrollPercent || 50)) {
               showPopup(popup);
               window.removeEventListener('scroll', handleScroll);
@@ -76,14 +84,7 @@ export default function PromoPopupDisplay() {
         }
       }
     }
-  }, [authLoading, user, popups, currentPath]);
-
-  const showPopup = useCallback((popup: PromoPopup) => {
-    setActivePopup(popup);
-    setIsVisible(true);
-    setPopupLastShown(popup.id);
-    incrementPopupStat(popup.id, 'impressions');
-  }, []);
+  }, [authLoading, user, popups, currentPath, showPopup]);
 
   const handleDismiss = useCallback(() => {
     if (activePopup) {
@@ -94,15 +95,18 @@ export default function PromoPopupDisplay() {
     setTimeout(() => setActivePopup(null), 300);
   }, [activePopup]);
 
-  const handleButtonClick = useCallback((url?: string) => {
-    if (activePopup) {
-      incrementPopupStat(activePopup.id, 'clicks');
-    }
-    if (url) {
-      window.location.href = url;
-    }
-    handleDismiss();
-  }, [activePopup, handleDismiss]);
+  const handleButtonClick = useCallback(
+    (url?: string) => {
+      if (activePopup) {
+        incrementPopupStat(activePopup.id, 'clicks');
+      }
+      if (url) {
+        window.location.href = url;
+      }
+      handleDismiss();
+    },
+    [activePopup, handleDismiss]
+  );
 
   if (!activePopup) return null;
 
@@ -164,6 +168,15 @@ function ModalPopup({ popup, isVisible, onDismiss, onButtonClick }: PopupProps) 
           isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={onDismiss}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onDismiss();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label="Cerrar promoción"
       />
 
       {/* Modal */}
@@ -175,7 +188,6 @@ function ModalPopup({ popup, isVisible, onDismiss, onButtonClick }: PopupProps) 
         <div
           className="relative max-w-md w-full rounded-2xl shadow-2xl overflow-hidden"
           style={{ backgroundColor: bgColor }}
-          onClick={(e) => e.stopPropagation()}
         >
           {/* Close button */}
           <button
@@ -189,11 +201,7 @@ function ModalPopup({ popup, isVisible, onDismiss, onButtonClick }: PopupProps) 
           {/* Image */}
           {popup.imageUrl && (
             <div className="w-full h-48 overflow-hidden">
-              <img
-                src={popup.imageUrl}
-                alt={popup.title}
-                className="w-full h-full object-cover"
-              />
+              <img src={popup.imageUrl} alt={popup.title} className="w-full h-full object-cover" />
             </div>
           )}
 
@@ -253,8 +261,8 @@ function BannerPopup({ popup, isVisible, onDismiss, onButtonClick }: PopupProps)
         isVisible
           ? 'translate-y-0'
           : popup.position === 'bottom'
-          ? 'translate-y-full'
-          : '-translate-y-full'
+            ? 'translate-y-full'
+            : '-translate-y-full'
       }`}
       style={{ backgroundColor: bgColor }}
     >
@@ -340,11 +348,7 @@ function SlideInPopup({ popup, isVisible, onDismiss, onButtonClick }: PopupProps
         {/* Image */}
         {popup.imageUrl && (
           <div className="w-full h-32 overflow-hidden">
-            <img
-              src={popup.imageUrl}
-              alt={popup.title}
-              className="w-full h-full object-cover"
-            />
+            <img src={popup.imageUrl} alt={popup.title} className="w-full h-full object-cover" />
           </div>
         )}
 

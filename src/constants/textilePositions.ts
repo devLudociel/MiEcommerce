@@ -37,8 +37,8 @@ export function printAreaToContainerCoords(
 ): { x: number; y: number } {
   const offset = (100 - printAreaPercentage) / 2;
   return {
-    x: offset + (printAreaPercentage * printAreaX / 100),
-    y: offset + (printAreaPercentage * printAreaY / 100),
+    x: offset + (printAreaPercentage * printAreaX) / 100,
+    y: offset + (printAreaPercentage * printAreaY) / 100,
   };
 }
 
@@ -155,5 +155,5 @@ export function getPositionsForSide(side: 'front' | 'back'): PresetPosition[] {
  * Buscar posición por ID
  */
 export function getPositionById(id: string): PresetPosition | undefined {
-  return [...FRONT_POSITIONS, ...BACK_POSITIONS].find(pos => pos.id === id);
+  return [...FRONT_POSITIONS, ...BACK_POSITIONS].find((pos) => pos.id === id);
 }

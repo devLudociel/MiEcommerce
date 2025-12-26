@@ -46,14 +46,14 @@ export default function CustomizationDetails({ customization }: CustomizationDet
             details.push({
               key: `${field.fieldId}_scale`,
               label: 'Escala',
-              value: `${Math.round(transform.scale * 100)}%`
+              value: `${Math.round(transform.scale * 100)}%`,
             });
           }
           if (transform.rotation !== undefined && transform.rotation !== 0) {
             details.push({
               key: `${field.fieldId}_rotation`,
               label: 'Rotación',
-              value: `${Math.round(transform.rotation)}°`
+              value: `${Math.round(transform.rotation)}°`,
             });
           }
         }
@@ -64,24 +64,26 @@ export default function CustomizationDetails({ customization }: CustomizationDet
       const displayValue = field.displayValue || field.value;
 
       // Use fieldLabel if available, otherwise format fieldId as fallback
-      const label = field.fieldLabel || field.fieldId
-        .replace(/^field_/, '')
-        .replace(/([A-Z])/g, ' $1')
-        .replace(/^./, (str: string) => str.toUpperCase())
-        .trim();
+      const label =
+        field.fieldLabel ||
+        field.fieldId
+          .replace(/^field_/, '')
+          .replace(/([A-Z])/g, ' $1')
+          .replace(/^./, (str: string) => str.toUpperCase())
+          .trim();
 
       // Handle arrays (like multi-select)
       if (Array.isArray(displayValue)) {
         details.push({
           key: field.fieldId || `field_${index}`,
           label,
-          value: displayValue.join(', ')
+          value: displayValue.join(', '),
         });
       } else {
         details.push({
           key: field.fieldId || `field_${index}`,
           label,
-          value: String(displayValue)
+          value: String(displayValue),
         });
       }
     });
@@ -99,7 +101,11 @@ export default function CustomizationDetails({ customization }: CustomizationDet
 
     // Add material
     if (customization.selectedMaterial) {
-      details.push({ key: 'selectedMaterial', label: 'Material', value: customization.selectedMaterial });
+      details.push({
+        key: 'selectedMaterial',
+        label: 'Material',
+        value: customization.selectedMaterial,
+      });
     }
 
     // Add text
@@ -116,14 +122,14 @@ export default function CustomizationDetails({ customization }: CustomizationDet
         details.push({
           key: 'scale',
           label: 'Escala',
-          value: `${Math.round(customization.scale * 100)}%`
+          value: `${Math.round(customization.scale * 100)}%`,
         });
       }
       if (customization.rotation !== undefined && customization.rotation !== 0) {
         details.push({
           key: 'rotation',
           label: 'Rotación',
-          value: `${Math.round(customization.rotation)}°`
+          value: `${Math.round(customization.rotation)}°`,
         });
       }
     }

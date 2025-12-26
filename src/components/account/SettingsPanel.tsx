@@ -102,8 +102,11 @@ export default function SettingsPanel() {
           <h3 className="text-xl font-semibold text-gray-900 mb-4">Información de la cuenta</h3>
           <div className="space-y-4">
             <div>
-              <label className="form-label">Correo electrónico</label>
+              <label className="form-label" htmlFor="account-settings-email">
+                Correo electrónico
+              </label>
               <input
+                id="account-settings-email"
                 type="email"
                 className="input"
                 value={email}

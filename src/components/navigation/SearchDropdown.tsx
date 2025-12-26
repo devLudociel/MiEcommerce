@@ -232,8 +232,9 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
               {/* Lista de resultados */}
               <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
                 {searchResults.slice(0, 8).map((result) => (
-                  <div
+                  <button
                     key={result.id}
+                    type="button"
                     onMouseDown={() => handleResultClickInternal(result)}
                     style={{
                       padding: '12px 16px',
@@ -243,6 +244,10 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                       alignItems: 'center',
                       gap: '12px',
                       transition: 'background-color 0.2s ease',
+                      background: 'transparent',
+                      border: 'none',
+                      textAlign: 'left',
+                      width: '100%',
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.backgroundColor = 'var(--color-gray-50)';
@@ -337,7 +342,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                         €{result.price.toFixed(2)}
                       </div>
                     )}
-                  </div>
+                  </button>
                 ))}
               </div>
 

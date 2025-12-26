@@ -1298,11 +1298,19 @@ export default function AdminProductsPanel() {
                   padding: '16px',
                 }}
               >
-                <label style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '8px', display: 'block' }}>
+                <label
+                  style={{
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    marginBottom: '8px',
+                    display: 'block',
+                  }}
+                >
                   🏷️ Categoría para Filtros Públicos *
                 </label>
                 <p style={{ fontSize: '14px', color: '#92400e', marginBottom: '12px' }}>
-                  Esta categoría simple se usa para filtrar productos en la página pública. Elige la que mejor represente tu producto.
+                  Esta categoría simple se usa para filtrar productos en la página pública. Elige la
+                  que mejor represente tu producto.
                 </p>
                 <select
                   className="input"
@@ -1323,7 +1331,14 @@ export default function AdminProductsPanel() {
 
             {/* 🎨 COLORES */}
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '8px', display: 'block' }}>
+              <label
+                style={{
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  marginBottom: '8px',
+                  display: 'block',
+                }}
+              >
                 🎨 Colores Disponibles
               </label>
               <p style={{ fontSize: '14px', color: '#666', marginBottom: '12px' }}>
@@ -1344,7 +1359,9 @@ export default function AdminProductsPanel() {
                       alignItems: 'center',
                       gap: '8px',
                       padding: '8px 12px',
-                      border: draft.colors?.includes(color.id) ? '2px solid #06b6d4' : '1px solid #d1d5db',
+                      border: draft.colors?.includes(color.id)
+                        ? '2px solid #06b6d4'
+                        : '1px solid #d1d5db',
                       borderRadius: '8px',
                       background: draft.colors?.includes(color.id) ? '#ecfeff' : 'white',
                       cursor: 'pointer',
@@ -1359,7 +1376,10 @@ export default function AdminProductsPanel() {
                         if (e.target.checked) {
                           setDraft({ ...draft, colors: [...currentColors, color.id] });
                         } else {
-                          setDraft({ ...draft, colors: currentColors.filter((c) => c !== color.id) });
+                          setDraft({
+                            ...draft,
+                            colors: currentColors.filter((c) => c !== color.id),
+                          });
                         }
                       }}
                     />
@@ -1379,48 +1399,58 @@ export default function AdminProductsPanel() {
             </div>
 
             {/* 📏 TALLAS (solo si es categoría textil) */}
-            {draft.category && simpleCategories.find((c) => c.id === draft.category)?.needsSizes && (
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '8px', display: 'block' }}>
-                  📏 Tallas Disponibles
-                </label>
-                <p style={{ fontSize: '14px', color: '#666', marginBottom: '12px' }}>
-                  Selecciona las tallas disponibles para este producto textil (opcional)
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-                  {availableSizes.map((size) => (
-                    <label
-                      key={size}
-                      style={{
-                        padding: '10px 20px',
-                        border: draft.sizes?.includes(size) ? '2px solid #06b6d4' : '1px solid #d1d5db',
-                        borderRadius: '8px',
-                        background: draft.sizes?.includes(size) ? '#ecfeff' : 'white',
-                        cursor: 'pointer',
-                        fontWeight: 'bold',
-                        fontSize: '14px',
-                        transition: 'all 0.2s',
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={draft.sizes?.includes(size) || false}
-                        onChange={(e) => {
-                          const currentSizes = draft.sizes || [];
-                          if (e.target.checked) {
-                            setDraft({ ...draft, sizes: [...currentSizes, size] });
-                          } else {
-                            setDraft({ ...draft, sizes: currentSizes.filter((s) => s !== size) });
-                          }
+            {draft.category &&
+              simpleCategories.find((c) => c.id === draft.category)?.needsSizes && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label
+                    style={{
+                      fontWeight: 'bold',
+                      fontSize: '16px',
+                      marginBottom: '8px',
+                      display: 'block',
+                    }}
+                  >
+                    📏 Tallas Disponibles
+                  </label>
+                  <p style={{ fontSize: '14px', color: '#666', marginBottom: '12px' }}>
+                    Selecciona las tallas disponibles para este producto textil (opcional)
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                    {availableSizes.map((size) => (
+                      <label
+                        key={size}
+                        style={{
+                          padding: '10px 20px',
+                          border: draft.sizes?.includes(size)
+                            ? '2px solid #06b6d4'
+                            : '1px solid #d1d5db',
+                          borderRadius: '8px',
+                          background: draft.sizes?.includes(size) ? '#ecfeff' : 'white',
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                          fontSize: '14px',
+                          transition: 'all 0.2s',
                         }}
-                        style={{ marginRight: '8px' }}
-                      />
-                      {size}
-                    </label>
-                  ))}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={draft.sizes?.includes(size) || false}
+                          onChange={(e) => {
+                            const currentSizes = draft.sizes || [];
+                            if (e.target.checked) {
+                              setDraft({ ...draft, sizes: [...currentSizes, size] });
+                            } else {
+                              setDraft({ ...draft, sizes: currentSizes.filter((s) => s !== size) });
+                            }
+                          }}
+                          style={{ marginRight: '8px' }}
+                        />
+                        {size}
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             <div>
               <label>Precio base (€) *</label>
@@ -2035,14 +2065,31 @@ export default function AdminProductsPanel() {
 
                 {/* 🏷️ Simple category for public filters */}
                 {p.category && (
-                  <div style={{ fontSize: '13px', color: '#06b6d4', marginBottom: '8px', fontWeight: 'bold' }}>
-                    🏷️ Categoría pública: {simpleCategories.find((c) => c.id === p.category)?.name || p.category}
+                  <div
+                    style={{
+                      fontSize: '13px',
+                      color: '#06b6d4',
+                      marginBottom: '8px',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    🏷️ Categoría pública:{' '}
+                    {simpleCategories.find((c) => c.id === p.category)?.name || p.category}
                   </div>
                 )}
 
                 {/* 🎨 Colors */}
                 {p.colors && p.colors.length > 0 && (
-                  <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      color: '#4b5563',
+                      marginBottom: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
                     🎨 Colores:
                     <div style={{ display: 'flex', gap: '4px' }}>
                       {p.colors.map((colorId) => {

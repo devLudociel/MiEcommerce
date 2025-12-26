@@ -217,17 +217,30 @@ function parseProductRow(
 
   const basePrice = getNumberValue('baseprice');
   if (basePrice === undefined || basePrice < 0) {
-    errors.push({ row: rowNumber, message: 'El precio base es requerido y debe ser un número válido' });
+    errors.push({
+      row: rowNumber,
+      message: 'El precio base es requerido y debe ser un número válido',
+    });
     return null;
   }
 
   // Procesar imágenes (separadas por |)
   const imagesStr = getValue('images');
-  const images = imagesStr ? imagesStr.split('|').map((img) => img.trim()).filter(Boolean) : [];
+  const images = imagesStr
+    ? imagesStr
+        .split('|')
+        .map((img) => img.trim())
+        .filter(Boolean)
+    : [];
 
   // Procesar tags (separados por |)
   const tagsStr = getValue('tags');
-  const tags = tagsStr ? tagsStr.split('|').map((tag) => tag.trim()).filter(Boolean) : [];
+  const tags = tagsStr
+    ? tagsStr
+        .split('|')
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+    : [];
 
   const product: Partial<FirebaseProduct> = {
     name,

@@ -40,7 +40,6 @@ export default function ShippingSelector({
   const [quotes, setQuotes] = useState<ShippingQuote[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isValidPostalCode, setIsValidPostalCode] = useState(false);
 
   // Cargar opciones de envío cuando cambia el código postal
   useEffect(() => {
@@ -56,8 +55,6 @@ export default function ShippingSelector({
 
       // Verificar si es de Canarias
       const isCanary = isCanaryIslandsPostalCode(postalCode);
-      setIsValidPostalCode(isCanary);
-
       if (!isCanary) {
         setQuotes([]);
         setError('Lo sentimos, actualmente solo realizamos envíos a las Islas Canarias.');
@@ -77,7 +74,9 @@ export default function ShippingSelector({
         const shippingQuotes = await calculateShipping(address, cartTotal, cartWeight);
 
         if (shippingQuotes.length === 0) {
-          setError('No hay métodos de envío disponibles para tu zona. Por favor, contacta con nosotros.');
+          setError(
+            'No hay métodos de envío disponibles para tu zona. Por favor, contacta con nosotros.'
+          );
           setQuotes([]);
           onSelectMethod(null);
         } else {
@@ -85,20 +84,16 @@ export default function ShippingSelector({
 
           // Auto-seleccionar el método más barato si no hay ninguno seleccionado
           if (!selectedMethodId) {
-            const cheapest = shippingQuotes.reduce((min, q) =>
-              q.price < min.price ? q : min
-            );
+            const cheapest = shippingQuotes.reduce((min, q) => (q.price < min.price ? q : min));
             onSelectMethod(cheapest);
           } else {
             // Mantener la selección actual si existe
-            const currentSelection = shippingQuotes.find(q => q.methodId === selectedMethodId);
+            const currentSelection = shippingQuotes.find((q) => q.methodId === selectedMethodId);
             if (currentSelection) {
               onSelectMethod(currentSelection);
             } else {
               // Si el método seleccionado ya no está disponible, seleccionar el más barato
-              const cheapest = shippingQuotes.reduce((min, q) =>
-                q.price < min.price ? q : min
-              );
+              const cheapest = shippingQuotes.reduce((min, q) => (q.price < min.price ? q : min));
               onSelectMethod(cheapest);
             }
           }
@@ -114,7 +109,7 @@ export default function ShippingSelector({
     };
 
     loadShippingOptions();
-  }, [postalCode, province, cartTotal, cartWeight]);
+  }, [postalCode, province, cartTotal, cartWeight, onSelectMethod, selectedMethodId]);
 
   const handleSelectMethod = (quote: ShippingQuote) => {
     onSelectMethod(quote);
@@ -168,7 +163,8 @@ export default function ShippingSelector({
           <div>
             <p className="font-medium text-amber-800">Sin opciones de envío</p>
             <p className="text-sm text-amber-600 mt-1">
-              No encontramos métodos de envío para tu zona. Contacta con nosotros para más información.
+              No encontramos métodos de envío para tu zona. Contacta con nosotros para más
+              información.
             </p>
           </div>
         </div>
@@ -205,7 +201,9 @@ export default function ShippingSelector({
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-gray-900">{quote.methodName}</span>
-                <span className={`font-semibold ${quote.isFree ? 'text-green-600' : 'text-gray-900'}`}>
+                <span
+                  className={`font-semibold ${quote.isFree ? 'text-green-600' : 'text-gray-900'}`}
+                >
                   {quote.isFree ? (
                     <span className="flex items-center gap-1">
                       <Gift className="w-4 h-4" />
@@ -234,7 +232,7 @@ export default function ShippingSelector({
       </div>
 
       {/* Info sobre envío gratis */}
-      {quotes.some(q => !q.isFree && q.originalPrice > 0) && (
+      {quotes.some((q) => !q.isFree && q.originalPrice > 0) && (
         <div className="text-xs text-gray-500 mt-2">
           * Los gastos de envío pueden variar según el peso del pedido
         </div>

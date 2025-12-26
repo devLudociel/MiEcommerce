@@ -11,6 +11,7 @@
  */
 
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import type { ServiceAccount } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { exampleSchemas } from '../src/data/exampleSchemas';
 import * as path from 'path';
@@ -29,12 +30,12 @@ config({ path: path.join(__dirname, '../.env') });
 // Inicializar Firebase Admin
 function initializeFirebase() {
   if (getApps().length === 0) {
-    let serviceAccount: any;
+    let serviceAccount: ServiceAccount;
 
     // Opción 1: Leer desde variable de entorno FIREBASE_SERVICE_ACCOUNT (JSON string)
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
       try {
-        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT) as ServiceAccount;
         console.log('✅ Credenciales cargadas desde FIREBASE_SERVICE_ACCOUNT');
       } catch (error) {
         console.error('❌ Error parseando FIREBASE_SERVICE_ACCOUNT:', error);
@@ -43,7 +44,8 @@ function initializeFirebase() {
     }
     // Opción 2: Leer desde archivo (GOOGLE_APPLICATION_CREDENTIALS o service-account-key.json)
     else {
-      const serviceAccountPath = process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+      const serviceAccountPath =
+        process.env.GOOGLE_APPLICATION_CREDENTIALS ||
         path.join(__dirname, '../service-account-key.json');
 
       if (!fs.existsSync(serviceAccountPath)) {
@@ -57,7 +59,7 @@ function initializeFirebase() {
         process.exit(1);
       }
 
-      serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+      serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8')) as ServiceAccount;
       console.log('✅ Credenciales cargadas desde archivo');
     }
 

@@ -21,7 +21,7 @@ import {
   CheckCircle,
   Loader2,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import {
   type HeroBanner,
@@ -36,7 +36,7 @@ import {
   moveBannerDown,
   uploadBannerImage,
   getNextOrder,
-  migrateDefaultBanners
+  migrateDefaultBanners,
 } from '../../lib/heroBanners';
 
 // ============================================================================
@@ -47,7 +47,11 @@ const ACCENT_COLORS: { value: AccentColor; label: string; preview: string }[] = 
   { value: 'cyan', label: 'Cyan', preview: 'bg-cyan-500' },
   { value: 'magenta', label: 'Magenta', preview: 'bg-pink-500' },
   { value: 'yellow', label: 'Amarillo', preview: 'bg-yellow-500' },
-  { value: 'rainbow', label: 'Arcoíris', preview: 'bg-gradient-to-r from-cyan-500 via-pink-500 to-yellow-500' },
+  {
+    value: 'rainbow',
+    label: 'Arcoíris',
+    preview: 'bg-gradient-to-r from-cyan-500 via-pink-500 to-yellow-500',
+  },
 ];
 
 // ============================================================================
@@ -243,7 +247,7 @@ export default function AdminBannersPanel() {
 
     try {
       const url = await uploadBannerImage(file);
-      setFormData(prev => ({ ...prev, backgroundImage: url }));
+      setFormData((prev) => ({ ...prev, backgroundImage: url }));
       setSuccess('Imagen subida correctamente');
     } catch (err) {
       setError('Error al subir la imagen');
@@ -262,7 +266,9 @@ export default function AdminBannersPanel() {
 
   const handleMigrate = async () => {
     if (banners.length > 0) {
-      if (!confirm('Ya existen banners. ¿Quieres añadir los banners por defecto de todas formas?')) {
+      if (
+        !confirm('Ya existen banners. ¿Quieres añadir los banners por defecto de todas formas?')
+      ) {
         return;
       }
     }
@@ -361,7 +367,7 @@ export default function AdminBannersPanel() {
                       className="w-full h-full object-cover"
                     />
                     <button
-                      onClick={() => setFormData(prev => ({ ...prev, backgroundImage: '' }))}
+                      onClick={() => setFormData((prev) => ({ ...prev, backgroundImage: '' }))}
                       className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600"
                     >
                       <X className="w-4 h-4" />
@@ -389,7 +395,9 @@ export default function AdminBannersPanel() {
                       <span className="text-gray-600">
                         {uploadingImage ? 'Subiendo...' : 'Haz clic para subir una imagen'}
                       </span>
-                      <span className="text-xs text-gray-400">PNG, JPG hasta 5MB (Recomendado: 1920x1080)</span>
+                      <span className="text-xs text-gray-400">
+                        PNG, JPG hasta 5MB (Recomendado: 1920x1080)
+                      </span>
                     </label>
                   </div>
                 )}
@@ -399,7 +407,9 @@ export default function AdminBannersPanel() {
                   <input
                     type="url"
                     value={formData.backgroundImage}
-                    onChange={(e) => setFormData(prev => ({ ...prev, backgroundImage: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, backgroundImage: e.target.value }))
+                    }
                     placeholder="https://..."
                     className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                   />
@@ -409,25 +419,21 @@ export default function AdminBannersPanel() {
               {/* Text Content */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Título *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
                   <input
                     type="text"
                     value={formData.title}
-                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                     placeholder="Ej: Tecnología del Futuro"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Subtítulo
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Subtítulo</label>
                   <input
                     type="text"
                     value={formData.subtitle}
-                    onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, subtitle: e.target.value }))}
                     placeholder="Ej: Nueva Colección 2025"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                   />
@@ -435,12 +441,12 @@ export default function AdminBannersPanel() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Descripción
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                 <textarea
                   value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, description: e.target.value }))
+                  }
                   placeholder="Ej: Descubre los productos más innovadores..."
                   rows={2}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
@@ -455,35 +461,47 @@ export default function AdminBannersPanel() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
-                    <span className="text-xs font-medium text-gray-500 uppercase">Botón Principal</span>
+                    <span className="text-xs font-medium text-gray-500 uppercase">
+                      Botón Principal
+                    </span>
                     <input
                       type="text"
                       value={formData.ctaPrimaryText}
-                      onChange={(e) => setFormData(prev => ({ ...prev, ctaPrimaryText: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, ctaPrimaryText: e.target.value }))
+                      }
                       placeholder="Texto del botón"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                     />
                     <input
                       type="text"
                       value={formData.ctaPrimaryUrl}
-                      onChange={(e) => setFormData(prev => ({ ...prev, ctaPrimaryUrl: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, ctaPrimaryUrl: e.target.value }))
+                      }
                       placeholder="URL (ej: /productos)"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                     />
                   </div>
                   <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
-                    <span className="text-xs font-medium text-gray-500 uppercase">Botón Secundario</span>
+                    <span className="text-xs font-medium text-gray-500 uppercase">
+                      Botón Secundario
+                    </span>
                     <input
                       type="text"
                       value={formData.ctaSecondaryText}
-                      onChange={(e) => setFormData(prev => ({ ...prev, ctaSecondaryText: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, ctaSecondaryText: e.target.value }))
+                      }
                       placeholder="Texto del botón"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                     />
                     <input
                       type="text"
                       value={formData.ctaSecondaryUrl}
-                      onChange={(e) => setFormData(prev => ({ ...prev, ctaSecondaryUrl: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, ctaSecondaryUrl: e.target.value }))
+                      }
                       placeholder="URL (ej: /como-funciona)"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                     />
@@ -502,7 +520,7 @@ export default function AdminBannersPanel() {
                     <button
                       key={color.value}
                       type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, accentColor: color.value }))}
+                      onClick={() => setFormData((prev) => ({ ...prev, accentColor: color.value }))}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
                         formData.accentColor === color.value
                           ? 'border-gray-900 bg-gray-100'
@@ -520,7 +538,7 @@ export default function AdminBannersPanel() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, active: !prev.active }))}
+                  onClick={() => setFormData((prev) => ({ ...prev, active: !prev.active }))}
                   className={`relative w-12 h-6 rounded-full transition-colors ${
                     formData.active ? 'bg-green-500' : 'bg-gray-300'
                   }`}
@@ -602,9 +620,11 @@ export default function AdminBannersPanel() {
                       </div>
                     )}
                     <div className="absolute top-2 left-2">
-                      <span className={`inline-block w-6 h-6 rounded-full text-white text-xs font-bold flex items-center justify-center ${
-                        banner.active ? 'bg-cyan-600' : 'bg-gray-500'
-                      }`}>
+                      <span
+                        className={`inline-block w-6 h-6 rounded-full text-white text-xs font-bold flex items-center justify-center ${
+                          banner.active ? 'bg-cyan-600' : 'bg-gray-500'
+                        }`}
+                      >
                         {index + 1}
                       </span>
                     </div>
@@ -616,12 +636,16 @@ export default function AdminBannersPanel() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="text-lg font-semibold text-gray-900">{banner.title}</h3>
-                          <span className={`w-4 h-4 rounded-full ${
-                            ACCENT_COLORS.find(c => c.value === banner.accentColor)?.preview
-                          }`} />
+                          <span
+                            className={`w-4 h-4 rounded-full ${
+                              ACCENT_COLORS.find((c) => c.value === banner.accentColor)?.preview
+                            }`}
+                          />
                         </div>
                         {banner.subtitle && (
-                          <p className="text-sm text-cyan-600 font-medium mb-1">{banner.subtitle}</p>
+                          <p className="text-sm text-cyan-600 font-medium mb-1">
+                            {banner.subtitle}
+                          </p>
                         )}
                         {banner.description && (
                           <p className="text-gray-600 text-sm line-clamp-2">{banner.description}</p>
@@ -631,17 +655,13 @@ export default function AdminBannersPanel() {
                             {banner.ctaPrimaryText && (
                               <span className="inline-flex items-center gap-1 text-xs bg-cyan-100 text-cyan-700 px-2 py-1 rounded">
                                 {banner.ctaPrimaryText}
-                                {banner.ctaPrimaryUrl && (
-                                  <ExternalLink className="w-3 h-3" />
-                                )}
+                                {banner.ctaPrimaryUrl && <ExternalLink className="w-3 h-3" />}
                               </span>
                             )}
                             {banner.ctaSecondaryText && (
                               <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
                                 {banner.ctaSecondaryText}
-                                {banner.ctaSecondaryUrl && (
-                                  <ExternalLink className="w-3 h-3" />
-                                )}
+                                {banner.ctaSecondaryUrl && <ExternalLink className="w-3 h-3" />}
                               </span>
                             )}
                           </div>
@@ -679,7 +699,11 @@ export default function AdminBannersPanel() {
                           }`}
                           title={banner.active ? 'Desactivar' : 'Activar'}
                         >
-                          {banner.active ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                          {banner.active ? (
+                            <Eye className="w-5 h-5" />
+                          ) : (
+                            <EyeOff className="w-5 h-5" />
+                          )}
                         </button>
 
                         <button

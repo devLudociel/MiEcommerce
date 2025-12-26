@@ -59,12 +59,31 @@ type StatusFilter = 'all' | 'pending' | 'read' | 'replied' | 'resolved' | 'archi
 // CONSTANTS
 // ============================================================================
 
-const STATUS_CONFIG: Record<SupportMessage['status'], { label: string; color: string; icon: React.ReactNode }> = {
-  pending: { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="w-4 h-4" /> },
+const STATUS_CONFIG: Record<
+  SupportMessage['status'],
+  { label: string; color: string; icon: React.ReactNode }
+> = {
+  pending: {
+    label: 'Pendiente',
+    color: 'bg-yellow-100 text-yellow-800',
+    icon: <Clock className="w-4 h-4" />,
+  },
   read: { label: 'Leído', color: 'bg-blue-100 text-blue-800', icon: <Eye className="w-4 h-4" /> },
-  replied: { label: 'Respondido', color: 'bg-purple-100 text-purple-800', icon: <Send className="w-4 h-4" /> },
-  resolved: { label: 'Resuelto', color: 'bg-green-100 text-green-800', icon: <CheckCircle className="w-4 h-4" /> },
-  archived: { label: 'Archivado', color: 'bg-gray-100 text-gray-800', icon: <Archive className="w-4 h-4" /> },
+  replied: {
+    label: 'Respondido',
+    color: 'bg-purple-100 text-purple-800',
+    icon: <Send className="w-4 h-4" />,
+  },
+  resolved: {
+    label: 'Resuelto',
+    color: 'bg-green-100 text-green-800',
+    icon: <CheckCircle className="w-4 h-4" />,
+  },
+  archived: {
+    label: 'Archivado',
+    color: 'bg-gray-100 text-gray-800',
+    icon: <Archive className="w-4 h-4" />,
+  },
 };
 
 // ============================================================================
@@ -340,7 +359,9 @@ export default function AdminSupportPanel() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-gray-900">{message.name}</span>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${STATUS_CONFIG[message.status].color}`}>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${STATUS_CONFIG[message.status].color}`}
+                      >
                         {STATUS_CONFIG[message.status].icon}
                         {STATUS_CONFIG[message.status].label}
                       </span>
@@ -392,7 +413,10 @@ export default function AdminSupportPanel() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900">{selectedMessage.name}</h3>
-                  <a href={`mailto:${selectedMessage.email}`} className="text-sm text-cyan-600 hover:underline">
+                  <a
+                    href={`mailto:${selectedMessage.email}`}
+                    className="text-sm text-cyan-600 hover:underline"
+                  >
                     {selectedMessage.email}
                   </a>
                   <p className="text-xs text-gray-500 mt-1">
@@ -406,7 +430,9 @@ export default function AdminSupportPanel() {
                     })}
                   </p>
                 </div>
-                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${STATUS_CONFIG[selectedMessage.status].color}`}>
+                <span
+                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${STATUS_CONFIG[selectedMessage.status].color}`}
+                >
                   {STATUS_CONFIG[selectedMessage.status].icon}
                   {STATUS_CONFIG[selectedMessage.status].label}
                 </span>
@@ -430,7 +456,9 @@ export default function AdminSupportPanel() {
 
               {/* Admin Notes */}
               <div className="mb-6">
-                <p className="text-sm text-gray-500 mb-1">Notas internas (solo visible para admins)</p>
+                <p className="text-sm text-gray-500 mb-1">
+                  Notas internas (solo visible para admins)
+                </p>
                 <textarea
                   value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}

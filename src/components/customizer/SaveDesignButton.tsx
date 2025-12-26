@@ -144,17 +144,20 @@ export default function SaveDesignButton({
 
                   {/* Name Input */}
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                      htmlFor="design-name"
+                    >
                       Nombre del diseño <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="design-name"
                       type="text"
                       value={designName}
                       onChange={(e) => setDesignName(e.target.value)}
                       placeholder="Ej: Cumpleaños de Ana 2025"
                       maxLength={100}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
-                      autoFocus
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Usa un nombre descriptivo para encontrarlo fácilmente

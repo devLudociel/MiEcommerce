@@ -29,14 +29,15 @@ interface ProductCardProps {
 
 // PERFORMANCE: Memoize component to prevent unnecessary re-renders
 const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }) => {
-  // PERFORMANCE: Wrap click handler in useCallback
-  const handleClick = useCallback(() => {
-    if (onClick) {
+  const cardHref = `/producto/${product.slug}`;
+  const handleCardLinkClick = useCallback(
+    (event: React.MouseEvent<HTMLAnchorElement>) => {
+      if (!onClick) return;
+      event.preventDefault();
       onClick();
-    } else {
-      window.location.href = `/producto/${product.slug}`;
-    }
-  }, [onClick, product.slug]);
+    },
+    [onClick]
+  );
 
   const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
@@ -44,16 +45,22 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
     img.src = FALLBACK_IMG_400x300;
   }, []);
 
-  const handleButtonClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    console.log('Añadir al carrito:', product.id);
-  }, [product.id]);
+  const handleButtonClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      console.log('Añadir al carrito:', product.id);
+    },
+    [product.id]
+  );
 
   return (
-    <article
-      className="bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-200 hover:border-gray-300 transition-all duration-300 cursor-pointer hover:-translate-y-1 active:scale-[0.98]"
-      onClick={handleClick}
-    >
+    <article className="relative bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-200 hover:border-gray-300 transition-all duration-300 cursor-pointer hover:-translate-y-1 active:scale-[0.98]">
+      <a
+        href={cardHref}
+        onClick={handleCardLinkClick}
+        className="absolute inset-0 z-10"
+        aria-label={`Ver detalles de ${product.name}`}
+      />
       {/* Imagen del producto - Responsive aspect ratio */}
       <div className="relative aspect-[4/3] sm:aspect-[3/2] overflow-hidden bg-gray-100">
         <img
@@ -75,27 +82,27 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
 
           {/* Stock status badge */}
           {product.trackInventory && product.stock === 0 && (
-            <div className={`px-2 py-1 sm:px-3 sm:py-1 rounded text-[10px] sm:text-xs font-medium shadow-md ${
-              product.allowBackorder
-                ? 'bg-amber-500 text-white'
-                : 'bg-red-600 text-white'
-            }`}>
+            <div
+              className={`px-2 py-1 sm:px-3 sm:py-1 rounded text-[10px] sm:text-xs font-medium shadow-md ${
+                product.allowBackorder ? 'bg-amber-500 text-white' : 'bg-red-600 text-white'
+              }`}
+            >
               {product.allowBackorder ? 'Bajo pedido' : 'Agotado'}
             </div>
           )}
 
           {product.trackInventory &&
-           product.stock !== undefined &&
-           product.stock > 0 &&
-           product.stock <= (product.lowStockThreshold || 5) && (
-            <div className="bg-amber-500 text-white px-2 py-1 sm:px-3 sm:py-1 rounded text-[10px] sm:text-xs font-medium shadow-md">
-              ¡Últimas {product.stock}!
-            </div>
-          )}
+            product.stock !== undefined &&
+            product.stock > 0 &&
+            product.stock <= (product.lowStockThreshold || 5) && (
+              <div className="bg-amber-500 text-white px-2 py-1 sm:px-3 sm:py-1 rounded text-[10px] sm:text-xs font-medium shadow-md">
+                ¡Últimas {product.stock}!
+              </div>
+            )}
         </div>
 
         {/* Compare button */}
-        <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
+        <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-20">
           <CompareButton
             product={{
               id: product.id,
@@ -165,14 +172,13 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
             <span className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">
               €{product.basePrice.toFixed(2)}
             </span>
-            <span className="text-[10px] sm:text-xs text-gray-500">
-              desde
-            </span>
+            <span className="text-[10px] sm:text-xs text-gray-500">desde</span>
           </div>
 
           <button
             className="bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap active:scale-95"
             onClick={handleButtonClick}
+            style={{ position: 'relative', zIndex: 20 }}
           >
             <span className="hidden sm:inline">Ver detalles</span>
             <span className="sm:hidden">Ver</span>

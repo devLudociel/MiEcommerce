@@ -179,7 +179,12 @@ export default function InteractiveElement({
               textAlign: element.align || 'left',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: element.align === 'center' ? 'center' : element.align === 'right' ? 'flex-end' : 'flex-start',
+              justifyContent:
+                element.align === 'center'
+                  ? 'center'
+                  : element.align === 'right'
+                    ? 'flex-end'
+                    : 'flex-start',
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
               width: '100%',

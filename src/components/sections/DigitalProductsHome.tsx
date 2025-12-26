@@ -24,9 +24,13 @@ const DigitalProductsHome: React.FC<DigitalProductsHomeProps> = ({ maxItems = 4 
   const [hoveredProduct, setHoveredProduct] = useState<string | null>(null);
 
   // Fetch digital products with React Query
-  const { data: rawProducts = [], isLoading: loading, error: queryError } = useProducts({
+  const {
+    data: rawProducts = [],
+    isLoading: loading,
+    error: queryError,
+  } = useProducts({
     onlyDigital: true,
-    limit: maxItems
+    limit: maxItems,
   });
 
   const error = queryError ? (queryError as Error).message : null;
@@ -75,7 +79,8 @@ const DigitalProductsHome: React.FC<DigitalProductsHomeProps> = ({ maxItems = 4 
           </h2>
 
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-6">
-            Descarga packs de imágenes, cliparts y recursos al instante. Acceso ilimitado y permanente.
+            Descarga packs de imágenes, cliparts y recursos al instante. Acceso ilimitado y
+            permanente.
           </p>
 
           <a
@@ -84,7 +89,12 @@ const DigitalProductsHome: React.FC<DigitalProductsHomeProps> = ({ maxItems = 4 
           >
             Ver todos los productos digitales
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 8l4 4m0 0l-4 4m4-4H3"
+              />
             </svg>
           </a>
         </div>

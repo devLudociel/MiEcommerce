@@ -129,13 +129,14 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
             stack: [
               { text: 'Fecha de pedido:', style: 'label' },
               {
-                text: extOrder.createdAt && 'toDate' in extOrder.createdAt
-                  ? extOrder.createdAt.toDate().toLocaleDateString('es-ES', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric',
-                    })
-                  : 'N/A',
+                text:
+                  extOrder.createdAt && 'toDate' in extOrder.createdAt
+                    ? extOrder.createdAt.toDate().toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric',
+                      })
+                    : 'N/A',
                 style: 'value',
               },
             ],

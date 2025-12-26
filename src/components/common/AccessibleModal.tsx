@@ -116,6 +116,19 @@ export default function AccessibleModal({
     onClose();
   };
 
+  const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) {
+      onClose();
+    }
+  };
+
+  const handleOverlayKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onClose();
+    }
+  };
+
   const iconColors = {
     info: 'bg-blue-100 text-blue-600',
     warning: 'bg-yellow-100 text-yellow-600',
@@ -165,16 +178,19 @@ export default function AccessibleModal({
   const modalContent = (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
-      aria-describedby="modal-description"
+      onClick={handleOverlayClick}
+      onKeyDown={handleOverlayKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label="Cerrar modal"
     >
       <div
         ref={modalRef}
         className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all"
-        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        aria-describedby="modal-description"
       >
         {/* Icon */}
         <div

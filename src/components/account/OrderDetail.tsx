@@ -427,18 +427,21 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
 
           {(() => {
             const extOrder = order as ExtendedOrder;
-            return extOrder.couponDiscount && extOrder.couponDiscount > 0 && (
-              <div className="flex justify-between text-green-600">
-                <span>Descuento {extOrder.couponCode && `(${extOrder.couponCode})`}</span>
-                <span className="font-semibold">-€{extOrder.couponDiscount.toFixed(2)}</span>
-              </div>
+            return (
+              extOrder.couponDiscount &&
+              extOrder.couponDiscount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Descuento {extOrder.couponCode && `(${extOrder.couponCode})`}</span>
+                  <span className="font-semibold">-€{extOrder.couponDiscount.toFixed(2)}</span>
+                </div>
+              )
             );
           })()}
 
           <div className="flex justify-between text-gray-700">
             <span>Envío</span>
             <span className="font-semibold">
-              {(((order as ExtendedOrder).shippingCost || order.shipping || 0) === 0)
+              {((order as ExtendedOrder).shippingCost || order.shipping || 0) === 0
                 ? 'GRATIS'
                 : `€${((order as ExtendedOrder).shippingCost || order.shipping || 0).toFixed(2)}`}
             </span>
@@ -446,21 +449,27 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
 
           {(() => {
             const extOrder = order as ExtendedOrder;
-            return extOrder.iva && extOrder.iva > 0 && (
-              <div className="flex justify-between text-gray-700">
-                <span>IVA (21%)</span>
-                <span className="font-semibold">€{extOrder.iva.toFixed(2)}</span>
-              </div>
+            return (
+              extOrder.iva &&
+              extOrder.iva > 0 && (
+                <div className="flex justify-between text-gray-700">
+                  <span>IVA (21%)</span>
+                  <span className="font-semibold">€{extOrder.iva.toFixed(2)}</span>
+                </div>
+              )
             );
           })()}
 
           {(() => {
             const extOrder = order as ExtendedOrder;
-            return extOrder.walletDiscount && extOrder.walletDiscount > 0 && (
-              <div className="flex justify-between text-green-600">
-                <span>Saldo del monedero</span>
-                <span className="font-semibold">-€{extOrder.walletDiscount.toFixed(2)}</span>
-              </div>
+            return (
+              extOrder.walletDiscount &&
+              extOrder.walletDiscount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Saldo del monedero</span>
+                  <span className="font-semibold">-€{extOrder.walletDiscount.toFixed(2)}</span>
+                </div>
+              )
             );
           })()}
 
@@ -487,29 +496,32 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
         </a>
 
         {/* Botones de reordenamiento mejorados */}
-        {(order.status === 'delivered' || order.status === 'processing' || order.status === 'shipped') && order.items.length > 0 && (
-          <>
-            {/* Reordenar: Comprar de nuevo con la misma configuración */}
-            <button
-              onClick={() => handleReorder(false)}
-              className="btn bg-gradient-to-r from-cyan-500 to-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all flex items-center gap-2"
-            >
-              <span>🔄</span>
-              Reordenar
-            </button>
-
-            {/* Editar y Reordenar: Modificar personalización antes de comprar */}
-            {order.items[0]?.customization && (
+        {(order.status === 'delivered' ||
+          order.status === 'processing' ||
+          order.status === 'shipped') &&
+          order.items.length > 0 && (
+            <>
+              {/* Reordenar: Comprar de nuevo con la misma configuración */}
               <button
-                onClick={() => handleReorder(true)}
-                className="btn btn-outline border-2 border-cyan-500 text-cyan-700 px-8 py-3 rounded-xl font-bold hover:bg-cyan-50 transition-all flex items-center gap-2"
+                onClick={() => handleReorder(false)}
+                className="btn bg-gradient-to-r from-cyan-500 to-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all flex items-center gap-2"
               >
-                <span>✏️</span>
-                Editar y Reordenar
+                <span>🔄</span>
+                Reordenar
               </button>
-            )}
-          </>
-        )}
+
+              {/* Editar y Reordenar: Modificar personalización antes de comprar */}
+              {order.items[0]?.customization && (
+                <button
+                  onClick={() => handleReorder(true)}
+                  className="btn btn-outline border-2 border-cyan-500 text-cyan-700 px-8 py-3 rounded-xl font-bold hover:bg-cyan-50 transition-all flex items-center gap-2"
+                >
+                  <span>✏️</span>
+                  Editar y Reordenar
+                </button>
+              )}
+            </>
+          )}
       </div>
     </div>
   );

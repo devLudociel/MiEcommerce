@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import type { Address } from '../../lib/userProfile';
@@ -67,10 +67,7 @@ export default function AddressesPanel() {
     if (!loading && uid && items.length === 0 && !editing) {
       startCreate();
     }
-  }, [loading, uid, items.length]);
-
-  const hasDefaultShipping = useMemo(() => items.some((a) => a.isDefaultShipping), [items]);
-  const hasDefaultBilling = useMemo(() => items.some((a) => a.isDefaultBilling), [items]);
+  }, [loading, uid, items.length, editing]);
 
   async function persist(next: Address[]) {
     if (!uid) return;
@@ -289,14 +286,17 @@ export default function AddressesPanel() {
         <div className="card card-yellow p-6">
           <div className="text-3xl font-bold text-yellow-600 mb-2">0,00 €</div>
           <div className="text-sm text-gray-600 mb-3">Créditos disponibles</div>
-          <a href="#" className="text-sm text-yellow-600 hover:underline font-medium">
+          <button type="button" className="text-sm text-yellow-600 hover:underline font-medium">
             Historial de transacciones →
-          </a>
+          </button>
         </div>
         <div className="card p-6">
           <div className="flex items-center justify-between mb-3">
             <div className="font-bold text-gray-900">Envío con marca blanca</div>
-            <label className="inline-flex items-center cursor-pointer">
+            <label
+              className="inline-flex items-center cursor-pointer"
+              aria-label="Activar envío con marca blanca"
+            >
               <input
                 type="checkbox"
                 className="sr-only"
@@ -386,8 +386,9 @@ export default function AddressesPanel() {
                 placeholder="Localidad"
                 value={editing.locality || editing.city || ''}
                 onChange={(e) => {
-                  onChange('locality', e.target.value);
-                  onChange('city', e.target.value as any);
+                  const value = e.target.value;
+                  onChange('locality', value);
+                  onChange('city', value);
                 }}
                 required
               />

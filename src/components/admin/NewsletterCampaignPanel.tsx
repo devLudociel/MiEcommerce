@@ -162,9 +162,7 @@ export default function NewsletterCampaignPanel() {
 
       {/* Campaign Type Selector */}
       <div className="mb-6">
-        <label className="block text-sm font-semibold text-gray-700 mb-3">
-          Tipo de Campaña
-        </label>
+        <label className="block text-sm font-semibold text-gray-700 mb-3">Tipo de Campaña</label>
         <div className="flex gap-4">
           <button
             type="button"
@@ -196,7 +194,10 @@ export default function NewsletterCampaignPanel() {
         {campaignType === 'coupon' ? (
           <>
             <div className="mb-4">
-              <label htmlFor="couponCode" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label
+                htmlFor="couponCode"
+                className="block text-sm font-semibold text-gray-700 mb-2"
+              >
                 Código del Cupón <span className="text-red-500">*</span>
               </label>
               <input
@@ -229,7 +230,10 @@ export default function NewsletterCampaignPanel() {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="expiryDate" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label
+                htmlFor="expiryDate"
+                className="block text-sm font-semibold text-gray-700 mb-2"
+              >
                 Fecha de Expiración <span className="text-red-500">*</span>
               </label>
               <input
@@ -335,7 +339,10 @@ export default function NewsletterCampaignPanel() {
             </div>
 
             <div className="mb-6">
-              <label htmlFor="productUrl" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label
+                htmlFor="productUrl"
+                className="block text-sm font-semibold text-gray-700 mb-2"
+              >
                 URL del Producto <span className="text-red-500">*</span>
               </label>
               <input
@@ -361,9 +368,7 @@ export default function NewsletterCampaignPanel() {
             }`}
           >
             <p
-              className={`font-semibold mb-2 ${
-                result.success ? 'text-green-800' : 'text-red-800'
-              }`}
+              className={`font-semibold mb-2 ${result.success ? 'text-green-800' : 'text-red-800'}`}
             >
               {result.success ? '✓ Éxito' : '✗ Error'}
             </p>
@@ -408,8 +413,8 @@ export default function NewsletterCampaignPanel() {
       {/* Info Box */}
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <p className="text-sm text-blue-800">
-          <strong>💡 Información:</strong> La campaña se enviará a todos los suscriptores activos
-          de tu newsletter. Asegúrate de revisar bien todos los datos antes de enviar.
+          <strong>💡 Información:</strong> La campaña se enviará a todos los suscriptores activos de
+          tu newsletter. Asegúrate de revisar bien todos los datos antes de enviar.
         </p>
       </div>
 

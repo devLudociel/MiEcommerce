@@ -4,7 +4,11 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { logger } from '../../../lib/logger';
 import { z } from 'zod';
 import { customAlphabet } from 'nanoid';
-import { checkRateLimit, createRateLimitResponse, RATE_LIMIT_CONFIGS } from '../../../lib/rate-limiter';
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_CONFIGS,
+} from '../../../lib/rate-limiter';
 
 // Generate short IDs (8 characters, URL-safe)
 const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 8);

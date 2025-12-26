@@ -3,7 +3,11 @@ import { getAdminDb, getAdminAuth } from '../../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { logger } from '../../../lib/logger';
 import { z } from 'zod';
-import { checkRateLimit, createRateLimitResponse, RATE_LIMIT_CONFIGS } from '../../../lib/rate-limiter';
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_CONFIGS,
+} from '../../../lib/rate-limiter';
 
 const saveDesignSchema = z.object({
   name: z.string().min(1).max(100),
@@ -45,10 +49,10 @@ export const POST: APIRoute = async ({ request }) => {
     // Get auth token
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'No authorization token provided' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'No authorization token provided' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const token = authHeader.substring(7);
@@ -107,11 +111,14 @@ export const POST: APIRoute = async ({ request }) => {
   } catch (error: unknown) {
     // Handle token errors
     const firebaseError = error as { code?: string };
-    if (firebaseError.code === 'auth/id-token-expired' || firebaseError.code === 'auth/argument-error') {
-      return new Response(
-        JSON.stringify({ error: 'Token inválido o expirado' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      );
+    if (
+      firebaseError.code === 'auth/id-token-expired' ||
+      firebaseError.code === 'auth/argument-error'
+    ) {
+      return new Response(JSON.stringify({ error: 'Token inválido o expirado' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     logger.error('[designs/save] Error:', error);

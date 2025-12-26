@@ -88,10 +88,7 @@ export default function DigitalProductsGrid() {
     }
   };
 
-  const filteredProducts =
-    filter === 'featured'
-      ? products.filter((p) => p.featured)
-      : products;
+  const filteredProducts = filter === 'featured' ? products.filter((p) => p.featured) : products;
 
   const getFileIcon = (format: string) => {
     switch (format) {
@@ -121,9 +118,7 @@ export default function DigitalProductsGrid() {
     return (
       <div className="text-center py-20">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
-          <h3 className="text-xl font-semibold text-red-900 mb-2">
-            Error al cargar productos
-          </h3>
+          <h3 className="text-xl font-semibold text-red-900 mb-2">Error al cargar productos</h3>
           <p className="text-red-600 mb-4">{error}</p>
           <button
             onClick={loadDigitalProducts}
@@ -144,10 +139,14 @@ export default function DigitalProductsGrid() {
           No hay productos digitales disponibles
         </h3>
         <p className="text-gray-600 mb-4">
-          Los productos deben tener el campo <code className="bg-gray-100 px-2 py-1 rounded">isDigital: true</code> en Firestore.
+          Los productos deben tener el campo{' '}
+          <code className="bg-gray-100 px-2 py-1 rounded">isDigital: true</code> en Firestore.
         </p>
         <p className="text-gray-500 text-sm">
-          Crea productos digitales desde el <a href="/admin/digital-products" className="text-cyan-600 hover:underline">panel de administración</a>
+          Crea productos digitales desde el{' '}
+          <a href="/admin/digital-products" className="text-cyan-600 hover:underline">
+            panel de administración
+          </a>
         </p>
       </div>
     );
@@ -213,9 +212,7 @@ export default function DigitalProductsGrid() {
                 {product.name}
               </h3>
 
-              <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                {product.description}
-              </p>
+              <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
 
               {/* Files Info */}
               {product.digitalFiles && product.digitalFiles.length > 0 && (
@@ -241,10 +238,7 @@ export default function DigitalProductsGrid() {
               {product.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-3">
                   {product.tags.slice(0, 3).map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="text-xs bg-cyan-50 text-cyan-700 px-2 py-1 rounded"
-                    >
+                    <span key={idx} className="text-xs bg-cyan-50 text-cyan-700 px-2 py-1 rounded">
                       {tag}
                     </span>
                   ))}

@@ -43,12 +43,10 @@ export const GET: APIRoute = async ({ url }) => {
 
     const snapshot = await query.get();
     const hasMore = snapshot.docs.length > limit;
-    const cliparts = snapshot.docs
-      .slice(0, limit)
-      .map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+    const cliparts = snapshot.docs.slice(0, limit).map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
 
     logger.info(`[cliparts/get-all] Found ${cliparts.length} cliparts`);
 
