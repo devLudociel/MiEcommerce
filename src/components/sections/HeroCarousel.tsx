@@ -148,7 +148,7 @@ const HeroCarousel = memo(() => {
   }
 
   return (
-    <section className="w-full px-3 sm:px-4 md:px-6 lg:px-8 mt-3 sm:mt-4 mb-4 sm:mb-6">
+    <section className="w-full px-3 sm:px-4 md:px-6 lg:px-8 mt-2 sm:mt-3 md:mt-4 mb-4 sm:mb-6">
       <div className="max-w-7xl mx-auto">
         <div
           className="relative overflow-hidden h-[200px] sm:h-[260px] md:h-[320px] lg:h-[380px] rounded-xl sm:rounded-2xl"

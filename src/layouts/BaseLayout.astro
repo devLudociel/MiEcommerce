@@ -53,8 +53,9 @@ const {
     <title>{title}</title>
     <style>
       /* Variable CSS para la altura del header - responsive */
+      /* Header = barra principal (~64px) + navegación categorías (~48px) + banner promo (~48px) */
       :root {
-        --header-height: 120px; /* Móvil: más compacto */
+        --header-height: 160px; /* Móvil */
       }
 
       .skip-link {
@@ -83,27 +84,19 @@ const {
       /* Breakpoints responsivos para header */
       @media (min-width: 640px) {
         :root {
-          --header-height: 140px; /* Tablet pequeña */
+          --header-height: 175px; /* Tablet pequeña */
         }
       }
 
       @media (min-width: 768px) {
         :root {
-          --header-height: 150px; /* Tablet */
+          --header-height: 180px; /* Tablet */
         }
       }
 
       @media (min-width: 1024px) {
         :root {
-          --header-height: 160px; /* Desktop */
-        }
-      }
-
-      /* Mobile optimizations */
-      @media (max-width: 640px) {
-        main > * {
-          padding-top: max(var(--spacing-4, 1rem), env(safe-area-inset-top));
-          padding-bottom: max(var(--spacing-4, 1rem), env(safe-area-inset-bottom));
+          --header-height: 190px; /* Desktop */
         }
       }
     </style>
