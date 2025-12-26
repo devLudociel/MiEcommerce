@@ -148,10 +148,11 @@ const HeroCarousel = memo(() => {
   }
 
   return (
-    <section className="container mx-auto px-4 pt-6 pb-4">
-      <div
-        className="relative overflow-hidden h-[280px] sm:h-[320px] md:h-[380px] lg:h-[420px] max-h-[450px] rounded-2xl"
-      >
+    <section className="w-full px-3 sm:px-4 md:px-6 lg:px-8 mt-3 sm:mt-4 mb-4 sm:mb-6">
+      <div className="max-w-7xl mx-auto">
+        <div
+          className="relative overflow-hidden h-[200px] sm:h-[260px] md:h-[320px] lg:h-[380px] rounded-xl sm:rounded-2xl"
+        >
       {/* Slides Container */}
       <div className="relative h-full">
         {slides.map((slide, index) => {
@@ -357,6 +358,7 @@ const HeroCarousel = memo(() => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
       </button>
+        </div>
       </div>
     </section>
   );
