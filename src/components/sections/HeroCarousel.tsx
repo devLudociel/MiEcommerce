@@ -149,7 +149,7 @@ const HeroCarousel = memo(() => {
 
   return (
     <section
-      className="relative overflow-hidden h-[50vh] sm:h-[55vh] md:h-[60vh] lg:h-[65vh] min-h-[320px] sm:min-h-[400px] md:min-h-[450px] lg:min-h-[500px] max-h-[600px] lg:max-h-[700px]"
+      className="relative overflow-hidden h-[280px] sm:h-[320px] md:h-[380px] lg:h-[420px] max-h-[450px]"
     >
       {/* Slides Container */}
       <div className="relative h-full">
@@ -201,7 +201,7 @@ const HeroCarousel = memo(() => {
 
                     {/* Title - Responsive font size */}
                     <h1
-                      className="font-black mb-2 sm:mb-3 md:mb-4 leading-tight text-white drop-shadow-2xl transform transition-all duration-1000 text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl"
+                      className="font-black mb-1 sm:mb-2 md:mb-3 leading-tight text-white drop-shadow-2xl transform transition-all duration-1000 text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl"
                       style={{
                         opacity: isActive ? 1 : 0,
                         transform: isActive ? 'translateY(0)' : 'translateY(3rem)',
@@ -223,7 +223,7 @@ const HeroCarousel = memo(() => {
 
                     {/* Description - Ocultar en móviles muy pequeños */}
                     <p
-                      className="text-white/90 mb-4 sm:mb-5 md:mb-6 leading-relaxed transform transition-all duration-1000 text-xs sm:text-sm md:text-base lg:text-lg max-w-[280px] sm:max-w-md md:max-w-lg line-clamp-2 sm:line-clamp-3 md:line-clamp-none"
+                      className="text-white/90 mb-2 sm:mb-3 md:mb-4 leading-relaxed transform transition-all duration-1000 text-xs sm:text-sm md:text-sm lg:text-base max-w-[280px] sm:max-w-md md:max-w-lg line-clamp-2 md:line-clamp-2"
                       style={{
                         opacity: isActive ? 1 : 0,
                         transform: isActive ? 'translateY(0)' : 'translateY(2rem)',
@@ -235,7 +235,7 @@ const HeroCarousel = memo(() => {
 
                     {/* Call to Actions - Responsive */}
                     <div
-                      className="flex flex-col xs:flex-row gap-2 sm:gap-3 md:gap-4 transform transition-all duration-1000"
+                      className="flex flex-row gap-2 sm:gap-3 transform transition-all duration-1000"
                       style={{
                         opacity: isActive ? 1 : 0,
                         transform: isActive ? 'translateY(0)' : 'translateY(2rem)',
@@ -245,7 +245,7 @@ const HeroCarousel = memo(() => {
                       {slide.ctaPrimary && (
                         <button
                           onClick={() => handleCtaClick(slide.ctaPrimaryUrl)}
-                          className={`px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 text-white text-xs sm:text-sm md:text-base font-bold rounded-lg sm:rounded-xl ${gradientClass} hover:scale-105 active:scale-95 transform transition-all shadow-lg hover:shadow-2xl touch-manipulation`}
+                          className={`px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 md:py-2.5 text-white text-xs sm:text-sm font-bold rounded-lg ${gradientClass} hover:scale-105 active:scale-95 transform transition-all shadow-lg hover:shadow-2xl touch-manipulation`}
                         >
                           {slide.ctaPrimary}
                         </button>
@@ -253,7 +253,7 @@ const HeroCarousel = memo(() => {
                       {slide.ctaSecondary && (
                         <button
                           onClick={() => handleCtaClick(slide.ctaSecondaryUrl)}
-                          className="px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 text-white text-xs sm:text-sm md:text-base font-bold rounded-lg sm:rounded-xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white hover:text-gray-800 transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+                          className="px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 md:py-2.5 text-white text-xs sm:text-sm font-bold rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white hover:text-gray-800 transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
                         >
                           {slide.ctaSecondary}
                         </button>
