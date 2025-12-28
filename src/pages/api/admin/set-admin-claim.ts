@@ -3,14 +3,25 @@
 
 import type { APIRoute } from 'astro';
 import { getAdminAuth } from '../../../lib/firebase-admin';
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_CONFIGS,
+} from '../../../lib/rate-limiter';
 
-// Admin emails from environment
-const ADMIN_EMAILS = (process.env.PUBLIC_ADMIN_EMAILS || import.meta.env.PUBLIC_ADMIN_EMAILS || '')
+// SECURITY FIX HIGH-001: Use private ADMIN_EMAILS (not PUBLIC_)
+const ADMIN_EMAILS = (import.meta.env.ADMIN_EMAILS || '')
   .split(',')
   .map((s: string) => s.trim().toLowerCase())
   .filter(Boolean);
 
 export const POST: APIRoute = async ({ request }) => {
+  // SECURITY FIX HIGH-004: Add rate limiting
+  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.VERY_STRICT, 'set-admin-claim');
+  if (!rateLimitResult.allowed) {
+    return createRateLimitResponse(rateLimitResult);
+  }
+
   try {
     // Get the authorization header
     const authHeader = request.headers.get('Authorization');
@@ -57,9 +68,8 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // Set the admin custom claim
+    // SECURITY FIX HIGH-006: Only set necessary claims, not the entire token
     await adminAuth.setCustomUserClaims(decodedToken.uid, {
-      ...decodedToken,
       admin: true,
     });
 
@@ -73,9 +83,11 @@ export const POST: APIRoute = async ({ request }) => {
     );
   } catch (error) {
     console.error('[set-admin-claim] Error:', error);
+    // SECURITY FIX HIGH-002: Don't expose error details in production
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Error processing request',
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

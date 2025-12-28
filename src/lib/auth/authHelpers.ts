@@ -90,8 +90,9 @@ export async function verifyAdminAuth(request: Request): Promise<AuthResult> {
     return authResult;
   }
 
-  // Fallback: Check against PUBLIC_ADMIN_EMAILS
-  const adminEmails = (import.meta.env.PUBLIC_ADMIN_EMAILS || '')
+  // SECURITY FIX HIGH-001: Use private ADMIN_EMAILS (not PUBLIC_)
+  // This prevents exposing admin emails to the client
+  const adminEmails = (import.meta.env.ADMIN_EMAILS || '')
     .split(',')
     .map((s: string) => s.trim().toLowerCase())
     .filter(Boolean);
