@@ -105,6 +105,88 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    // SECURITY FIX ALTA: Verificar precios contra el catálogo de productos
+    // Esto previene manipulación de precios donde el cliente envía precios reducidos
+    const orderItems = orderData?.items || [];
+    let expectedSubtotal = 0;
+    const priceDiscrepancies: string[] = [];
+
+    for (const item of orderItems) {
+      if (!item.productId) continue;
+
+      try {
+        const productRef = db.collection('products').doc(String(item.productId));
+        const productSnap = await productRef.get();
+
+        if (productSnap.exists) {
+          const productData = productSnap.data();
+          let expectedPrice = Number(productData?.price) || 0;
+
+          // Si tiene variante, verificar precio de variante
+          if (item.variantId && productData?.variants) {
+            const variant = productData.variants.find(
+              (v: Record<string, unknown>) => v.id === item.variantId
+            );
+            if (variant && typeof variant.price === 'number') {
+              expectedPrice = variant.price;
+            }
+          }
+
+          const claimedPrice = Number(item.price) || 0;
+          const quantity = Number(item.quantity) || 1;
+
+          // Permitir 1% de diferencia por redondeo/variaciones
+          const priceDiff = Math.abs(expectedPrice - claimedPrice);
+          const tolerance = Math.max(expectedPrice * 0.01, 0.01);
+
+          if (priceDiff > tolerance) {
+            priceDiscrepancies.push(
+              `Product ${item.productId}: expected €${expectedPrice}, claimed €${claimedPrice}`
+            );
+          }
+
+          expectedSubtotal += expectedPrice * quantity;
+        }
+      } catch (productError) {
+        logger.warn(`[create-payment-intent] Could not verify price for product ${item.productId}`, productError);
+        // Continue - don't block payment for product lookup failures
+      }
+    }
+
+    // Si hay discrepancias significativas, bloquear el pago
+    if (priceDiscrepancies.length > 0) {
+      const claimedSubtotal = Number(orderData?.subtotal) || 0;
+      const subtotalDiff = Math.abs(expectedSubtotal - claimedSubtotal);
+      const subtotalTolerance = Math.max(expectedSubtotal * 0.05, 1); // 5% o €1
+
+      if (subtotalDiff > subtotalTolerance) {
+        logger.error('[create-payment-intent] SECURITY: Price manipulation detected!', {
+          orderId,
+          expectedSubtotal,
+          claimedSubtotal,
+          priceDiscrepancies,
+        });
+
+        // Actualizar el pedido con bandera de fraude
+        await orderRef.update({
+          suspectedFraud: true,
+          fraudReason: 'Price manipulation detected',
+          fraudDetails: priceDiscrepancies,
+          updatedAt: new Date(),
+        });
+
+        return new Response(
+          JSON.stringify({
+            error: 'Error en la validación del pedido. Por favor, contacta a soporte.',
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
+
     // Validar que el pedido no haya sido pagado ya
     if (orderData?.paymentStatus === 'paid' || orderData?.paymentStatus === 'completed') {
       return new Response(

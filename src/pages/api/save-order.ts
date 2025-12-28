@@ -8,8 +8,10 @@ import {
   RATE_LIMIT_CONFIGS,
 } from '../../lib/rate-limiter';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
-import { finalizeOrder } from '../../lib/orders/finalizeOrder';
+import { verifyAuthToken } from '../../lib/auth/authHelpers';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
+// SECURITY NOTE: finalizeOrder ya NO se importa aquí
+// Solo debe llamarse desde stripe-webhook.ts después de confirmar pago
 import { z } from 'zod';
 
 const logger = createScopedLogger('save-order');
@@ -57,9 +59,12 @@ const orderDataSchema = z.object({
   items: z.array(orderItemSchema).min(1).max(100),
   shippingInfo: shippingInfoSchema,
   billingInfo: billingInfoSchema.optional(),
-  userId: z.string().optional(),
+  // SECURITY FIX: userId is set server-side from auth token, NOT from client
+  // userId: removed - will be set from authenticated user
   customerEmail: z.string().email().optional(),
-  paymentMethod: z.enum(['card', 'wallet', 'transfer', 'cash']).default('card'),
+  // SECURITY FIX: Only 'card' payment method allowed from client API
+  // Other methods (transfer, cash, wallet-only) must be created by admin
+  paymentMethod: z.literal('card').default('card'),
   subtotal: z.number().min(0).max(1000000),
   shippingCost: z.number().min(0).max(10000).optional(),
   tax: z.number().min(0).optional(),
@@ -72,8 +77,9 @@ const orderDataSchema = z.object({
   couponId: z.string().optional(),
   walletDiscount: z.number().min(0).optional(),
   usedWallet: z.boolean().optional(),
-  status: z.string().optional(),
-  paymentStatus: z.string().optional(),
+  // SECURITY FIX: status is always 'pending' for new orders - removed from client control
+  // status: removed - always set to 'pending' server-side
+  // paymentStatus: removed - always set to 'pending' server-side
   notes: z.string().max(1000).optional(),
 });
 
@@ -91,14 +97,33 @@ export const POST: APIRoute = async ({ request }) => {
     logger.warn('[save-order] CSRF validation failed:', csrfCheck.reason);
     return createCSRFErrorResponse();
   }
+
+  // SECURITY FIX CRÍTICO: Verificar autenticación
+  // El userId DEBE venir del token, NO del cliente
+  const authResult = await verifyAuthToken(request);
+  let authenticatedUserId: string | null = null;
+  let authenticatedEmail: string | null = null;
+
+  if (authResult.success) {
+    authenticatedUserId = authResult.uid || null;
+    authenticatedEmail = authResult.email || null;
+    logger.info('[save-order] Authenticated user:', { uid: authenticatedUserId });
+  } else {
+    // Permitir checkout como invitado, pero sin userId
+    logger.info('[save-order] Guest checkout (no authentication)');
+  }
+
   const isProd = import.meta.env.PROD === true;
   logger.info('API save-order: Solicitud recibida');
 
   try {
     const rawData = await request.json();
 
-    // LOG: Ver estructura de datos recibidos
-    logger.info('API save-order: Datos recibidos:', JSON.stringify(rawData, null, 2));
+    // SECURITY FIX MEDIA: NO loguear datos completos antes de redactar
+    // Solo loguear en DEV mode y con datos redactados
+    if (!isProd) {
+      logger.info('API save-order: Datos recibidos (DEV only):', JSON.stringify(rawData, null, 2));
+    }
 
     // SECURITY: Validar datos con Zod para prevenir inyección y datos maliciosos
     const validationResult = orderDataSchema.safeParse(rawData);
@@ -188,9 +213,18 @@ export const POST: APIRoute = async ({ request }) => {
           quantity: Number(i?.quantity) || 0,
         }))
       : [];
+
+    // SECURITY FIX CRÍTICO: Usar userId del token autenticado, NO del cliente
+    // Si no hay autenticación, se guarda como 'guest'
+    const secureUserId = authenticatedUserId || 'guest';
+    const secureCustomerEmail = orderData.customerEmail || authenticatedEmail || orderData.shippingInfo.email;
+
     const docRef = await adminDb.collection('orders').add({
       ...orderData,
       items: sanitizedItems,
+      // SECURITY FIX: userId viene del servidor, no del cliente
+      userId: secureUserId,
+      customerEmail: secureCustomerEmail,
       subtotal: Number(orderData.subtotal) || 0,
       shipping: Number(orderData.shippingCost) || 0,
       shippingCost: Number(orderData.shippingCost) || 0,
@@ -198,39 +232,29 @@ export const POST: APIRoute = async ({ request }) => {
       idempotencyKey, // Store the idempotency key with the order
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
-      status: orderData.status || 'pending',
+      // SECURITY FIX CRÍTICO: status SIEMPRE es 'pending' para nuevos pedidos
+      // Solo el webhook de Stripe o un admin puede cambiar esto
+      status: 'pending',
+      paymentStatus: 'pending',
+      // SECURITY FIX: Solo 'card' permitido desde API pública
+      paymentMethod: 'card',
     });
 
     logger.info('API save-order: Pedido guardado con ID:', docRef.id);
 
-    const paymentMethod = String(orderData.paymentMethod || 'card');
-    const orderStatus = String(orderData.status || 'pending');
-    const shouldDeferPostPaymentActions =
-      paymentMethod === 'card' &&
-      (orderStatus === 'pending' ||
-        String(orderData.paymentStatus || '').toLowerCase() === 'pending');
-
-    if (shouldDeferPostPaymentActions) {
-      logger.info(
-        `[save-order] Post-payment actions deferred for order ${docRef.id} until payment confirmation`
-      );
-    } else {
-      try {
-        await finalizeOrder({
-          db: adminDb,
-          orderId: docRef.id,
-          orderData: { ...orderData, items: sanitizedItems },
-          requestUrl: request.url,
-        });
-      } catch (finalizeError) {
-        logger.error(
-          '[save-order] Error running post-payment actions. Rolling back order.',
-          finalizeError
-        );
-        await docRef.delete();
-        throw finalizeError;
-      }
-    }
+    // SECURITY FIX CRÍTICO: NUNCA ejecutar finalizeOrder desde save-order
+    // finalizeOrder SOLO debe ejecutarse desde:
+    // 1. El webhook de Stripe después de confirmar el pago (stripe-webhook.ts)
+    // 2. Un admin manualmente para métodos de pago alternativos
+    //
+    // Esto previene que un atacante obtenga:
+    // - Acceso a productos digitales sin pagar
+    // - Cashback/créditos en wallet sin pagar
+    // - Uso de cupones sin completar la compra
+    logger.info(
+      `[save-order] Order ${docRef.id} created with status 'pending'. ` +
+      'Post-payment actions will run after payment confirmation via webhook.'
+    );
 
     return new Response(
       JSON.stringify({
