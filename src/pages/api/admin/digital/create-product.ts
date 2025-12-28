@@ -66,7 +66,7 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(
         JSON.stringify({
           error: 'Invalid input',
-          details: validationResult.error.format(),
+          details: import.meta.env.PROD ? undefined : validationResult.error.format(),
         }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
@@ -126,9 +126,11 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     logger.error('[admin/digital/create-product] Error:', error);
+    // SECURITY FIX: Don't expose error details in production
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Error creating digital product',
+        error: 'Error creating digital product',
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
@@ -136,8 +138,12 @@ export const POST: APIRoute = async ({ request }) => {
 };
 
 // Helper function to check admin emails
+// SECURITY FIX HIGH-001: Use private ADMIN_EMAILS (not PUBLIC_)
 function isAdminEmail(email?: string): boolean {
   if (!email) return false;
-  const adminEmails = import.meta.env.PUBLIC_ADMIN_EMAILS?.split(',') || [];
-  return adminEmails.includes(email);
+  const adminEmails = (import.meta.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map((e: string) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return adminEmails.includes(email.toLowerCase());
 }

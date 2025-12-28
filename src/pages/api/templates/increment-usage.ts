@@ -27,7 +27,7 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(
         JSON.stringify({
           error: 'Invalid input',
-          details: validationResult.error.format(),
+          details: import.meta.env.PROD ? undefined : validationResult.error.format(),
         }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
@@ -63,9 +63,11 @@ export const POST: APIRoute = async ({ request }) => {
     });
   } catch (error) {
     logger.error('[increment-usage] Error:', error);
+    // SECURITY FIX: Don't expose error details in production
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Error incrementing usage',
+        error: 'Error incrementing usage',
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

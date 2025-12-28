@@ -141,9 +141,11 @@ export const POST: APIRoute = async ({ request }) => {
     );
   } catch (error: unknown) {
     logger.error('[update-order-tracking] Error:', error);
+    // SECURITY FIX: Don't expose error details in production
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Error actualizando tracking del pedido',
+        error: 'Error actualizando tracking del pedido',
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

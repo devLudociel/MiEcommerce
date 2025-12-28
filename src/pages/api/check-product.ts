@@ -188,11 +188,12 @@ export const GET: APIRoute = async ({ request, url }) => {
           }
         );
       } catch (e: unknown) {
-        const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+        logger.error('[check-product] Failed to update product:', e);
+        // SECURITY FIX: Don't expose error details in production
         return new Response(
           JSON.stringify({
             error: 'Failed to update product',
-            details: errorMessage,
+            details: import.meta.env.DEV ? (e instanceof Error ? e.message : undefined) : undefined,
           }),
           {
             status: 500,
@@ -234,12 +235,12 @@ export const GET: APIRoute = async ({ request, url }) => {
       }
     );
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[check-product] Internal server error:', error);
+    // SECURITY FIX: Don't expose error details in production
     return new Response(
       JSON.stringify({
         error: 'Internal server error',
-        details: errorMessage,
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       {
         status: 500,

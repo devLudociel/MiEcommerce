@@ -55,9 +55,11 @@ export const GET: APIRoute = async ({ request, url }) => {
     });
   } catch (error) {
     logger.error('[get-by-category] Error:', error);
+    // SECURITY FIX: Don't expose error details in production
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Error fetching templates',
+        error: 'Error fetching templates',
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

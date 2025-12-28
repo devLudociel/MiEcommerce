@@ -71,9 +71,11 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     logger.error('[digital/get-my-downloads] Error:', error);
+    // SECURITY FIX: Don't expose error details in production
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Error al obtener descargas',
+        error: 'Error al obtener descargas',
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

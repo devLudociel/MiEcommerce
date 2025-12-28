@@ -146,9 +146,11 @@ export const POST: APIRoute = async ({ request }) => {
     );
   } catch (error: unknown) {
     logger.error('[cancel-order] Error cancelling order:', error);
+    // SECURITY FIX: Don't expose error details in production
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Error cancelando el pedido',
+        error: 'Error cancelando el pedido',
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       {
         status: 500,

@@ -61,9 +61,11 @@ export const GET: APIRoute = async ({ url }) => {
     );
   } catch (error) {
     logger.error('[cliparts/get-all] Error:', error);
+    // SECURITY FIX: Don't expose error details in production
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Error fetching cliparts',
+        error: 'Error fetching cliparts',
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
