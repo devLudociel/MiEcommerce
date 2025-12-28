@@ -299,8 +299,22 @@ export default function LoginPanel() {
           setError('Las contraseñas no coinciden');
           return;
         }
-        if (password.length < 6) {
-          setError('La contraseña debe tener al menos 6 caracteres');
+        // SECURITY FIX MED-005: Use centralized password validation
+        // Requires 8+ chars, uppercase, lowercase, and number
+        if (password.length < 8) {
+          setError('La contraseña debe tener al menos 8 caracteres');
+          return;
+        }
+        if (!/[A-Z]/.test(password)) {
+          setError('La contraseña debe contener al menos una mayúscula');
+          return;
+        }
+        if (!/[a-z]/.test(password)) {
+          setError('La contraseña debe contener al menos una minúscula');
+          return;
+        }
+        if (!/[0-9]/.test(password)) {
+          setError('La contraseña debe contener al menos un número');
           return;
         }
       }

@@ -333,10 +333,11 @@ export const POST: APIRoute = async ({ request }) => {
     );
   } catch (error) {
     logger.error('[validate-coupon] Unexpected error', error);
+    // SECURITY FIX MED-006: Don't expose error details in production
     return new Response(
       JSON.stringify({
         error: 'Error al validar el cupón',
-        details: (error as Error).message,
+        details: import.meta.env.DEV ? (error as Error).message : undefined,
       }),
       {
         status: 500,

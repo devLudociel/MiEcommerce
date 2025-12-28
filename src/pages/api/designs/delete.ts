@@ -38,10 +38,11 @@ export const DELETE: APIRoute = async ({ request }) => {
     // Validate input
     const validationResult = deleteDesignSchema.safeParse(rawData);
     if (!validationResult.success) {
+      // SECURITY FIX MED-006: Don't expose validation details in production
       return new Response(
         JSON.stringify({
           error: 'Invalid input',
-          details: validationResult.error.format(),
+          details: import.meta.env.DEV ? validationResult.error.format() : undefined,
         }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );

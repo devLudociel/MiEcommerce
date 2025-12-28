@@ -22,6 +22,16 @@ export const GET: APIRoute = async ({ params }) => {
       });
     }
 
+    // SECURITY FIX LOW-003: Validate shareId format
+    // Only allow alphanumeric, hyphens, and underscores (10-50 chars)
+    if (!/^[a-zA-Z0-9_-]{10,50}$/.test(shareId)) {
+      logger.warn('[share/get] Invalid shareId format:', shareId);
+      return new Response(JSON.stringify({ error: 'Invalid share ID format' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     logger.info('[share/get] Fetching shared design:', shareId);
 
     const db = getAdminDb();
