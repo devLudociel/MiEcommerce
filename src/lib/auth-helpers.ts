@@ -81,7 +81,34 @@ export async function verifyAdminAuth(request: Request): Promise<AuthResult> {
 export function createErrorResponse(message: string, status: number = 500): Response {
   return new Response(JSON.stringify({ error: message }), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: getSecurityHeaders(),
+  });
+}
+
+/**
+ * SECURITY FIX LOW-005: Security headers for API responses
+ * Returns headers object with security best practices
+ */
+export function getSecurityHeaders(): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Cache-Control': 'no-store, no-cache, must-revalidate',
+    'Pragma': 'no-cache',
+  };
+}
+
+/**
+ * Creates a JSON response with security headers
+ */
+export function createSecureResponse(
+  data: unknown,
+  status: number = 200
+): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: getSecurityHeaders(),
   });
 }
 

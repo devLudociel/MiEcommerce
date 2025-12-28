@@ -245,10 +245,14 @@ export const POST: APIRoute = async ({ request }) => {
   } catch (error: unknown) {
     // SECURITY: No exponer stack traces en producción
     logger.error('API save-order: Error:', error);
-    logger.error('API save-order: Stack:', error instanceof Error ? error.stack : undefined);
+    if (import.meta.env.DEV) {
+      logger.error('API save-order: Stack:', error instanceof Error ? error.stack : undefined);
+    }
+    // SECURITY FIX: Don't expose error details in production
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Error guardando pedido',
+        error: 'Error guardando pedido',
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       {
         status: 500,

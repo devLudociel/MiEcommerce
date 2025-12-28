@@ -188,9 +188,11 @@ export const POST: APIRoute = async ({ request }) => {
     );
   } catch (error: unknown) {
     logger.error('[finalize-order] Unexpected error', error);
+    // SECURITY FIX: Don't expose error details in production
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Error procesando solicitud',
+        error: 'Error procesando solicitud',
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

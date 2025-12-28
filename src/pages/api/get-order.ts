@@ -91,9 +91,11 @@ export const GET: APIRoute = async ({ url, request }) => {
     });
   } catch (error: unknown) {
     logger.error('Error fetching order:', error);
+    // SECURITY FIX: Don't expose error details in production
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Internal server error',
+        error: 'Error al obtener pedido',
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       {
         status: 500,
