@@ -106,9 +106,14 @@ export const POST: APIRoute = async ({ request }) => {
     if (trackingNumber && carrier) {
       try {
         const orderData = orderSnap.data();
+        // SECURITY FIX: Use internal API secret for server-to-server call
+        const internalSecret = import.meta.env.INTERNAL_API_SECRET || '';
         await fetch(new URL('/api/send-email', request.url).toString(), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(internalSecret && { 'X-Internal-Secret': internalSecret }),
+          },
           body: JSON.stringify({
             orderId,
             type: 'tracking-update',

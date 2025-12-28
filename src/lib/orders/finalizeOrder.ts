@@ -310,9 +310,14 @@ export async function finalizeOrder({
   if (requestUrl) {
     try {
       logger.debug('[finalizeOrder] Sending confirmation email', { orderId });
+      // SECURITY FIX: Use internal API secret for server-to-server call
+      const internalSecret = import.meta.env.INTERNAL_API_SECRET || '';
       const emailResponse = await fetch(new URL('/api/send-email', requestUrl).toString(), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(internalSecret && { 'X-Internal-Secret': internalSecret }),
+        },
         body: JSON.stringify({
           orderId,
           type: 'confirmation',

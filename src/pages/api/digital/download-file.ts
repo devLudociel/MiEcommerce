@@ -13,6 +13,18 @@ interface DigitalFile {
 }
 
 /**
+ * SECURITY: Sanitize filename for Content-Disposition header
+ * Prevents header injection attacks
+ */
+function sanitizeFilename(filename: string): string {
+  // Remove or replace dangerous characters
+  return filename
+    .replace(/["\\\r\n]/g, '_')  // Remove quotes, backslashes, newlines
+    .replace(/[^\x20-\x7E]/g, '_')  // Only ASCII printable chars
+    .substring(0, 255);  // Limit length
+}
+
+/**
  * POST /api/digital/download-file
  *
  * Genera una URL de descarga segura y temporal para un archivo digital
@@ -100,7 +112,27 @@ export const POST: APIRoute = async ({ request }) => {
       throw new Error('Invalid file URL format');
     }
     const encodedPath = urlParts[1].split('?')[0];
-    const filePath = decodeURIComponent(encodedPath);
+    let filePath = decodeURIComponent(encodedPath);
+
+    // SECURITY FIX CRIT-004: Prevent path traversal attacks
+    // Normalize path and remove any '..' sequences
+    filePath = filePath.replace(/\.\./g, '').replace(/\/+/g, '/');
+
+    // Verify path is within allowed directory (digital products)
+    const ALLOWED_PREFIXES = ['digital-products/', 'digital/', 'downloads/'];
+    const isAllowedPath = ALLOWED_PREFIXES.some(prefix => filePath.startsWith(prefix));
+
+    if (!isAllowedPath && !filePath.includes('digital')) {
+      logger.warn('[digital/download-file] Path traversal attempt blocked', {
+        userId,
+        attemptedPath: filePath,
+        originalUrl: fileUrl,
+      });
+      return new Response(
+        JSON.stringify({ error: 'Ruta de archivo no permitida' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     const fileRef = bucket.file(filePath);
 
@@ -141,7 +173,7 @@ export const POST: APIRoute = async ({ request }) => {
       status: 200,
       headers: {
         'Content-Type': file.fileType || 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${file.name}"`,
+        'Content-Disposition': `attachment; filename="${sanitizeFilename(file.name)}"`,
         'Content-Length': fileBuffer.length.toString(),
       },
     });

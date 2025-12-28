@@ -8,6 +8,14 @@ import {
   newsletterWelcomeTemplate,
 } from '../../lib/emailTemplates';
 import type { OrderData } from '../../types/firebase';
+import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_CONFIGS,
+} from '../../lib/rate-limiter';
+import { verifyAdminAuth } from '../../lib/auth/authHelpers';
+import { z } from 'zod';
 
 // Simple console logger for API routes (avoids import issues)
 const logger = {
@@ -24,17 +32,71 @@ interface ResendResponse {
   error?: { message: string; name: string } | null;
 }
 
+// SECURITY: Zod schema for input validation
+const sendEmailSchema = z.object({
+  orderId: z.string().min(1).max(255).optional(),
+  type: z.enum(['confirmation', 'status-update', 'newsletter-welcome', 'tracking-update']),
+  newStatus: z.string().max(50).optional(),
+  email: z.string().email().max(255).optional(),
+  trackingNumber: z.string().max(100).optional(),
+  carrier: z.string().max(100).optional(),
+  trackingUrl: z.string().url().max(500).optional(),
+  customerEmail: z.string().email().max(255).optional(),
+});
+
+// Internal API secret for server-to-server calls (newsletter subscription)
+const INTERNAL_API_SECRET = import.meta.env.INTERNAL_API_SECRET || '';
+
 const resend = new Resend(import.meta.env.RESEND_API_KEY);
 
 export const POST: APIRoute = async ({ request }) => {
   logger.info('📧 API send-email: Solicitud recibida');
 
+  // SECURITY FIX CRIT-003: Rate limiting
+  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STRICT, 'send-email');
+  if (!rateLimitResult.allowed) {
+    logger.warn('📧 Rate limit exceeded for send-email');
+    return createRateLimitResponse(rateLimitResult);
+  }
+
+  // SECURITY FIX CRIT-003: CSRF validation
+  const csrfResult = validateCSRF(request);
+  if (!csrfResult.valid) {
+    logger.warn('📧 CSRF validation failed:', csrfResult.reason);
+    return createCSRFErrorResponse();
+  }
+
+  // Check for internal API call (from newsletter subscription)
+  const internalSecret = request.headers.get('X-Internal-Secret');
+  const isInternalCall = internalSecret && internalSecret === INTERNAL_API_SECRET && INTERNAL_API_SECRET.length > 0;
+
   try {
-    const { orderId, type, newStatus, email } = await request.json();
-    logger.info('📧 Datos recibidos:', { orderId, type, newStatus, email });
+    const rawData = await request.json();
+
+    // SECURITY FIX CRIT-003: Validate input with Zod
+    const validationResult = sendEmailSchema.safeParse(rawData);
+    if (!validationResult.success) {
+      logger.warn('📧 Invalid input:', validationResult.error.format());
+      return new Response(
+        JSON.stringify({ error: 'Datos inválidos' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { orderId, type, newStatus, email } = validationResult.data;
+    logger.info('📧 Datos recibidos:', { orderId, type, newStatus, email: email ? '***@***' : undefined });
 
     // Newsletter welcome doesn't need orderId, just email
     if (type === 'newsletter-welcome') {
+      // SECURITY: Newsletter welcome only allowed from internal calls
+      if (!isInternalCall) {
+        logger.warn('📧 Unauthorized newsletter-welcome attempt (not internal call)');
+        return new Response(
+          JSON.stringify({ error: 'No autorizado' }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
       if (!email) {
         return new Response(JSON.stringify({ error: 'Email requerido para newsletter' }), {
           status: 400,
@@ -43,7 +105,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
 
       const template = newsletterWelcomeTemplate(email);
-      logger.info('📧 Enviando email de bienvenida a:', email);
+      logger.info('📧 Enviando email de bienvenida');
 
       const response = await resend.emails.send({
         from: import.meta.env.EMAIL_FROM || 'noreply@imprimearte.es',
@@ -52,7 +114,7 @@ export const POST: APIRoute = async ({ request }) => {
         html: template.html,
       });
 
-      logger.info('📧 Email de newsletter enviado correctamente:', response);
+      logger.info('📧 Email de newsletter enviado correctamente');
 
       const resendResponse = response as ResendResponse;
       const emailId = resendResponse.data?.id ?? resendResponse.id;
@@ -60,6 +122,18 @@ export const POST: APIRoute = async ({ request }) => {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
+    }
+
+    // SECURITY FIX CRIT-003: Order emails require admin authentication OR internal call
+    if (!isInternalCall) {
+      const authResult = await verifyAdminAuth(request);
+      if (!authResult.success || !authResult.isAdmin) {
+        logger.warn('📧 Unauthorized order email attempt');
+        return new Response(
+          JSON.stringify({ error: 'No autorizado - Se requiere autenticación de administrador' }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // Order emails need orderId
@@ -119,10 +193,12 @@ export const POST: APIRoute = async ({ request }) => {
     });
   } catch (error: unknown) {
     logger.error('❌ Error enviando email:', error);
+    // SECURITY FIX: Don't expose error details in production
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Error enviando email',
-        details: error instanceof Error ? error.stack : undefined,
+        error: 'Error enviando email',
+        // Only include details in development
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
