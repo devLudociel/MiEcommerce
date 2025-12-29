@@ -6,6 +6,18 @@ import { auth } from '../../lib/firebase';
 import { syncCartWithUser } from '../../store/cartStore';
 import { syncWishlistWithUser } from '../../store/wishlistStore';
 
+const AUTH_COOKIE_NAME = 'auth_token';
+
+function setAuthCookie(token: string | null): void {
+  if (typeof document === 'undefined') return;
+  if (!token) {
+    document.cookie = `${AUTH_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
+    return;
+  }
+  const encoded = encodeURIComponent(token);
+  document.cookie = `${AUTH_COOKIE_NAME}=${encoded}; Max-Age=3600; Path=/; SameSite=Lax`;
+}
+
 // TYPES: Firebase token claims structure
 interface FirebaseTokenClaims {
   admin?: boolean;
@@ -23,9 +35,10 @@ export function useAuth() {
       setUser(currentUser);
       try {
         if (currentUser) {
-          const token = await getIdTokenResult(currentUser, true);
-          const claims = token.claims as FirebaseTokenClaims;
+          const tokenResult = await getIdTokenResult(currentUser, true);
+          const claims = tokenResult.claims as FirebaseTokenClaims;
           setIsAdminClaim(!!claims.admin);
+          setAuthCookie(tokenResult.token);
 
           // Sync cart and wishlist with authenticated user
           await Promise.all([
@@ -34,12 +47,14 @@ export function useAuth() {
           ]);
         } else {
           setIsAdminClaim(false);
+          setAuthCookie(null);
 
           // Clear cart and wishlist when user logs out
           await Promise.all([syncCartWithUser(null), syncWishlistWithUser(null)]);
         }
       } catch {
         setIsAdminClaim(false);
+        setAuthCookie(null);
         // Still sync cart and wishlist even if token check fails
         if (currentUser) {
           await Promise.all([
@@ -60,6 +75,7 @@ export function useAuth() {
   const logout = async () => {
     try {
       await signOut(auth);
+      setAuthCookie(null);
       window.location.href = '/';
     } catch (error) {
       console.error('Error al cerrar sesión:', error);

@@ -1,6 +1,13 @@
 import type { APIRoute } from 'astro';
 import { verifyAdminAuth } from '../../../lib/auth-helpers';
 import { getAdminDb } from '../../../lib/firebase-admin';
+import { z } from 'zod';
+
+const updateItemNotesSchema = z.object({
+  orderId: z.string().min(1).max(255),
+  itemIndex: z.coerce.number().int().min(0),
+  notes: z.string().max(5000).optional(),
+});
 
 /**
  * API endpoint to update production notes for a specific order item
@@ -27,17 +34,19 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Parse request body
-    const { orderId, itemIndex, notes } = await request.json();
-
-    if (!orderId || itemIndex === undefined) {
+    const rawData = await request.json();
+    const validationResult = updateItemNotesSchema.safeParse(rawData);
+    if (!validationResult.success) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: orderId, itemIndex' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
+        JSON.stringify({
+          error: 'Datos inválidos',
+          details: import.meta.env.DEV ? validationResult.error.format() : undefined,
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
+
+    const { orderId, itemIndex, notes } = validationResult.data;
 
     // Get the order from Firestore
     const adminDb = getAdminDb();

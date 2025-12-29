@@ -583,6 +583,121 @@ export const bolsasSchema: CustomizationSchema = {
 };
 
 // ============================================================================
+// SCHEMA: TARJETAS DE VISITA
+// ============================================================================
+
+export const tarjetasVisitaSchema: CustomizationSchema = {
+  fields: [
+    {
+      id: 'design_ready',
+      fieldType: 'radio_group',
+      label: '¿Tienes tu diseño listo?',
+      required: true,
+      priceModifier: 0,
+      order: 1,
+      helpText: 'Elige una opción para continuar',
+      config: {
+        layout: 'vertical',
+        options: [
+          { value: 'ready', label: 'Sí, subiré mi diseño' },
+          { value: 'needs_design', label: 'No, necesito que lo diseñen' },
+        ],
+      },
+    },
+    {
+      id: 'design_upload',
+      fieldType: 'image_upload',
+      label: 'Sube tu diseño',
+      required: true,
+      priceModifier: 0,
+      order: 2,
+      condition: {
+        dependsOn: 'design_ready',
+        showWhen: 'ready',
+      },
+      config: {
+        maxSizeMB: 20,
+        allowedFormats: ['jpg', 'png', 'pdf', 'svg'],
+        showPreview: true,
+        helpText:
+          'Sube tu diseño listo para imprimir. Asegúrate de que tenga buena resolución. Formatos: JPG, PNG, PDF, SVG. Máx 20MB',
+      },
+    },
+    {
+      id: 'design_comments',
+      fieldType: 'text_input',
+      label: 'Comentarios adicionales (opcional)',
+      required: false,
+      priceModifier: 0,
+      order: 3,
+      helpText: 'Ejemplos: "Quiero que el fondo sea blanco", "Centrar el logo"',
+      condition: {
+        dependsOn: 'design_ready',
+        showWhen: 'ready',
+      },
+      config: {
+        placeholder: 'Ej: Quiero que el fondo sea blanco y el logo centrado',
+        maxLength: 500,
+        showCharCounter: true,
+      },
+    },
+    {
+      id: 'design_service',
+      fieldType: 'checkbox',
+      label: '🎨 Diseño gráfico profesional (+15 €)',
+      required: true,
+      priceModifier: 15,
+      order: 4,
+      condition: {
+        dependsOn: 'design_ready',
+        showWhen: 'needs_design',
+      },
+      config: {
+        description: 'Incluye 1 revisión. Revisiones extra pueden tener coste adicional.',
+      },
+    },
+    {
+      id: 'design_reference_upload',
+      fieldType: 'image_upload',
+      label: 'Sube referencias (opcional)',
+      required: false,
+      priceModifier: 0,
+      order: 5,
+      condition: {
+        dependsOn: 'design_ready',
+        showWhen: 'needs_design',
+      },
+      config: {
+        maxSizeMB: 10,
+        allowedFormats: ['jpg', 'png', 'pdf', 'svg'],
+        showPreview: true,
+        helpText: 'Puedes subir un boceto, logo o imagen de referencia (opcional).',
+      },
+    },
+    {
+      id: 'design_description',
+      fieldType: 'text_input',
+      label: 'Descripción del diseño',
+      required: true,
+      priceModifier: 0,
+      order: 6,
+      helpText: 'Incluye 1 revisión. Revisiones extra pueden tener coste adicional.',
+      condition: {
+        dependsOn: 'design_ready',
+        showWhen: 'needs_design',
+      },
+      config: {
+        placeholder:
+          'Quiero una tarjeta elegante, colores negro y dorado, con QR y logo...',
+        maxLength: 1000,
+        showCharCounter: true,
+      },
+    },
+  ],
+  displayComponent: 'DynamicCustomizer',
+};
+
+// ============================================================================
 // EXPORT ALL SCHEMAS
 // ============================================================================
 
@@ -591,6 +706,7 @@ export const exampleSchemas = {
   camisetasPro: camisetasProSchema,
   hoodies: hoodiesSchema,
   bolsas: bolsasSchema,
+  tarjetasVisita: tarjetasVisitaSchema,
   cuadros: cuadrosSchema,
   resina: resinaSchema,
   tazas: tazasSchema,
@@ -648,6 +764,7 @@ export const exampleSchemas = {
 
 // Schema names for dropdown selection
 export const schemaOptions = [
+<<<<<<< HEAD
   // ───── PRODUCTOS GRÁFICOS ─────
   { value: 'tarjetasVisita', label: '🎴 Tarjetas de Visita' },
   { value: 'flyers', label: '📰 Flyers y Folletos' },
@@ -683,6 +800,21 @@ export const schemaOptions = [
   { value: 'resina', label: '💎 Figuras de Resina (cajas)' },
 
   // ───── EVENTOS ─────
+=======
+  { value: 'camisetas', label: 'Camisetas / Textiles (básico)' },
+  { value: 'camisetasPro', label: 'Camisetas Pro (front/back)' },
+  { value: 'hoodies', label: 'Hoodies / Sudaderas' },
+  { value: 'bolsas', label: 'Bolsas / Tote Bags' },
+  { value: 'tarjetasVisita', label: '💼 Tarjetas de visita' },
+  { value: 'cuadros', label: 'Cuadros / Marcos' },
+  { value: 'resina', label: 'Figuras de Resina' },
+  { value: 'tazas', label: 'Tazas / Sublimados' },
+  // Packaging options
+  { value: 'cajasPersonalizadas', label: '📦 Cajas Personalizadas' },
+  { value: 'bolsasPapel', label: '🛍️ Bolsas de Papel' },
+  { value: 'etiquetasAdhesivas', label: '🏷️ Etiquetas Adhesivas' },
+  // Eventos infantiles
+>>>>>>> ebebe39 (estilos card y productos)
   { value: 'cajasChuches', label: '🍬 Cajas de Chuches / Cumpleaños' },
   { value: 'invitacionesEventos', label: '💌 Invitaciones de Eventos' },
   { value: 'photocalls', label: '📸 Photocalls' },

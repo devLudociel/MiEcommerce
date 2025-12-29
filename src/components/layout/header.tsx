@@ -210,7 +210,6 @@ const Header: React.FC<HeaderProps> = () => {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -223,56 +222,8 @@ const Header: React.FC<HeaderProps> = () => {
     return () => document.removeEventListener('click', onDocClick);
   }, []);
 
-  const { user, email, displayName, isAuthenticated, logout } = useAuth();
-
-  // Check if user is admin (allowlist OR custom claim)
-  // Automatically set admin claim if user is admin by email but doesn't have claim
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const adminEmails = (import.meta.env.PUBLIC_ADMIN_EMAILS || '')
-        .split(',')
-        .map((s: string) => s.trim().toLowerCase())
-        .filter(Boolean);
-      const byEmail = email ? adminEmails.includes(email.toLowerCase()) : false;
-      let byClaim = false;
-      try {
-        if (user) {
-          const { getIdTokenResult, getIdToken } = await import('firebase/auth');
-          const token = await getIdTokenResult(user, true);
-          byClaim = !!token.claims?.admin;
-
-          // If admin by email but missing claim, set it automatically
-          if (byEmail && !byClaim) {
-            try {
-              const idToken = await getIdToken(user);
-              const response = await fetch('/api/admin/set-admin-claim', {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${idToken}`,
-                  'Content-Type': 'application/json',
-                },
-              });
-              if (response.ok) {
-                // Refresh the token to get the new claim
-                await getIdTokenResult(user, true);
-                console.log('[Header] Admin claim set successfully');
-              }
-            } catch (claimError) {
-              console.debug('[Header] Could not set admin claim:', claimError);
-            }
-          }
-        }
-      } catch (e) {
-        // Non-critical: will fallback to email check
-        console.debug('[Header] Could not get admin claim:', e);
-      }
-      if (!cancelled) setIsAdmin(byEmail || byClaim);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [email, user]);
+  const { user, email, displayName, isAuthenticated, logout, isAdminClaim } = useAuth();
+  const isAdmin = isAdminClaim;
 
   // Cerrar menús al hacer clic fuera
   useEffect(() => {
@@ -416,7 +367,8 @@ const Header: React.FC<HeaderProps> = () => {
                         </div>
 
                         {/* Opciones del menú */}
-                        <div style={{ padding: 'var(--spacing-2) 0' }}>
+                        <div className="max-h-[70vh] overflow-y-auto">
+                          <div style={{ padding: 'var(--spacing-2) 0' }}>
                           <div
                             style={{
                               padding: '0 var(--spacing-3) var(--spacing-2) var(--spacing-3)',
@@ -482,90 +434,92 @@ const Header: React.FC<HeaderProps> = () => {
                                 Administración
                               </h4>
                             </div>
-                            <a
-                              href="/admin"
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              📊 Panel de administración
-                            </a>
-                            <a
-                              href="/admin/orders"
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              📦 Gestión de pedidos
-                            </a>
-                            <a
-                              href="/admin/products"
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              🏷️ Gestión de productos
-                            </a>
-                            <a
-                              href="/admin/content-manager"
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              🎨 Plantillas y Cliparts
-                            </a>
-                            <a
-                              href="/admin/digital-products"
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              📦 Productos Digitales
-                            </a>
-                            <a
-                              href="/admin/cupones"
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              🎟️ Gestión de cupones
-                            </a>
-                            <a
-                              href="/admin/newsletter"
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              📧 Newsletter Campaigns
-                            </a>
-                            <a
-                              href="/admin/banners"
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              🖼️ Banners del Carrusel
-                            </a>
-                            <a
-                              href="/admin/faqs"
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              ❓ Preguntas Frecuentes
-                            </a>
-                            <a
-                              href="/admin/testimonios"
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              ⭐ Testimonios y Estadísticas
-                            </a>
-                            <a
-                              href="/admin/contacto"
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              📞 Info de Contacto
-                            </a>
-                            <a
-                              href="/admin/resenas"
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              💬 Reseñas de Clientes
-                            </a>
+                            <div className="grid grid-cols-2 gap-1 px-2">
+                              <a
+                                href="/admin"
+                                className="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                📊 Panel
+                              </a>
+                              <a
+                                href="/admin/orders"
+                                className="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                📦 Pedidos
+                              </a>
+                              <a
+                                href="/admin/products"
+                                className="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                🏷️ Productos
+                              </a>
+                              <a
+                                href="/admin/content-manager"
+                                className="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                🎨 Plantillas
+                              </a>
+                              <a
+                                href="/admin/digital-products"
+                                className="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                📦 Digitales
+                              </a>
+                              <a
+                                href="/admin/cupones"
+                                className="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                🎟️ Cupones
+                              </a>
+                              <a
+                                href="/admin/newsletter"
+                                className="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                📧 Newsletter
+                              </a>
+                              <a
+                                href="/admin/banners"
+                                className="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                🖼️ Banners
+                              </a>
+                              <a
+                                href="/admin/faqs"
+                                className="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                ❓ FAQs
+                              </a>
+                              <a
+                                href="/admin/testimonios"
+                                className="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                ⭐ Testimonios
+                              </a>
+                              <a
+                                href="/admin/contacto"
+                                className="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                📞 Contacto
+                              </a>
+                              <a
+                                href="/admin/resenas"
+                                className="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                💬 Reseñas
+                              </a>
+                            </div>
                           </div>
                         )}
 
@@ -636,6 +590,7 @@ const Header: React.FC<HeaderProps> = () => {
                           >
                             Cerrar sesión
                           </button>
+                        </div>
                         </div>
                       </>
                     ) : (

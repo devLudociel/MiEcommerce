@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
-import { verifyAdminAuth } from '../../../lib/auth-helpers';
+import { verifyAdminAuth, getSecurityHeaders } from '../../../lib/auth-helpers';
 import { getAdminDb } from '../../../lib/firebase-admin';
+import { z } from 'zod';
 
 /**
  * API endpoint to update production status for a specific order item
@@ -11,7 +12,17 @@ import { getAdminDb } from '../../../lib/firebase-admin';
  *
  * Only accessible by authenticated admin users
  */
+const validStatuses = ['pending', 'in_production', 'ready', 'shipped'] as const;
+
+const updateItemStatusSchema = z.object({
+  orderId: z.string().min(1).max(255),
+  itemIndex: z.coerce.number().int().min(0),
+  status: z.enum(validStatuses),
+});
+
 export const POST: APIRoute = async ({ request }) => {
+  const headers = getSecurityHeaders();
+
   try {
     // Verify admin authentication
     const authResult = await verifyAdminAuth(request);
@@ -21,35 +32,25 @@ export const POST: APIRoute = async ({ request }) => {
         JSON.stringify({ error: authResult.error || 'Forbidden: Admin access required' }),
         {
           status: authResult.isAuthenticated ? 403 : 401,
-          headers: { 'Content-Type': 'application/json' },
+          headers,
         }
       );
     }
 
     // Parse request body
-    const { orderId, itemIndex, status } = await request.json();
-
-    if (!orderId || itemIndex === undefined || !status) {
+    const rawData = await request.json();
+    const validationResult = updateItemStatusSchema.safeParse(rawData);
+    if (!validationResult.success) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: orderId, itemIndex, status' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
+        JSON.stringify({
+          error: 'Datos inválidos',
+          details: import.meta.env.DEV ? validationResult.error.format() : undefined,
+        }),
+        { status: 400, headers }
       );
     }
 
-    // Validate status
-    const validStatuses = ['pending', 'in_production', 'ready', 'shipped'];
-    if (!validStatuses.includes(status)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid status. Must be one of: ' + validStatuses.join(', ') }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
+    const { orderId, itemIndex, status } = validationResult.data;
 
     // Get the order from Firestore
     const adminDb = getAdminDb();
@@ -59,7 +60,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (!orderDoc.exists) {
       return new Response(JSON.stringify({ error: 'Order not found' }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
@@ -67,7 +68,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (!orderData || !orderData.items || !orderData.items[itemIndex]) {
       return new Response(JSON.stringify({ error: 'Item not found' }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
@@ -91,14 +92,14 @@ export const POST: APIRoute = async ({ request }) => {
       }),
       {
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       }
     );
   } catch (error) {
     console.error('[update-item-status] Error:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   }
 };

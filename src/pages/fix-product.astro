@@ -51,7 +51,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { auth } from '../lib/firebase';
+    import { getIdTokenResult } from 'firebase/auth';
+
     const slugInput = document.getElementById('slug') as HTMLInputElement;
     const checkBtn = document.getElementById('checkBtn')!;
     const fixBtn = document.getElementById('fixBtn')!;
@@ -64,6 +67,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const div = document.createElement('div');
       div.textContent = String(text);
       return div.innerHTML;
+    }
+
+    async function getAdminToken(): Promise<string | null> {
+      const user = auth.currentUser;
+      if (!user) return null;
+      try {
+        const tokenResult = await getIdTokenResult(user, true);
+        if (!tokenResult.claims?.admin) {
+          return null;
+        }
+        return tokenResult.token;
+      } catch (e) {
+        console.warn('[fix-product] Could not verify admin token:', e);
+        return null;
+      }
     }
 
     async function checkProduct() {
@@ -241,7 +259,28 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       loading.classList.remove('hidden');
 
       try {
-        const response = await fetch(`/api/check-product?slug=${encodeURIComponent(slug)}&action=fix`);
+        const adminToken = await getAdminToken();
+        if (!adminToken) {
+          loading.classList.add('hidden');
+          results.classList.remove('hidden');
+          results.innerHTML = `
+            <div class="bg-red-50 border-2 border-red-200 rounded-2xl p-8">
+              <div class="text-4xl mb-3">❌</div>
+              <h3 class="text-xl font-bold text-red-900 mb-2">Acceso denegado</h3>
+              <p class="text-red-700">Se requiere una cuenta de administrador.</p>
+            </div>
+          `;
+          return;
+        }
+
+        const response = await fetch(
+          `/api/check-product?slug=${encodeURIComponent(slug)}&action=fix`,
+          {
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+            },
+          }
+        );
         const data = await response.json();
 
         loading.classList.add('hidden');

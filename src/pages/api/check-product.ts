@@ -1,9 +1,11 @@
 import type { APIRoute } from 'astro';
-import { collection, query, where, limit, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { loadCustomizationSchema } from '../../lib/customization/schemas';
 import { rateLimitPersistent } from '../../lib/rateLimitPersistent';
 import { logger } from '../../lib/logger';
+import { getAdminDb } from '../../lib/firebase-admin';
+import { verifyAdminAuth } from '../../lib/auth/authHelpers';
 
 // Type for product data from Firestore
 interface ProductDocument {
@@ -48,6 +50,19 @@ export const GET: APIRoute = async ({ request, url }) => {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
+    }
+
+    if (action === 'fix') {
+      const authResult = await verifyAdminAuth(request);
+      if (!authResult.success || !authResult.isAdmin) {
+        return (
+          authResult.error ||
+          new Response(JSON.stringify({ error: 'Forbidden: Admin access required' }), {
+            status: 403,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        );
+      }
     }
 
     // 1. Buscar producto
@@ -155,8 +170,8 @@ export const GET: APIRoute = async ({ request, url }) => {
     // 4. Si action=fix, agregar el campo customizationSchemaId
     if (action === 'fix' && detectedSchemaId && !productData.customizationSchemaId) {
       try {
-        const productRef = doc(db, 'products', productId);
-        await updateDoc(productRef, {
+        const adminDb = getAdminDb();
+        await adminDb.collection('products').doc(productId).update({
           customizationSchemaId: detectedSchemaId,
         });
 

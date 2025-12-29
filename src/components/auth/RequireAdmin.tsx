@@ -9,10 +9,6 @@ interface Props {
 
 export default function RequireAdmin({ children, redirectTo = '/account' }: Props) {
   const [allowed, setAllowed] = useState<boolean | null>(null);
-  const adminEmails = (import.meta.env.PUBLIC_ADMIN_EMAILS || '')
-    .split(',')
-    .map((s: string) => s.trim().toLowerCase())
-    .filter(Boolean);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -25,22 +21,20 @@ export default function RequireAdmin({ children, redirectTo = '/account' }: Prop
         return;
       }
       try {
-        const email = (user.email || '').toLowerCase();
-        const allowedByEmail = !!email && adminEmails.includes(email);
         let allowedByClaim = false;
         try {
           const token = await getIdTokenResult(user, true);
           allowedByClaim = !!token.claims?.admin;
           console.log('[RequireAdmin] claims', token.claims);
         } catch (e) {
-          // Token claim check failed - will fallback to email check
+          // Token claim check failed
           console.warn('[RequireAdmin] Could not get token claims:', e);
         }
-        if (allowedByEmail || allowedByClaim) {
+        if (allowedByClaim) {
           setAllowed(true);
         } else {
           if (typeof window !== 'undefined') {
-            console.warn('[RequireAdmin] Acceso denegado. Email no permitido:', email);
+            console.warn('[RequireAdmin] Acceso denegado. Claims insuficientes.');
             window.location.replace(redirectTo);
           }
         }
