@@ -3,6 +3,13 @@ import { getAdminDb, getAdminAuth } from '../../../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { logger } from '../../../../lib/logger';
 import { z } from 'zod';
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_CONFIGS,
+} from '../../../../lib/rate-limiter';
+import { validateCSRF, createCSRFErrorResponse } from '../../../../lib/csrf';
+import { getSecurityHeaders } from '../../../../lib/auth-helpers';
 
 const createClipartSchema = z.object({
   name: z.string().min(1).max(100),
@@ -33,6 +40,22 @@ const createClipartSchema = z.object({
  * Returns: { clipartId: string }
  */
 export const POST: APIRoute = async ({ request }) => {
+  const headers = getSecurityHeaders();
+
+  // SECURITY: Rate limiting for admin clipart creation
+  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STRICT, 'cliparts-create');
+  if (!rateLimitResult.allowed) {
+    logger.warn('[admin/cliparts/create] Rate limit exceeded');
+    return createRateLimitResponse(rateLimitResult);
+  }
+
+  // SECURITY: CSRF protection
+  const csrfCheck = validateCSRF(request);
+  if (!csrfCheck.valid) {
+    logger.warn('[admin/cliparts/create] CSRF validation failed:', csrfCheck.reason);
+    return createCSRFErrorResponse();
+  }
+
   try {
     // SECURITY: Admin authentication required
     const authHeader = request.headers.get('Authorization');
@@ -40,7 +63,7 @@ export const POST: APIRoute = async ({ request }) => {
       logger.warn('[admin/cliparts/create] No auth token provided');
       return new Response(JSON.stringify({ error: 'Unauthorized: Token required' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
@@ -52,7 +75,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (!decodedToken.admin && !isAdminEmail(decodedToken.email)) {
       return new Response(JSON.stringify({ error: 'Unauthorized: Admin access required' }), {
         status: 403,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
@@ -66,7 +89,7 @@ export const POST: APIRoute = async ({ request }) => {
           error: 'Invalid input',
           details: import.meta.env.PROD ? undefined : validationResult.error.format(),
         }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { status: 400, headers }
       );
     }
 
@@ -92,7 +115,7 @@ export const POST: APIRoute = async ({ request }) => {
         clipartId: clipartRef.id,
         message: 'Clipart creado correctamente',
       }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      { status: 200, headers }
     );
   } catch (error: unknown) {
     const firebaseError = error as { code?: string };
@@ -102,7 +125,7 @@ export const POST: APIRoute = async ({ request }) => {
     ) {
       return new Response(JSON.stringify({ error: 'Token inválido o expirado' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
@@ -113,7 +136,7 @@ export const POST: APIRoute = async ({ request }) => {
         error: 'Error creating clipart',
         details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 500, headers }
     );
   }
 };

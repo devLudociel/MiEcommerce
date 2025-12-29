@@ -2,6 +2,11 @@ import type { APIRoute } from 'astro';
 import { getAdminDb, getAdminAuth } from '../../../lib/firebase-admin';
 import { logger } from '../../../lib/logger';
 import { z } from 'zod';
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_CONFIGS,
+} from '../../../lib/rate-limiter';
 
 const toggleFavoriteSchema = z.object({
   designId: z.string().min(1),
@@ -19,6 +24,17 @@ const toggleFavoriteSchema = z.object({
  * Returns: { success: boolean }
  */
 export const POST: APIRoute = async ({ request }) => {
+  // SECURITY: Rate limiting (standard limit for toggling favorites)
+  const rateLimitResult = checkRateLimit(
+    request,
+    RATE_LIMIT_CONFIGS.STANDARD,
+    'designs-toggle-favorite'
+  );
+  if (!rateLimitResult.allowed) {
+    logger.warn('[designs/toggle-favorite] Rate limit exceeded');
+    return createRateLimitResponse(rateLimitResult);
+  }
+
   try {
     // Get auth token
     const authHeader = request.headers.get('Authorization');
@@ -97,7 +113,8 @@ export const POST: APIRoute = async ({ request }) => {
     logger.error('[designs/toggle-favorite] Error:', error);
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Error toggling favorite',
+        error: 'Error toggling favorite',
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

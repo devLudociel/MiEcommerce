@@ -45,14 +45,6 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
     img.src = FALLBACK_IMG_400x300;
   }, []);
 
-  const handleButtonClick = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-      e.stopPropagation();
-      console.log('Añadir al carrito:', product.id);
-    },
-    [product.id]
-  );
-
   return (
     <article className="relative bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-200 hover:border-gray-300 transition-all duration-300 cursor-pointer hover:-translate-y-1 active:scale-[0.98]">
       <a
@@ -125,7 +117,16 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
           {product.name}
         </h3>
 
-        <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 leading-relaxed line-clamp-2 hidden sm:block">
+        <p
+          className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 leading-relaxed hidden sm:block"
+          style={{
+            display: '-webkit-box',
+            WebkitBoxOrient: 'vertical',
+            WebkitLineClamp: 3,
+            overflow: 'hidden',
+            minHeight: '4.8em',
+          }}
+        >
           {product.description}
         </p>
 
@@ -175,14 +176,14 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
             <span className="text-[10px] sm:text-xs text-gray-500">desde</span>
           </div>
 
-          <button
+          <a
+            href={cardHref}
             className="bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap active:scale-95"
-            onClick={handleButtonClick}
             style={{ position: 'relative', zIndex: 20 }}
           >
             <span className="hidden sm:inline">Ver detalles</span>
             <span className="sm:hidden">Ver</span>
-          </button>
+          </a>
         </div>
       </div>
     </article>

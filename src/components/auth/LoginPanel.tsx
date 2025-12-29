@@ -5,11 +5,13 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
+  getIdTokenResult,
   onAuthStateChanged,
   signOut,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
+  type User,
 } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import AccessibleModal from '../common/AccessibleModal';
@@ -24,6 +26,18 @@ interface FirebaseError {
 
 function isFirebaseError(error: unknown): error is FirebaseError {
   return typeof error === 'object' && error !== null && ('code' in error || 'message' in error);
+}
+
+const AUTH_COOKIE_NAME = 'auth_token';
+
+function setAuthCookie(token: string | null): void {
+  if (typeof document === 'undefined') return;
+  if (!token) {
+    document.cookie = `${AUTH_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
+    return;
+  }
+  const encoded = encodeURIComponent(token);
+  document.cookie = `${AUTH_COOKIE_NAME}=${encoded}; Max-Age=3600; Path=/; SameSite=Lax`;
 }
 
 export default function LoginPanel() {
@@ -79,6 +93,20 @@ export default function LoginPanel() {
     );
   };
 
+  const getAdminTargetUrl = async (user: User | null, desired?: string) => {
+    if (!user || typeof window === 'undefined') return '/account';
+    try {
+      const tokenResult = await getIdTokenResult(user, true);
+      setAuthCookie(tokenResult.token);
+      const isAdmin = Boolean(tokenResult.claims?.admin);
+      return isAdmin ? desired || '/admin/products' : '/account';
+    } catch (e) {
+      logger.warn('[LoginPanel] Could not verify admin claims', e);
+      setAuthCookie(null);
+      return '/account';
+    }
+  };
+
   // Check for redirect result on mount (for mobile)
   useEffect(() => {
     const checkRedirectResult = async () => {
@@ -117,14 +145,7 @@ export default function LoginPanel() {
           await new Promise((resolve) => setTimeout(resolve, 500));
 
           // Get redirect URL
-          const adminEmails = (import.meta.env.PUBLIC_ADMIN_EMAILS || '')
-            .split(',')
-            .map((s: string) => s.trim().toLowerCase())
-            .filter(Boolean);
-
-          const email = (result.user.email || '').toLowerCase();
-          const isAdmin = adminEmails.includes(email);
-          const targetUrl = isAdmin ? '/admin/products' : '/account';
+          const targetUrl = await getAdminTargetUrl(result.user);
 
           logger.info('[LoginPanel] Redirecting to:', targetUrl);
           window.location.href = targetUrl;
@@ -141,13 +162,7 @@ export default function LoginPanel() {
             // Check if user is already authenticated
             if (auth.currentUser) {
               logger.info('[LoginPanel] User already authenticated, redirecting...');
-              const adminEmails = (import.meta.env.PUBLIC_ADMIN_EMAILS || '')
-                .split(',')
-                .map((s: string) => s.trim().toLowerCase())
-                .filter(Boolean);
-              const email = (auth.currentUser.email || '').toLowerCase();
-              const isAdmin = adminEmails.includes(email);
-              const targetUrl = isAdmin ? '/admin/products' : '/account';
+              const targetUrl = await getAdminTargetUrl(auth.currentUser);
               window.location.href = targetUrl;
               return;
             }
@@ -399,22 +414,14 @@ export default function LoginPanel() {
   }
 
   async function redirectAfterLogin() {
-    const adminEmails = (import.meta.env.PUBLIC_ADMIN_EMAILS || '')
-      .split(',')
-      .map((s: string) => s.trim().toLowerCase())
-      .filter(Boolean);
-
     const u = auth.currentUser;
     if (!u || typeof window === 'undefined') return;
-    const email = (u.email || '').toLowerCase();
-    const allowedByEmail = !!email && adminEmails.includes(email);
     const url = new URL(window.location.href);
     const desired = url.searchParams.get('redirect') || '/admin/products';
     // Si NO es admin, redirige al panel de cuenta
-    const target = allowedByEmail ? desired : '/account';
+    const target = await getAdminTargetUrl(u, desired);
     logger.info('[LoginPanel] redirectAfterLogin', {
-      email,
-      allowedByEmail,
+      email: u.email || null,
       desired,
       target,
     });
