@@ -1,6 +1,20 @@
 import type { APIRoute } from 'astro';
-import { verifyAdminAuth } from '../../../lib/auth-helpers';
+import { verifyAdminAuth, getSecurityHeaders } from '../../../lib/auth-helpers';
 import { getAdminDb } from '../../../lib/firebase-admin';
+import { z } from 'zod';
+import { logger } from '../../../lib/logger';
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_CONFIGS,
+} from '../../../lib/rate-limiter';
+
+// SECURITY FIX: Zod schema for input validation
+const updateItemNotesSchema = z.object({
+  orderId: z.string().min(1).max(100).regex(/^[a-zA-Z0-9_-]+$/, 'Invalid orderId format'),
+  itemIndex: z.number().int().min(0).max(1000),
+  notes: z.string().max(5000).default(''), // Limit notes length to prevent abuse
+});
 
 /**
  * API endpoint to update production notes for a specific order item
@@ -12,6 +26,13 @@ import { getAdminDb } from '../../../lib/firebase-admin';
  * Only accessible by authenticated admin users
  */
 export const POST: APIRoute = async ({ request }) => {
+  // SECURITY FIX: Add rate limiting
+  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'admin-update-item-notes');
+  if (!rateLimitResult.allowed) {
+    logger.warn('[update-item-notes] Rate limit exceeded');
+    return createRateLimitResponse(rateLimitResult);
+  }
+
   try {
     // Verify admin authentication
     const authResult = await verifyAdminAuth(request);
@@ -21,23 +42,30 @@ export const POST: APIRoute = async ({ request }) => {
         JSON.stringify({ error: authResult.error || 'Forbidden: Admin access required' }),
         {
           status: authResult.isAuthenticated ? 403 : 401,
-          headers: { 'Content-Type': 'application/json' },
+          headers: getSecurityHeaders(),
         }
       );
     }
 
-    // Parse request body
-    const { orderId, itemIndex, notes } = await request.json();
+    // Parse and validate request body
+    const rawData = await request.json();
+    const validationResult = updateItemNotesSchema.safeParse(rawData);
 
-    if (!orderId || itemIndex === undefined) {
+    if (!validationResult.success) {
+      logger.warn('[update-item-notes] Validation failed:', validationResult.error.format());
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: orderId, itemIndex' }),
+        JSON.stringify({
+          error: 'Invalid input data',
+          details: import.meta.env.DEV ? validationResult.error.format() : undefined,
+        }),
         {
           status: 400,
-          headers: { 'Content-Type': 'application/json' },
+          headers: getSecurityHeaders(),
         }
       );
     }
+
+    const { orderId, itemIndex, notes } = validationResult.data;
 
     // Get the order from Firestore
     const adminDb = getAdminDb();
@@ -72,6 +100,8 @@ export const POST: APIRoute = async ({ request }) => {
       updatedAt: new Date(),
     });
 
+    logger.info('[update-item-notes] Notes updated by admin:', authResult.uid);
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -79,14 +109,21 @@ export const POST: APIRoute = async ({ request }) => {
       }),
       {
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: getSecurityHeaders(),
       }
     );
   } catch (error) {
-    console.error('[update-item-notes] Error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    logger.error('[update-item-notes] Error:', error);
+    // SECURITY FIX: Don't expose internal error details
+    return new Response(
+      JSON.stringify({
+        error: 'Internal server error',
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
+      }),
+      {
+        status: 500,
+        headers: getSecurityHeaders(),
+      }
+    );
   }
 };

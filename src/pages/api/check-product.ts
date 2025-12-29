@@ -4,6 +4,7 @@ import { db } from '../../lib/firebase';
 import { loadCustomizationSchema } from '../../lib/customization/schemas';
 import { rateLimitPersistent } from '../../lib/rateLimitPersistent';
 import { logger } from '../../lib/logger';
+import { verifyAdminAuth, getSecurityHeaders } from '../../lib/auth-helpers';
 
 // Type for product data from Firestore
 interface ProductDocument {
@@ -153,12 +154,28 @@ export const GET: APIRoute = async ({ request, url }) => {
     }
 
     // 4. Si action=fix, agregar el campo customizationSchemaId
+    // SECURITY FIX: Require admin authentication for modifying products
     if (action === 'fix' && detectedSchemaId && !productData.customizationSchemaId) {
+      // Verify admin authentication before allowing product modification
+      const authResult = await verifyAdminAuth(request);
+      if (!authResult.isAuthenticated || !authResult.isAdmin) {
+        logger.warn('[check-product] Unauthorized product fix attempt blocked');
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized: Admin access required to fix products' }),
+          {
+            status: authResult.isAuthenticated ? 403 : 401,
+            headers: getSecurityHeaders(),
+          }
+        );
+      }
+
       try {
         const productRef = doc(db, 'products', productId);
         await updateDoc(productRef, {
           customizationSchemaId: detectedSchemaId,
         });
+
+        logger.info('[check-product] Product fixed by admin:', authResult.uid);
 
         return new Response(
           JSON.stringify({

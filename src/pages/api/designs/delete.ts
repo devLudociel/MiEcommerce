@@ -2,6 +2,11 @@ import type { APIRoute } from 'astro';
 import { getAdminDb, getAdminAuth } from '../../../lib/firebase-admin';
 import { logger } from '../../../lib/logger';
 import { z } from 'zod';
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_CONFIGS,
+} from '../../../lib/rate-limiter';
 
 const deleteDesignSchema = z.object({
   designId: z.string().min(1),
@@ -18,6 +23,13 @@ const deleteDesignSchema = z.object({
  * Returns: { success: boolean }
  */
 export const DELETE: APIRoute = async ({ request }) => {
+  // SECURITY FIX: Add rate limiting to prevent abuse
+  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'designs-delete');
+  if (!rateLimitResult.allowed) {
+    logger.warn('[designs/delete] Rate limit exceeded');
+    return createRateLimitResponse(rateLimitResult);
+  }
+
   try {
     // Get auth token
     const authHeader = request.headers.get('Authorization');
@@ -94,9 +106,11 @@ export const DELETE: APIRoute = async ({ request }) => {
     }
 
     logger.error('[designs/delete] Error:', error);
+    // SECURITY FIX: Don't expose internal error messages in production
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Error deleting design',
+        error: 'Error al eliminar el diseño',
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

@@ -116,14 +116,14 @@ export default function LoginPanel() {
           // Wait a bit for auth state to settle
           await new Promise((resolve) => setTimeout(resolve, 500));
 
-          // Get redirect URL
-          const adminEmails = (import.meta.env.PUBLIC_ADMIN_EMAILS || '')
-            .split(',')
-            .map((s: string) => s.trim().toLowerCase())
-            .filter(Boolean);
-
-          const email = (result.user.email || '').toLowerCase();
-          const isAdmin = adminEmails.includes(email);
+          // SECURITY FIX: Check admin via Firebase custom claims, not email list
+          let isAdmin = false;
+          try {
+            const tokenResult = await result.user.getIdTokenResult(true);
+            isAdmin = !!tokenResult.claims?.admin;
+          } catch (claimError) {
+            logger.warn('[LoginPanel] Could not get admin claim:', claimError);
+          }
           const targetUrl = isAdmin ? '/admin/products' : '/account';
 
           logger.info('[LoginPanel] Redirecting to:', targetUrl);
@@ -141,12 +141,14 @@ export default function LoginPanel() {
             // Check if user is already authenticated
             if (auth.currentUser) {
               logger.info('[LoginPanel] User already authenticated, redirecting...');
-              const adminEmails = (import.meta.env.PUBLIC_ADMIN_EMAILS || '')
-                .split(',')
-                .map((s: string) => s.trim().toLowerCase())
-                .filter(Boolean);
-              const email = (auth.currentUser.email || '').toLowerCase();
-              const isAdmin = adminEmails.includes(email);
+              // SECURITY FIX: Check admin via Firebase custom claims
+              let isAdmin = false;
+              try {
+                const tokenResult = await auth.currentUser.getIdTokenResult(true);
+                isAdmin = !!tokenResult.claims?.admin;
+              } catch (claimError) {
+                logger.warn('[LoginPanel] Could not get admin claim:', claimError);
+              }
               const targetUrl = isAdmin ? '/admin/products' : '/account';
               window.location.href = targetUrl;
               return;
@@ -399,22 +401,25 @@ export default function LoginPanel() {
   }
 
   async function redirectAfterLogin() {
-    const adminEmails = (import.meta.env.PUBLIC_ADMIN_EMAILS || '')
-      .split(',')
-      .map((s: string) => s.trim().toLowerCase())
-      .filter(Boolean);
-
     const u = auth.currentUser;
     if (!u || typeof window === 'undefined') return;
-    const email = (u.email || '').toLowerCase();
-    const allowedByEmail = !!email && adminEmails.includes(email);
+
+    // SECURITY FIX: Check admin via Firebase custom claims, not email list
+    let isAdmin = false;
+    try {
+      const tokenResult = await u.getIdTokenResult(true);
+      isAdmin = !!tokenResult.claims?.admin;
+    } catch (claimError) {
+      logger.warn('[LoginPanel] Could not get admin claim:', claimError);
+    }
+
     const url = new URL(window.location.href);
     const desired = url.searchParams.get('redirect') || '/admin/products';
-    // Si NO es admin, redirige al panel de cuenta
-    const target = allowedByEmail ? desired : '/account';
+    // If NOT admin, redirect to account panel
+    const target = isAdmin ? desired : '/account';
     logger.info('[LoginPanel] redirectAfterLogin', {
-      email,
-      allowedByEmail,
+      email: u.email,
+      isAdmin,
       desired,
       target,
     });

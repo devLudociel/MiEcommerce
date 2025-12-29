@@ -3,6 +3,13 @@ import { getAdminDb, getAdminAuth } from '../../../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { logger } from '../../../../lib/logger';
 import { z } from 'zod';
+import { getSecurityHeaders } from '../../../../lib/auth-helpers';
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_CONFIGS,
+} from '../../../../lib/rate-limiter';
+import { validateCSRF, createCSRFErrorResponse } from '../../../../lib/csrf';
 
 const createClipartSchema = z.object({
   name: z.string().min(1).max(100),
@@ -33,6 +40,20 @@ const createClipartSchema = z.object({
  * Returns: { clipartId: string }
  */
 export const POST: APIRoute = async ({ request }) => {
+  // SECURITY FIX: Add rate limiting
+  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'admin-cliparts-create');
+  if (!rateLimitResult.allowed) {
+    logger.warn('[admin/cliparts/create] Rate limit exceeded');
+    return createRateLimitResponse(rateLimitResult);
+  }
+
+  // SECURITY FIX: Add CSRF protection
+  const csrfCheck = validateCSRF(request);
+  if (!csrfCheck.valid) {
+    logger.warn('[admin/cliparts/create] CSRF validation failed:', csrfCheck.reason);
+    return createCSRFErrorResponse();
+  }
+
   try {
     // SECURITY: Admin authentication required
     const authHeader = request.headers.get('Authorization');
@@ -40,7 +61,7 @@ export const POST: APIRoute = async ({ request }) => {
       logger.warn('[admin/cliparts/create] No auth token provided');
       return new Response(JSON.stringify({ error: 'Unauthorized: Token required' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: getSecurityHeaders(),
       });
     }
 
@@ -48,11 +69,12 @@ export const POST: APIRoute = async ({ request }) => {
     const auth = getAdminAuth();
     const decodedToken = await auth.verifyIdToken(token);
 
-    // Check if user is admin
-    if (!decodedToken.admin && !isAdminEmail(decodedToken.email)) {
+    // SECURITY FIX: Only check admin claim, not email list (server-side ADMIN_EMAILS is acceptable but claims are preferred)
+    if (!decodedToken.admin) {
+      logger.warn('[admin/cliparts/create] Non-admin user attempted access:', decodedToken.uid);
       return new Response(JSON.stringify({ error: 'Unauthorized: Admin access required' }), {
         status: 403,
-        headers: { 'Content-Type': 'application/json' },
+        headers: getSecurityHeaders(),
       });
     }
 
@@ -64,9 +86,9 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(
         JSON.stringify({
           error: 'Invalid input',
-          details: import.meta.env.PROD ? undefined : validationResult.error.format(),
+          details: import.meta.env.DEV ? validationResult.error.format() : undefined,
         }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { status: 400, headers: getSecurityHeaders() }
       );
     }
 
@@ -87,12 +109,14 @@ export const POST: APIRoute = async ({ request }) => {
 
     logger.info('[admin/cliparts/create] Clipart created successfully:', clipartRef.id);
 
+    logger.info('[admin/cliparts/create] Clipart created by admin:', decodedToken.uid);
+
     return new Response(
       JSON.stringify({
         clipartId: clipartRef.id,
         message: 'Clipart creado correctamente',
       }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      { status: 200, headers: getSecurityHeaders() }
     );
   } catch (error: unknown) {
     const firebaseError = error as { code?: string };
@@ -102,7 +126,7 @@ export const POST: APIRoute = async ({ request }) => {
     ) {
       return new Response(JSON.stringify({ error: 'Token inválido o expirado' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: getSecurityHeaders(),
       });
     }
 
@@ -113,18 +137,7 @@ export const POST: APIRoute = async ({ request }) => {
         error: 'Error creating clipart',
         details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 500, headers: getSecurityHeaders() }
     );
   }
 };
-
-// Helper function to check admin emails
-// SECURITY FIX HIGH-001: Use private ADMIN_EMAILS (not PUBLIC_)
-function isAdminEmail(email?: string): boolean {
-  if (!email) return false;
-  const adminEmails = (import.meta.env.ADMIN_EMAILS || '')
-    .split(',')
-    .map((e: string) => e.trim().toLowerCase())
-    .filter(Boolean);
-  return adminEmails.includes(email.toLowerCase());
-}

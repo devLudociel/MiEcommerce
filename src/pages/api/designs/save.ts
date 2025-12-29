@@ -8,6 +8,7 @@ import {
   createRateLimitResponse,
   RATE_LIMIT_CONFIGS,
 } from '../../../lib/rate-limiter';
+import { validateCSRF, createCSRFErrorResponse } from '../../../lib/csrf';
 
 const saveDesignSchema = z.object({
   name: z.string().min(1).max(100),
@@ -43,6 +44,13 @@ export const POST: APIRoute = async ({ request }) => {
   if (!rateLimitResult.allowed) {
     logger.warn('[designs/save] Rate limit exceeded');
     return createRateLimitResponse(rateLimitResult);
+  }
+
+  // SECURITY FIX: Add CSRF protection
+  const csrfCheck = validateCSRF(request);
+  if (!csrfCheck.valid) {
+    logger.warn('[designs/save] CSRF validation failed:', csrfCheck.reason);
+    return createCSRFErrorResponse();
   }
 
   try {
@@ -123,9 +131,11 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     logger.error('[designs/save] Error:', error);
+    // SECURITY FIX: Don't expose internal error messages in production
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Error saving design',
+        error: 'Error al guardar el diseño',
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

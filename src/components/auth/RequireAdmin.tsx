@@ -7,12 +7,15 @@ interface Props {
   redirectTo?: string; // dónde enviar si no es admin
 }
 
+/**
+ * SECURITY FIX: Removed PUBLIC_ADMIN_EMAILS exposure to client-side code.
+ * Admin verification now relies ONLY on Firebase custom claims (token.claims.admin).
+ * This prevents exposing admin email addresses to potential attackers.
+ *
+ * To grant admin access, use the /api/admin/set-admin-claims endpoint with ADMIN_SETUP_SECRET.
+ */
 export default function RequireAdmin({ children, redirectTo = '/account' }: Props) {
   const [allowed, setAllowed] = useState<boolean | null>(null);
-  const adminEmails = (import.meta.env.PUBLIC_ADMIN_EMAILS || '')
-    .split(',')
-    .map((s: string) => s.trim().toLowerCase())
-    .filter(Boolean);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -25,27 +28,30 @@ export default function RequireAdmin({ children, redirectTo = '/account' }: Prop
         return;
       }
       try {
-        const email = (user.email || '').toLowerCase();
-        const allowedByEmail = !!email && adminEmails.includes(email);
+        // SECURITY: Only check Firebase custom claims for admin access
+        // Do NOT use email-based checks on the client side
         let allowedByClaim = false;
         try {
           const token = await getIdTokenResult(user, true);
           allowedByClaim = !!token.claims?.admin;
-          console.log('[RequireAdmin] claims', token.claims);
+          // Don't log claims in production for security
+          if (import.meta.env.DEV) {
+            console.log('[RequireAdmin] Admin claim:', !!token.claims?.admin);
+          }
         } catch (e) {
-          // Token claim check failed - will fallback to email check
           console.warn('[RequireAdmin] Could not get token claims:', e);
         }
-        if (allowedByEmail || allowedByClaim) {
+
+        if (allowedByClaim) {
           setAllowed(true);
         } else {
           if (typeof window !== 'undefined') {
-            console.warn('[RequireAdmin] Acceso denegado. Email no permitido:', email);
+            console.warn('[RequireAdmin] Access denied - no admin claim');
             window.location.replace(redirectTo);
           }
         }
       } catch (e) {
-        console.error('[RequireAdmin] Error validando permisos', e);
+        console.error('[RequireAdmin] Error validating permissions', e);
         if (typeof window !== 'undefined') {
           window.location.replace(redirectTo);
         }
