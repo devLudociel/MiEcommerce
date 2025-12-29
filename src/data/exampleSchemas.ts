@@ -10,6 +10,17 @@ import {
   CANDY_BOX_SCHEMA,
   EVENT_INVITATION_SCHEMA,
   MUG_CUSTOMIZATION_SCHEMA,
+  // Nuevos schemas de schemaTemplates
+  BUSINESS_CARDS_SCHEMA,
+  CUSTOM_CAPS_SCHEMA,
+  CUSTOM_CUSHIONS_SCHEMA,
+  CUSTOM_PUZZLES_SCHEMA,
+  PHONE_CASES_SCHEMA,
+  CUSTOM_CALENDARS_SCHEMA,
+  CUSTOM_KEYCHAINS_SCHEMA,
+  PET_TAGS_SCHEMA,
+  PHOTOCALL_SCHEMA,
+  FIGURES_3D_SCHEMA,
 } from '../lib/customization/schemaTemplates';
 import {
   // Productos Gráficos
@@ -616,39 +627,65 @@ export const exampleSchemas = {
   // Impresión 3D
   figurasGaming: FIGURAS_GAMING_SCHEMA,
   maquetas: MAQUETAS_SCHEMA,
+  // ===== SCHEMAS DE schemaTemplates.ts =====
+  // Productos Gráficos
+  tarjetasVisita: BUSINESS_CARDS_SCHEMA,
+  calendarios: CUSTOM_CALENDARS_SCHEMA,
+  // Textiles
+  gorras: CUSTOM_CAPS_SCHEMA,
+  // Sublimación
+  cojines: CUSTOM_CUSHIONS_SCHEMA,
+  puzzles: CUSTOM_PUZZLES_SCHEMA,
+  fundasMovil: PHONE_CASES_SCHEMA,
+  // Corte Láser
+  llaveros: CUSTOM_KEYCHAINS_SCHEMA,
+  placasMascotas: PET_TAGS_SCHEMA,
+  // Eventos
+  photocalls: PHOTOCALL_SCHEMA,
+  // Impresión 3D
+  figuras3D: FIGURES_3D_SCHEMA,
 };
 
 // Schema names for dropdown selection
 export const schemaOptions = [
+  // ───── PRODUCTOS GRÁFICOS ─────
+  { value: 'tarjetasVisita', label: '🎴 Tarjetas de Visita' },
+  { value: 'flyers', label: '📰 Flyers y Folletos' },
+  { value: 'imanes', label: '🧲 Imanes Personalizados' },
+  { value: 'cartelesEventos', label: '📋 Carteles para Eventos' },
+  { value: 'calendarios', label: '📅 Calendarios' },
+  { value: 'cuadros', label: '🖼️ Cuadros / Marcos (flores)' },
+
   // ───── TEXTILES ─────
   { value: 'camisetas', label: '👕 Camisetas (básico)' },
   { value: 'camisetasPro', label: '👕 Camisetas Pro (front/back)' },
   { value: 'hoodies', label: '🧥 Hoodies / Sudaderas' },
   { value: 'bolsas', label: '👜 Bolsas / Tote Bags' },
+  { value: 'gorras', label: '🧢 Gorras y Caps' },
   { value: 'delantales', label: '👨‍🍳 Delantales' },
 
   // ───── SUBLIMACIÓN ─────
   { value: 'tazas', label: '☕ Tazas (básico)' },
   { value: 'tazasPersonalizadas', label: '☕ Tazas Personalizadas (completo)' },
+  { value: 'cojines', label: '🛋️ Cojines Personalizados' },
+  { value: 'puzzles', label: '🧩 Puzzles Personalizados' },
+  { value: 'fundasMovil', label: '📱 Fundas de Móvil' },
   { value: 'alfombrillas', label: '🖱️ Alfombrillas de Ratón' },
   { value: 'posavasos', label: '🍵 Posavasos' },
   { value: 'decoracionSublimada', label: '🖼️ Cuadros Metálicos / Decoración' },
 
-  // ───── PRODUCTOS GRÁFICOS ─────
-  { value: 'flyers', label: '📰 Flyers y Folletos' },
-  { value: 'imanes', label: '🧲 Imanes Personalizados' },
-  { value: 'cartelesEventos', label: '📋 Carteles para Eventos' },
-  { value: 'cuadros', label: '🖼️ Cuadros / Marcos (flores)' },
-
   // ───── CORTE LÁSER ─────
+  { value: 'llaveros', label: '🔑 Llaveros Personalizados' },
   { value: 'decoracionMadera', label: '🌳 Decoración en Madera' },
   { value: 'senalizacion', label: '🪧 Señalización / Placas' },
   { value: 'cajasMadera', label: '📦 Cajas de Madera Grabadas' },
+  { value: 'placasMascotas', label: '🐾 Placas para Mascotas' },
   { value: 'resina', label: '💎 Figuras de Resina (cajas)' },
 
   // ───── EVENTOS ─────
   { value: 'cajasChuches', label: '🍬 Cajas de Chuches / Cumpleaños' },
   { value: 'invitacionesEventos', label: '💌 Invitaciones de Eventos' },
+  { value: 'photocalls', label: '📸 Photocalls' },
   { value: 'banderines', label: '🎏 Banderines y Guirnaldas' },
   { value: 'meseros', label: '🔢 Meseros / Números de Mesa' },
 
@@ -662,6 +699,7 @@ export const schemaOptions = [
   { value: 'cuadernos', label: '📓 Cuadernos y Libretas' },
 
   // ───── IMPRESIÓN 3D ─────
+  { value: 'figuras3D', label: '🎭 Figuras 3D Personalizadas' },
   { value: 'figurasGaming', label: '🎮 Figuras Gaming/Anime' },
   { value: 'maquetas', label: '🏗️ Maquetas y Prototipos' },
 
