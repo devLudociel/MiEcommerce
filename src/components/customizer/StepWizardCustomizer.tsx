@@ -51,6 +51,8 @@ interface FirebaseProduct {
   description: string;
   categoryId: string;
   basePrice: number;
+  onSale?: boolean;
+  salePrice?: number;
   images: string[];
   slug: string;
   subcategoryId?: string;
@@ -67,6 +69,15 @@ interface StepWizardCustomizerProps {
   product: FirebaseProduct;
   schema: CustomizationSchema;
 }
+
+const getEffectiveBasePrice = (product: FirebaseProduct): number => {
+  const basePrice = Number(product.basePrice) || 0;
+  const salePrice = Number(product.salePrice ?? 0);
+  if (product.onSale && Number.isFinite(salePrice) && salePrice > 0 && salePrice < basePrice) {
+    return salePrice;
+  }
+  return basePrice;
+};
 
 // Tipos de pasos del wizard
 type StepType = 'options' | 'design' | 'position' | 'review';
@@ -372,9 +383,10 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     const quantityValue = quantityField ? values[quantityField.id] : undefined;
     const quantity = extractQuantity(quantityValue);
 
+    const saleBasePrice = getEffectiveBasePrice(product);
     // Get tiered unit price if available, otherwise use product base price
     const tieredUnitPrice = getTieredUnitPrice(quantityField, quantityValue);
-    const effectiveBasePrice = tieredUnitPrice ?? product.basePrice;
+    const effectiveBasePrice = tieredUnitPrice ?? saleBasePrice;
 
     const customizationPrice = Object.values(values).reduce(
       (sum, val) => sum + (val.priceModifier || 0),
@@ -404,6 +416,8 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     };
   }, [
     product.basePrice,
+    product.onSale,
+    product.salePrice,
     values,
     schema.fields,
     isQuantityField,

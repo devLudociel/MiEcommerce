@@ -8,7 +8,8 @@ import { logger } from '../../../lib/logger';
 interface DigitalFile {
   id: string;
   name: string;
-  storagePath: string;
+  storagePath?: string;
+  fileUrl?: string;
   fileType?: string;
 }
 
@@ -105,28 +106,36 @@ export const POST: APIRoute = async ({ request }) => {
     const storage = getStorage();
     const bucket = storage.bucket();
 
-    // Extract file path from URL
-    const fileUrl = file.fileUrl;
-    const urlParts = fileUrl.split('/o/');
-    if (urlParts.length < 2) {
-      throw new Error('Invalid file URL format');
+    let filePath = '';
+    if (file.storagePath) {
+      filePath = file.storagePath;
+    } else if (file.fileUrl) {
+      const urlParts = file.fileUrl.split('/o/');
+      if (urlParts.length < 2) {
+        throw new Error('Invalid file URL format');
+      }
+      const encodedPath = urlParts[1].split('?')[0];
+      filePath = decodeURIComponent(encodedPath);
+    } else {
+      return new Response(JSON.stringify({ error: 'Archivo sin ruta válida' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
-    const encodedPath = urlParts[1].split('?')[0];
-    let filePath = decodeURIComponent(encodedPath);
 
     // SECURITY FIX CRIT-004: Prevent path traversal attacks
     // Normalize path and remove any '..' sequences
-    filePath = filePath.replace(/\.\./g, '').replace(/\/+/g, '/');
+    filePath = filePath.replace(/\.\./g, '').replace(/\/+/g, '/').replace(/^\/+/, '');
 
     // Verify path is within allowed directory (digital products)
     const ALLOWED_PREFIXES = ['digital-products/', 'digital/', 'downloads/'];
-    const isAllowedPath = ALLOWED_PREFIXES.some(prefix => filePath.startsWith(prefix));
+    const isAllowedPath = ALLOWED_PREFIXES.some((prefix) => filePath.startsWith(prefix));
 
-    if (!isAllowedPath && !filePath.includes('digital')) {
+    if (!isAllowedPath) {
       logger.warn('[digital/download-file] Path traversal attempt blocked', {
         userId,
         attemptedPath: filePath,
-        originalUrl: fileUrl,
+        originalUrl: file.fileUrl,
       });
       return new Response(
         JSON.stringify({ error: 'Ruta de archivo no permitida' }),

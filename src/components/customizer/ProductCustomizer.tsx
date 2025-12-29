@@ -20,6 +20,8 @@ interface FirebaseProduct {
   categoryId: string;
   subcategoryId: string;
   basePrice: number;
+  onSale?: boolean;
+  salePrice?: number;
   images: string[];
   attributes: ProductAttributeValue[];
   tags: string[];

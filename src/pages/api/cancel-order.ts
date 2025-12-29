@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { getAdminDb, getAdminAuth } from '../../lib/firebase-admin';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { FieldValue } from 'firebase-admin/firestore';
+import { releaseWalletReservation } from '../../lib/orders/walletReservations';
 
 // Simple console logger for API routes (avoids import issues)
 const logger = {
@@ -124,6 +125,27 @@ export const POST: APIRoute = async ({ request }) => {
           headers: { 'Content-Type': 'application/json' },
         }
       );
+    }
+
+    const reservationStatus = String(data.walletReservationStatus || '');
+    const reservedAmount = Number(data.walletReservedAmount || 0);
+    const orderUserId = typeof data.userId === 'string' ? data.userId : null;
+
+    if (reservationStatus === 'reserved' && reservedAmount > 0 && orderUserId && orderUserId !== 'guest') {
+      try {
+        await releaseWalletReservation({
+          db,
+          orderId,
+          userId: orderUserId,
+          amount: reservedAmount,
+        });
+      } catch (walletError) {
+        logger.error('[cancel-order] Failed to release wallet reservation', walletError);
+        return new Response(JSON.stringify({ error: 'No se pudo liberar el saldo reservado' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     await orderRef.delete();

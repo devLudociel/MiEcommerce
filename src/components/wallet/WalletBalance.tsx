@@ -175,21 +175,28 @@ export default function WalletBalance({
             </div>
           ) : (
             <div className="space-y-3">
-              {transactions.map((tx) => (
-                <div
-                  key={tx.id}
-                  className={`p-4 rounded-xl border-2 ${
-                    tx.type === 'earn'
-                      ? 'border-green-200 bg-green-50'
-                      : tx.type === 'spend'
-                        ? 'border-orange-200 bg-orange-50'
-                        : 'border-blue-200 bg-blue-50'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        {tx.type === 'earn' && (
+              {transactions.map((tx) => {
+                const isEarn =
+                  tx.type === 'earn' || tx.type === 'cashback' || tx.type === 'credit';
+                const isSpend = tx.type === 'spend' || tx.type === 'debit';
+                const isRefund = tx.type === 'refund';
+                const hasBalance = Number.isFinite(tx.balance);
+
+                return (
+                  <div
+                    key={tx.id}
+                    className={`p-4 rounded-xl border-2 ${
+                      isEarn
+                        ? 'border-green-200 bg-green-50'
+                        : isSpend
+                          ? 'border-orange-200 bg-orange-50'
+                          : 'border-blue-200 bg-blue-50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          {isEarn && (
                           <svg
                             className="w-5 h-5 text-green-600"
                             fill="none"
@@ -204,7 +211,7 @@ export default function WalletBalance({
                             />
                           </svg>
                         )}
-                        {tx.type === 'spend' && (
+                        {isSpend && (
                           <svg
                             className="w-5 h-5 text-orange-600"
                             fill="none"
@@ -219,7 +226,7 @@ export default function WalletBalance({
                             />
                           </svg>
                         )}
-                        {tx.type === 'refund' && (
+                        {isRefund && (
                           <svg
                             className="w-5 h-5 text-blue-600"
                             fill="none"
@@ -235,8 +242,10 @@ export default function WalletBalance({
                           </svg>
                         )}
                         <span className="font-semibold text-gray-800">
-                          {tx.type === 'earn' && 'Cashback recibido'}
-                          {tx.type === 'spend' && 'Saldo usado'}
+                          {tx.type === 'cashback' && 'Cashback recibido'}
+                          {tx.type === 'earn' && 'Saldo acreditado'}
+                          {tx.type === 'credit' && 'Saldo acreditado'}
+                          {(tx.type === 'spend' || tx.type === 'debit') && 'Saldo usado'}
                           {tx.type === 'refund' && 'Reembolso'}
                         </span>
                       </div>
@@ -246,19 +255,23 @@ export default function WalletBalance({
                     <div className="text-right">
                       <p
                         className={`text-xl font-black ${
-                          tx.type === 'earn' || tx.type === 'refund'
+                          isEarn || isRefund
                             ? 'text-green-600'
                             : 'text-orange-600'
                         }`}
                       >
-                        {tx.type === 'earn' || tx.type === 'refund' ? '+' : '-'}$
-                        {tx.amount.toFixed(2)}
+                        {isEarn || isRefund ? '+' : '-'}€{tx.amount.toFixed(2)}
                       </p>
-                      <p className="text-xs text-gray-500">Saldo: ${tx.balance.toFixed(2)}</p>
+                      {hasBalance && (
+                        <p className="text-xs text-gray-500">
+                          Saldo: €{Number(tx.balance).toFixed(2)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
           )}
         </div>

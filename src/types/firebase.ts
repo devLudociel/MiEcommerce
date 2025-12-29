@@ -165,6 +165,7 @@ export interface Wallet {
   id?: string;
   userId: string;
   balance: number; // Saldo disponible en moneda local
+  reservedBalance?: number; // Saldo reservado para pedidos en proceso
   totalEarned: number; // Total acumulado históricamente
   totalSpent: number; // Total gastado del wallet
   createdAt?: Timestamp;
@@ -174,9 +175,9 @@ export interface Wallet {
 export interface WalletTransaction {
   id?: string;
   userId: string;
-  type: 'earn' | 'spend' | 'refund';
+  type: 'earn' | 'spend' | 'refund' | 'credit' | 'debit' | 'cashback';
   amount: number;
-  balance: number; // Saldo después de la transacción
+  balance?: number; // Saldo después de la transacción
   orderId?: string; // Pedido relacionado
   description: string;
   createdAt?: Timestamp;
@@ -382,6 +383,10 @@ export interface OrderData {
   couponDiscount?: number;
   // Wallet information
   walletDiscount?: number;
+  walletReservationStatus?: 'reserved' | 'released' | 'captured';
+  walletReservedAmount?: number;
+  walletCapturedAmount?: number;
+  walletReleasedAmount?: number;
 }
 
 // ============================================================================
@@ -395,7 +400,8 @@ export interface DigitalFile {
   id: string; // Unique file ID
   name: string; // Display name (e.g., "Pack de 100 imágenes.zip")
   description?: string;
-  fileUrl: string; // Firebase Storage URL (private)
+  storagePath?: string; // Firebase Storage path (private, server-only)
+  fileUrl?: string; // Legacy download URL (avoid storing for new records)
   fileSize: number; // Size in bytes
   fileType: string; // MIME type (e.g., "application/zip", "image/png")
   format: 'image' | 'pdf' | 'zip' | 'other'; // File category

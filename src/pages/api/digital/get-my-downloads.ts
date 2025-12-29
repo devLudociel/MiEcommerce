@@ -38,9 +38,15 @@ export const GET: APIRoute = async ({ request }) => {
     const downloads = snapshot.docs
       .map((doc) => {
         const data = doc.data();
+        const files = Array.isArray(data.files) ? data.files : [];
+        const sanitizedFiles = files.map((file) => {
+          const { storagePath, fileUrl, ...rest } = file;
+          return rest;
+        });
         return {
           id: doc.id,
           ...data,
+          files: sanitizedFiles,
           purchasedAt: data.purchasedAt?.toDate?.()?.toISOString() || null,
           lastDownloadAt: data.lastDownloadAt?.toDate?.()?.toISOString() || null,
           // Keep timestamp for sorting

@@ -8,7 +8,12 @@ const digitalFileSchema = z.object({
   id: z.string(),
   name: z.string().min(1).max(200),
   description: z.string().optional(),
-  fileUrl: z.string().url(),
+  storagePath: z
+    .string()
+    .min(1)
+    .refine((value) => value.startsWith('digital-products/'), {
+      message: 'storagePath must start with digital-products/',
+    }),
   fileSize: z.number().int().positive(),
   fileType: z.string(),
   format: z.enum(['image', 'pdf', 'zip', 'other']),
@@ -85,6 +90,8 @@ export const POST: APIRoute = async ({ request }) => {
       .replace(/^-+|-+$/g, '');
 
     // Create product document
+    const publicDigitalFiles = productData.digitalFiles.map(({ storagePath, ...rest }) => rest);
+
     const docData = {
       name: productData.name,
       description: productData.description,
@@ -97,12 +104,24 @@ export const POST: APIRoute = async ({ request }) => {
       slug,
       active: true,
       isDigital: true,
-      digitalFiles: productData.digitalFiles,
+      digitalFiles: publicDigitalFiles,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     };
 
     const productRef = await db.collection('products').add(docData);
+
+    const batch = db.batch();
+    const filesRef = productRef.collection('digital_files');
+    productData.digitalFiles.forEach((file) => {
+      batch.set(filesRef.doc(file.id), {
+        ...file,
+        uploadedAt: FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    });
+    await batch.commit();
 
     logger.info('[admin/digital/create-product] Product created successfully:', productRef.id);
 

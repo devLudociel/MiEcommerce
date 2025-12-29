@@ -1,6 +1,7 @@
 import type { Firestore } from 'firebase-admin/firestore';
 import { FieldValue } from 'firebase-admin/firestore';
 import { createScopedLogger } from '../utils/apiLogger';
+import { captureWalletReservation } from './walletReservations';
 
 const logger = createScopedLogger('finalizeOrder');
 
@@ -63,9 +64,13 @@ export async function finalizeOrder({
     data.userId !== 'guest' &&
     Number(data.walletDiscount) > 0
   ) {
-    try {
-      const userId: string = String(data.userId);
-      const walletAmount: number = Number(data.walletDiscount) || 0;
+    const userId: string = String(data.userId);
+    const walletAmount: number = Number(data.walletDiscount) || 0;
+    const reservationStatus = String(data.walletReservationStatus || '');
+    const reservedAmount = Number(data.walletReservedAmount || 0);
+    const epsilon = 0.01;
+
+    const debitWalletDirect = async () => {
       const walletRef = db.collection('wallets').doc(userId);
 
       await db.runTransaction(async (transaction) => {
@@ -78,11 +83,11 @@ export async function finalizeOrder({
         const current = snap.data() as Record<string, unknown>;
         const currentBalance = Number(current.balance || 0);
 
-        if (currentBalance < walletAmount) {
+        if (currentBalance + epsilon < walletAmount) {
           throw new Error('Saldo insuficiente en el monedero');
         }
 
-        const newBalance = currentBalance - walletAmount;
+        const newBalance = Math.max(0, Number((currentBalance - walletAmount).toFixed(2)));
 
         transaction.set(
           walletRef,
@@ -110,9 +115,58 @@ export async function finalizeOrder({
         amount: walletAmount,
         userId,
       });
+    };
+
+    try {
+      if (reservationStatus === 'captured') {
+        logger.info('[finalizeOrder] Wallet reservation already captured', {
+          orderId,
+          userId,
+        });
+      } else if (reservationStatus === 'reserved') {
+        const amountToCapture = reservedAmount > 0 ? reservedAmount : walletAmount;
+        const captured = await captureWalletReservation({
+          db,
+          orderId,
+          userId,
+          amount: amountToCapture,
+        });
+
+        logger.info('[finalizeOrder] Wallet reservation captured', {
+          orderId,
+          userId,
+          captured,
+          expected: walletAmount,
+        });
+
+        if (walletAmount - captured > epsilon) {
+          await orderRef.set(
+            {
+              walletDebitStatus: 'partial',
+              walletDebitAmount: walletAmount,
+              walletCapturedAmount: captured,
+              updatedAt: FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+        }
+      } else {
+        await debitWalletDirect();
+      }
     } catch (walletError) {
       logger.error('[finalizeOrder] Error processing wallet debit', walletError);
-      throw walletError;
+      const errorMessage =
+        walletError instanceof Error ? walletError.message : 'Error procesando el monedero';
+      await orderRef.set(
+        {
+          walletDebitStatus: 'failed',
+          walletDebitError: errorMessage,
+          walletDebitAmount: walletAmount,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+      // Non-critical: payment already succeeded, continue post-payment flow
     }
   } else {
     logger.debug('[finalizeOrder] Wallet debit skipped', {
@@ -139,12 +193,11 @@ export async function finalizeOrder({
     data.userId !== 'guest' &&
     Number(data.couponDiscount) > 0
   ) {
+    const couponId: string = String(data.couponId);
+    const couponCode: string = String(data.couponCode);
+    const discountAmount: number = Number(data.couponDiscount) || 0;
+    const userId: string = String(data.userId);
     try {
-      const couponId: string = String(data.couponId);
-      const couponCode: string = String(data.couponCode);
-      const discountAmount: number = Number(data.couponDiscount) || 0;
-      const userId: string = String(data.userId);
-
       const couponRef = db.collection('coupons').doc(couponId);
 
       await db.runTransaction(async (transaction) => {
@@ -190,7 +243,19 @@ export async function finalizeOrder({
       });
     } catch (couponError) {
       logger.error('[finalizeOrder] Error processing coupon', couponError);
-      throw couponError;
+      const errorMessage =
+        couponError instanceof Error ? couponError.message : 'Error procesando cupón';
+      await orderRef.set(
+        {
+          couponUsageStatus: 'failed',
+          couponUsageError: errorMessage,
+          couponId,
+          couponCode,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+      // Non-critical: payment already succeeded, continue post-payment flow
     }
   }
 
@@ -207,13 +272,34 @@ export async function finalizeOrder({
         if (productSnap.exists) {
           const productData = productSnap.data();
 
-          if (productData?.isDigital && productData?.digitalFiles) {
+          if (productData?.isDigital) {
             logger.info('[finalizeOrder] Granting access to digital product', {
               orderId,
               productId: item.productId,
               productName: item.productName,
               userId: data.userId,
             });
+
+            const privateFilesSnap = await productRef.collection('digital_files').get();
+            const privateFiles = privateFilesSnap.docs.map((doc) => {
+              const docData = doc.data() as Record<string, unknown>;
+              return {
+                ...docData,
+                id: String(docData.id || doc.id),
+              };
+            });
+            const publicFiles = Array.isArray(productData.digitalFiles)
+              ? productData.digitalFiles
+              : [];
+            const filesToGrant = privateFiles.length > 0 ? privateFiles : publicFiles;
+
+            if (filesToGrant.length === 0) {
+              logger.warn('[finalizeOrder] Digital product has no files', {
+                orderId,
+                productId: item.productId,
+              });
+              continue;
+            }
 
             // Create digital access record
             await db.collection('digital_access').add({
@@ -222,7 +308,7 @@ export async function finalizeOrder({
               productId: String(item.productId),
               productName: String(item.productName),
               orderId,
-              files: productData.digitalFiles,
+              files: filesToGrant,
               purchasedAt: FieldValue.serverTimestamp(),
               totalDownloads: 0,
               expiresAt: null, // null = never expires
@@ -232,7 +318,7 @@ export async function finalizeOrder({
             logger.info('[finalizeOrder] Digital access granted', {
               orderId,
               productId: item.productId,
-              filesCount: productData.digitalFiles.length,
+              filesCount: filesToGrant.length,
             });
           }
         }

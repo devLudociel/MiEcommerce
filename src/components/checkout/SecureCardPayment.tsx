@@ -22,6 +22,7 @@ interface SecureCardPaymentProps {
   };
   onSuccess: (paymentIntentId: string, orderId: string) => void;
   onError: (error: string) => void;
+  getAuthToken?: () => Promise<string | null>;
 }
 
 /**
@@ -46,6 +47,7 @@ export default function SecureCardPayment({
   billingDetails,
   onSuccess,
   onError,
+  getAuthToken,
 }: SecureCardPaymentProps) {
   const stripe = useStripe();
   const elements = useElements();
@@ -66,7 +68,8 @@ export default function SecureCardPayment({
    * Process payment using Stripe Elements (PCI-DSS compliant)
    */
   const processPayment = async (
-    orderIdOverride?: string
+    orderIdOverride?: string,
+    amountOverride?: number
   ): Promise<{ success: boolean; error?: string }> => {
     if (!stripe || !elements) {
       logger.error('[SecureCardPayment] Stripe.js has not loaded yet');
@@ -113,19 +116,24 @@ export default function SecureCardPayment({
       });
 
       // Step 2: Create PaymentIntent on server (with order validation)
+      const effectiveAmount = Number((amountOverride ?? orderTotal).toFixed(2));
       logger.info('[SecureCardPayment] Creating PaymentIntent', {
         orderId: effectiveOrderId,
-        orderTotal,
+        orderTotal: effectiveAmount,
       });
 
       const paymentIntentData = await withRetry(
         async () => {
+          const token = getAuthToken ? await getAuthToken() : null;
           const paymentIntentResponse = await fetch('/api/create-payment-intent', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
             body: JSON.stringify({
               orderId: effectiveOrderId,
-              amount: Number(orderTotal.toFixed(2)),
+              amount: effectiveAmount,
               currency: 'eur',
             }),
           });

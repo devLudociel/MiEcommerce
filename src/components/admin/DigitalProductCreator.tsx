@@ -19,7 +19,7 @@ interface DigitalFile {
   id: string;
   name: string;
   description: string;
-  fileUrl: string;
+  storagePath: string;
   fileSize: number;
   fileType: string;
   format: 'image' | 'pdf' | 'zip' | 'other';
@@ -44,8 +44,9 @@ export default function DigitalProductCreator() {
   // Upload file to Firebase Storage
   const uploadFileToStorage = async (
     file: File,
-    folder: string
-  ): Promise<{ url: string; size: number; type: string }> => {
+    folder: string,
+    includeDownloadUrl = false
+  ): Promise<{ url?: string; size: number; type: string; path: string }> => {
     // Get current user ID
     const currentUser = auth.currentUser;
     if (!currentUser) {
@@ -58,12 +59,13 @@ export default function DigitalProductCreator() {
     const storageRef = ref(storage, fileName);
 
     await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(storageRef);
+    const downloadURL = includeDownloadUrl ? await getDownloadURL(storageRef) : undefined;
 
     return {
       url: downloadURL,
       size: file.size,
       type: file.type,
+      path: storageRef.fullPath,
     };
   };
 
@@ -82,7 +84,11 @@ export default function DigitalProductCreator() {
       setUploadingPreview(true);
 
       // Upload to Firebase Storage
-      const { url } = await uploadFileToStorage(file, 'product-previews');
+      const { url } = await uploadFileToStorage(file, 'product-previews', true);
+
+      if (!url) {
+        throw new Error('No se pudo generar URL de preview');
+      }
 
       setProductImages((prev) => [...prev, url]);
       notify.success('Imagen de preview subida correctamente');
@@ -105,7 +111,7 @@ export default function DigitalProductCreator() {
       setUploadingFile(true);
 
       // Upload to Firebase Storage
-      const { url, size, type } = await uploadFileToStorage(file, 'digital-products');
+      const { size, type, path } = await uploadFileToStorage(file, 'digital-products');
 
       // Detect format
       let format: 'image' | 'pdf' | 'zip' | 'other' = 'other';
@@ -121,7 +127,7 @@ export default function DigitalProductCreator() {
         id: `file_${Date.now()}`,
         name: file.name,
         description: '',
-        fileUrl: url,
+        storagePath: path,
         fileSize: size,
         fileType: type,
         format,
@@ -201,7 +207,7 @@ export default function DigitalProductCreator() {
           id: f.id,
           name: f.name,
           description: f.description,
-          fileUrl: f.fileUrl,
+          storagePath: f.storagePath,
           fileSize: f.fileSize,
           fileType: f.fileType,
           format: f.format,

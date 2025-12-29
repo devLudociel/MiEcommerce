@@ -26,6 +26,8 @@ interface FirebaseProduct {
   description: string;
   categoryId: string;
   basePrice: number;
+  onSale?: boolean;
+  salePrice?: number;
   images: string[];
   slug: string;
   [key: string]: any;
@@ -55,6 +57,15 @@ const WIZARD_STEPS = [
   { id: 'review', title: 'Confirmar', shortTitle: 'Confirmar', icon: Eye },
 ];
 
+const getEffectiveBasePrice = (product: FirebaseProduct): number => {
+  const basePrice = Number(product.basePrice) || 0;
+  const salePrice = Number(product.salePrice ?? 0);
+  if (product.onSale && Number.isFinite(salePrice) && salePrice > 0 && salePrice < basePrice) {
+    return salePrice;
+  }
+  return basePrice;
+};
+
 export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProps) {
   const [selectedColor, setSelectedColor] = useState(MUG_COLORS[0]);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -79,7 +90,7 @@ export default function SimpleMugCustomizer({ product }: SimpleMugCustomizerProp
   }, []);
 
   // Calcular precio total
-  const totalPrice = product.basePrice + selectedColor.price;
+  const totalPrice = getEffectiveBasePrice(product) + selectedColor.price;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-ES', {

@@ -8,11 +8,10 @@ interface DigitalFile {
   id: string;
   name: string;
   description?: string;
-  fileUrl: string;
   fileSize: number;
   fileType: string;
   format: 'image' | 'pdf' | 'zip' | 'other';
-  uploadedAt: string;
+  uploadedAt?: string;
 }
 
 interface DigitalAccess {

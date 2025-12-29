@@ -10,6 +10,7 @@ import {
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { verifyAuthToken } from '../../lib/auth/authHelpers';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
+import { calculateOrderPricing } from '../../lib/orders/pricing';
 // SECURITY NOTE: finalizeOrder ya NO se importa aquí
 // Solo debe llamarse desde stripe-webhook.ts después de confirmar pago
 import { z } from 'zod';
@@ -28,6 +29,12 @@ const shippingInfoSchema = z.object({
   zipCode: z.string().min(4).max(10),
   country: z.string().min(2).max(100).default('España'),
   shippingMethod: z.string().optional(),
+  shippingMethodId: z.string().max(100).optional(),
+  shippingMethodName: z.string().max(200).optional(),
+  shippingZoneId: z.string().max(100).optional(),
+  shippingZoneName: z.string().max(200).optional(),
+  estimatedDays: z.string().max(50).optional(),
+  notes: z.string().max(1000).optional(),
 });
 
 const billingInfoSchema = z.object({
@@ -62,9 +69,7 @@ const orderDataSchema = z.object({
   // SECURITY FIX: userId is set server-side from auth token, NOT from client
   // userId: removed - will be set from authenticated user
   customerEmail: z.string().email().optional(),
-  // SECURITY FIX: Only 'card' payment method allowed from client API
-  // Other methods (transfer, cash, wallet-only) must be created by admin
-  paymentMethod: z.literal('card').default('card'),
+  paymentMethod: z.enum(['card', 'transfer', 'cash', 'paypal']).default('card'),
   subtotal: z.number().min(0).max(1000000),
   shippingCost: z.number().min(0).max(10000).optional(),
   tax: z.number().min(0).optional(),
@@ -75,6 +80,19 @@ const orderDataSchema = z.object({
   couponDiscount: z.number().min(0).optional(),
   couponCode: z.string().optional(),
   couponId: z.string().optional(),
+  bundleDiscount: z.number().min(0).optional(),
+  bundleDiscountDetails: z
+    .array(
+      z.object({
+        bundleId: z.string(),
+        bundleName: z.string(),
+        productIds: z.array(z.string()),
+        originalPrice: z.number(),
+        discountedPrice: z.number(),
+        savedAmount: z.number(),
+      })
+    )
+    .optional(),
   walletDiscount: z.number().min(0).optional(),
   usedWallet: z.boolean().optional(),
   // SECURITY FIX: status is always 'pending' for new orders - removed from client control
@@ -219,26 +237,75 @@ export const POST: APIRoute = async ({ request }) => {
     const secureUserId = authenticatedUserId || 'guest';
     const secureCustomerEmail = orderData.customerEmail || authenticatedEmail || orderData.shippingInfo.email;
 
-    const docRef = await adminDb.collection('orders').add({
-      ...orderData,
+    const pricing = await calculateOrderPricing({
       items: sanitizedItems,
+      shippingInfo: orderData.shippingInfo as Record<string, unknown>,
+      couponCode: orderData.couponCode || null,
+      couponId: orderData.couponId || null,
+      useWallet: Boolean(orderData.usedWallet),
+      userId: secureUserId,
+    });
+
+    const itemsForDoc = pricing.items.map((item) => {
+      const docItem: Record<string, unknown> = {
+        productId: item.productId,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      };
+      if (item.image) docItem.image = item.image;
+      if (typeof item.variantId === 'number') docItem.variantId = item.variantId;
+      if (item.variantName) docItem.variantName = item.variantName;
+      if (item.customization) docItem.customization = item.customization;
+      return docItem;
+    });
+
+    const orderPayload: Record<string, unknown> = {
+      idempotencyKey,
+      items: itemsForDoc,
+      shippingInfo: orderData.shippingInfo,
+      paymentMethod: orderData.paymentMethod,
       // SECURITY FIX: userId viene del servidor, no del cliente
       userId: secureUserId,
       customerEmail: secureCustomerEmail,
-      subtotal: Number(orderData.subtotal) || 0,
-      shipping: Number(orderData.shippingCost) || 0,
-      shippingCost: Number(orderData.shippingCost) || 0,
-      total: Number(orderData.total) || 0,
-      idempotencyKey, // Store the idempotency key with the order
+      subtotal: pricing.subtotal,
+      bundleDiscount: pricing.bundleDiscount,
+      bundleDiscountDetails: pricing.bundleDiscountDetails,
+      couponDiscount: pricing.couponDiscount,
+      shipping: pricing.shippingCost,
+      shippingCost: pricing.shippingCost,
+      tax: pricing.tax,
+      taxType: pricing.taxType,
+      taxRate: pricing.taxRate,
+      taxLabel: pricing.taxLabel,
+      walletDiscount: pricing.walletDiscount,
+      usedWallet: pricing.walletDiscount > 0,
+      total: pricing.total,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
       // SECURITY FIX CRÍTICO: status SIEMPRE es 'pending' para nuevos pedidos
       // Solo el webhook de Stripe o un admin puede cambiar esto
       status: 'pending',
       paymentStatus: 'pending',
-      // SECURITY FIX: Solo 'card' permitido desde API pública
-      paymentMethod: 'card',
-    });
+    };
+
+    if (orderData.billingInfo) {
+      orderPayload.billingInfo = orderData.billingInfo;
+    }
+
+    if (pricing.couponCode) {
+      orderPayload.couponCode = pricing.couponCode;
+    }
+
+    if (pricing.couponId) {
+      orderPayload.couponId = pricing.couponId;
+    }
+
+    if (orderData.notes) {
+      orderPayload.notes = orderData.notes;
+    }
+
+    const docRef = await adminDb.collection('orders').add(orderPayload);
 
     logger.info('API save-order: Pedido guardado con ID:', docRef.id);
 
@@ -260,6 +327,16 @@ export const POST: APIRoute = async ({ request }) => {
       JSON.stringify({
         success: true,
         orderId: docRef.id,
+        totals: {
+          subtotal: pricing.subtotal,
+          bundleDiscount: pricing.bundleDiscount,
+          couponDiscount: pricing.couponDiscount,
+          shippingCost: pricing.shippingCost,
+          tax: pricing.tax,
+          taxLabel: pricing.taxLabel,
+          walletDiscount: pricing.walletDiscount,
+          total: pricing.total,
+        },
       }),
       {
         status: 200,

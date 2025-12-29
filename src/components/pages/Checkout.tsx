@@ -440,6 +440,7 @@ export default function Checkout() {
         country: 'ES',
       },
     },
+    getAuthToken: async () => (user ? await user.getIdToken() : null),
     onSuccess: async (paymentIntentId, completedOrderId) => {
       logger.info('[Checkout] Payment successful', {
         paymentIntentId,
@@ -562,11 +563,13 @@ export default function Checkout() {
     }
 
     try {
+      const token = user ? await user.getIdToken() : null;
       const response = await fetch('/api/cancel-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           orderId: orderIdToCancel,
@@ -590,7 +593,7 @@ export default function Checkout() {
     } catch (error) {
       logger.error('[Checkout] Error cancelling pending order', error);
     }
-  }, []);
+  }, [user]);
 
   // PERFORMANCE: Memoize coupon handlers
   const handleApplyCoupon = useCallback(async () => {
@@ -777,9 +780,13 @@ export default function Checkout() {
         status: 'pending',
       };
 
+      const token = user ? await user.getIdToken() : null;
       const response = await fetch('/api/save-order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(orderData),
       });
 
@@ -787,7 +794,14 @@ export default function Checkout() {
         throw new Error('Error al guardar la orden');
       }
 
-      const { orderId: newOrderId } = await response.json();
+      const { orderId: newOrderId, totals } = await response.json();
+      const resolvedTotals = totals || {
+        subtotal: orderData.subtotal,
+        shippingCost: orderData.shippingCost,
+        tax: orderData.tax,
+        taxLabel: orderData.taxLabel,
+        total: orderData.total,
+      };
       setOrderId(newOrderId);
       cleanupOrderId = newOrderId;
       cleanupIdempotency = idempotencyKey;
@@ -800,11 +814,11 @@ export default function Checkout() {
           shippingInfo: orderData.shippingInfo,
           billingInfo: orderData.billingInfo,
           paymentInfo: { method: orderData.paymentMethod },
-          subtotal: Number(orderData.subtotal || 0),
-          shipping: Number(orderData.shippingCost || 0),
-          tax: Number(orderData.tax || 0),
-          taxLabel: orderData.taxLabel,
-          total: Number(orderData.total || 0),
+          subtotal: Number(resolvedTotals.subtotal || 0),
+          shipping: Number(resolvedTotals.shippingCost || 0),
+          tax: Number(resolvedTotals.tax || 0),
+          taxLabel: resolvedTotals.taxLabel || orderData.taxLabel,
+          total: Number(resolvedTotals.total || 0),
           status: orderData.status,
           userId: orderData.userId,
           accessKey: idempotencyKey,
@@ -816,7 +830,7 @@ export default function Checkout() {
 
       if (paymentInfo.method === 'card') {
         logger.info('[Checkout] Processing card payment...');
-        const paymentResult = await securePayment.processPayment(newOrderId);
+        const paymentResult = await securePayment.processPayment(newOrderId, totals?.total);
 
         if (!paymentResult.success) {
           await cancelPendingOrder(newOrderId, idempotencyKey);
@@ -856,6 +870,7 @@ export default function Checkout() {
     acceptTerms,
     total,
     cart.items,
+    user,
     user?.uid,
     shippingInfo,
     billingInfo,

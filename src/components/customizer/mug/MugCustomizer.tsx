@@ -18,6 +18,8 @@ interface FirebaseProduct {
   description: string;
   categoryId: string;
   basePrice: number;
+  onSale?: boolean;
+  salePrice?: number;
   images: string[];
   slug: string;
   [key: string]: any;
@@ -26,6 +28,15 @@ interface FirebaseProduct {
 interface MugCustomizerProps {
   product: FirebaseProduct;
 }
+
+const getEffectiveBasePrice = (product: FirebaseProduct): number => {
+  const basePrice = Number(product.basePrice) || 0;
+  const salePrice = Number(product.salePrice ?? 0);
+  if (product.onSale && Number.isFinite(salePrice) && salePrice > 0 && salePrice < basePrice) {
+    return salePrice;
+  }
+  return basePrice;
+};
 
 export default function MugCustomizer({ product }: MugCustomizerProps) {
   const [customization, setCustomization] = useState<MugCustomizationData>({
@@ -47,6 +58,7 @@ export default function MugCustomizer({ product }: MugCustomizerProps) {
   const [showReview, setShowReview] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [nextElementId, setNextElementId] = useState(1);
+  const effectiveBasePrice = getEffectiveBasePrice(product);
 
   // Actualizar elementos según el tipo de impresión
   useEffect(() => {
@@ -181,7 +193,7 @@ export default function MugCustomizer({ product }: MugCustomizerProps) {
       addToCart({
         id: product.id,
         name: product.name,
-        price: product.basePrice,
+        price: effectiveBasePrice,
         quantity: 1,
         image: product.images[0] || '/placeholder-mug.png',
         slug: product.slug,
@@ -298,7 +310,7 @@ export default function MugCustomizer({ product }: MugCustomizerProps) {
             <MugOptionsPanel
               customization={customization}
               onUpdate={handleUpdateCustomization}
-              basePrice={product.basePrice}
+              basePrice={effectiveBasePrice}
             />
           </div>
         </div>

@@ -37,6 +37,8 @@ interface FirebaseProduct {
   description: string;
   categoryId: string;
   basePrice: number;
+  onSale?: boolean;
+  salePrice?: number;
   images: string[];
   slug: string;
   subcategoryId?: string;
@@ -53,6 +55,15 @@ interface DynamicCustomizerProps {
   product: FirebaseProduct;
   schema: CustomizationSchema;
 }
+
+const getEffectiveBasePrice = (product: FirebaseProduct): number => {
+  const basePrice = Number(product.basePrice) || 0;
+  const salePrice = Number(product.salePrice ?? 0);
+  if (product.onSale && Number.isFinite(salePrice) && salePrice > 0 && salePrice < basePrice) {
+    return salePrice;
+  }
+  return basePrice;
+};
 
 export default function DynamicCustomizer({ product, schema }: DynamicCustomizerProps) {
   const [values, setValues] = useState<Record<string, CustomizationValue>>({});
@@ -361,9 +372,10 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   const quantityValue = quantityField ? values[quantityField.id] : undefined;
   const selectedQuantity = extractQuantity(quantityValue);
 
+  const saleBasePrice = getEffectiveBasePrice(product);
   // Get tiered unit price if available, otherwise use product base price
   const tieredUnitPrice = getTieredUnitPrice(quantityField, quantityValue);
-  const effectiveBasePrice = tieredUnitPrice ?? product.basePrice;
+  const effectiveBasePrice = tieredUnitPrice ?? saleBasePrice;
 
   // Calculate pricing with quantity multiplication and tiered pricing
   const customizationPrice = Object.values(values).reduce(

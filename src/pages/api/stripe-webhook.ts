@@ -4,6 +4,7 @@ import { getAdminDb } from '../../lib/firebase-admin';
 import { finalizeOrder } from '../../lib/orders/finalizeOrder';
 import { FieldValue } from 'firebase-admin/firestore';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
+import { releaseWalletReservation } from '../../lib/orders/walletReservations';
 
 const logger = createScopedLogger('stripe-webhook');
 
@@ -95,13 +96,34 @@ export const POST: APIRoute = async ({ request }) => {
         },
         { merge: true }
       );
-    } else if (type === 'payment_intent.payment_failed' || type === 'charge.failed') {
+    } else if (
+      type === 'payment_intent.payment_failed' ||
+      type === 'payment_intent.canceled' ||
+      type === 'charge.failed'
+    ) {
       if (orderData?.paymentStatus === 'paid') {
         logger.warn(
           '[Stripe Webhook] Received payment failure for already paid order. Skipping deletion.',
           orderId
         );
       } else {
+        const reservationStatus = String(orderData.walletReservationStatus || '');
+        const reservedAmount = Number(orderData.walletReservedAmount || 0);
+        const orderUserId = typeof orderData.userId === 'string' ? orderData.userId : null;
+
+        if (reservationStatus === 'reserved' && reservedAmount > 0 && orderUserId && orderUserId !== 'guest') {
+          try {
+            await releaseWalletReservation({
+              db,
+              orderId,
+              userId: orderUserId,
+              amount: reservedAmount,
+            });
+          } catch (walletError) {
+            logger.error('[Stripe Webhook] Failed to release wallet reservation', walletError);
+          }
+        }
+
         await orderRef.delete();
         await db.collection('order_cancellations').add({
           orderId,

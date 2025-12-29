@@ -18,17 +18,16 @@ vi.mock('firebase-admin/firestore', () => ({
 // In-memory DB mock
 function createDb() {
   let idSeq = 1;
-  const data: Record<string, any[]> = {
-    orders: [],
-    wallets: [],
-    wallet_transactions: [],
-    coupons: [],
-    coupon_usage: [],
-  };
-
-  const docs: Record<string, Record<string, any>> = {
+  const data: Record<string, Record<string, any>> = {
+    orders: {},
+    products: {},
     wallets: {},
+    wallet_transactions: {},
     coupons: {},
+    coupon_usage: {},
+    bundleDiscounts: {},
+    users: {},
+    shipping_methods: {},
   };
 
   function wrapInc(current: any, update: any) {
@@ -43,37 +42,67 @@ function createDb() {
     return result;
   }
 
+  const buildQuery = (
+    name: string,
+    filters: Array<[string, string, any]> = [],
+    limitCount?: number
+  ) => ({
+    where: (field: string, op: string, value: any) =>
+      buildQuery(name, [...filters, [field, op, value]], limitCount),
+    limit: (count: number) => buildQuery(name, filters, count),
+    async get() {
+      const col = data[name] || {};
+      let docs = Object.entries(col).map(([id, doc]) => ({ id, doc }));
+      for (const [field, op, value] of filters) {
+        if (op === '==') {
+          docs = docs.filter((item) => item.doc?.[field] === value);
+        }
+      }
+      if (typeof limitCount === 'number') {
+        docs = docs.slice(0, limitCount);
+      }
+      const snapDocs = docs.map((item) => ({
+        id: item.id,
+        data: () => item.doc,
+      }));
+      return {
+        empty: snapDocs.length === 0,
+        size: snapDocs.length,
+        docs: snapDocs,
+        forEach: (cb: (doc: any) => void) => snapDocs.forEach(cb),
+      } as any;
+    },
+  });
+
   return {
     data,
     collection(name: string) {
       return {
         add: async (doc: any) => {
           const id = `${name}_${idSeq++}`;
-          data[name] = data[name] || [];
-          data[name].push({ id, ...doc });
+          data[name] = data[name] || {};
+          data[name][id] = doc;
           return { id } as any;
         },
-        where: () => ({
-          limit: () => ({
-            get: async () => ({ empty: true, docs: [] }),
-          }),
-        }),
+        where: (field: string, op: string, value: any) =>
+          buildQuery(name, [[field, op, value]]),
         doc: (id: string) => ({
           async get() {
-            const col = docs[name] || {};
+            const col = data[name] || {};
             const exists = !!col[id];
             return {
               exists,
+              id,
               data: () => (exists ? col[id] : undefined),
             } as any;
           },
           async set(update: any, opts?: any) {
-            const col = (docs[name] = docs[name] || {});
+            const col = (data[name] = data[name] || {});
             const current = col[id] || {};
             col[id] = opts?.merge ? wrapInc(current, update) : update;
           },
           async update(update: any) {
-            const col = (docs[name] = docs[name] || {});
+            const col = (data[name] = data[name] || {});
             const current = col[id] || {};
             col[id] = wrapInc(current, update);
           },
@@ -106,16 +135,15 @@ describe('API save-order', () => {
     expect(res.status).toBe(400);
   });
 
-  it('guarda pedido, debita wallet, registra cupón y cashback', async () => {
-    // Mock fetch para /api/send-email
-    const fetchSpy = vi.spyOn(globalThis, 'fetch' as any).mockResolvedValue({ ok: true } as any);
-
+  it('guarda pedido con precios calculados en servidor', async () => {
     // Inicializar wallet usuario
     const { __mockDb } = (await import('../../../lib/firebase-admin')) as any;
-    await __mockDb
-      .collection('wallets')
-      .doc('u1')
-      .set({ userId: 'u1', balance: 50, totalEarned: 0, totalSpent: 0 });
+    __mockDb.data.products['p1'] = {
+      name: 'Prod 1',
+      basePrice: 10,
+      active: true,
+      tags: [],
+    };
 
     const req = new Request('http://local/api/save-order', {
       method: 'POST',
@@ -129,19 +157,14 @@ describe('API save-order', () => {
           phone: '123456789',
           address: 'Calle Test 123',
           city: 'Madrid',
-          state: 'Madrid',
+          state: 'Las Palmas',
           zipCode: '28001',
           country: 'España',
         },
         subtotal: 20,
         shippingCost: 0,
         total: 20,
-        userId: 'u1',
-        usedWallet: true,
-        walletDiscount: 5,
-        couponCode: 'PERC10',
-        couponId: 'c1',
-        couponDiscount: 2,
+        usedWallet: false,
       }),
     });
 
@@ -152,7 +175,7 @@ describe('API save-order', () => {
     expect(data.orderId).toBeTruthy();
 
     // Verificaciones en memoria
-    const orders = __mockDb.data.orders;
+    const orders = Object.values(__mockDb.data.orders);
     expect(orders.length).toBe(1);
     expect(orders[0].total).toBe(20);
 
@@ -161,12 +184,14 @@ describe('API save-order', () => {
     // para evitar debitar fondos antes de confirmar el pago con Stripe
   });
 
-  it('continúa si el wallet no tiene fondos suficientes (no falla 200)', async () => {
+  it('continúa si se solicita wallet sin autenticación (no falla 200)', async () => {
     const { __mockDb } = (await import('../../../lib/firebase-admin')) as any;
-    await __mockDb
-      .collection('wallets')
-      .doc('u2')
-      .set({ userId: 'u2', balance: 1, totalEarned: 0, totalSpent: 0 });
+    __mockDb.data.products['p1'] = {
+      name: 'Prod 1',
+      basePrice: 10,
+      active: true,
+      tags: [],
+    };
 
     const req = new Request('http://local/api/save-order', {
       method: 'POST',
@@ -180,14 +205,13 @@ describe('API save-order', () => {
           phone: '987654321',
           address: 'Avenida Test 456',
           city: 'Barcelona',
-          state: 'Cataluña',
+          state: 'Las Palmas',
           zipCode: '08001',
           country: 'España',
         },
         subtotal: 20,
         shippingCost: 0,
         total: 20,
-        userId: 'u2',
         usedWallet: true,
         walletDiscount: 5,
       }),

@@ -12,22 +12,79 @@ vi.mock('stripe', () => {
   return { default: StripeMock };
 });
 
-// In-memory DB mock for orders
+// In-memory DB mock
 function createDb() {
-  const orders: Record<string, any> = {};
+  let idSeq = 1;
+  const collections: Record<string, Record<string, any>> = {
+    orders: {},
+    products: {},
+    bundleDiscounts: {},
+    coupons: {},
+    coupon_usage: {},
+    users: {},
+    shipping_methods: {},
+    wallets: {},
+  };
+
+  const buildQuery = (
+    name: string,
+    filters: Array<[string, string, any]> = [],
+    limitCount?: number
+  ) => ({
+    where: (field: string, op: string, value: any) =>
+      buildQuery(name, [...filters, [field, op, value]], limitCount),
+    limit: (count: number) => buildQuery(name, filters, count),
+    async get() {
+      const col = collections[name] || {};
+      let docs = Object.entries(col).map(([id, data]) => ({ id, data }));
+      for (const [field, op, value] of filters) {
+        if (op === '==') {
+          docs = docs.filter((doc) => doc.data?.[field] === value);
+        }
+      }
+      if (typeof limitCount === 'number') {
+        docs = docs.slice(0, limitCount);
+      }
+      const snapDocs = docs.map((doc) => ({
+        id: doc.id,
+        data: () => doc.data,
+      }));
+      return {
+        empty: snapDocs.length === 0,
+        size: snapDocs.length,
+        docs: snapDocs,
+        forEach: (cb: (doc: any) => void) => snapDocs.forEach(cb),
+      } as any;
+    },
+  });
+
   return {
-    orders,
+    data: collections,
     collection(name: string) {
       return {
+        add: async (doc: any) => {
+          const id = `${name}_${idSeq++}`;
+          collections[name] = collections[name] || {};
+          collections[name][id] = doc;
+          return { id } as any;
+        },
         doc: (id: string) => ({
           async get() {
-            const exists = !!orders[id];
-            return { exists, data: () => (exists ? orders[id] : undefined) } as any;
+            const col = collections[name] || {};
+            const exists = !!col[id];
+            return { exists, id, data: () => (exists ? col[id] : undefined) } as any;
           },
           async update(update: any) {
-            orders[id] = { ...(orders[id] || {}), ...update };
+            const col = (collections[name] = collections[name] || {});
+            col[id] = { ...(col[id] || {}), ...update };
+          },
+          async set(update: any) {
+            const col = (collections[name] = collections[name] || {});
+            col[id] = update;
           },
         }),
+        where: (field: string, op: string, value: any) =>
+          buildQuery(name, [[field, op, value]]),
       } as any;
     },
   };
@@ -69,7 +126,18 @@ describe('API create-payment-intent', () => {
 
   it('crea Payment Intent cuando el monto coincide', async () => {
     const { __mockDb } = (await import('../../../lib/firebase-admin')) as any;
-    __mockDb.orders['o1'] = { total: 19.99, customerEmail: 'ok@example.com' };
+    __mockDb.data.products['p1'] = {
+      name: 'Prod 1',
+      basePrice: 19.99,
+      active: true,
+      tags: [],
+    };
+    __mockDb.data.orders['o1'] = {
+      customerEmail: 'ok@example.com',
+      userId: 'guest',
+      items: [{ productId: 'p1', quantity: 1, name: 'Prod 1' }],
+      shippingInfo: { state: 'Las Palmas' },
+    };
     const req = new Request('http://local/api/create-payment-intent', {
       method: 'POST',
       body: JSON.stringify({ orderId: 'o1', amount: 19.99 }),
@@ -84,7 +152,17 @@ describe('API create-payment-intent', () => {
 
   it('rechaza si el monto no coincide', async () => {
     const { __mockDb } = (await import('../../../lib/firebase-admin')) as any;
-    __mockDb.orders['o2'] = { total: 50 };
+    __mockDb.data.products['p2'] = {
+      name: 'Prod 2',
+      basePrice: 50,
+      active: true,
+      tags: [],
+    };
+    __mockDb.data.orders['o2'] = {
+      items: [{ productId: 'p2', quantity: 1, name: 'Prod 2' }],
+      shippingInfo: { state: 'Las Palmas' },
+      userId: 'guest',
+    };
     const req = new Request('http://local/api/create-payment-intent', {
       method: 'POST',
       body: JSON.stringify({ orderId: 'o2', amount: 45 }),

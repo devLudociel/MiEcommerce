@@ -5,6 +5,12 @@ import { getAdminDb } from '../../lib/firebase-admin';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { executeStripeOperation } from '../../lib/externalServices';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
+import { calculateOrderPricing } from '../../lib/orders/pricing';
+import { verifyAuthToken } from '../../lib/auth/authHelpers';
+import {
+  releaseWalletReservation,
+  reserveWalletFunds,
+} from '../../lib/orders/walletReservations';
 import { z } from 'zod';
 import {
   checkRateLimit,
@@ -50,6 +56,9 @@ export const POST: APIRoute = async ({ request }) => {
     return createCSRFErrorResponse();
   }
 
+  let adminDb: ReturnType<typeof getAdminDb> | null = null;
+  let reservationToRelease: { orderId: string; userId: string; amount: number } | null = null;
+
   try {
     const rawData = await request.json();
 
@@ -76,8 +85,8 @@ export const POST: APIRoute = async ({ request }) => {
     const { orderId, amount, currency } = validationResult.data;
 
     // Validar que el pedido existe y obtener el monto real
-    const db = getAdminDb();
-    const orderRef = db.collection('orders').doc(orderId);
+    adminDb = getAdminDb();
+    const orderRef = adminDb.collection('orders').doc(orderId);
     const orderSnap = await orderRef.get();
 
     if (!orderSnap.exists) {
@@ -87,102 +96,25 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const orderData = orderSnap.data();
-    const orderTotal = orderData?.total || 0;
+    const orderData = orderSnap.data() || {};
+    const orderUserId = typeof orderData.userId === 'string' ? orderData.userId : null;
+    const requiresAuth = Boolean(orderUserId && orderUserId !== 'guest');
 
-    // Validar que el monto coincide con el total del pedido
-    // Permitir pequeña diferencia por redondeo (0.01 EUR)
-    if (Math.abs(orderTotal - amount) > 0.01) {
-      logger.error(`Mismatch de monto: order=${orderTotal}, requested=${amount}`, { orderId });
-      return new Response(
-        JSON.stringify({
-          error: 'El monto no coincide con el total del pedido',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    // SECURITY FIX ALTA: Verificar precios contra el catálogo de productos
-    // Esto previene manipulación de precios donde el cliente envía precios reducidos
-    const orderItems = orderData?.items || [];
-    let expectedSubtotal = 0;
-    const priceDiscrepancies: string[] = [];
-
-    for (const item of orderItems) {
-      if (!item.productId) continue;
-
-      try {
-        const productRef = db.collection('products').doc(String(item.productId));
-        const productSnap = await productRef.get();
-
-        if (productSnap.exists) {
-          const productData = productSnap.data();
-          let expectedPrice = Number(productData?.price) || 0;
-
-          // Si tiene variante, verificar precio de variante
-          if (item.variantId && productData?.variants) {
-            const variant = productData.variants.find(
-              (v: Record<string, unknown>) => v.id === item.variantId
-            );
-            if (variant && typeof variant.price === 'number') {
-              expectedPrice = variant.price;
-            }
-          }
-
-          const claimedPrice = Number(item.price) || 0;
-          const quantity = Number(item.quantity) || 1;
-
-          // Permitir 1% de diferencia por redondeo/variaciones
-          const priceDiff = Math.abs(expectedPrice - claimedPrice);
-          const tolerance = Math.max(expectedPrice * 0.01, 0.01);
-
-          if (priceDiff > tolerance) {
-            priceDiscrepancies.push(
-              `Product ${item.productId}: expected €${expectedPrice}, claimed €${claimedPrice}`
-            );
-          }
-
-          expectedSubtotal += expectedPrice * quantity;
-        }
-      } catch (productError) {
-        logger.warn(`[create-payment-intent] Could not verify price for product ${item.productId}`, productError);
-        // Continue - don't block payment for product lookup failures
+    if (requiresAuth) {
+      const authResult = await verifyAuthToken(request);
+      if (!authResult.success) {
+        return authResult.error!;
       }
-    }
 
-    // Si hay discrepancias significativas, bloquear el pago
-    if (priceDiscrepancies.length > 0) {
-      const claimedSubtotal = Number(orderData?.subtotal) || 0;
-      const subtotalDiff = Math.abs(expectedSubtotal - claimedSubtotal);
-      const subtotalTolerance = Math.max(expectedSubtotal * 0.05, 1); // 5% o €1
-
-      if (subtotalDiff > subtotalTolerance) {
-        logger.error('[create-payment-intent] SECURITY: Price manipulation detected!', {
+      if (authResult.uid !== orderUserId && !authResult.isAdmin) {
+        logger.warn('[create-payment-intent] Unauthorized order access', {
           orderId,
-          expectedSubtotal,
-          claimedSubtotal,
-          priceDiscrepancies,
+          orderUserId,
+          requester: authResult.uid,
         });
-
-        // Actualizar el pedido con bandera de fraude
-        await orderRef.update({
-          suspectedFraud: true,
-          fraudReason: 'Price manipulation detected',
-          fraudDetails: priceDiscrepancies,
-          updatedAt: new Date(),
-        });
-
         return new Response(
-          JSON.stringify({
-            error: 'Error en la validación del pedido. Por favor, contacta a soporte.',
-          }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          }
+          JSON.stringify({ error: 'No tienes permiso para pagar este pedido' }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } }
         );
       }
     }
@@ -198,6 +130,91 @@ export const POST: APIRoute = async ({ request }) => {
           headers: { 'Content-Type': 'application/json' },
         }
       );
+    }
+
+    const pricing = await calculateOrderPricing({
+      items: orderData.items || [],
+      shippingInfo: orderData.shippingInfo || {},
+      couponCode: orderData.couponCode || null,
+      couponId: orderData.couponId || null,
+      useWallet: Boolean(orderData.usedWallet),
+      userId: orderUserId || null,
+    });
+
+    const orderTotal = pricing.total;
+
+    // Validar que el monto coincide con el total calculado por servidor
+    if (Math.abs(orderTotal - amount) > 0.01) {
+      logger.error(`Mismatch de monto: server=${orderTotal}, requested=${amount}`, { orderId });
+      return new Response(
+        JSON.stringify({
+          error: 'El monto no coincide con el total del pedido',
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const reservationStatus = String(orderData.walletReservationStatus || '');
+    const reservedAmount = Number(orderData.walletReservedAmount || 0);
+    const isGuest = !orderUserId || orderUserId === 'guest';
+    const reservationEpsilon = 0.01;
+
+    if (!isGuest && orderUserId) {
+      try {
+        if (pricing.walletDiscount > 0) {
+          if (
+            reservationStatus === 'reserved' &&
+            Math.abs(reservedAmount - pricing.walletDiscount) <= reservationEpsilon
+          ) {
+            logger.info('[create-payment-intent] Wallet reservation already in place', {
+              orderId,
+              amount: reservedAmount,
+            });
+          } else {
+            if (reservationStatus === 'reserved' && reservedAmount > 0) {
+              await releaseWalletReservation({
+                db: adminDb,
+                orderId,
+                userId: orderUserId,
+                amount: reservedAmount,
+              });
+            }
+
+            await reserveWalletFunds({
+              db: adminDb,
+              orderId,
+              userId: orderUserId,
+              amount: pricing.walletDiscount,
+            });
+            reservationToRelease = {
+              orderId,
+              userId: orderUserId,
+              amount: pricing.walletDiscount,
+            };
+          }
+        } else if (reservationStatus === 'reserved' && reservedAmount > 0) {
+          await releaseWalletReservation({
+            db: adminDb,
+            orderId,
+            userId: orderUserId,
+            amount: reservedAmount,
+          });
+        }
+      } catch (walletError: unknown) {
+        const message =
+          walletError instanceof Error ? walletError.message : 'Error procesando el monedero';
+        logger.warn('[create-payment-intent] Wallet reservation failed', {
+          orderId,
+          message,
+        });
+        return new Response(JSON.stringify({ error: message }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     // Crear Payment Intent with circuit breaker protection
@@ -218,12 +235,34 @@ export const POST: APIRoute = async ({ request }) => {
       `create-payment-intent-${orderId}`
     );
 
-    // Actualizar pedido con el Payment Intent ID
-    await orderRef.update({
+    // Actualizar pedido con el Payment Intent ID y precios verificados
+    const orderUpdate: Record<string, unknown> = {
       paymentIntentId: paymentIntent.id,
       paymentStatus: 'pending',
+      subtotal: pricing.subtotal,
+      bundleDiscount: pricing.bundleDiscount,
+      bundleDiscountDetails: pricing.bundleDiscountDetails,
+      couponDiscount: pricing.couponDiscount,
+      shipping: pricing.shippingCost,
+      shippingCost: pricing.shippingCost,
+      tax: pricing.tax,
+      taxType: pricing.taxType,
+      taxRate: pricing.taxRate,
+      taxLabel: pricing.taxLabel,
+      walletDiscount: pricing.walletDiscount,
+      usedWallet: pricing.walletDiscount > 0,
+      total: pricing.total,
       updatedAt: new Date(),
-    });
+    };
+
+    if (pricing.couponCode) {
+      orderUpdate.couponCode = pricing.couponCode;
+    }
+    if (pricing.couponId) {
+      orderUpdate.couponId = pricing.couponId;
+    }
+
+    await orderRef.update(orderUpdate);
 
     logger.info(`✅ Payment Intent creado para pedido ${orderId}: ${paymentIntent.id}`);
 
@@ -238,6 +277,19 @@ export const POST: APIRoute = async ({ request }) => {
       }
     );
   } catch (error: unknown) {
+    if (reservationToRelease && adminDb) {
+      try {
+        await releaseWalletReservation({
+          db: adminDb,
+          orderId: reservationToRelease.orderId,
+          userId: reservationToRelease.userId,
+          amount: reservationToRelease.amount,
+        });
+      } catch (releaseError) {
+        logger.error('[create-payment-intent] Failed to release wallet reservation', releaseError);
+      }
+    }
+
     // SECURITY: No exponer detalles internos
     logger.error('❌ Error creando Payment Intent:', error);
 
