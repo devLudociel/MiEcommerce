@@ -11,6 +11,31 @@ import {
   EVENT_INVITATION_SCHEMA,
   MUG_CUSTOMIZATION_SCHEMA,
 } from '../lib/customization/schemaTemplates';
+import {
+  // Productos Gráficos
+  FLYERS_SCHEMA,
+  IMANES_SCHEMA,
+  CARTELES_EVENTOS_SCHEMA,
+  // Textiles
+  DELANTALES_SCHEMA,
+  // Sublimación
+  ALFOMBRILLAS_SCHEMA,
+  POSAVASOS_SCHEMA,
+  DECORACION_SUBLIMADA_SCHEMA,
+  // Corte Láser
+  DECORACION_MADERA_SCHEMA,
+  SENALIZACION_SCHEMA,
+  CAJAS_MADERA_SCHEMA,
+  // Eventos
+  BANDERINES_SCHEMA,
+  MESEROS_SCHEMA,
+  // Papelería
+  CUADERNOS_SCHEMA,
+  PAPEL_REGALO_SCHEMA,
+  // Impresión 3D
+  FIGURAS_GAMING_SCHEMA,
+  MAQUETAS_SCHEMA,
+} from '../lib/customization/productSchemas';
 
 /**
  * Schemas de ejemplo para diferentes tipos de productos
@@ -547,121 +572,6 @@ export const bolsasSchema: CustomizationSchema = {
 };
 
 // ============================================================================
-// SCHEMA: TARJETAS DE VISITA
-// ============================================================================
-
-export const tarjetasVisitaSchema: CustomizationSchema = {
-  fields: [
-    {
-      id: 'design_ready',
-      fieldType: 'radio_group',
-      label: '¿Tienes tu diseño listo?',
-      required: true,
-      priceModifier: 0,
-      order: 1,
-      helpText: 'Elige una opción para continuar',
-      config: {
-        layout: 'vertical',
-        options: [
-          { value: 'ready', label: 'Sí, subiré mi diseño' },
-          { value: 'needs_design', label: 'No, necesito que lo diseñen' },
-        ],
-      },
-    },
-    {
-      id: 'design_upload',
-      fieldType: 'image_upload',
-      label: 'Sube tu diseño',
-      required: true,
-      priceModifier: 0,
-      order: 2,
-      condition: {
-        dependsOn: 'design_ready',
-        showWhen: 'ready',
-      },
-      config: {
-        maxSizeMB: 20,
-        allowedFormats: ['jpg', 'png', 'pdf', 'svg'],
-        showPreview: true,
-        helpText:
-          'Sube tu diseño listo para imprimir. Asegúrate de que tenga buena resolución. Formatos: JPG, PNG, PDF, SVG. Máx 20MB',
-      },
-    },
-    {
-      id: 'design_comments',
-      fieldType: 'text_input',
-      label: 'Comentarios adicionales (opcional)',
-      required: false,
-      priceModifier: 0,
-      order: 3,
-      helpText: 'Ejemplos: "Quiero que el fondo sea blanco", "Centrar el logo"',
-      condition: {
-        dependsOn: 'design_ready',
-        showWhen: 'ready',
-      },
-      config: {
-        placeholder: 'Ej: Quiero que el fondo sea blanco y el logo centrado',
-        maxLength: 500,
-        showCharCounter: true,
-      },
-    },
-    {
-      id: 'design_service',
-      fieldType: 'checkbox',
-      label: '🎨 Diseño gráfico profesional (+15 €)',
-      required: true,
-      priceModifier: 15,
-      order: 4,
-      condition: {
-        dependsOn: 'design_ready',
-        showWhen: 'needs_design',
-      },
-      config: {
-        description: 'Incluye 1 revisión. Revisiones extra pueden tener coste adicional.',
-      },
-    },
-    {
-      id: 'design_reference_upload',
-      fieldType: 'image_upload',
-      label: 'Sube referencias (opcional)',
-      required: false,
-      priceModifier: 0,
-      order: 5,
-      condition: {
-        dependsOn: 'design_ready',
-        showWhen: 'needs_design',
-      },
-      config: {
-        maxSizeMB: 10,
-        allowedFormats: ['jpg', 'png', 'pdf', 'svg'],
-        showPreview: true,
-        helpText: 'Puedes subir un boceto, logo o imagen de referencia (opcional).',
-      },
-    },
-    {
-      id: 'design_description',
-      fieldType: 'text_input',
-      label: 'Descripción del diseño',
-      required: true,
-      priceModifier: 0,
-      order: 6,
-      helpText: 'Incluye 1 revisión. Revisiones extra pueden tener coste adicional.',
-      condition: {
-        dependsOn: 'design_ready',
-        showWhen: 'needs_design',
-      },
-      config: {
-        placeholder:
-          'Quiero una tarjeta elegante, colores negro y dorado, con QR y logo...',
-        maxLength: 1000,
-        showCharCounter: true,
-      },
-    },
-  ],
-  displayComponent: 'DynamicCustomizer',
-};
-
-// ============================================================================
 // EXPORT ALL SCHEMAS
 // ============================================================================
 
@@ -670,7 +580,6 @@ export const exampleSchemas = {
   camisetasPro: camisetasProSchema,
   hoodies: hoodiesSchema,
   bolsas: bolsasSchema,
-  tarjetasVisita: tarjetasVisitaSchema,
   cuadros: cuadrosSchema,
   resina: resinaSchema,
   tazas: tazasSchema,
@@ -683,26 +592,79 @@ export const exampleSchemas = {
   invitacionesEventos: EVENT_INVITATION_SCHEMA,
   // Sublimación avanzada
   tazasPersonalizadas: MUG_CUSTOMIZATION_SCHEMA,
+  // ===== NUEVOS SCHEMAS =====
+  // Productos Gráficos
+  flyers: FLYERS_SCHEMA,
+  imanes: IMANES_SCHEMA,
+  cartelesEventos: CARTELES_EVENTOS_SCHEMA,
+  // Textiles
+  delantales: DELANTALES_SCHEMA,
+  // Sublimación
+  alfombrillas: ALFOMBRILLAS_SCHEMA,
+  posavasos: POSAVASOS_SCHEMA,
+  decoracionSublimada: DECORACION_SUBLIMADA_SCHEMA,
+  // Corte Láser
+  decoracionMadera: DECORACION_MADERA_SCHEMA,
+  senalizacion: SENALIZACION_SCHEMA,
+  cajasMadera: CAJAS_MADERA_SCHEMA,
+  // Eventos
+  banderines: BANDERINES_SCHEMA,
+  meseros: MESEROS_SCHEMA,
+  // Papelería
+  cuadernos: CUADERNOS_SCHEMA,
+  papelRegalo: PAPEL_REGALO_SCHEMA,
+  // Impresión 3D
+  figurasGaming: FIGURAS_GAMING_SCHEMA,
+  maquetas: MAQUETAS_SCHEMA,
 };
 
 // Schema names for dropdown selection
 export const schemaOptions = [
-  { value: 'camisetas', label: 'Camisetas / Textiles (básico)' },
-  { value: 'camisetasPro', label: 'Camisetas Pro (front/back)' },
-  { value: 'hoodies', label: 'Hoodies / Sudaderas' },
-  { value: 'bolsas', label: 'Bolsas / Tote Bags' },
-  { value: 'tarjetasVisita', label: '💼 Tarjetas de visita' },
-  { value: 'cuadros', label: 'Cuadros / Marcos' },
-  { value: 'resina', label: 'Figuras de Resina' },
-  { value: 'tazas', label: 'Tazas / Sublimados' },
-  // Packaging options
-  { value: 'cajasPersonalizadas', label: '📦 Cajas Personalizadas' },
-  { value: 'bolsasPapel', label: '🛍️ Bolsas de Papel' },
-  { value: 'etiquetasAdhesivas', label: '🏷️ Etiquetas Adhesivas' },
-  // Eventos infantiles
+  // ───── TEXTILES ─────
+  { value: 'camisetas', label: '👕 Camisetas (básico)' },
+  { value: 'camisetasPro', label: '👕 Camisetas Pro (front/back)' },
+  { value: 'hoodies', label: '🧥 Hoodies / Sudaderas' },
+  { value: 'bolsas', label: '👜 Bolsas / Tote Bags' },
+  { value: 'delantales', label: '👨‍🍳 Delantales' },
+
+  // ───── SUBLIMACIÓN ─────
+  { value: 'tazas', label: '☕ Tazas (básico)' },
+  { value: 'tazasPersonalizadas', label: '☕ Tazas Personalizadas (completo)' },
+  { value: 'alfombrillas', label: '🖱️ Alfombrillas de Ratón' },
+  { value: 'posavasos', label: '🍵 Posavasos' },
+  { value: 'decoracionSublimada', label: '🖼️ Cuadros Metálicos / Decoración' },
+
+  // ───── PRODUCTOS GRÁFICOS ─────
+  { value: 'flyers', label: '📰 Flyers y Folletos' },
+  { value: 'imanes', label: '🧲 Imanes Personalizados' },
+  { value: 'cartelesEventos', label: '📋 Carteles para Eventos' },
+  { value: 'cuadros', label: '🖼️ Cuadros / Marcos (flores)' },
+
+  // ───── CORTE LÁSER ─────
+  { value: 'decoracionMadera', label: '🌳 Decoración en Madera' },
+  { value: 'senalizacion', label: '🪧 Señalización / Placas' },
+  { value: 'cajasMadera', label: '📦 Cajas de Madera Grabadas' },
+  { value: 'resina', label: '💎 Figuras de Resina (cajas)' },
+
+  // ───── EVENTOS ─────
   { value: 'cajasChuches', label: '🍬 Cajas de Chuches / Cumpleaños' },
   { value: 'invitacionesEventos', label: '💌 Invitaciones de Eventos' },
-  // Sublimación avanzada
-  { value: 'tazasPersonalizadas', label: '☕ Tazas Personalizadas (completo)' },
-  { value: 'custom', label: 'Personalizado (crear desde cero)' },
+  { value: 'banderines', label: '🎏 Banderines y Guirnaldas' },
+  { value: 'meseros', label: '🔢 Meseros / Números de Mesa' },
+
+  // ───── PACKAGING ─────
+  { value: 'cajasPersonalizadas', label: '📦 Cajas Personalizadas (cartón)' },
+  { value: 'bolsasPapel', label: '🛍️ Bolsas de Papel' },
+  { value: 'etiquetasAdhesivas', label: '🏷️ Etiquetas Adhesivas' },
+  { value: 'papelRegalo', label: '🎀 Papel de Regalo' },
+
+  // ───── PAPELERÍA ─────
+  { value: 'cuadernos', label: '📓 Cuadernos y Libretas' },
+
+  // ───── IMPRESIÓN 3D ─────
+  { value: 'figurasGaming', label: '🎮 Figuras Gaming/Anime' },
+  { value: 'maquetas', label: '🏗️ Maquetas y Prototipos' },
+
+  // ───── PERSONALIZADO ─────
+  { value: 'custom', label: '🎨 Personalizado (crear desde cero)' },
 ];
