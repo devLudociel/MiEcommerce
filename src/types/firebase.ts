@@ -26,6 +26,16 @@ export interface FirebaseProduct {
   // SEO fields
   metaTitle?: string; // Título para buscadores (máx 60 caracteres)
   metaDescription?: string; // Descripción para buscadores (máx 160 caracteres)
+  // Customization examples for inspiration
+  customizationExamples?: CustomizationExample[];
+}
+
+// Ejemplo de personalización para mostrar en la página del producto
+export interface CustomizationExample {
+  id: string;
+  image: string; // URL de la imagen
+  description: string; // Descripción corta
+  order?: number; // Orden de visualización
 }
 
 export interface CustomizationOption {

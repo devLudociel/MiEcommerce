@@ -61,6 +61,7 @@ interface Product {
 
   // Personalización
   customizationSchemaId?: string; // ID del schema (cat_tazas, cat_camisetas, etc.)
+  customizationExamples?: { id: string; image: string; description: string; order?: number }[];
 
   // Ofertas
   onSale: boolean;
@@ -220,6 +221,7 @@ export default function AdminProductsPanelV2() {
       slug: '',
       active: true,
       customizationSchemaId: '',
+      customizationExamples: [],
       onSale: false,
       // Control de Stock - valores por defecto
       trackInventory: false,
@@ -467,6 +469,9 @@ export default function AdminProductsPanelV2() {
         // Optional fields - only include if they have values
         ...(formData.customizationSchemaId && {
           customizationSchemaId: formData.customizationSchemaId,
+        }),
+        ...(formData.customizationExamples?.length && {
+          customizationExamples: formData.customizationExamples,
         }),
         ...(formData.onSale && formData.salePrice && { salePrice: Number(formData.salePrice) }),
       };
@@ -1407,6 +1412,87 @@ export default function AdminProductsPanelV2() {
                     Selecciona un schema para habilitar personalización en este producto
                   </p>
                 </div>
+
+                {/* Ejemplos de personalización - Solo si tiene schema */}
+                {formData.customizationSchemaId && (
+                  <div className="mt-4 pt-4 border-t border-purple-200">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      💡 Ejemplos de personalización (inspiración para clientes)
+                    </label>
+
+                    {/* Lista de ejemplos existentes */}
+                    {(formData.customizationExamples || []).length > 0 && (
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        {(formData.customizationExamples || []).map((example, index) => (
+                          <div key={example.id} className="relative group bg-white rounded-lg border p-2">
+                            <img
+                              src={example.image}
+                              alt={example.description}
+                              className="w-full h-24 object-cover rounded"
+                            />
+                            <p className="text-xs text-gray-600 mt-1 truncate">{example.description}</p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = [...(formData.customizationExamples || [])];
+                                updated.splice(index, 1);
+                                setFormData({ ...formData, customizationExamples: updated });
+                              }}
+                              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Añadir nuevo ejemplo */}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        id="newExampleUrl"
+                        placeholder="URL de imagen"
+                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                      />
+                      <input
+                        type="text"
+                        id="newExampleDesc"
+                        placeholder="Descripción"
+                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const urlInput = document.getElementById('newExampleUrl') as HTMLInputElement;
+                          const descInput = document.getElementById('newExampleDesc') as HTMLInputElement;
+                          const url = urlInput?.value?.trim();
+                          const desc = descInput?.value?.trim();
+                          if (url && desc) {
+                            const newExample = {
+                              id: `ex_${Date.now()}`,
+                              image: url,
+                              description: desc,
+                              order: (formData.customizationExamples || []).length
+                            };
+                            setFormData({
+                              ...formData,
+                              customizationExamples: [...(formData.customizationExamples || []), newExample]
+                            });
+                            urlInput.value = '';
+                            descInput.value = '';
+                          }
+                        }}
+                        className="px-3 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500">
+                      Añade imágenes de ejemplo para inspirar a los clientes. Se muestran en la página del producto.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Imágenes */}

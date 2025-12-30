@@ -403,13 +403,10 @@ export default function ProductDetail({ id, slug }: Props) {
           : { text: 'En stock', color: 'text-green-500', bg: 'bg-green-100' };
   const stockStatus = getStockStatus(currentVariant.stock);
 
-  // Ejemplos de personalización (estáticos por ahora)
-  const customizationExamples = [
-    { image: FALLBACK_IMG_400x300, description: 'Con logo empresarial' },
-    { image: FALLBACK_IMG_400x300, description: 'Colores personalizados' },
-    { image: FALLBACK_IMG_400x300, description: 'Texto personalizado' },
-    { image: FALLBACK_IMG_400x300, description: 'Diseño único' },
-  ];
+  // Ejemplos de personalización - usa los del producto o fallback vacío
+  const customizationExamples = product.customizationExamples?.length
+    ? product.customizationExamples.sort((a, b) => (a.order || 0) - (b.order || 0))
+    : [];
 
   return (
     <>
@@ -803,8 +800,8 @@ export default function ProductDetail({ id, slug }: Props) {
             </div>
           </div>
 
-          {/* Galería de Ejemplos de Personalización */}
-          {product.customizable && (
+          {/* Galería de Ejemplos de Personalización - Solo si hay ejemplos configurados */}
+          {product.customizable && customizationExamples.length > 0 && (
             <div className="mt-16 bg-gradient-to-r from-purple-50 to-pink-50 rounded-3xl p-8">
               <h3 className="text-3xl font-black text-gray-800 mb-6 text-center">
                 💡 Ejemplos de Personalizaciones
@@ -812,10 +809,15 @@ export default function ProductDetail({ id, slug }: Props) {
               <p className="text-center text-gray-600 mb-8">
                 Inspírate con estas ideas y crea tu diseño único
               </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {customizationExamples.map((example, i) => (
+              <div className={`grid gap-4 ${
+                customizationExamples.length === 1 ? 'grid-cols-1 max-w-sm mx-auto' :
+                customizationExamples.length === 2 ? 'grid-cols-2 max-w-2xl mx-auto' :
+                customizationExamples.length === 3 ? 'grid-cols-3 max-w-4xl mx-auto' :
+                'grid-cols-2 md:grid-cols-4'
+              }`}>
+                {customizationExamples.map((example) => (
                   <div
-                    key={i}
+                    key={example.id}
                     className="rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform cursor-pointer"
                   >
                     <img
@@ -824,6 +826,9 @@ export default function ProductDetail({ id, slug }: Props) {
                       loading="lazy"
                       decoding="async"
                       className="w-full h-48 object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = FALLBACK_IMG_400x300;
+                      }}
                     />
                     <div className="p-3 bg-white">
                       <p className="text-sm text-gray-700 font-medium text-center">
