@@ -307,6 +307,22 @@ service firebase.storage {
     }
 
     // ==========================================================================
+    // INSPIRATION: Example images for product customization inspiration
+    // ==========================================================================
+    match /inspiration/{fileName} {
+      // Only ADMINS can upload inspiration images
+      allow create, update: if isAdmin() &&
+                              isValidSize() &&
+                              isImage();
+
+      // Anyone can read (public inspiration images shown on product pages)
+      allow read: if true;
+
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================================================
     // DENY ALL OTHER PATHS
     // ==========================================================================
     match /{allPaths=**} {
