@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { getProductReviewStats } from '../../lib/firebase';
-import type { FirebaseProduct } from '../../types/firebase';
+import { getProductReviewStats, db } from '../../lib/firebase';
+import { collection, query, where, limit, getDocs, orderBy } from 'firebase/firestore';
+import type { FirebaseProduct, InspirationImage } from '../../types/firebase';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { addToCart } from '../../store/cartStore';
 import { useWishlist, toggleWishlist } from '../../store/wishlistStore';
@@ -181,6 +182,7 @@ export default function ProductDetail({ id, slug }: Props) {
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [reviewStats, setReviewStats] = useState({ averageRating: 0, totalReviews: 0 });
   const [mounted, setMounted] = useState(false);
+  const [inspirationImages, setInspirationImages] = useState<InspirationImage[]>([]);
 
   // Modal state
   const [modal, setModal] = useState<{
@@ -243,6 +245,52 @@ export default function ProductDetail({ id, slug }: Props) {
       }
     })();
   }, [uiProduct]);
+
+  // Fetch inspiration images based on product category
+  useEffect(() => {
+    if (!uiProduct?.customizable || !uiProduct?.category) return;
+
+    const fetchInspirationImages = async () => {
+      try {
+        // Map UI category to inspiration category slug
+        const categoryMap: Record<string, string> = {
+          textil: 'textiles',
+          textiles: 'textiles',
+          'impresion-3d': 'impresion-3d',
+          laser: 'laser',
+          eventos: 'eventos',
+          regalos: 'packaging',
+          packaging: 'packaging',
+          bordado: 'textiles',
+          digital: 'papeleria',
+          sublimacion: 'sublimacion',
+        };
+        const categorySlug = categoryMap[uiProduct.category.toLowerCase()] || uiProduct.category.toLowerCase();
+
+        const q = query(
+          collection(db, 'inspiration_images'),
+          where('categorySlug', '==', categorySlug),
+          where('active', '==', true),
+          orderBy('featured', 'desc'),
+          orderBy('createdAt', 'desc'),
+          limit(8)
+        );
+
+        const snapshot = await getDocs(q);
+        const images = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as InspirationImage[];
+
+        setInspirationImages(images);
+      } catch (error) {
+        console.error('Error fetching inspiration images:', error);
+        // Silently fail - inspiration images are optional
+      }
+    };
+
+    fetchInspirationImages();
+  }, [uiProduct?.category, uiProduct?.customizable]);
 
   // PERFORMANCE: useCallback para prevenir re-creación de funciones en cada render
   const handleAddToCart = useCallback(async () => {
@@ -403,10 +451,21 @@ export default function ProductDetail({ id, slug }: Props) {
           : { text: 'En stock', color: 'text-green-500', bg: 'bg-green-100' };
   const stockStatus = getStockStatus(currentVariant.stock);
 
-  // Ejemplos de personalización - usa los del producto o fallback vacío
-  const customizationExamples = product.customizationExamples?.length
-    ? product.customizationExamples.sort((a, b) => (a.order || 0) - (b.order || 0))
-    : [];
+  // Ejemplos de personalización - combina ejemplos del producto + imágenes de inspiración
+  const allExamples = useMemo(() => {
+    const productExamples = (product.customizationExamples || [])
+      .sort((a, b) => (a.order || 0) - (b.order || 0))
+      .map((ex) => ({ id: ex.id, image: ex.image, title: ex.description }));
+
+    const inspirationExamples = inspirationImages.map((img) => ({
+      id: img.id || `insp_${Math.random()}`,
+      image: img.imageUrl,
+      title: img.title,
+    }));
+
+    // Product examples first, then inspiration images (max 8 total)
+    return [...productExamples, ...inspirationExamples].slice(0, 8);
+  }, [product.customizationExamples, inspirationImages]);
 
   return (
     <>
@@ -800,8 +859,8 @@ export default function ProductDetail({ id, slug }: Props) {
             </div>
           </div>
 
-          {/* Galería de Ejemplos de Personalización - Solo si hay ejemplos configurados */}
-          {product.customizable && customizationExamples.length > 0 && (
+          {/* Galería de Ejemplos de Personalización - Ejemplos del producto + Inspiración automática */}
+          {product.customizable && allExamples.length > 0 && (
             <div className="mt-16 bg-gradient-to-r from-purple-50 to-pink-50 rounded-3xl p-8">
               <h3 className="text-3xl font-black text-gray-800 mb-6 text-center">
                 💡 Ejemplos de Personalizaciones
@@ -810,19 +869,19 @@ export default function ProductDetail({ id, slug }: Props) {
                 Inspírate con estas ideas y crea tu diseño único
               </p>
               <div className={`grid gap-4 ${
-                customizationExamples.length === 1 ? 'grid-cols-1 max-w-sm mx-auto' :
-                customizationExamples.length === 2 ? 'grid-cols-2 max-w-2xl mx-auto' :
-                customizationExamples.length === 3 ? 'grid-cols-3 max-w-4xl mx-auto' :
+                allExamples.length === 1 ? 'grid-cols-1 max-w-sm mx-auto' :
+                allExamples.length === 2 ? 'grid-cols-2 max-w-2xl mx-auto' :
+                allExamples.length === 3 ? 'grid-cols-3 max-w-4xl mx-auto' :
                 'grid-cols-2 md:grid-cols-4'
               }`}>
-                {customizationExamples.map((example) => (
+                {allExamples.map((example) => (
                   <div
                     key={example.id}
                     className="rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform cursor-pointer"
                   >
                     <img
                       src={example.image}
-                      alt={example.description}
+                      alt={example.title}
                       loading="lazy"
                       decoding="async"
                       className="w-full h-48 object-cover"
@@ -832,7 +891,7 @@ export default function ProductDetail({ id, slug }: Props) {
                     />
                     <div className="p-3 bg-white">
                       <p className="text-sm text-gray-700 font-medium text-center">
-                        {example.description}
+                        {example.title}
                       </p>
                     </div>
                   </div>

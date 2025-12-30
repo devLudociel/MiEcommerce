@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminInspirationPanel from '../../components/admin/AdminInspirationPanel';
+import RequireAdmin from '../../components/auth/RequireAdmin.tsx';
+---
+
+<BaseLayout title="Admin | Biblioteca de Inspiración">
+  <div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- PERFORMANCE: Auth check needs immediate load -->
+      <RequireAdmin client:load />
+      <!-- PERFORMANCE: Panel can wait until browser is idle -->
+      <AdminInspirationPanel client:idle />
+    </div>
+  </div>
+</BaseLayout>
