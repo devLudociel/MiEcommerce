@@ -84,22 +84,4 @@ const nonce = Astro.locals?.cspNonce;
     overlay?.addEventListener('click', toggleMobileMenu);
   </script>
 
-  <style>
-    #mobile-menu::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    #mobile-menu::-webkit-scrollbar-track {
-      background: #f1f1f1;
-    }
-
-    #mobile-menu::-webkit-scrollbar-thumb {
-      background: #888;
-      border-radius: 10px;
-    }
-
-    #mobile-menu::-webkit-scrollbar-thumb:hover {
-      background: #555;
-    }
-  </style>
 </BaseLayout>

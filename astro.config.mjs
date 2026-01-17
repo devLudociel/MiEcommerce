@@ -22,6 +22,7 @@ export default defineConfig({
           'https://www.googletagmanager.com',
           'https://js.stripe.com',
         ],
+        hashes: ['sha256-Jua0BSagD04dr1M2+eje7o39hvQbuJX4g91etdB4q10='],
       },
       styleDirective: {
         resources: ["'self'", "'unsafe-inline'", 'https://*.googleapis.com'],
