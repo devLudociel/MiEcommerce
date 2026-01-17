@@ -1,5 +1,6 @@
 // src/middleware.ts
 import { defineMiddleware } from 'astro:middleware';
+import { randomBytes } from 'crypto';
 import { getAdminAuth } from './lib/firebase-admin';
 
 /**
@@ -33,6 +34,8 @@ function getBearerToken(request: Request): string | null {
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname, search } = context.url;
+  const nonce = randomBytes(16).toString('base64');
+  context.locals.cspNonce = nonce;
 
   if (pathname === ADMIN_PATH_PREFIX || pathname.startsWith(`${ADMIN_PATH_PREFIX}/`)) {
     const headerToken = getBearerToken(context.request);
@@ -99,40 +102,5 @@ function getSecurityHeaders(): Record<string, string> {
     ...(import.meta.env.PROD && {
       'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
     }),
-    'Content-Security-Policy': getContentSecurityPolicy(),
   };
-}
-
-function getContentSecurityPolicy(): string {
-  const isDev = import.meta.env.DEV;
-
-  if (isDev) {
-    return [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.google.com https://*.googleapis.com https://www.googletagmanager.com https://js.stripe.com",
-      "style-src 'self' 'unsafe-inline' https://*.googleapis.com",
-      "img-src 'self' data: https: blob:",
-      "font-src 'self' data: https://*.googleapis.com https://*.gstatic.com",
-      "connect-src 'self' ws: wss: https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://*.google-analytics.com https://*.googletagmanager.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.zippopotam.us https://api.geoapify.com",
-      "frame-src 'self' https://*.firebaseapp.com https://js.stripe.com https://accounts.google.com https://*.google.com",
-      "object-src 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-    ].join('; ');
-  }
-
-  return [
-    "default-src 'self'",
-    "script-src 'self' https://*.google.com https://*.googleapis.com https://www.googletagmanager.com https://js.stripe.com",
-    "style-src 'self' 'unsafe-inline' https://*.googleapis.com",
-    "img-src 'self' data: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://*.google.com https://*.google-analytics.com",
-    "font-src 'self' data: https://*.googleapis.com https://*.gstatic.com",
-    "connect-src 'self' https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://*.google-analytics.com https://*.googletagmanager.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.zippopotam.us https://api.geoapify.com",
-    "frame-src 'self' https://*.firebaseapp.com https://js.stripe.com https://accounts.google.com https://*.google.com",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-    "frame-ancestors 'self'",
-    'upgrade-insecure-requests',
-  ].join('; ');
 }
