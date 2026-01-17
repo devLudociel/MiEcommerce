@@ -3,12 +3,13 @@
  * DEPRECATED: This page has been replaced by /checkout
  * Redirecting to new checkout page with improved features
  */
+const nonce = Astro.locals?.cspNonce;
 ---
 
 <html lang="es">
   <head>
     <meta http-equiv="refresh" content="0;url=/checkout" />
-    <script>
+    <script nonce={nonce}>
       window.location.href = '/checkout';
     </script>
   </head>

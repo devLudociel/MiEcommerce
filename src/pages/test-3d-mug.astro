@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+const nonce = Astro.locals?.cspNonce;
 ---
 
 <BaseLayout title="Test 3D Mug Preview">
@@ -125,7 +126,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </div>
 </BaseLayout>
 
-<script>
+<script nonce={nonce}>
   import { createRoot } from 'react-dom/client';
   import { createElement } from 'react';
   import ThreeDMugPreview from '../components/3d/ThreeDMugPreview';

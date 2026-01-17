@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+const nonce = Astro.locals?.cspNonce;
 ---
 
 <BaseLayout title="Arreglar Producto">
@@ -51,7 +52,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
   </div>
 
-  <script type="module">
+  <script type="module" nonce={nonce}>
     import { auth } from '../lib/firebase';
     import { getIdTokenResult } from 'firebase/auth';
 

@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import RequireAuth from '../../components/auth/RequireAuth.tsx';
 import AccountMenu from '../../components/account/AccountMenu.tsx';
 import ImageCustomizer from '../../components/account/ImageCustomizer.tsx';
+const nonce = Astro.locals?.cspNonce;
 ---
 
 <BaseLayout title="Personalizador de Diseños">
@@ -66,7 +67,7 @@ import ImageCustomizer from '../../components/account/ImageCustomizer.tsx';
     </div>
   </div>
 
-  <script>
+  <script nonce={nonce}>
     const mobileToggle = document.getElementById('mobile-menu-toggle');
     const mobileMenu = document.getElementById('mobile-menu');
     const mobileMenuClose = document.getElementById('mobile-menu-close');

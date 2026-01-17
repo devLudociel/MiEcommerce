@@ -19,6 +19,7 @@ const {
   description = 'Especialistas en personalización: estampado, bordado, impresión 3D, corte láser y mucho más.',
   ogImage = '/og-image.jpg',
 } = Astro.props;
+const nonce = Astro.locals?.cspNonce;
 ---
 
 <!doctype html>
@@ -100,7 +101,7 @@ const {
         }
       }
     </style>
-    <script is:inline>
+    <script is:inline nonce={nonce}>
       (() => {
         let initialized = false;
 

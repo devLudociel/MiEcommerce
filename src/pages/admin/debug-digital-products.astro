@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+const nonce = Astro.locals?.cspNonce;
 ---
 
 <BaseLayout title="Debug - Productos Digitales">
@@ -23,7 +24,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   </div>
 </BaseLayout>
 
-<script>
+<script nonce={nonce}>
   import { db } from '../../lib/firebase';
   import { collection, query, getDocs, doc, updateDoc } from 'firebase/firestore';
 

@@ -4,6 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 export const prerender = false;
 
 const { shareId } = Astro.params;
+const nonce = Astro.locals?.cspNonce;
 
 // Redirect if no shareId
 if (!shareId) {
@@ -113,7 +114,7 @@ if (!shareId) {
     </div>
   </div>
 
-  <script>
+  <script nonce={nonce}>
     // Fetch and display shared design
     async function loadSharedDesign() {
       const container = document.getElementById('shared-design-viewer');
