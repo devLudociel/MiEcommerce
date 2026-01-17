@@ -118,29 +118,40 @@ export default function ProductsWithFilters() {
         const q = query(collection(db, 'products'), where('active', '==', true), limit(100));
 
         const snapshot = await getDocs(q);
-        const items: Product[] = snapshot.docs.map((doc) => {
-          const data = doc.data();
-          const categoryId = data.categoryId || 'otros';
-          const category = categories.find((c) => c.id === categoryId);
+        const items: Product[] = snapshot.docs
+          .filter((doc) => doc.data().readyMade !== true)
+          .map((doc) => {
+            const data = doc.data();
+            const variants = Array.isArray(data.variants) ? data.variants : [];
+            const variantColors = variants
+              .map((variant: Record<string, unknown>) => String(variant.colorName || ''))
+              .filter(Boolean);
+            const variantSizes = variants
+              .map((variant: Record<string, unknown>) => String(variant.name || ''))
+              .filter(Boolean);
+            const colors = [...(data.colors || []), ...variantColors];
+            const sizes = [...(data.sizes || []), ...variantSizes];
+            const categoryId = data.categoryId || 'otros';
+            const category = categories.find((c) => c.id === categoryId);
 
-          return {
-            id: doc.id,
-            name: data.name || 'Producto',
-            price: Number(data.basePrice) || 0,
-            salePrice: data.salePrice ? Number(data.salePrice) : undefined,
-            image: (data.images && data.images[0]) || FALLBACK_IMG_400x300,
-            slug: data.slug || doc.id,
-            categoryId: categoryId,
-            categoryName: category?.name || 'Otros',
-            tags: data.tags || [], // ✅ NUEVO: Cargar tags desde Firebase
-            rating: data.rating || 0,
-            reviews: data.reviewCount || 0,
-            inStock: !!data.active,
-            colors: data.colors || [],
-            sizes: data.sizes || [],
-            onSale: !!data.onSale,
-          };
-        });
+            return {
+              id: doc.id,
+              name: data.name || 'Producto',
+              price: Number(data.basePrice) || 0,
+              salePrice: data.salePrice ? Number(data.salePrice) : undefined,
+              image: (data.images && data.images[0]) || FALLBACK_IMG_400x300,
+              slug: data.slug || doc.id,
+              categoryId: categoryId,
+              categoryName: category?.name || 'Otros',
+              tags: data.tags || [], // ✅ NUEVO: Cargar tags desde Firebase
+              rating: data.rating || 0,
+              reviews: data.reviewCount || 0,
+              inStock: !!data.active,
+              colors: Array.from(new Set(colors)),
+              sizes: Array.from(new Set(sizes)),
+              onSale: !!data.onSale,
+            };
+          });
 
         setProducts(items);
         setFilteredProducts(items);

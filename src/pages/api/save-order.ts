@@ -101,6 +101,26 @@ const orderDataSchema = z.object({
   notes: z.string().max(1000).optional(),
 });
 
+function stripImageUrls(input: unknown): unknown {
+  if (Array.isArray(input)) {
+    return input.map(stripImageUrls);
+  }
+
+  if (!input || typeof input !== 'object') {
+    return input;
+  }
+
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
+    if (key === 'imageUrl' || key === 'previewImage') {
+      continue;
+    }
+    result[key] = stripImageUrls(value);
+  }
+
+  return result;
+}
+
 export const POST: APIRoute = async ({ request }) => {
   // SECURITY: Rate limiting (strict for order creation)
   const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STRICT, 'save-order');
@@ -256,7 +276,7 @@ export const POST: APIRoute = async ({ request }) => {
       if (item.image) docItem.image = item.image;
       if (typeof item.variantId === 'number') docItem.variantId = item.variantId;
       if (item.variantName) docItem.variantName = item.variantName;
-      if (item.customization) docItem.customization = item.customization;
+      if (item.customization) docItem.customization = stripImageUrls(item.customization);
       return docItem;
     });
 

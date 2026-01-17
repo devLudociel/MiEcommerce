@@ -6,18 +6,6 @@ import { auth } from '../../lib/firebase';
 import { syncCartWithUser } from '../../store/cartStore';
 import { syncWishlistWithUser } from '../../store/wishlistStore';
 
-const AUTH_COOKIE_NAME = 'auth_token';
-
-function setAuthCookie(token: string | null): void {
-  if (typeof document === 'undefined') return;
-  if (!token) {
-    document.cookie = `${AUTH_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
-    return;
-  }
-  const encoded = encodeURIComponent(token);
-  document.cookie = `${AUTH_COOKIE_NAME}=${encoded}; Max-Age=3600; Path=/; SameSite=Lax`;
-}
-
 // TYPES: Firebase token claims structure
 interface FirebaseTokenClaims {
   admin?: boolean;
@@ -29,6 +17,17 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [isAdminClaim, setIsAdminClaim] = useState(false);
 
+  const syncSessionCookie = async (token: string | null) => {
+    if (typeof window === 'undefined') return;
+    try {
+      const endpoint = token ? '/api/auth/session' : '/api/auth/logout';
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+      await fetch(endpoint, { method: 'POST', headers });
+    } catch {
+      // Non-blocking; session cookie is best-effort
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setLoading(true);
@@ -38,7 +37,7 @@ export function useAuth() {
           const tokenResult = await getIdTokenResult(currentUser, true);
           const claims = tokenResult.claims as FirebaseTokenClaims;
           setIsAdminClaim(!!claims.admin);
-          setAuthCookie(tokenResult.token);
+          await syncSessionCookie(tokenResult.token);
 
           // Sync cart and wishlist with authenticated user
           await Promise.all([
@@ -47,14 +46,14 @@ export function useAuth() {
           ]);
         } else {
           setIsAdminClaim(false);
-          setAuthCookie(null);
+          await syncSessionCookie(null);
 
           // Clear cart and wishlist when user logs out
           await Promise.all([syncCartWithUser(null), syncWishlistWithUser(null)]);
         }
       } catch {
         setIsAdminClaim(false);
-        setAuthCookie(null);
+        await syncSessionCookie(null);
         // Still sync cart and wishlist even if token check fails
         if (currentUser) {
           await Promise.all([
@@ -75,7 +74,7 @@ export function useAuth() {
   const logout = async () => {
     try {
       await signOut(auth);
-      setAuthCookie(null);
+      await syncSessionCookie(null);
       window.location.href = '/';
     } catch (error) {
       console.error('Error al cerrar sesión:', error);

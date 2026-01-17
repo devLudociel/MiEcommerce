@@ -12,6 +12,19 @@ export default function SavedDesignsPanel() {
   const [selectedDesign, setSelectedDesign] = useState<SavedDesign | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [thumbnailUrls, setThumbnailUrls] = useState<Record<string, string>>({});
+
+  const getAuthHeaders = async (includeJson: boolean = true) => {
+    if (!user) return null;
+    const token = await user.getIdToken();
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${token}`,
+    };
+    if (includeJson) {
+      headers['Content-Type'] = 'application/json';
+    }
+    return headers;
+  };
 
   useEffect(() => {
     if (user) {
@@ -19,10 +32,34 @@ export default function SavedDesignsPanel() {
     }
   }, [user]);
 
+  const fetchSignedUrl = async (path: string, token: string): Promise<string | null> => {
+    try {
+      const response = await fetch('/api/storage/get-signed-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ path }),
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data?.url || null;
+    } catch (error) {
+      logger.error('[SavedDesigns] Error fetching signed url:', error);
+      return null;
+    }
+  };
+
   const fetchDesigns = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/designs/get-user-designs');
+      if (!user) return;
+      const headers = await getAuthHeaders(false);
+      if (!headers) return;
+      const response = await fetch('/api/designs/get-user-designs', {
+        headers,
+      });
       if (response.ok) {
         const data = await response.json();
         setDesigns(data.designs || []);
@@ -36,11 +73,42 @@ export default function SavedDesignsPanel() {
     }
   };
 
+  useEffect(() => {
+    if (!user || designs.length === 0) return;
+
+    let isActive = true;
+
+    const resolveThumbnails = async () => {
+      const token = await user.getIdToken();
+      const updates: Record<string, string> = {};
+
+      for (const design of designs) {
+        if (!design.thumbnailPath || thumbnailUrls[design.id]) continue;
+        const signedUrl = await fetchSignedUrl(design.thumbnailPath, token);
+        if (signedUrl) {
+          updates[design.id] = signedUrl;
+        }
+      }
+
+      if (isActive && Object.keys(updates).length > 0) {
+        setThumbnailUrls((prev) => ({ ...prev, ...updates }));
+      }
+    };
+
+    resolveThumbnails();
+
+    return () => {
+      isActive = false;
+    };
+  }, [designs, user, thumbnailUrls]);
+
   const handleToggleFavorite = async (designId: string, currentFavorite: boolean) => {
     try {
+      const headers = await getAuthHeaders();
+      if (!headers) return;
       const response = await fetch('/api/designs/toggle-favorite', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ designId, isFavorite: !currentFavorite }),
       });
 
@@ -59,9 +127,11 @@ export default function SavedDesignsPanel() {
   const handleDelete = async (designId: string) => {
     setDeletingId(designId);
     try {
+      const headers = await getAuthHeaders();
+      if (!headers) return;
       const response = await fetch('/api/designs/delete', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ designId }),
       });
 
@@ -93,9 +163,11 @@ export default function SavedDesignsPanel() {
 
   const handleDuplicate = async (designId: string) => {
     try {
+      const headers = await getAuthHeaders();
+      if (!headers) return;
       const response = await fetch('/api/designs/duplicate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ designId }),
       });
 
@@ -175,6 +247,7 @@ export default function SavedDesignsPanel() {
           <DesignCard
             key={design.id}
             design={design}
+            thumbnailUrl={thumbnailUrls[design.id]}
             onToggleFavorite={handleToggleFavorite}
             onDelete={(d) => {
               setSelectedDesign(d);
@@ -238,6 +311,7 @@ export default function SavedDesignsPanel() {
 
 interface DesignCardProps {
   design: SavedDesign;
+  thumbnailUrl?: string;
   onToggleFavorite: (id: string, currentFavorite: boolean) => void;
   onDelete: (design: SavedDesign) => void;
   onDuplicate: (id: string) => void;
@@ -247,19 +321,22 @@ interface DesignCardProps {
 
 function DesignCard({
   design,
+  thumbnailUrl,
   onToggleFavorite,
   onDelete,
   onDuplicate,
   onUseInProduct,
   onUseInOtherProduct,
 }: DesignCardProps) {
+  const resolvedThumbnail = thumbnailUrl || design.thumbnail;
+
   return (
     <div className="group bg-white rounded-lg border-2 border-gray-200 hover:border-purple-400 transition-all overflow-hidden hover:shadow-lg">
       {/* Thumbnail */}
       <div className="relative aspect-square bg-gray-100">
-        {design.thumbnail ? (
+        {resolvedThumbnail ? (
           <img
-            src={design.thumbnail}
+            src={resolvedThumbnail}
             alt={design.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
           />

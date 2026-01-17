@@ -2,6 +2,17 @@
 // Test page for DynamicCustomizer
 import DynamicCustomizer from '../components/customizer/DynamicCustomizer';
 import { camisetasSchema } from '../data/exampleSchemas';
+import { requireAdminPage, AUTH_COOKIE_NAME } from '../lib/auth/requireAdminPage';
+
+const guardResponse = await requireAdminPage(
+  Astro.request,
+  Astro.url,
+  Astro.cookies.get(AUTH_COOKIE_NAME)?.value
+);
+
+if (guardResponse) {
+  return guardResponse;
+}
 
 // Mock product data
 const mockProduct = {

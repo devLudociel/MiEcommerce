@@ -28,18 +28,6 @@ function isFirebaseError(error: unknown): error is FirebaseError {
   return typeof error === 'object' && error !== null && ('code' in error || 'message' in error);
 }
 
-const AUTH_COOKIE_NAME = 'auth_token';
-
-function setAuthCookie(token: string | null): void {
-  if (typeof document === 'undefined') return;
-  if (!token) {
-    document.cookie = `${AUTH_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
-    return;
-  }
-  const encoded = encodeURIComponent(token);
-  document.cookie = `${AUTH_COOKIE_NAME}=${encoded}; Max-Age=3600; Path=/; SameSite=Lax`;
-}
-
 export default function LoginPanel() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -93,16 +81,27 @@ export default function LoginPanel() {
     );
   };
 
+  const syncSessionCookie = async (token: string | null) => {
+    if (typeof window === 'undefined') return;
+    try {
+      const endpoint = token ? '/api/auth/session' : '/api/auth/logout';
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+      await fetch(endpoint, { method: 'POST', headers });
+    } catch (e) {
+      logger.warn('[LoginPanel] Could not sync session cookie', e);
+    }
+  };
+
   const getAdminTargetUrl = async (user: User | null, desired?: string) => {
     if (!user || typeof window === 'undefined') return '/account';
     try {
       const tokenResult = await getIdTokenResult(user, true);
-      setAuthCookie(tokenResult.token);
+      await syncSessionCookie(tokenResult.token);
       const isAdmin = Boolean(tokenResult.claims?.admin);
       return isAdmin ? desired || '/admin/products' : '/account';
     } catch (e) {
       logger.warn('[LoginPanel] Could not verify admin claims', e);
-      setAuthCookie(null);
+      await syncSessionCookie(null);
       return '/account';
     }
   };
@@ -433,6 +432,7 @@ export default function LoginPanel() {
       setError(null);
       setLoading(true);
       await signOut(auth);
+      await syncSessionCookie(null);
       await signInWithGoogle(true);
     } catch (error: unknown) {
       setError(

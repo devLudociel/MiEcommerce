@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { getProductReviewStats, db } from '../../lib/firebase';
 import { collection, query, where, limit, getDocs, orderBy } from 'firebase/firestore';
-import type { FirebaseProduct, InspirationImage } from '../../types/firebase';
+import type { FirebaseProduct, InspirationImage, ProductVariant } from '../../types/firebase';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
 import { addToCart } from '../../store/cartStore';
 import { useWishlist, toggleWishlist } from '../../store/wishlistStore';
@@ -27,16 +27,6 @@ interface ProductImage {
   url: string;
   alt: string;
   color?: string;
-}
-interface ProductVariant {
-  id: number;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  color: string;
-  colorName: string;
-  stock: number;
-  sku: string;
 }
 interface ProductReview {
   id: number;
@@ -73,6 +63,7 @@ interface UIProduct {
   onSale: boolean;
   salePrice?: number;
   basePrice: number;
+  readyMade?: boolean;
 }
 
 interface Props {
@@ -81,11 +72,14 @@ interface Props {
 }
 
 function toUIProduct(data: FirebaseProduct & { id: string }): UIProduct {
-  const basePrice = Number((data as any).basePrice) || 0;
   const onSale = !!(data as any).onSale;
   const salePrice = (data as any).salePrice ? Number((data as any).salePrice) : undefined;
-  const currentPrice = onSale && salePrice ? salePrice : basePrice;
   const active = (data as any).active ?? true;
+  const readyMade = (data as any).readyMade === true;
+  const explicitCustomizable = (data as any).customizable;
+  const hasSchema = Boolean((data as any).customizationSchemaId);
+  const customizable =
+    readyMade ? false : typeof explicitCustomizable === 'boolean' ? explicitCustomizable : hasSchema;
   const images: ProductImage[] = Array.isArray(data.images)
     ? data.images.map((url, i) => ({
         id: i + 1,
@@ -93,22 +87,59 @@ function toUIProduct(data: FirebaseProduct & { id: string }): UIProduct {
         alt: `${data.name} ${i + 1}`,
       }))
     : [{ id: 1, url: FALLBACK_IMG_400x300, alt: data.name }];
-  const variants: ProductVariant[] = [
-    {
-      id: 1,
-      name: 'Estándar',
-      price: currentPrice,
-      originalPrice: onSale && salePrice ? basePrice : undefined,
-      color: '#4B5563',
-      colorName: 'Estándar',
-      stock: active ? 15 : 0,
-      sku: (data as any).slug || data.id,
-    },
-  ];
+  const rawVariants = Array.isArray((data as any).variants) ? (data as any).variants : [];
+  const normalizedVariants: ProductVariant[] = rawVariants
+    .map((variant: Record<string, unknown>, index: number) => {
+      const price = Number(variant.price);
+      if (!Number.isFinite(price)) return null;
+      const color = typeof variant.color === 'string' ? variant.color : '#4B5563';
+      const colorName =
+        typeof variant.colorName === 'string' ? variant.colorName : 'Estándar';
+      const stock = Number(variant.stock);
+      const originalPriceRaw = variant.originalPrice;
+      const originalPriceParsed =
+        originalPriceRaw !== undefined ? Number(originalPriceRaw) : undefined;
+      const originalPrice = Number.isFinite(originalPriceParsed)
+        ? originalPriceParsed
+        : undefined;
+      return {
+        id: Number(variant.id) || index + 1,
+        name: String(variant.name || 'Variante'),
+        price,
+        originalPrice,
+        color,
+        colorName,
+        stock: Number.isFinite(stock) ? stock : active ? 15 : 0,
+        sku: String(variant.sku || (data as any).slug || data.id),
+      };
+    })
+    .filter((variant): variant is ProductVariant => !!variant);
+  const variantPrices = normalizedVariants.map((variant) => variant.price);
+  const basePriceRaw = Number((data as any).basePrice) || 0;
+  const basePrice =
+    basePriceRaw > 0 ? basePriceRaw : variantPrices.length ? Math.min(...variantPrices) : 0;
+  const currentPrice = onSale && salePrice && normalizedVariants.length === 0 ? salePrice : basePrice;
+  const variants: ProductVariant[] =
+    normalizedVariants.length > 0
+      ? normalizedVariants
+      : [
+          {
+            id: 1,
+            name: 'Estándar',
+            price: currentPrice,
+            originalPrice: onSale && salePrice ? basePrice : undefined,
+            color: '#4B5563',
+            colorName: 'Estándar',
+            stock: active ? 15 : 0,
+            sku: (data as any).slug || data.id,
+          },
+        ];
   const features: string[] =
     Array.isArray((data as any).tags) && (data as any).tags.length
       ? (data as any).tags
-      : [(data as any).customizable ? 'Personalizable' : 'Calidad garantizada', 'Hecho a medida'];
+      : readyMade
+        ? ['Listo para comprar', 'Calidad garantizada']
+        : [customizable ? 'Personalizable' : 'Calidad garantizada', 'Hecho a medida'];
   const specifications: Record<string, string> = {};
   if (Array.isArray((data as any).customizationOptions))
     for (const o of (data as any).customizationOptions)
@@ -131,13 +162,14 @@ function toUIProduct(data: FirebaseProduct & { id: string }): UIProduct {
     freeShipping: true,
     warranty: 'Garantía 12 meses',
     returnPolicy: '30 días para devoluciones gratuitas',
-    customizable: (data as any).customizable ?? true,
+    customizable,
     productionTime: (data as any).productionTime || '3-5 días hábiles',
     categoryId: (data as any).categoryId,
     slug: (data as any).slug,
     onSale,
     salePrice,
     basePrice,
+    readyMade,
   };
 }
 
@@ -168,8 +200,12 @@ export default function ProductDetail({ id, slug }: Props) {
 
   // Convert related products to UI format
   const relatedProducts = useMemo(() => {
-    return relatedProductsData.map((doc) => toUIProduct({ id: doc.id, ...doc } as any));
-  }, [relatedProductsData]);
+    const mapped = relatedProductsData.map((doc) => toUIProduct({ id: doc.id, ...doc } as any));
+    if (!uiProduct) return mapped;
+    return mapped.filter((product) =>
+      uiProduct.readyMade ? product.readyMade : product.readyMade !== true
+    );
+  }, [relatedProductsData, uiProduct]);
 
   const [selectedVariant, setSelectedVariant] = useState(0);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -256,16 +292,24 @@ export default function ProductDetail({ id, slug }: Props) {
         const categoryMap: Record<string, string> = {
           textil: 'textiles',
           textiles: 'textiles',
+          'productos textiles': 'textiles',
           'impresion-3d': 'impresion-3d',
+          'corte-grabado': 'laser',
           laser: 'laser',
           eventos: 'eventos',
           regalos: 'packaging',
           packaging: 'packaging',
+          papeleria: 'papeleria',
+          'graficos-impresos': 'papeleria',
+          'servicios-digitales': 'papeleria',
           bordado: 'textiles',
           digital: 'papeleria',
           sublimacion: 'sublimacion',
+          sublimados: 'sublimacion',
         };
-        const categorySlug = categoryMap[uiProduct.category.toLowerCase()] || uiProduct.category.toLowerCase();
+        const rawCategory =
+          (uiProduct.categoryId || uiProduct.category || '').toLowerCase();
+        const categorySlug = categoryMap[rawCategory] || rawCategory;
 
         const q = query(
           collection(db, 'inspiration_images'),
@@ -377,6 +421,23 @@ export default function ProductDetail({ id, slug }: Props) {
     setIsInWishlist(wishlist.items.some((w) => String(w.id) === String(id)));
   }, [uiProduct?.id, wishlist.items]);
 
+  // Ejemplos de personalización - combina ejemplos del producto + imágenes de inspiración
+  const allExamples = useMemo(() => {
+    if (!uiProduct) return [];
+    const productExamples = ((uiProduct as any).customizationExamples || [])
+      .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+      .map((ex: any) => ({ id: ex.id, image: ex.image, title: ex.description }));
+
+    const inspirationExamples = inspirationImages.map((img) => ({
+      id: img.id || `insp_${Math.random()}`,
+      image: img.imageUrl,
+      title: img.title,
+    }));
+
+    // Product examples first, then inspiration images (max 8 total)
+    return [...productExamples, ...inspirationExamples].slice(0, 8);
+  }, [uiProduct, inspirationImages]);
+
   // ✅ AÑADE TODO ESTO ANTES DEL if (loading)
   if (!mounted) {
     return (
@@ -450,22 +511,6 @@ export default function ProductDetail({ id, slug }: Props) {
           ? { text: `Últimas ${stock} unidades`, color: 'text-yellow-600', bg: 'bg-yellow-100' }
           : { text: 'En stock', color: 'text-green-500', bg: 'bg-green-100' };
   const stockStatus = getStockStatus(currentVariant.stock);
-
-  // Ejemplos de personalización - combina ejemplos del producto + imágenes de inspiración
-  const allExamples = useMemo(() => {
-    const productExamples = (product.customizationExamples || [])
-      .sort((a, b) => (a.order || 0) - (b.order || 0))
-      .map((ex) => ({ id: ex.id, image: ex.image, title: ex.description }));
-
-    const inspirationExamples = inspirationImages.map((img) => ({
-      id: img.id || `insp_${Math.random()}`,
-      image: img.imageUrl,
-      title: img.title,
-    }));
-
-    // Product examples first, then inspiration images (max 8 total)
-    return [...productExamples, ...inspirationExamples].slice(0, 8);
-  }, [product.customizationExamples, inspirationImages]);
 
   return (
     <>
@@ -644,7 +689,10 @@ export default function ProductDetail({ id, slug }: Props) {
                 <ul className="space-y-2">
                   <li className="flex items-center gap-3">
                     <span className="text-green-500 text-xl">✓</span>
-                    <span>1x {product.name} personalizado</span>
+                    <span>
+                      1x {product.name}
+                      {product.customizable ? ' personalizado' : ''}
+                    </span>
                   </li>
                   {product.customizable && (
                     <li className="flex items-center gap-3">
@@ -664,7 +712,9 @@ export default function ProductDetail({ id, slug }: Props) {
               </div>
 
               <div>
-                <h3 className="text-lg font-bold text-gray-800 mb-4">Elige tu modelo:</h3>
+                <h3 className="text-lg font-bold text-gray-800 mb-4">
+                  {product.readyMade ? 'Elige talla y color:' : 'Elige tu modelo:'}
+                </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {product.variants.map((variant, i) => (
                     <button
@@ -680,10 +730,10 @@ export default function ProductDetail({ id, slug }: Props) {
                         />
                         <div className="flex-1">
                           <div className="font-semibold text-gray-800">{variant.colorName}</div>
-                          <div className="text-sm text-gray-500">
-                            {variant.name.split(' - ')[0]}
+                          <div className="text-sm text-gray-500">{variant.name}</div>
+                          <div className="text-lg font-bold text-cyan-600">
+                            €{variant.price.toFixed(2)}
                           </div>
-                          <div className="text-lg font-bold text-cyan-600">${variant.price}</div>
                         </div>
                         <div
                           className={`w-3 h-3 rounded-full ${variant.stock > 10 ? 'bg-green-500' : variant.stock > 5 ? 'bg-yellow-500' : variant.stock > 0 ? 'bg-orange-500' : 'bg-red-500'}`}

@@ -4,6 +4,7 @@ import HeroCarousel from '../components/sections/HeroCarousel.tsx';
 import CategoriesShowcase from '../components/sections/CategoriesShowcase.tsx';
 import BestSellersWithProvider from '../components/sections/BestSellersWithProvider.tsx';
 import ProductGrid from '../components/sections/ProductGrid.tsx';
+import ReadyToBuyHomeWithProvider from '../components/sections/ReadyToBuyHomeWithProvider.tsx';
 import DigitalProductsHomeWithProvider from '../components/sections/DigitalProductsHomeWithProvider.tsx';
 import WhyChooseUs from '../components/sections/WhyChooseUs.tsx';
 import FooterComponent from '../components/sections/Footer.tsx';
@@ -31,15 +32,19 @@ const ogImage = '/og-home.jpg';
   <!-- client:visible = Cargar cuando es visible (below the fold) -->
   <ProductGrid client:visible />
 
-  <!-- 5. Digital Products: Productos DIGITALES descargables -->
+  <!-- 5. Ready to Buy: Diseños listos para comprar -->
+  <!-- client:visible = Cargar cuando es visible (below the fold) -->
+  <ReadyToBuyHomeWithProvider client:visible maxItems={6} />
+
+  <!-- 6. Digital Products: Productos DIGITALES descargables -->
   <!-- client:visible = Cargar cuando es visible (below the fold) -->
   <DigitalProductsHomeWithProvider client:visible maxItems={4} />
 
-  <!-- 6. Why Choose Us: Generar confianza con stats reales -->
+  <!-- 7. Why Choose Us: Generar confianza con stats reales -->
   <!-- client:idle = Cargar cuando el navegador está idle (no muy interactivo) -->
   <WhyChooseUs client:idle />
 
-  <!-- 7. Footer: Información de contacto, legal y newsletter -->
+  <!-- 8. Footer: Información de contacto, legal y newsletter -->
   <!-- client:only = Solo renderizar en cliente (mejor para contenido estático) -->
   <!-- Newsletter integrado en el footer - un solo sistema unificado -->
   <footer class="bg-gray-800 text-white py-12">

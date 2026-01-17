@@ -3,6 +3,11 @@ import { getAdminDb } from '../../../lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { logger } from '../../../lib/logger';
 import { z } from 'zod';
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_CONFIGS,
+} from '../../../lib/rate-limiter';
 
 const incrementUsageSchema = z.object({
   clipartId: z.string().min(1),
@@ -18,6 +23,16 @@ const incrementUsageSchema = z.object({
  * Returns: { success: boolean }
  */
 export const POST: APIRoute = async ({ request }) => {
+  const rateLimitResult = checkRateLimit(
+    request,
+    RATE_LIMIT_CONFIGS.STANDARD,
+    'cliparts-increment-usage'
+  );
+  if (!rateLimitResult.allowed) {
+    logger.warn('[cliparts/increment-usage] Rate limit exceeded');
+    return createRateLimitResponse(rateLimitResult);
+  }
+
   try {
     const rawData = await request.json();
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes } from 'firebase/storage';
 import { storage, auth } from '../../lib/firebase';
 import { withRetry } from '../../lib/resilience';
 import { executeStorageOperation } from '../../lib/externalServices';
@@ -62,6 +62,7 @@ export default function ImageCustomizer() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imagePath, setImagePath] = useState<string | null>(null);
   const [selectedMockups, setSelectedMockups] = useState<string[]>([
     'shirt-black',
     'mug',
@@ -69,6 +70,28 @@ export default function ImageCustomizer() {
   ]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const fetchSignedUrl = async (path: string): Promise<string | null> => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return null;
+      const token = await user.getIdToken();
+      const response = await fetch('/api/storage/get-signed-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ path }),
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data?.url || null;
+    } catch (err) {
+      console.error('Error obteniendo URL firmada:', err);
+      return null;
+    }
+  };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -80,6 +103,8 @@ export default function ImageCustomizer() {
     try {
       setError(null);
       setUploading(true);
+      setImageUrl(null);
+      setImagePath(null);
 
       const user = auth.currentUser;
       if (!user) {
@@ -100,12 +125,12 @@ export default function ImageCustomizer() {
       const uniqueName = `${timestamp}-${file.name}`;
       const fileRef = ref(storage, `users/${user.uid}/customizer-designs/${uniqueName}`);
 
-      const downloadUrl = await executeStorageOperation(
+      const uploadedPath = await executeStorageOperation(
         () =>
           withRetry(
             async () => {
               await uploadBytes(fileRef, file);
-              return await getDownloadURL(fileRef);
+              return fileRef.fullPath;
             },
             {
               context: 'Upload image to Firebase Storage',
@@ -116,8 +141,10 @@ export default function ImageCustomizer() {
         `upload-${uniqueName}`
       );
 
-      setImageUrl(downloadUrl);
-      console.log('Imagen subida exitosamente:', downloadUrl);
+      setImagePath(uploadedPath);
+      const signedUrl = await fetchSignedUrl(uploadedPath);
+      setImageUrl(signedUrl);
+      console.log('Imagen subida exitosamente:', uploadedPath);
     } catch (err) {
       console.error('Error subiendo imagen:', err);
       setError('Error al subir la imagen');
@@ -293,10 +320,10 @@ export default function ImageCustomizer() {
 
           {/* Acciones */}
           <div className="flex gap-4">
-            <button className="btn btn-primary flex-1" disabled={!imageUrl || uploading}>
+            <button className="btn btn-primary flex-1" disabled={!imagePath || uploading}>
               Guardar Diseño
             </button>
-            <button className="btn btn-secondary flex-1" disabled={!imageUrl || uploading}>
+            <button className="btn btn-secondary flex-1" disabled={!imagePath || uploading}>
               Agregar al Carrito
             </button>
           </div>

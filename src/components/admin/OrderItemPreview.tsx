@@ -57,7 +57,8 @@ interface CustomizationValue {
   fieldId?: string;
   value?: string;
   imageUrl?: string;
-  transform?: ImageTransform;
+  imagePath?: string;
+  imageTransform?: ImageTransform;
 }
 
 interface OrderItemCustomization {
@@ -71,9 +72,20 @@ interface OrderItemData {
 
 interface OrderItemPreviewProps {
   item: OrderItemData;
+  signedUrls?: Record<string, string>;
 }
 
-export default function OrderItemPreview({ item }: OrderItemPreviewProps) {
+function extractStoragePath(url: string): string | null {
+  if (!url) return null;
+  if (url.startsWith('gs://')) {
+    return url.replace(/^gs:\/\/[^/]+\//, '');
+  }
+  const parts = url.split('/o/');
+  if (parts.length < 2) return null;
+  return decodeURIComponent(parts[1].split('?')[0]);
+}
+
+export default function OrderItemPreview({ item, signedUrls }: OrderItemPreviewProps) {
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
 
   if (!item.customization?.values) {
@@ -91,21 +103,25 @@ export default function OrderItemPreview({ item }: OrderItemPreviewProps) {
   const selectedColor = colorField?.value?.toLowerCase();
 
   // Buscar imágenes subidas
-  const frontImageField = values.find(
-    (v: CustomizationValue) =>
-      v.imageUrl &&
+  const frontImageField = values.find((v: CustomizationValue) => {
+    const hasImage = Boolean(v.imageUrl || v.imagePath);
+    return (
+      hasImage &&
       (v.fieldLabel?.toLowerCase().includes('front') ||
         v.fieldLabel?.toLowerCase().includes('frontal') ||
         v.fieldLabel?.toLowerCase().includes('delantera'))
-  );
+    );
+  });
 
-  const backImageField = values.find(
-    (v: CustomizationValue) =>
-      v.imageUrl &&
+  const backImageField = values.find((v: CustomizationValue) => {
+    const hasImage = Boolean(v.imageUrl || v.imagePath);
+    return (
+      hasImage &&
       (v.fieldLabel?.toLowerCase().includes('back') ||
         v.fieldLabel?.toLowerCase().includes('trasera') ||
         v.fieldLabel?.toLowerCase().includes('espalda'))
-  );
+    );
+  });
 
   // Si no hay imágenes subidas, no mostrar preview
   if (!frontImageField && !backImageField) {
@@ -123,8 +139,18 @@ export default function OrderItemPreview({ item }: OrderItemPreviewProps) {
   const frontBaseImage = getFallbackBaseImage('front');
   const backBaseImage = getFallbackBaseImage('back');
 
-  const userFrontImage = frontImageField?.imageUrl;
-  const userBackImage = backImageField?.imageUrl;
+  const resolveImageUrl = (field?: CustomizationValue): string | null => {
+    if (!field) return null;
+    if (field.imageUrl && field.imageUrl.startsWith('data:')) return field.imageUrl;
+    const path = field.imagePath || (field.imageUrl ? extractStoragePath(field.imageUrl) : null);
+    if (path) {
+      return signedUrls?.[path] || null;
+    }
+    return field.imageUrl || null;
+  };
+
+  const userFrontImage = resolveImageUrl(frontImageField);
+  const userBackImage = resolveImageUrl(backImageField);
 
   const frontTransform: ImageTransform = frontImageField?.imageTransform || {
     x: 50,

@@ -58,6 +58,8 @@ interface Product {
   featured: boolean;
   slug: string;
   active: boolean;
+  readyMade?: boolean; // Listos para comprar (no personalizable)
+  variants?: ProductVariant[];
 
   // Personalización
   customizationSchemaId?: string; // ID del schema (cat_tazas, cat_camisetas, etc.)
@@ -87,6 +89,16 @@ interface Category {
   name: string;
   slug: string;
   description?: string;
+}
+
+interface ProductVariant {
+  id: number;
+  name: string; // Talla/Modelo
+  price: number;
+  color: string; // Hex
+  colorName: string;
+  stock: number;
+  sku: string;
 }
 
 interface CustomizationSchema {
@@ -160,6 +172,13 @@ export default function AdminProductsPanelV2() {
   // Accessible confirmation dialog
   const { confirm, ConfirmDialog } = useConfirmDialog();
 
+  const selectedCategoryPreview = categories.find((c) => c.id === formData.categoryId);
+  const selectedSubcategoryPreview = subcategories.find((s) => s.id === formData.subcategoryId);
+  const previewCategorySlug =
+    selectedCategoryPreview?.slug || formData.category || 'otros';
+  const previewSubcategorySlug =
+    selectedSubcategoryPreview?.slug || formData.subcategory || 'subcategoria';
+
   // ============================================================================
   // CARGAR DATOS
   // ============================================================================
@@ -220,6 +239,8 @@ export default function AdminProductsPanelV2() {
       featured: false,
       slug: '',
       active: true,
+      readyMade: false,
+      variants: [],
       customizationSchemaId: '',
       customizationExamples: [],
       onSale: false,
@@ -465,16 +486,21 @@ export default function AdminProductsPanelV2() {
         slug: formData.slug,
         active: formData.active !== false,
         onSale: !!formData.onSale,
+        readyMade: !!formData.readyMade,
         updatedAt: Timestamp.now(),
         // Optional fields - only include if they have values
-        ...(formData.customizationSchemaId && {
+        ...(!formData.readyMade && formData.customizationSchemaId && {
           customizationSchemaId: formData.customizationSchemaId,
         }),
-        ...(formData.customizationExamples?.length && {
+        ...(!formData.readyMade && formData.customizationExamples?.length && {
           customizationExamples: formData.customizationExamples,
         }),
         ...(formData.onSale && formData.salePrice && { salePrice: Number(formData.salePrice) }),
+        ...(formData.readyMade && { variants: formData.variants || [] }),
       };
+      if (!formData.readyMade && editingProduct?.variants?.length) {
+        data.variants = [];
+      }
 
       if (editingProduct) {
         // Actualizar
@@ -510,6 +536,52 @@ export default function AdminProductsPanelV2() {
       ...prev,
       name,
       slug: prev.slug || generateSlug(name),
+    }));
+  };
+
+  const handleVariantChange = (
+    index: number,
+    key: keyof ProductVariant,
+    value: string | number
+  ) => {
+    setFormData((prev) => {
+      const variants = [...(prev.variants || [])];
+      const current = variants[index] || {
+        id: index + 1,
+        name: '',
+        price: Number(prev.basePrice) || 0,
+        color: '#000000',
+        colorName: '',
+        stock: 0,
+        sku: '',
+      };
+      variants[index] = { ...current, [key]: value } as ProductVariant;
+      return { ...prev, variants };
+    });
+  };
+
+  const handleAddVariant = () => {
+    setFormData((prev) => {
+      const variants = [...(prev.variants || [])];
+      const nextId =
+        variants.length > 0 ? Math.max(...variants.map((v) => v.id || 0)) + 1 : 1;
+      variants.push({
+        id: nextId,
+        name: '',
+        price: Number(prev.basePrice) || 0,
+        color: '#000000',
+        colorName: '',
+        stock: 0,
+        sku: '',
+      });
+      return { ...prev, variants };
+    });
+  };
+
+  const handleRemoveVariant = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      variants: (prev.variants || []).filter((_, idx) => idx !== index),
     }));
   };
 
@@ -815,7 +887,11 @@ export default function AdminProductsPanelV2() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-sm">
-                    {schema ? (
+                    {product.readyMade ? (
+                      <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium">
+                        Listo para comprar
+                      </span>
+                    ) : schema ? (
                       <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-lg text-xs font-medium">
                         {schema.name}
                       </span>
@@ -837,6 +913,11 @@ export default function AdminProductsPanelV2() {
                       {product.featured && (
                         <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium w-fit">
                           Destacado
+                        </span>
+                      )}
+                      {product.readyMade && (
+                        <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium w-fit">
+                          Listo
                         </span>
                       )}
                       {/* Stock indicator */}
@@ -1016,10 +1097,17 @@ export default function AdminProductsPanelV2() {
                       ))}
                     </select>
                     <p className="mt-1 text-xs text-gray-500">
-                      📂 Categoría principal (textiles, sublimados, resina, etc.) - Aparecerá en{' '}
-                      <code className="text-cyan-600">
-                        /categoria/{formData.category || 'categoria'}
-                      </code>
+                      {formData.readyMade ? (
+                        <>
+                          📂 Categoría principal (solo para organización) - Aparecerá en{' '}
+                          <code className="text-amber-600">/listos-para-comprar</code>
+                        </>
+                      ) : (
+                        <>
+                          📂 Categoría principal (textiles, sublimados, resina, etc.) - Aparecerá en{' '}
+                          <code className="text-cyan-600">/categoria/{previewCategorySlug}</code>
+                        </>
+                      )}
                     </p>
                   </div>
 
@@ -1051,11 +1139,19 @@ export default function AdminProductsPanelV2() {
                         ))}
                     </select>
                     <p className="mt-1 text-xs text-gray-500">
-                      📁 Subcategoría específica - Aparecerá en{' '}
-                      <code className="text-cyan-600">
-                        /categoria/{formData.category || 'categoria'}/
-                        {formData.subcategory || 'subcategoria'}
-                      </code>
+                      {formData.readyMade ? (
+                        <>
+                          📁 Subcategoría específica (opcional) - Se mostrará en{' '}
+                          <code className="text-amber-600">/listos-para-comprar</code>
+                        </>
+                      ) : (
+                        <>
+                          📁 Subcategoría específica - Aparecerá en{' '}
+                          <code className="text-cyan-600">
+                            /categoria/{previewCategorySlug}/{previewSubcategorySlug}
+                          </code>
+                        </>
+                      )}
                     </p>
                   </div>
 
@@ -1135,6 +1231,204 @@ export default function AdminProductsPanelV2() {
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Listos para comprar */}
+              <div className="bg-gray-50 rounded-xl p-4 space-y-4">
+                <h4 className="font-semibold text-gray-800 flex items-center gap-2">
+                  <span className="text-lg">✅</span>
+                  Listos para comprar
+                </h4>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">
+                      Publicar como diseño listo (sin personalización)
+                    </label>
+                    <p className="text-xs text-gray-500">
+                      Aparecerá solo en la sección “Listos para comprar”
+                    </p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.readyMade || false}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setFormData((prev) => {
+                          const variants = prev.variants || [];
+                          return {
+                            ...prev,
+                            readyMade: checked,
+                            variants:
+                              checked && variants.length === 0
+                                ? [
+                                    {
+                                      id: 1,
+                                      name: '',
+                                      price: Number(prev.basePrice) || 0,
+                                      color: '#000000',
+                                      colorName: '',
+                                      stock: 0,
+                                      sku: '',
+                                    },
+                                  ]
+                                : variants,
+                          };
+                        });
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                  </label>
+                </div>
+
+                {formData.readyMade && (
+                  <div className="space-y-4 pt-2 border-t border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Variantes (talla y color)</p>
+                        <p className="text-xs text-gray-500">
+                          Cada variante representa una combinación específica
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddVariant}
+                        className="px-3 py-2 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                      >
+                        + Añadir variante
+                      </button>
+                    </div>
+
+                    {(formData.variants || []).length === 0 ? (
+                      <p className="text-sm text-gray-500">
+                        Añade al menos una variante para este diseño.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {(formData.variants || []).map((variant, index) => (
+                          <div
+                            key={variant.id || index}
+                            className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end border border-gray-200 rounded-lg p-3"
+                          >
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Talla/Modelo
+                              </label>
+                              <input
+                                type="text"
+                                value={variant.name || ''}
+                                onChange={(e) =>
+                                  handleVariantChange(index, 'name', e.target.value)
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                placeholder="M, L, XL..."
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Nombre color
+                              </label>
+                              <input
+                                type="text"
+                                value={variant.colorName || ''}
+                                onChange={(e) =>
+                                  handleVariantChange(index, 'colorName', e.target.value)
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                placeholder="Rojo, Negro..."
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Color (hex)
+                              </label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={variant.color || '#000000'}
+                                  onChange={(e) =>
+                                    handleVariantChange(index, 'color', e.target.value)
+                                  }
+                                  className="w-10 h-10 border border-gray-300 rounded-md"
+                                />
+                                <input
+                                  type="text"
+                                  value={variant.color || '#000000'}
+                                  onChange={(e) =>
+                                    handleVariantChange(index, 'color', e.target.value)
+                                  }
+                                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                  placeholder="#000000"
+                                />
+                              </div>
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Precio
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={variant.price || 0}
+                                onChange={(e) =>
+                                  handleVariantChange(
+                                    index,
+                                    'price',
+                                    parseFloat(e.target.value) || 0
+                                  )
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Stock
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={variant.stock ?? 0}
+                                onChange={(e) =>
+                                  handleVariantChange(
+                                    index,
+                                    'stock',
+                                    parseInt(e.target.value) || 0
+                                  )
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                              />
+                            </div>
+                            <div className="md:col-span-1">
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                SKU
+                              </label>
+                              <input
+                                type="text"
+                                value={variant.sku || ''}
+                                onChange={(e) =>
+                                  handleVariantChange(index, 'sku', e.target.value)
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                placeholder="SKU"
+                              />
+                            </div>
+                            <div className="md:col-span-1 flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveVariant(index)}
+                                className="px-3 py-2 text-xs font-semibold text-red-600 hover:text-red-700"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Control de Stock */}

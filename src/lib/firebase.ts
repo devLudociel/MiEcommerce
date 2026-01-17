@@ -122,7 +122,6 @@ export default app;
 // ============================================
 
 export interface CustomImageUpload {
-  url: string;
   path: string;
   name: string;
 }
@@ -200,12 +199,10 @@ export async function uploadCustomImage(
     );
 
     const snapshot: UploadResult = await uploadBytes(storageRef, file);
-    const url: string = await getDownloadURL(snapshot.ref);
 
-    logger.info('✅ Imagen personalizada subida:', url);
+    logger.info('✅ Imagen personalizada subida:', snapshot.ref.fullPath);
 
     return {
-      url,
       path: snapshot.ref.fullPath,
       name: fileName,
     };

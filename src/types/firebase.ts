@@ -7,6 +7,8 @@ export interface FirebaseProduct {
   category: ProductCategory;
   basePrice: number;
   images: string[]; // URLs de Firebase Storage
+  variants?: ProductVariant[]; // Variantes con talla/color/precio
+  readyMade?: boolean; // Listos para comprar (sin personalización)
   customizable: boolean;
   customizationOptions?: CustomizationOption[];
   tags: string[];
@@ -36,6 +38,17 @@ export interface CustomizationExample {
   image: string; // URL de la imagen
   description: string; // Descripción corta
   order?: number; // Orden de visualización
+}
+
+export interface ProductVariant {
+  id: number;
+  name: string; // Ej: "M", "L", "Pack 2"
+  price: number;
+  originalPrice?: number;
+  color: string; // Hex (ej: #FF0000)
+  colorName: string; // Ej: "Rojo"
+  stock: number;
+  sku: string;
 }
 
 export interface CustomizationOption {

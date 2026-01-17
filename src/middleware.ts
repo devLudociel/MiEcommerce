@@ -31,6 +31,19 @@ function getBearerToken(request: Request): string | null {
   return authHeader.replace('Bearer ', '').trim();
 }
 
+async function verifyAdminToken(token: string): Promise<{ admin?: boolean } | null> {
+  const adminAuth = getAdminAuth();
+  try {
+    return await adminAuth.verifySessionCookie(token, true);
+  } catch {
+    try {
+      return await adminAuth.verifyIdToken(token);
+    } catch {
+      return null;
+    }
+  }
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname, search } = context.url;
 
@@ -51,8 +64,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
 
     try {
-      const decodedToken = await getAdminAuth().verifyIdToken(token);
-      if (!decodedToken.admin) {
+      const decodedToken = await verifyAdminToken(token);
+      if (!decodedToken?.admin) {
         const redirectUrl = new URL('/account', context.url.origin);
         const response = Response.redirect(redirectUrl, 302);
         const securityHeaders = getSecurityHeaders();
@@ -113,7 +126,7 @@ function getContentSecurityPolicy(): string {
       "style-src 'self' 'unsafe-inline' https://*.googleapis.com",
       "img-src 'self' data: https: blob:",
       "font-src 'self' data: https://*.googleapis.com https://*.gstatic.com",
-      "connect-src 'self' ws: wss: https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://*.google-analytics.com https://*.googletagmanager.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.zippopotam.us https://api.geoapify.com",
+      "connect-src 'self' ws: wss: blob: https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://*.google-analytics.com https://*.googletagmanager.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.zippopotam.us https://api.geoapify.com",
       "frame-src 'self' https://*.firebaseapp.com https://js.stripe.com https://accounts.google.com https://*.google.com",
       "object-src 'none'",
       "base-uri 'self'",
@@ -127,7 +140,7 @@ function getContentSecurityPolicy(): string {
     "style-src 'self' 'unsafe-inline' https://*.googleapis.com",
     "img-src 'self' data: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://*.google.com https://*.google-analytics.com",
     "font-src 'self' data: https://*.googleapis.com https://*.gstatic.com",
-    "connect-src 'self' https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://*.google-analytics.com https://*.googletagmanager.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.zippopotam.us https://api.geoapify.com",
+    "connect-src 'self' blob: https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://*.google-analytics.com https://*.googletagmanager.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.zippopotam.us https://api.geoapify.com",
     "frame-src 'self' https://*.firebaseapp.com https://js.stripe.com https://accounts.google.com https://*.google.com",
     "object-src 'none'",
     "base-uri 'self'",

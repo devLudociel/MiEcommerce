@@ -363,6 +363,7 @@ export interface SavedDesign {
   userId: string;
   name: string; // "Mi diseño de cumpleaños"
   thumbnail: string; // Preview del diseño
+  thumbnailPath?: string; // Ruta privada en Storage (si aplica)
   originalProductId: string;
   originalCategory: string;
   designData: ProductCustomization; // Configuración completa
@@ -386,6 +387,7 @@ export interface SharedDesign {
   productName: string;
   designData: ProductCustomization;
   imageUrl: string; // Snapshot del diseño
+  imagePath?: string; // Ruta privada en Storage (si aplica)
   shareCount: number;
   viewCount: number;
   clickCount: number;

@@ -51,7 +51,17 @@ export const queryKeys = {
   products: {
     all: ['products'] as const,
     lists: () => [...queryKeys.products.all, 'list'] as const,
-    list: (filters?: { category?: string; featured?: boolean; limit?: number }) =>
+    list: (filters?: {
+      category?: string;
+      categoryId?: string;
+      featured?: boolean;
+      onSale?: boolean;
+      limit?: number;
+      onlyPhysical?: boolean;
+      onlyDigital?: boolean;
+      readyMade?: boolean;
+      excludeReadyMade?: boolean;
+    }) =>
       [...queryKeys.products.lists(), filters] as const,
     details: () => [...queryKeys.products.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.products.details(), id] as const,

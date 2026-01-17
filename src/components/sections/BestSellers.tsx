@@ -19,7 +19,10 @@ export default function BestSellers() {
   const [activeIndex, setActiveIndex] = useState(0);
 
   // Fetch products with React Query - get 20 to sort client-side
-  const { data: rawProducts = [], isLoading: loading } = useProducts({ limit: 20 });
+  const { data: rawProducts = [], isLoading: loading } = useProducts({
+    limit: 20,
+    excludeReadyMade: true,
+  });
 
   // Transform and sort products
   const products = useMemo(() => {

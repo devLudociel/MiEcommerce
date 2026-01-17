@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { db } from '../../lib/firebase';
+import { useEffect, useState } from 'react';
+import { db, auth } from '../../lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
@@ -16,7 +17,6 @@ interface NotifyWhenAvailableProps {
   productSlug: string;
   productImage?: string;
   userEmail?: string; // Pre-fill if user is logged in
-  userId?: string;
 }
 
 // ============================================================================
@@ -29,12 +29,23 @@ export default function NotifyWhenAvailable({
   productSlug,
   productImage,
   userEmail,
-  userId,
 }: NotifyWhenAvailableProps) {
   const [email, setEmail] = useState(userEmail || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(Boolean(auth.currentUser));
+  const redirectPath = `/producto/${encodeURIComponent(productSlug)}`;
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsLoggedIn(Boolean(user));
+      if (user?.email) {
+        setEmail((prev) => (prev ? prev : user.email || ''));
+      }
+    });
+    return () => unsubscribe();
+  }, []);
   const [error, setError] = useState<string | null>(null);
 
   // ============================================================================
@@ -54,13 +65,23 @@ export default function NotifyWhenAvailable({
     e.preventDefault();
     setError(null);
 
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setError('Debes iniciar sesión para recibir notificaciones');
+      notify.info('Inicia sesión para suscribirte');
+      return;
+    }
+
+    const normalizedEmail =
+      (email.trim() || currentUser.email || '').toLowerCase().trim();
+
     // Validar email
-    if (!email.trim()) {
+    if (!normalizedEmail) {
       setError('Por favor, introduce tu email');
       return;
     }
 
-    if (!validateEmail(email)) {
+    if (!validateEmail(normalizedEmail)) {
       setError('Por favor, introduce un email válido');
       return;
     }
@@ -72,7 +93,7 @@ export default function NotifyWhenAvailable({
       const existingQuery = query(
         collection(db, 'stock_notifications'),
         where('productId', '==', productId),
-        where('email', '==', email.toLowerCase().trim()),
+        where('email', '==', normalizedEmail),
         where('status', '==', 'pending')
       );
       const existingSnap = await getDocs(existingQuery);
@@ -89,8 +110,8 @@ export default function NotifyWhenAvailable({
         productName,
         productSlug,
         productImage,
-        email: email.toLowerCase().trim(),
-        userId: userId || undefined,
+        email: normalizedEmail,
+        userId: currentUser.uid,
         status: 'pending',
         createdAt: Timestamp.now(),
       };
@@ -135,6 +156,30 @@ export default function NotifyWhenAvailable({
 
   // Vista compacta - botón para expandir
   if (!showForm) {
+    if (!isLoggedIn) {
+      return (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-full">
+              <Mail className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-blue-800">¿Quieres que te avisemos?</h4>
+              <p className="text-sm text-blue-700">
+                Inicia sesión para recibir un aviso cuando vuelva a estar disponible.
+              </p>
+            </div>
+            <a
+              href={`/login?redirect=${encodeURIComponent(redirectPath)}`}
+              className="btn btn-outline border-2 border-blue-300 text-blue-700 px-4 py-2 rounded-xl font-bold hover:border-blue-500 hover:text-blue-800 transition-all"
+            >
+              Iniciar sesión
+            </a>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <button
         onClick={() => setShowForm(true)}
