@@ -511,6 +511,47 @@ export default function ProductDetail({ id, slug }: Props) {
           ? { text: `Últimas ${stock} unidades`, color: 'text-yellow-600', bg: 'bg-yellow-100' }
           : { text: 'En stock', color: 'text-green-500', bg: 'bg-green-100' };
   const stockStatus = getStockStatus(currentVariant.stock);
+  const whatsappMessage = `Hola ${product.brand}, tengo una consulta sobre ${product.name}.`;
+  const whatsappLink = `https://wa.me/34645341452?text=${encodeURIComponent(whatsappMessage)}`;
+  const trustItems = [
+    {
+      icon: '🏷️',
+      title: 'Producción cuidada',
+      text: 'Control de calidad en cada pedido para un acabado impecable.',
+    },
+    {
+      icon: '🚚',
+      title: product.freeShipping ? 'Envío gratis' : 'Envío',
+      text: product.freeShipping
+        ? 'Consulta condiciones y zonas disponibles en checkout.'
+        : 'Calculado en el checkout según destino.',
+    },
+    {
+      icon: '⏱️',
+      title: 'Tiempo estimado',
+      text: `Producción: ${product.productionTime}.`,
+    },
+    {
+      icon: '💬',
+      title: '¿Tienes prisa?',
+      text: 'Escríbenos por WhatsApp y buscamos una solución rápida.',
+      link: whatsappLink,
+      linkLabel: 'WhatsApp',
+    },
+    {
+      icon: '🛡️',
+      title: 'Garantía',
+      text: product.warranty,
+    },
+    {
+      icon: '⭐',
+      title: 'Clientes felices',
+      text:
+        reviewStats.totalReviews > 0
+          ? `Más de ${reviewStats.totalReviews} reseñas verificadas.`
+          : 'Calidad valorada por nuestros clientes.',
+    },
+  ];
 
   return (
     <>
@@ -545,34 +586,144 @@ export default function ProductDetail({ id, slug }: Props) {
 
         <div className="container mx-auto px-6 py-10 md:py-12 mt-8 md:mt-12 lg:mt-120 sm:mt-160">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
-            {/* Galería de imágenes - PERFORMANCE: Componente memoizado */}
-            <div className="relative">
-              <ProductGallery
-                images={product.images}
-                productName={product.name}
-                selectedImage={selectedImage}
-                onImageChange={setSelectedImage}
-              />
+            <div className="flex flex-col gap-8">
+              {/* Galería de imágenes - PERFORMANCE: Componente memoizado */}
+              <div className="relative">
+                <ProductGallery
+                  images={product.images}
+                  productName={product.name}
+                  selectedImage={selectedImage}
+                  onImageChange={setSelectedImage}
+                />
 
-              {/* Badge de Oferta */}
-              {product.onSale && product.salePrice && (
-                <div className="absolute top-4 left-4 px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-full flex items-center gap-2 shadow-lg z-20">
-                  <span>🔥</span>
-                  <span>
-                    -{Math.round((1 - product.salePrice / product.basePrice) * 100)}% OFERTA
-                  </span>
-                </div>
-              )}
+                {/* Badge de Oferta */}
+                {product.onSale && product.salePrice && (
+                  <div className="absolute top-4 left-4 px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-full flex items-center gap-2 shadow-lg z-20">
+                    <span>🔥</span>
+                    <span>
+                      -{Math.round((1 - product.salePrice / product.basePrice) * 100)}% OFERTA
+                    </span>
+                  </div>
+                )}
 
-              {/* Badge de Personalizable */}
-              {product.customizable && (
-                <div
-                  className={`absolute ${product.onSale ? 'top-16' : 'top-4'} left-4 px-4 py-2 bg-gradient-to-r from-purple-600 via-magenta-600 to-pink-600 text-white text-sm font-bold rounded-full flex items-center gap-2 shadow-lg animate-pulse z-20`}
-                >
-                  <span>✨</span>
-                  <span>100% Personalizable</span>
+                {/* Badge de Personalizable */}
+                {product.customizable && (
+                  <div
+                    className={`absolute ${product.onSale ? 'top-16' : 'top-4'} left-4 px-4 py-2 bg-gradient-to-r from-purple-600 via-magenta-600 to-pink-600 text-white text-sm font-bold rounded-full flex items-center gap-2 shadow-lg animate-pulse z-20`}
+                  >
+                    <span>✨</span>
+                    <span>100% Personalizable</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="hidden lg:block rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                {product.customizable && allExamples.length > 0 ? (
+                  <>
+                    <div className="text-center">
+                      <h3 className="text-lg font-bold text-gray-800">✨ ¿Necesitas personalizarlo?</h3>
+                      <p className="mt-1 text-sm text-gray-600">
+                        Inspírate con ideas rápidas y añade complementos perfectos.
+                      </p>
+                    </div>
+                    <div className="mt-6 grid grid-cols-2 gap-4">
+                      {allExamples.slice(0, 4).map((example) => (
+                        <div key={example.id} className="flex flex-col items-center text-center">
+                          <img
+                            src={example.image}
+                            alt={example.title}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-24 w-24 rounded-full object-cover shadow"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = FALLBACK_IMG_400x300;
+                            }}
+                          />
+                          <span className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-gray-600">
+                            {example.title || 'Idea'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-center">
+                      <h3 className="text-lg font-bold text-gray-800">✅ Compra sin dudas</h3>
+                      <p className="mt-1 text-sm text-gray-600">
+                        Información clara para decidir rápido.
+                      </p>
+                    </div>
+                    <div className="mt-5 space-y-3 text-sm text-gray-700">
+                      <div className="flex items-start gap-3">
+                        <span className="text-lg">🚚</span>
+                        <div>
+                          <div className="font-semibold text-gray-900">Envío y tiempos</div>
+                          <div className="text-gray-600">
+                            {product.freeShipping ? 'Envío gratis disponible.' : 'Envío calculado en checkout.'} Producción:{' '}
+                            {product.productionTime}.
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="text-lg">🛡️</span>
+                        <div>
+                          <div className="font-semibold text-gray-900">Garantía</div>
+                          <div className="text-gray-600">{product.warranty}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="text-lg">💬</span>
+                        <div>
+                          <div className="font-semibold text-gray-900">¿Necesitas ayuda?</div>
+                          <div className="text-gray-600">
+                            Escríbenos por{' '}
+                            <a
+                              href={whatsappLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-cyan-700 font-semibold hover:text-cyan-800"
+                            >
+                              WhatsApp
+                            </a>
+                            .
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="hidden lg:block bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-cyan-700 mb-4">
+                  <span className="px-2 py-1 bg-cyan-50 rounded-full">✔ Confianza</span>
+                  <span>Compra segura</span>
                 </div>
-              )}
+                <div className="space-y-4 text-sm text-gray-700">
+                  {trustItems.map((item, index) => (
+                    <div key={`${item.title}-${index}`} className="flex items-start gap-3">
+                      <span className="text-lg">{item.icon}</span>
+                      <div>
+                        <div className="font-semibold text-gray-900">{item.title}</div>
+                        <div className="text-gray-600">
+                          {item.text}{' '}
+                          {item.link && (
+                            <a
+                              href={item.link}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-cyan-700 font-semibold hover:text-cyan-800"
+                            >
+                              {item.linkLabel ?? 'Más info'}
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Información del producto */}
@@ -839,6 +990,10 @@ export default function ProductDetail({ id, slug }: Props) {
                       </>
                     )}
                   </button>
+                  <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                    <span className="text-green-600">🔒</span>
+                    <span>Compra segura y protegida</span>
+                  </div>
 
                   {/* Notify When Available - Solo visible cuando está agotado */}
                   {currentVariant.stock === 0 && uiProduct && (
@@ -850,7 +1005,7 @@ export default function ProductDetail({ id, slug }: Props) {
                     />
                   )}
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
                     <button
                       data-testid="product-add-to-wishlist"
                       onClick={() => {
@@ -862,19 +1017,19 @@ export default function ProductDetail({ id, slug }: Props) {
                             image: product.images[0]?.url,
                           });
                       }}
-                      className={`py-3 px-6 rounded-xl font-bold transition-all duration-300 ${isInWishlist ? 'bg-gradient-secondary text-white shadow-magenta' : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-magenta-500 hover:text-magenta-500'} transform hover:scale-105 flex items-center justify-center gap-2`}
+                      className="flex items-center gap-2 text-rose-600 hover:text-rose-700 font-semibold"
                     >
                       <Icon
                         name="heart"
-                        className={isInWishlist ? 'w-5 h-5 text-pink-600' : 'w-5 h-5'}
+                        className={isInWishlist ? 'w-5 h-5 text-rose-600' : 'w-5 h-5'}
                       />
-                      {isInWishlist ? 'En Favoritos' : 'Favoritos'}
+                      {isInWishlist ? 'En tu lista de deseos' : 'Añade a la lista de deseos'}
                     </button>
 
                     <button
                       data-testid="product-share"
                       onClick={handleShare}
-                      className="py-3 px-6 rounded-xl font-bold bg-white border-2 border-gray-200 text-gray-700 hover:border-purple-500 hover:text-purple-500 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
+                      className="flex items-center gap-2 text-gray-600 hover:text-purple-600 font-semibold"
                     >
                       <Icon name="share-2" className="w-5 h-5" />
                       Compartir
@@ -911,7 +1066,7 @@ export default function ProductDetail({ id, slug }: Props) {
 
           {/* Galería de Ejemplos de Personalización - Ejemplos del producto + Inspiración automática */}
           {product.customizable && allExamples.length > 0 && (
-            <div className="mt-16 bg-gradient-to-r from-purple-50 to-pink-50 rounded-3xl p-8">
+            <div className="mt-16 bg-gradient-to-r from-purple-50 to-pink-50 rounded-3xl p-8 lg:hidden">
               <h3 className="text-3xl font-black text-gray-800 mb-6 text-center">
                 💡 Ejemplos de Personalizaciones
               </h3>
