@@ -13,33 +13,7 @@ export default defineConfig({
   output: 'server',
   adapter: vercel(),
   experimental: {
-    csp: {
-      scriptDirective: {
-        resources: [
-          "'self'",
-          'https://*.google.com',
-          'https://*.googleapis.com',
-          'https://www.googletagmanager.com',
-          'https://js.stripe.com',
-        ],
-        hashes: ['sha256-Jua0BSagD04dr1M2+eje7o39hvQbuJX4g91etdB4q10='],
-      },
-      styleDirective: {
-        resources: ["'self'", "'unsafe-inline'", 'https://*.googleapis.com'],
-      },
-      directives: [
-        "default-src 'self'",
-        "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://*.google.com https://*.google-analytics.com https://images.unsplash.com",
-        "font-src 'self' data: https://*.googleapis.com https://*.gstatic.com",
-        "connect-src 'self' https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://*.google-analytics.com https://*.googletagmanager.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.zippopotam.us https://api.geoapify.com",
-        "frame-src 'self' https://*.firebaseapp.com https://js.stripe.com https://accounts.google.com https://*.google.com",
-        "object-src 'none'",
-        "base-uri 'self'",
-        "form-action 'self'",
-        "frame-ancestors 'self'",
-        'upgrade-insecure-requests',
-      ],
-    },
+    csp: false,
   },
   // PERFORMANCE: Image optimization configuration
   image: {

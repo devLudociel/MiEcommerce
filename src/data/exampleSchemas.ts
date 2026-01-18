@@ -706,7 +706,6 @@ export const exampleSchemas = {
   camisetasPro: camisetasProSchema,
   hoodies: hoodiesSchema,
   bolsas: bolsasSchema,
-  tarjetasVisita: tarjetasVisitaSchema,
   cuadros: cuadrosSchema,
   resina: resinaSchema,
   tazas: tazasSchema,

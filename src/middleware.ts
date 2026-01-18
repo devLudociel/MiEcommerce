@@ -59,7 +59,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
       const redirectUrl = new URL('/login', context.url.origin);
       redirectUrl.searchParams.set('redirect', `${pathname}${search}`);
       const response = Response.redirect(redirectUrl, 302);
-      const securityHeaders = getSecurityHeaders();
+      const securityHeaders = getSecurityHeaders(nonce);
       Object.entries(securityHeaders).forEach(([key, value]) => {
         response.headers.set(key, value);
       });
@@ -71,7 +71,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
       if (!decodedToken?.admin) {
         const redirectUrl = new URL('/account', context.url.origin);
         const response = Response.redirect(redirectUrl, 302);
-        const securityHeaders = getSecurityHeaders();
+        const securityHeaders = getSecurityHeaders(nonce);
         Object.entries(securityHeaders).forEach(([key, value]) => {
           response.headers.set(key, value);
         });
@@ -81,7 +81,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
       const redirectUrl = new URL('/login', context.url.origin);
       redirectUrl.searchParams.set('redirect', `${pathname}${search}`);
       const response = Response.redirect(redirectUrl, 302);
-      const securityHeaders = getSecurityHeaders();
+      const securityHeaders = getSecurityHeaders(nonce);
       Object.entries(securityHeaders).forEach(([key, value]) => {
         response.headers.set(key, value);
       });
@@ -93,7 +93,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const response = await next();
 
   // Agregar headers de seguridad a la respuesta
-  const securityHeaders = getSecurityHeaders();
+  const securityHeaders = getSecurityHeaders(nonce);
 
   Object.entries(securityHeaders).forEach(([key, value]) => {
     response.headers.set(key, value);
@@ -105,8 +105,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
 /**
  * Headers de seguridad HTTP
  */
-function getSecurityHeaders(): Record<string, string> {
-  return {
+function getSecurityHeaders(nonce?: string): Record<string, string> {
+  const headers: Record<string, string> = {
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'SAMEORIGIN',
     'X-XSS-Protection': '1; mode=block',
@@ -116,4 +116,39 @@ function getSecurityHeaders(): Record<string, string> {
       'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
     }),
   };
+
+  if (import.meta.env.PROD && nonce) {
+    headers['Content-Security-Policy'] = getContentSecurityPolicy(nonce);
+  }
+
+  return headers;
+}
+
+function getContentSecurityPolicy(nonce: string): string {
+  const scriptSrc = [
+    "'self'",
+    `'nonce-${nonce}'`,
+    'https://*.google.com',
+    'https://*.googleapis.com',
+    'https://www.googletagmanager.com',
+    'https://js.stripe.com',
+  ];
+
+  const styleSrc = ["'self'", "'unsafe-inline'", 'https://*.googleapis.com'];
+
+  return [
+    "default-src 'self'",
+    `script-src ${scriptSrc.join(' ')}`,
+    `style-src ${styleSrc.join(' ')}`,
+    "style-src-attr 'unsafe-inline'",
+    "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://*.google.com https://*.google-analytics.com https://images.unsplash.com",
+    "font-src 'self' data: https://*.googleapis.com https://*.gstatic.com",
+    "connect-src 'self' blob: https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://*.google-analytics.com https://*.googletagmanager.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.zippopotam.us https://api.geoapify.com",
+    "frame-src 'self' https://*.firebaseapp.com https://js.stripe.com https://accounts.google.com https://*.google.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'self'",
+    'upgrade-insecure-requests',
+  ].join('; ');
 }
