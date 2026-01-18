@@ -20,6 +20,38 @@ const saveDesignSchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 
+const PRIVATE_PREFIXES = [
+  'users/',
+  'uploads/',
+  'personalizaciones/',
+  'profiles/',
+];
+
+function extractStoragePath(url: string): string | null {
+  if (!url || typeof url !== 'string') return null;
+  if (url.startsWith('data:')) return null;
+  if (url.startsWith('gs://')) {
+    return url.replace(/^gs:\/\/[^/]+\//, '');
+  }
+  const storageMatch = url.match(/^https?:\/\/storage\.googleapis\.com\/[^/]+\/(.+)$/);
+  if (storageMatch) {
+    return decodeURIComponent(storageMatch[1].split('?')[0]);
+  }
+  const firebaseMatch = url.match(/^https?:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[^/]+\/o\/(.+)$/);
+  if (firebaseMatch) {
+    return decodeURIComponent(firebaseMatch[1].split('?')[0]);
+  }
+  const parts = url.split('/o/');
+  if (parts.length < 2) return null;
+  const rawPath = parts[1].split('?')[0];
+  if (!rawPath) return null;
+  return decodeURIComponent(rawPath);
+}
+
+function isPrivatePath(path: string): boolean {
+  return PRIVATE_PREFIXES.some((prefix) => path.startsWith(prefix));
+}
+
 /**
  * POST /api/designs/save
  *
@@ -86,6 +118,9 @@ export const POST: APIRoute = async ({ request }) => {
     const { name, productId, productName, categoryId, designData, previewImage, tags } =
       validationResult.data;
 
+    const previewPath = previewImage ? extractStoragePath(previewImage) : null;
+    const isPrivatePreview = previewPath ? isPrivatePath(previewPath) : false;
+
     logger.info('[designs/save] Saving design for user:', userId);
 
     const db = getAdminDb();
@@ -94,7 +129,8 @@ export const POST: APIRoute = async ({ request }) => {
     const savedDesign = {
       userId,
       name,
-      thumbnail: previewImage || '',
+      thumbnail: !isPrivatePreview ? previewImage || '' : '',
+      ...(isPrivatePreview && previewPath ? { thumbnailPath: previewPath } : {}),
       originalProductId: productId,
       originalCategory: categoryId,
       designData,

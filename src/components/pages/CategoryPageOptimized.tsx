@@ -141,13 +141,15 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
       (snapshot) => {
         console.log('📦 Productos encontrados:', snapshot.size);
 
-        const productList: Product[] = snapshot.docs.map(
-          (doc) =>
-            ({
-              id: doc.id,
-              ...doc.data(),
-            }) as Product
-        );
+        const productList: Product[] = snapshot.docs
+          .filter((doc) => doc.data().readyMade !== true)
+          .map(
+            (doc) =>
+              ({
+                id: doc.id,
+                ...doc.data(),
+              }) as Product
+          );
 
         // Log de los primeros 3 productos para debug
         productList.slice(0, 3).forEach((p) => {

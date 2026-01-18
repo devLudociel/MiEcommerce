@@ -25,7 +25,7 @@ export default function ProductGridOfertas() {
     data: rawProducts = [],
     isLoading: loading,
     error: queryError,
-  } = useProducts({ onSale: true });
+  } = useProducts({ onSale: true, excludeReadyMade: true });
 
   const error = queryError ? (queryError as Error).message : null;
 

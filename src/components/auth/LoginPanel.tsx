@@ -93,16 +93,38 @@ export default function LoginPanel() {
     );
   };
 
+<<<<<<< HEAD
+=======
+  const syncSessionCookie = async (token: string | null) => {
+    if (typeof window === 'undefined') return;
+    try {
+      const endpoint = token ? '/api/auth/session' : '/api/auth/logout';
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+      await fetch(endpoint, { method: 'POST', headers });
+    } catch (e) {
+      logger.warn('[LoginPanel] Could not sync session cookie', e);
+    }
+  };
+
+>>>>>>> claude/review-navbar-products-0lJA3
   const getAdminTargetUrl = async (user: User | null, desired?: string) => {
     if (!user || typeof window === 'undefined') return '/account';
     try {
       const tokenResult = await getIdTokenResult(user, true);
+<<<<<<< HEAD
       setAuthCookie(tokenResult.token);
+=======
+      await syncSessionCookie(tokenResult.token);
+>>>>>>> claude/review-navbar-products-0lJA3
       const isAdmin = Boolean(tokenResult.claims?.admin);
       return isAdmin ? desired || '/admin/products' : '/account';
     } catch (e) {
       logger.warn('[LoginPanel] Could not verify admin claims', e);
+<<<<<<< HEAD
       setAuthCookie(null);
+=======
+      await syncSessionCookie(null);
+>>>>>>> claude/review-navbar-products-0lJA3
       return '/account';
     }
   };
@@ -433,6 +455,7 @@ export default function LoginPanel() {
       setError(null);
       setLoading(true);
       await signOut(auth);
+      await syncSessionCookie(null);
       await signInWithGoogle(true);
     } catch (error: unknown) {
       setError(

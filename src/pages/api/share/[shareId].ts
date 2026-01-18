@@ -1,7 +1,45 @@
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../../lib/firebase-admin';
+import { getStorage } from 'firebase-admin/storage';
 import { FieldValue } from 'firebase-admin/firestore';
 import { logger } from '../../../lib/logger';
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_CONFIGS,
+} from '../../../lib/rate-limiter';
+
+const PRIVATE_PREFIXES = [
+  'users/',
+  'uploads/',
+  'personalizaciones/',
+  'profiles/',
+];
+
+function extractStoragePath(url: string): string | null {
+  if (!url || typeof url !== 'string') return null;
+  if (url.startsWith('data:')) return null;
+  if (url.startsWith('gs://')) {
+    return url.replace(/^gs:\/\/[^/]+\//, '');
+  }
+  const storageMatch = url.match(/^https?:\/\/storage\.googleapis\.com\/[^/]+\/(.+)$/);
+  if (storageMatch) {
+    return decodeURIComponent(storageMatch[1].split('?')[0]);
+  }
+  const firebaseMatch = url.match(/^https?:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[^/]+\/o\/(.+)$/);
+  if (firebaseMatch) {
+    return decodeURIComponent(firebaseMatch[1].split('?')[0]);
+  }
+  const parts = url.split('/o/');
+  if (parts.length < 2) return null;
+  const rawPath = parts[1].split('?')[0];
+  if (!rawPath) return null;
+  return decodeURIComponent(rawPath);
+}
+
+function isPrivatePath(path: string): boolean {
+  return PRIVATE_PREFIXES.some((prefix) => path.startsWith(prefix));
+}
 
 /**
  * GET /api/share/[shareId]
@@ -11,7 +49,13 @@ import { logger } from '../../../lib/logger';
  *
  * Returns: SharedDesign object or 404
  */
-export const GET: APIRoute = async ({ params }) => {
+export const GET: APIRoute = async ({ params, request }) => {
+  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'share-get');
+  if (!rateLimitResult.allowed) {
+    logger.warn('[share/get] Rate limit exceeded');
+    return createRateLimitResponse(rateLimitResult);
+  }
+
   try {
     const { shareId } = params;
 
@@ -23,8 +67,8 @@ export const GET: APIRoute = async ({ params }) => {
     }
 
     // SECURITY FIX LOW-003: Validate shareId format
-    // Only allow alphanumeric, hyphens, and underscores (10-50 chars)
-    if (!/^[a-zA-Z0-9_-]{10,50}$/.test(shareId)) {
+    // Only allow alphanumeric, hyphens, and underscores (8-50 chars)
+    if (!/^[a-zA-Z0-9_-]{8,50}$/.test(shareId)) {
       logger.warn('[share/get] Invalid shareId format:', shareId);
       return new Response(JSON.stringify({ error: 'Invalid share ID format' }), {
         status: 400,
@@ -62,6 +106,27 @@ export const GET: APIRoute = async ({ params }) => {
       viewCount: FieldValue.increment(1),
     });
 
+    let imageUrl: string | null = shareData?.imageUrl || null;
+    const imagePath =
+      shareData?.imagePath ||
+      (shareData?.imageUrl ? extractStoragePath(shareData.imageUrl) : null);
+
+    if (imagePath && isPrivatePath(imagePath)) {
+      try {
+        const storage = getStorage();
+        const bucket = storage.bucket();
+        const expiresInSeconds = 5 * 60;
+        const expiresAt = Date.now() + expiresInSeconds * 1000;
+        const [signedUrl] = await bucket.file(imagePath).getSignedUrl({
+          action: 'read',
+          expires: expiresAt,
+        });
+        imageUrl = signedUrl;
+      } catch (err) {
+        logger.warn('[share/get] Failed to sign image path', err);
+      }
+    }
+
     logger.info('[share/get] Shared design retrieved successfully');
 
     return new Response(
@@ -72,7 +137,7 @@ export const GET: APIRoute = async ({ params }) => {
           productId: shareData?.productId,
           productName: shareData?.productName,
           designData: shareData?.designData,
-          imageUrl: shareData?.imageUrl,
+          imageUrl: imageUrl,
           createdAt: shareData?.createdAt,
         },
       }),

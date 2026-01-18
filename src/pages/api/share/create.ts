@@ -20,6 +20,38 @@ const createShareSchema = z.object({
   previewImage: z.string().url().optional(),
 });
 
+const PRIVATE_PREFIXES = [
+  'users/',
+  'uploads/',
+  'personalizaciones/',
+  'profiles/',
+];
+
+function extractStoragePath(url: string): string | null {
+  if (!url || typeof url !== 'string') return null;
+  if (url.startsWith('data:')) return null;
+  if (url.startsWith('gs://')) {
+    return url.replace(/^gs:\/\/[^/]+\//, '');
+  }
+  const storageMatch = url.match(/^https?:\/\/storage\.googleapis\.com\/[^/]+\/(.+)$/);
+  if (storageMatch) {
+    return decodeURIComponent(storageMatch[1].split('?')[0]);
+  }
+  const firebaseMatch = url.match(/^https?:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[^/]+\/o\/(.+)$/);
+  if (firebaseMatch) {
+    return decodeURIComponent(firebaseMatch[1].split('?')[0]);
+  }
+  const parts = url.split('/o/');
+  if (parts.length < 2) return null;
+  const rawPath = parts[1].split('?')[0];
+  if (!rawPath) return null;
+  return decodeURIComponent(rawPath);
+}
+
+function isPrivatePath(path: string): boolean {
+  return PRIVATE_PREFIXES.some((prefix) => path.startsWith(prefix));
+}
+
 /**
  * POST /api/share/create
  *
@@ -60,6 +92,9 @@ export const POST: APIRoute = async ({ request }) => {
 
     const { productId, productName, designData, previewImage } = validationResult.data;
 
+    const previewPath = previewImage ? extractStoragePath(previewImage) : null;
+    const isPrivatePreview = previewPath ? isPrivatePath(previewPath) : false;
+
     // Generate unique share ID
     const shareId = nanoid();
 
@@ -78,7 +113,8 @@ export const POST: APIRoute = async ({ request }) => {
       productId,
       productName,
       designData,
-      imageUrl: previewImage || '',
+      imageUrl: !isPrivatePreview ? previewImage || '' : '',
+      ...(isPrivatePreview && previewPath ? { imagePath: previewPath } : {}),
       shareCount: 0,
       viewCount: 0,
       clickCount: 0,

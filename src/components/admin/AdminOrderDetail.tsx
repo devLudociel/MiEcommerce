@@ -28,6 +28,7 @@ interface CustomizationField {
   value?: string | number;
   displayValue?: string;
   imageUrl?: string;
+  imagePath?: string;
   imageTransform?: ImageTransform;
 }
 
@@ -98,11 +99,22 @@ function detectPresetPosition(
   return null;
 }
 
+function extractStoragePath(url: string): string | null {
+  if (!url) return null;
+  if (url.startsWith('gs://')) {
+    return url.replace(/^gs:\/\/[^/]+\//, '');
+  }
+  const parts = url.split('/o/');
+  if (parts.length < 2) return null;
+  return decodeURIComponent(parts[1].split('?')[0]);
+}
+
 export default function AdminOrderDetail() {
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [orderId, setOrderId] = useState<string | null>(null);
   const { user, loading: authLoading } = useAuth();
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
   // Modal state
   const [modal, setModal] = useState<{
@@ -133,6 +145,25 @@ export default function AdminOrderDetail() {
     setModal({ ...modal, isOpen: false });
   };
 
+  const resolveFieldPath = (field: CustomizationField): string | null => {
+    if (field.imagePath) return field.imagePath;
+    if (field.imageUrl && !field.imageUrl.startsWith('data:')) {
+      return extractStoragePath(field.imageUrl);
+    }
+    return null;
+  };
+
+  const resolveFieldUrl = (field: CustomizationField): string | null => {
+    if (field.imageUrl && field.imageUrl.startsWith('data:')) {
+      return field.imageUrl;
+    }
+    const path = resolveFieldPath(field);
+    if (path) {
+      return signedUrls[path] || null;
+    }
+    return field.imageUrl || null;
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id') || window.location.pathname.split('/').pop();
@@ -158,6 +189,63 @@ export default function AdminOrderDetail() {
 
     void loadOrder(orderId);
   }, [authLoading, user, orderId]);
+
+  useEffect(() => {
+    if (!order || !user) return;
+
+    const paths = new Set<string>();
+    for (const item of order.items || []) {
+      for (const field of item.customization?.values || []) {
+        const path = resolveFieldPath(field as CustomizationField);
+        if (path) paths.add(path);
+      }
+    }
+
+    const pending = Array.from(paths).filter((path) => !signedUrls[path]);
+    if (!pending.length) return;
+
+    let active = true;
+
+    const fetchSignedUrls = async () => {
+      try {
+        const token = await user.getIdToken();
+        const collected: Record<string, string> = {};
+
+        for (const path of pending) {
+          const response = await fetch('/api/storage/get-signed-url', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ path }),
+          });
+
+          if (!response.ok) {
+            logger.warn('[AdminOrderDetail] Failed to fetch signed URL', { path });
+            continue;
+          }
+
+          const data = await response.json();
+          if (data?.url) {
+            collected[path] = data.url;
+          }
+        }
+
+        if (active && Object.keys(collected).length) {
+          setSignedUrls((prev) => ({ ...prev, ...collected }));
+        }
+      } catch (error) {
+        logger.warn('[AdminOrderDetail] Error fetching signed URLs', error);
+      }
+    };
+
+    void fetchSignedUrls();
+
+    return () => {
+      active = false;
+    };
+  }, [order, user, signedUrls]);
 
   async function loadOrder(id: string) {
     if (!user) {
@@ -285,18 +373,24 @@ export default function AdminOrderDetail() {
    * Descarga una imagen personalizada del cliente
    * Soporta URLs (Firebase Storage) y base64
    */
-  const handleImageDownload = async (imageUrl: string, fieldLabel: string, itemName: string) => {
+  const handleImageDownload = async (field: CustomizationField, itemName: string) => {
     try {
+      const resolvedUrl = resolveFieldUrl(field);
+      if (!resolvedUrl) {
+        notify.error('No se pudo generar la descarga de la imagen.');
+        return;
+      }
+
       let blob: Blob;
 
       // Detectar si es base64 o URL
-      if (imageUrl.startsWith('data:')) {
+      if (resolvedUrl.startsWith('data:')) {
         // Es base64 - convertir directamente a blob
-        const response = await fetch(imageUrl);
+        const response = await fetch(resolvedUrl);
         blob = await response.blob();
       } else {
         // Es URL (Firebase Storage) - descargar con CORS
-        const response = await fetch(imageUrl);
+        const response = await fetch(resolvedUrl);
         if (!response.ok) {
           throw new Error('No se pudo descargar la imagen');
         }
@@ -306,6 +400,7 @@ export default function AdminOrderDetail() {
       // Crear nombre de archivo descriptivo
       const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
       const sanitizedItemName = itemName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+      const fieldLabel = field.fieldLabel || field.fieldId || 'imagen';
       const sanitizedFieldLabel = fieldLabel.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
       const orderIdShort = order?.id?.slice(0, 8) || 'pedido';
       const fileName = `${orderIdShort}_${sanitizedItemName}_${sanitizedFieldLabel}_${timestamp}.jpg`;
@@ -440,25 +535,51 @@ export default function AdminOrderDetail() {
    */
   const handleBulkImageDownload = async () => {
     if (!order) return;
+    if (!user) {
+      notify.error('Debes iniciar sesión para descargar imágenes.');
+      return;
+    }
 
     try {
       // Buscar todas las imágenes en todos los items del pedido
       const imageData: Array<{ url: string; name: string }> = [];
       let itemIndex = 0;
+      const token = await user.getIdToken();
 
       for (const item of order.items || []) {
         itemIndex++;
         if (item.customization?.values) {
           let fieldIndex = 0;
           for (const field of item.customization.values) {
-            if (field.imageUrl) {
+            const resolvedUrl = resolveFieldUrl(field as CustomizationField);
+            let imageUrl = resolvedUrl;
+
+            if (!imageUrl) {
+              const path = resolveFieldPath(field as CustomizationField);
+              if (path) {
+                const response = await fetch('/api/storage/get-signed-url', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({ path }),
+                });
+
+                if (response.ok) {
+                  const data = await response.json();
+                  imageUrl = data?.url || null;
+                }
+              }
+            }
+
+            if (imageUrl) {
               fieldIndex++;
               const sanitizedItemName = item.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-              const sanitizedFieldLabel = field.fieldLabel
-                .replace(/[^a-zA-Z0-9]/g, '-')
-                .toLowerCase();
+              const fieldLabel = field.fieldLabel || field.fieldId || 'imagen';
+              const sanitizedFieldLabel = fieldLabel.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
               const fileName = `${itemIndex}_${sanitizedItemName}_${fieldIndex}_${sanitizedFieldLabel}.jpg`;
-              imageData.push({ url: field.imageUrl, name: fileName });
+              imageData.push({ url: imageUrl, name: fileName });
             }
           }
         }
@@ -717,110 +838,108 @@ export default function AdminOrderDetail() {
                             {item.customization.values && (
                               <div className="space-y-2 mt-2">
                                 {item.customization.values.map(
-                                  (field: CustomizationField, idx: number) => (
-                                    <div key={idx} className="text-sm">
-                                      <span className="font-semibold text-gray-700">
-                                        {field.fieldLabel}:
-                                      </span>
+                                  (field: CustomizationField, idx: number) => {
+                                    const resolvedUrl = resolveFieldUrl(field);
 
-                                      {/* Si tiene imagen, mostrarla */}
-                                      {field.imageUrl ? (
-                                        <div className="mt-2 ml-4">
-                                          <div className="flex items-start gap-3">
-                                            <img
-                                              src={field.imageUrl}
-                                              alt={field.fieldLabel}
-                                              className="w-32 h-32 object-contain border-2 border-purple-200 rounded-lg bg-white flex-shrink-0"
-                                            />
+                                    return (
+                                      <div key={idx} className="text-sm">
+                                        <span className="font-semibold text-gray-700">
+                                          {field.fieldLabel}:
+                                        </span>
 
-                                            {/* Botón de descarga */}
-                                            <button
-                                              onClick={() =>
-                                                handleImageDownload(
-                                                  field.imageUrl,
-                                                  field.fieldLabel,
-                                                  item.name
-                                                )
-                                              }
-                                              className="px-3 py-2 bg-cyan-500 text-white rounded-lg font-bold hover:bg-cyan-600 transition-all flex items-center gap-2 text-sm flex-shrink-0"
-                                              title="Descargar imagen del cliente para editar y producir"
-                                            >
-                                              <Icon name="download" className="w-4 h-4" />
-                                              Descargar
-                                            </button>
-                                          </div>
+                                        {/* Si tiene imagen, mostrarla */}
+                                        {resolvedUrl ? (
+                                          <div className="mt-2 ml-4">
+                                            <div className="flex items-start gap-3">
+                                              <img
+                                                src={resolvedUrl}
+                                                alt={field.fieldLabel}
+                                                className="w-32 h-32 object-contain border-2 border-purple-200 rounded-lg bg-white flex-shrink-0"
+                                              />
 
-                                          {/* Mostrar transformaciones si existen */}
-                                          {field.imageTransform &&
-                                            (() => {
-                                              const detectedPreset = detectPresetPosition(
-                                                field.imageTransform,
-                                                field.fieldLabel
-                                              );
-                                              return (
-                                                <div className="mt-2 text-xs space-y-1">
-                                                  {/* Mostrar preset detectado */}
-                                                  {detectedPreset ? (
-                                                    <div className="p-2 bg-green-100 border border-green-300 rounded">
-                                                      <p className="font-bold text-green-800 flex items-center gap-1">
-                                                        📍 {detectedPreset.label}
-                                                      </p>
-                                                      <p className="text-green-700 italic">
-                                                        {detectedPreset.description}
-                                                      </p>
-                                                    </div>
-                                                  ) : (
-                                                    <div className="p-2 bg-yellow-100 border border-yellow-300 rounded">
-                                                      <p className="font-bold text-yellow-800">
-                                                        ⚠️ Posición personalizada
-                                                      </p>
-                                                    </div>
-                                                  )}
+                                              {/* Botón de descarga */}
+                                              <button
+                                                onClick={() => handleImageDownload(field, item.name)}
+                                                className="px-3 py-2 bg-cyan-500 text-white rounded-lg font-bold hover:bg-cyan-600 transition-all flex items-center gap-2 text-sm flex-shrink-0"
+                                                title="Descargar imagen del cliente para editar y producir"
+                                              >
+                                                <Icon name="download" className="w-4 h-4" />
+                                                Descargar
+                                              </button>
+                                            </div>
 
-                                                  {/* Coordenadas técnicas */}
-                                                  <div className="text-gray-600 space-y-0.5">
-                                                    <p>
-                                                      • X={field.imageTransform.x.toFixed(1)}%, Y=
-                                                      {field.imageTransform.y.toFixed(1)}%
-                                                    </p>
-                                                    <p>
-                                                      • Escala:{' '}
-                                                      {(field.imageTransform.scale * 100).toFixed(
-                                                        0
-                                                      )}
-                                                      %
-                                                    </p>
-                                                    {field.imageTransform.rotation !== 0 && (
-                                                      <p>
-                                                        • Rotación: {field.imageTransform.rotation}°
-                                                      </p>
+                                            {/* Mostrar transformaciones si existen */}
+                                            {field.imageTransform &&
+                                              (() => {
+                                                const detectedPreset = detectPresetPosition(
+                                                  field.imageTransform,
+                                                  field.fieldLabel
+                                                );
+                                                return (
+                                                  <div className="mt-2 text-xs space-y-1">
+                                                    {/* Mostrar preset detectado */}
+                                                    {detectedPreset ? (
+                                                      <div className="p-2 bg-green-100 border border-green-300 rounded">
+                                                        <p className="font-bold text-green-800 flex items-center gap-1">
+                                                          📍 {detectedPreset.label}
+                                                        </p>
+                                                        <p className="text-green-700 italic">
+                                                          {detectedPreset.description}
+                                                        </p>
+                                                      </div>
+                                                    ) : (
+                                                      <div className="p-2 bg-yellow-100 border border-yellow-300 rounded">
+                                                        <p className="font-bold text-yellow-800">
+                                                          ⚠️ Posición personalizada
+                                                        </p>
+                                                      </div>
                                                     )}
-                                                  </div>
-                                                </div>
-                                              );
-                                            })()}
-                                        </div>
-                                      ) : (
-                                        /* Si es un valor simple (color, talla, etc.) */
-                                        <span className="ml-2 text-gray-600">
-                                          {field.displayValue || field.value}
-                                        </span>
-                                      )}
 
-                                      {/* Mostrar precio adicional si existe */}
-                                      {field.priceModifier && field.priceModifier > 0 && (
-                                        <span className="ml-2 text-xs text-green-600">
-                                          (+{eur(field.priceModifier)})
-                                        </span>
-                                      )}
-                                    </div>
-                                  )
+                                                    {/* Coordenadas técnicas */}
+                                                    <div className="text-gray-600 space-y-0.5">
+                                                      <p>
+                                                        • X={field.imageTransform.x.toFixed(1)}%, Y=
+                                                        {field.imageTransform.y.toFixed(1)}%
+                                                      </p>
+                                                      <p>
+                                                        • Escala:{' '}
+                                                        {(field.imageTransform.scale * 100).toFixed(
+                                                          0
+                                                        )}
+                                                        %
+                                                      </p>
+                                                      {field.imageTransform.rotation !== 0 && (
+                                                        <p>
+                                                          • Rotación: {field.imageTransform.rotation}°
+                                                        </p>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                );
+                                              })()}
+                                          </div>
+                                        ) : (
+                                          /* Si es un valor simple (color, talla, etc.) */
+                                          <span className="ml-2 text-gray-600">
+                                            {field.displayValue || field.value}
+                                          </span>
+                                        )}
+
+                                        {/* Mostrar precio adicional si existe */}
+                                        {field.priceModifier && field.priceModifier > 0 && (
+                                          <span className="ml-2 text-xs text-green-600">
+                                            (+{eur(field.priceModifier)})
+                                          </span>
+                                        )}
+                                      </div>
+                                    );
+                                  }
                                 )}
                               </div>
                             )}
 
                             {/* Preview visual del mockup */}
-                            <OrderItemPreview item={item} />
+                            <OrderItemPreview item={item} signedUrls={signedUrls} />
                           </div>
                         )}
 
@@ -1013,7 +1132,7 @@ export default function AdminOrderDetail() {
                   {(() => {
                     const imageCount = (order.items || []).reduce((count, item) => {
                       if (item.customization?.values) {
-                        return count + item.customization.values.filter((f) => f.imageUrl).length;
+                        return count + item.customization.values.filter((f) => f.imageUrl || f.imagePath).length;
                       }
                       return count;
                     }, 0);

@@ -46,6 +46,7 @@ export default function SettingsPanel() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      await fetch('/api/auth/logout', { method: 'POST' });
       window.location.href = '/';
     } catch (error) {
       console.error('Error al cerrar sesión:', error);

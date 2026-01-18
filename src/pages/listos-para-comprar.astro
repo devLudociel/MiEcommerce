@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ReadyToBuyPageWithProvider from '../components/pages/ReadyToBuyPageWithProvider.tsx';
+
+const title = 'Listos para comprar | ImprimeArte';
+const description =
+  'Diseños listos para comprar sin personalizar. Encuentra tu favorito y compra al instante.';
+---
+
+<BaseLayout title={title} description={description}>
+  <ReadyToBuyPageWithProvider client:load />
+</BaseLayout>

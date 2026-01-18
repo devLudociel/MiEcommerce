@@ -141,13 +141,15 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySl
     const unsubscribe = onSnapshot(
       productQuery,
       (snapshot) => {
-        const productList: Product[] = snapshot.docs.map(
-          (doc) =>
-            ({
-              id: doc.id,
-              ...doc.data(),
-            }) as Product
-        );
+        const productList: Product[] = snapshot.docs
+          .filter((doc) => doc.data().readyMade !== true)
+          .map(
+            (doc) =>
+              ({
+                id: doc.id,
+                ...doc.data(),
+              }) as Product
+          );
 
         setProducts(productList);
         setLoading(false);

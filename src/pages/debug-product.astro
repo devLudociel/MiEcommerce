@@ -1,6 +1,17 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProductDebugPanel from '../components/debug/ProductDebugPanel';
+import { requireAdminPage, AUTH_COOKIE_NAME } from '../lib/auth/requireAdminPage';
+
+const guardResponse = await requireAdminPage(
+  Astro.request,
+  Astro.url,
+  Astro.cookies.get(AUTH_COOKIE_NAME)?.value
+);
+
+if (guardResponse) {
+  return guardResponse;
+}
 
 const { slug } = Astro.url.searchParams;
 ---

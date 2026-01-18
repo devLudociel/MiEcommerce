@@ -29,6 +29,17 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [isAdminClaim, setIsAdminClaim] = useState(false);
 
+  const syncSessionCookie = async (token: string | null) => {
+    if (typeof window === 'undefined') return;
+    try {
+      const endpoint = token ? '/api/auth/session' : '/api/auth/logout';
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+      await fetch(endpoint, { method: 'POST', headers });
+    } catch {
+      // Non-blocking; session cookie is best-effort
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setLoading(true);
@@ -38,7 +49,11 @@ export function useAuth() {
           const tokenResult = await getIdTokenResult(currentUser, true);
           const claims = tokenResult.claims as FirebaseTokenClaims;
           setIsAdminClaim(!!claims.admin);
+<<<<<<< HEAD
           setAuthCookie(tokenResult.token);
+=======
+          await syncSessionCookie(tokenResult.token);
+>>>>>>> claude/review-navbar-products-0lJA3
 
           // Sync cart and wishlist with authenticated user
           await Promise.all([
@@ -47,14 +62,22 @@ export function useAuth() {
           ]);
         } else {
           setIsAdminClaim(false);
+<<<<<<< HEAD
           setAuthCookie(null);
+=======
+          await syncSessionCookie(null);
+>>>>>>> claude/review-navbar-products-0lJA3
 
           // Clear cart and wishlist when user logs out
           await Promise.all([syncCartWithUser(null), syncWishlistWithUser(null)]);
         }
       } catch {
         setIsAdminClaim(false);
+<<<<<<< HEAD
         setAuthCookie(null);
+=======
+        await syncSessionCookie(null);
+>>>>>>> claude/review-navbar-products-0lJA3
         // Still sync cart and wishlist even if token check fails
         if (currentUser) {
           await Promise.all([
@@ -75,7 +98,11 @@ export function useAuth() {
   const logout = async () => {
     try {
       await signOut(auth);
+<<<<<<< HEAD
       setAuthCookie(null);
+=======
+      await syncSessionCookie(null);
+>>>>>>> claude/review-navbar-products-0lJA3
       window.location.href = '/';
     } catch (error) {
       console.error('Error al cerrar sesión:', error);

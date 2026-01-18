@@ -1,6 +1,20 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+<<<<<<< HEAD
 const nonce = Astro.locals?.cspNonce;
+=======
+import { requireAdminPage, AUTH_COOKIE_NAME } from '../lib/auth/requireAdminPage';
+
+const guardResponse = await requireAdminPage(
+  Astro.request,
+  Astro.url,
+  Astro.cookies.get(AUTH_COOKIE_NAME)?.value
+);
+
+if (guardResponse) {
+  return guardResponse;
+}
+>>>>>>> claude/review-navbar-products-0lJA3
 ---
 
 <BaseLayout title="Test 3D Mug Preview">

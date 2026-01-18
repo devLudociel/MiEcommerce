@@ -97,8 +97,9 @@ service firebase.storage {
                               isValidSize() &&
                               isImage();
 
-      // Anyone can read (for product previews)
-      allow read: if true;
+      // Only file owner or admin can read
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == userId || isAdmin());
 
       // Users can only delete their own files
       allow delete: if isAuthenticated() && request.auth.uid == userId;
@@ -111,8 +112,8 @@ service firebase.storage {
       // Authenticated users can upload
       allow create, update: if isAuthenticated() && isValidSize() && isImage();
 
-      // Anyone can read
-      allow read: if true;
+      // Only admins can read (no userId in path to safely scope access)
+      allow read: if isAdmin();
 
       // SECURITY FIX: Only admins can delete customization files
       // (Cannot verify ownership without userId in path, so restrict to admin)
@@ -129,8 +130,9 @@ service firebase.storage {
                               isValidSize() &&
                               isImage();
 
-      // Anyone can read (for order fulfillment and previews)
-      allow read: if true;
+      // Only file owner or admin can read
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == userId || isAdmin());
 
       // Only file owner or admin can delete
       allow delete: if isAuthenticated() &&
@@ -147,8 +149,9 @@ service firebase.storage {
                               isValidSize() &&
                               isImage();
 
-      // Anyone can read
-      allow read: if true;
+      // Only file owner or admin can read
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == userId || isAdmin());
 
       // Only owner can delete
       allow delete: if isAuthenticated() && request.auth.uid == userId;
@@ -171,6 +174,22 @@ service firebase.storage {
     }
 
     // ==========================================================================
+    // INSPIRATION: Admin inspiration images
+    // ==========================================================================
+    match /inspiration/{fileName} {
+      // Only admins can upload inspiration images
+      allow create, update: if isAdmin() &&
+                              isValidSize() &&
+                              isImage();
+
+      // Anyone can read (public inspiration gallery)
+      allow read: if true;
+
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================================================
     // USER CUSTOMIZER DESIGNS: Saved designs from customizer
     // ==========================================================================
     match /users/{userId}/customizer-designs/{fileName} {
@@ -180,8 +199,9 @@ service firebase.storage {
                               isValidSize() &&
                               isImage();
 
-      // Anyone can read (for previews and order processing)
-      allow read: if true;
+      // Only file owner or admin can read
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == userId || isAdmin());
 
       // Users can only delete their own files or admin
       allow delete: if isAuthenticated() &&
@@ -198,8 +218,9 @@ service firebase.storage {
                               isValidSize() &&
                               isAllowedFileType();
 
-      // Anyone can read (for order processing)
-      allow read: if true;
+      // Only file owner or admin can read
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == userId || isAdmin());
 
       // Users can only delete their own files or admin
       allow delete: if isAuthenticated() &&
@@ -303,6 +324,22 @@ service firebase.storage {
       allow read: if true;
 
       // SECURITY FIX: Only admins can delete
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================================================
+    // INSPIRATION: Example images for product customization inspiration
+    // ==========================================================================
+    match /inspiration/{fileName} {
+      // Only ADMINS can upload inspiration images
+      allow create, update: if isAdmin() &&
+                              isValidSize() &&
+                              isImage();
+
+      // Anyone can read (public inspiration images shown on product pages)
+      allow read: if true;
+
+      // Only admins can delete
       allow delete: if isAdmin();
     }
 

@@ -8,7 +8,10 @@ import AccessibleModal from '../common/AccessibleModal';
 
 export default function ProductsSection() {
   // Fetch products with React Query
-  const { data: products = [], isLoading: loading, error: queryError } = useProducts({ limit: 6 });
+  const { data: products = [], isLoading: loading, error: queryError } = useProducts({
+    limit: 6,
+    excludeReadyMade: true,
+  });
 
   const error = queryError ? (queryError as Error).message : null;
 

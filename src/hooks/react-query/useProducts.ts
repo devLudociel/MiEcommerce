@@ -18,10 +18,12 @@ export interface Product {
   name: string;
   description: string;
   price: number;
+  basePrice?: number;
   originalPrice?: number;
   image: string;
   images?: string[];
   category: string;
+  categoryId?: string;
   badge?: 'new' | 'sale' | 'hot' | 'limited';
   rating: number;
   reviews: number;
@@ -33,6 +35,8 @@ export interface Product {
   active: boolean;
   featured?: boolean;
   isDigital?: boolean;
+  readyMade?: boolean;
+  variants?: Array<Record<string, unknown>>;
   createdAt?: Date;
 }
 
@@ -45,6 +49,8 @@ interface ProductFilters {
   onlyPhysical?: boolean;
   onlyDigital?: boolean;
   excludeIds?: string[];
+  readyMade?: boolean;
+  excludeReadyMade?: boolean;
 }
 
 /**
@@ -76,6 +82,11 @@ async function fetchProducts(filters: ProductFilters = {}): Promise<Product[]> {
       q = query(q, where('onSale', '==', filters.onSale));
     }
 
+    // Filter ready-made (only when true to avoid excluding legacy docs)
+    if (filters.readyMade === true) {
+      q = query(q, where('readyMade', '==', true));
+    }
+
     // Filter physical/digital
     if (filters.onlyPhysical) {
       q = query(q, where('isDigital', '==', false));
@@ -99,6 +110,10 @@ async function fetchProducts(filters: ProductFilters = {}): Promise<Product[]> {
     // Exclude specific IDs (client-side filter for related products)
     if (filters.excludeIds && filters.excludeIds.length > 0) {
       products = products.filter((p) => !filters.excludeIds!.includes(p.id));
+    }
+
+    if (filters.excludeReadyMade) {
+      products = products.filter((p) => p.readyMade !== true);
     }
 
     logger.debug('[useProducts] Fetched products', { count: products.length });

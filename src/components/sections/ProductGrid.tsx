@@ -115,7 +115,7 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
         const physicalDocs = snap.docs
           .filter((d) => {
             const data = d.data();
-            return !data.isDigital; // Exclude digital products
+            return !data.isDigital && data.readyMade !== true; // Exclude digital + ready-made
           })
           .slice(0, maxItems); // Limit to maxItems after filtering
 

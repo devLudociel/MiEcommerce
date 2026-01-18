@@ -1175,7 +1175,13 @@ export default function AdminProductsPanel() {
             <button className="btn btn-secondary" onClick={testStorageConnection}>
               🧪 Test Storage
             </button>
-            <button className="btn btn-ghost" onClick={() => signOut(auth)}>
+            <button
+              className="btn btn-ghost"
+              onClick={async () => {
+                await signOut(auth);
+                await fetch('/api/auth/logout', { method: 'POST' });
+              }}
+            >
               Cerrar sesión
             </button>
           </div>

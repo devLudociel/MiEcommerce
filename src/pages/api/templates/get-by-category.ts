@@ -1,6 +1,11 @@
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../../lib/firebase-admin';
 import { logger } from '../../../lib/logger';
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_CONFIGS,
+} from '../../../lib/rate-limiter';
 
 /**
  * GET /api/templates/get-by-category
@@ -15,9 +20,20 @@ import { logger } from '../../../lib/logger';
  * Returns: { templates: DesignTemplate[] }
  */
 export const GET: APIRoute = async ({ request, url }) => {
+  const rateLimitResult = checkRateLimit(
+    request,
+    RATE_LIMIT_CONFIGS.STANDARD,
+    'templates-get-by-category'
+  );
+  if (!rateLimitResult.allowed) {
+    logger.warn('[get-by-category] Rate limit exceeded');
+    return createRateLimitResponse(rateLimitResult);
+  }
+
   try {
     const categoryId = url.searchParams.get('category');
-    const limit = parseInt(url.searchParams.get('limit') || '100');
+    const limitRaw = parseInt(url.searchParams.get('limit') || '100', 10);
+    const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 100) : 100;
     const premiumOnly = url.searchParams.get('premiumOnly') === 'true';
 
     if (!categoryId) {

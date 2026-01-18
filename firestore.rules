@@ -179,11 +179,17 @@ service cloud.firestore {
       allow write: if isAdmin(); // Solo admins pueden subir/editar/eliminar
     }
 
+    // Inspiration Images (galería de inspiración)
+    match /inspiration_images/{imageId} {
+      allow read: if true; // Visible para catálogo público
+      allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
+    }
+
     // Stock Notifications (avisos de disponibilidad)
     match /stock_notifications/{notificationId} {
       // Usuarios autenticados pueden crear suscripciones para su email
       allow read: if isAdmin() || (isAuth() && resource.data.userId == request.auth.uid);
-      allow create: if isAuth(); // Cualquier usuario autenticado puede suscribirse
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isAdmin(); // Solo admins pueden gestionar
     }
 
@@ -283,6 +289,14 @@ service cloud.firestore {
       allow create: if isAuth() && request.resource.data.customerId == request.auth.uid;
       // Solo admins pueden actualizar (aprobar/rechazar) o eliminar
       allow update, delete: if isAdmin();
+    }
+
+    // Inspiration Images (Biblioteca de imágenes de inspiración)
+    match /inspiration_images/{imageId} {
+      // Cualquiera puede leer las imágenes de inspiración (mostradas en productos)
+      allow read: if true;
+      // Solo admins pueden crear/editar/eliminar
+      allow write: if isAdmin();
     }
 
     // Denegar por defecto

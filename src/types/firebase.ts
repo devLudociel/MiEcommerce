@@ -7,6 +7,8 @@ export interface FirebaseProduct {
   category: ProductCategory;
   basePrice: number;
   images: string[]; // URLs de Firebase Storage
+  variants?: ProductVariant[]; // Variantes con talla/color/precio
+  readyMade?: boolean; // Listos para comprar (sin personalización)
   customizable: boolean;
   customizationOptions?: CustomizationOption[];
   tags: string[];
@@ -26,6 +28,27 @@ export interface FirebaseProduct {
   // SEO fields
   metaTitle?: string; // Título para buscadores (máx 60 caracteres)
   metaDescription?: string; // Descripción para buscadores (máx 160 caracteres)
+  // Customization examples for inspiration
+  customizationExamples?: CustomizationExample[];
+}
+
+// Ejemplo de personalización para mostrar en la página del producto
+export interface CustomizationExample {
+  id: string;
+  image: string; // URL de la imagen
+  description: string; // Descripción corta
+  order?: number; // Orden de visualización
+}
+
+export interface ProductVariant {
+  id: number;
+  name: string; // Ej: "M", "L", "Pack 2"
+  price: number;
+  originalPrice?: number;
+  color: string; // Hex (ej: #FF0000)
+  colorName: string; // Ej: "Rojo"
+  stock: number;
+  sku: string;
 }
 
 export interface CustomizationOption {
@@ -476,3 +499,59 @@ export interface ProductNotificationStats {
   totalRequests: number; // All-time requests
   lastNotificationSent?: Timestamp;
 }
+
+// ============================================================================
+// INSPIRATION IMAGES: Library of example images for customer inspiration
+// ============================================================================
+
+/**
+ * Imagen de inspiración/ejemplo para mostrar en productos
+ * Se asocian por tags y categoría para mostrarse automáticamente
+ */
+export interface InspirationImage {
+  id?: string;
+  imageUrl: string; // URL en Firebase Storage
+  thumbnailUrl?: string; // Thumbnail para carga rápida
+  title: string; // Título descriptivo (ej: "Camiseta con logo empresarial")
+  description?: string; // Descripción opcional más larga
+
+  // Asociaciones para matching automático
+  categorySlug: string; // Categoría principal (textiles, sublimacion, etc.)
+  subcategorySlug?: string; // Subcategoría opcional (ropa-personalizada, tazas)
+  tags: string[]; // Tags para matching (logo, texto, foto, empresarial, cumpleaños)
+
+  // Metadata
+  active: boolean;
+  featured: boolean; // Si se muestra primero
+  order?: number; // Orden de visualización
+  viewCount?: number; // Veces mostrada
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+/**
+ * Categorías predefinidas para organizar imágenes de inspiración
+ */
+export const INSPIRATION_CATEGORIES = [
+  { slug: 'textiles', name: 'Textiles', icon: '👕' },
+  { slug: 'sublimacion', name: 'Sublimación', icon: '☕' },
+  { slug: 'impresion-3d', name: 'Impresión 3D', icon: '🎮' },
+  { slug: 'laser', name: 'Corte Láser', icon: '✂️' },
+  { slug: 'eventos', name: 'Eventos', icon: '🎉' },
+  { slug: 'packaging', name: 'Packaging', icon: '📦' },
+  { slug: 'papeleria', name: 'Papelería', icon: '📝' },
+] as const;
+
+/**
+ * Tags comunes para imágenes de inspiración
+ */
+export const INSPIRATION_TAGS = [
+  // Tipo de diseño
+  'logo', 'texto', 'foto', 'ilustracion', 'patron',
+  // Uso/Ocasión
+  'empresarial', 'personal', 'regalo', 'cumpleanos', 'boda', 'bautizo',
+  // Estilo
+  'minimalista', 'colorido', 'elegante', 'divertido', 'infantil',
+  // Técnica
+  'bordado', 'serigrafia', 'dtf', 'vinilo', 'sublimado', 'grabado',
+] as const;

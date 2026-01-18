@@ -6,7 +6,6 @@ import {
   getMetadata,
   deleteObject,
   uploadBytes,
-  getDownloadURL,
 } from 'firebase/storage';
 import { storage, auth } from '../../lib/firebase';
 import { withRetry } from '../../lib/resilience';
@@ -21,7 +20,7 @@ interface File {
   size: number;
   uploadedAt: string;
   url: string;
-  downloadUrl: string;
+  previewUrl?: string;
   path: string;
 }
 
@@ -42,6 +41,28 @@ export default function FilesPanel() {
     title: '',
     message: '',
   });
+
+  const fetchSignedUrl = async (path: string): Promise<string | null> => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return null;
+      const token = await user.getIdToken();
+      const response = await fetch('/api/storage/get-signed-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ path }),
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data?.url || null;
+    } catch (error) {
+      logger.error('Error obteniendo URL segura:', error);
+      return null;
+    }
+  };
 
   const showModal = (
     type: 'info' | 'warning' | 'error' | 'success',
@@ -68,7 +89,8 @@ export default function FilesPanel() {
 
       for (const fileRef of filesList.items) {
         const metadata = await getMetadata(fileRef);
-        const downloadUrl = await getDownloadURL(fileRef);
+        const fileType = getFileType(fileRef.name);
+        const previewUrl = fileType === 'image' ? await fetchSignedUrl(fileRef.fullPath) : undefined;
 
         // Extraer nombre sin timestamp: "1234567890-foto.png" -> "foto.png"
         const displayName = fileRef.name.replace(/^\d+-/, '');
@@ -77,11 +99,11 @@ export default function FilesPanel() {
           id: fileRef.name,
           name: fileRef.name,
           displayName: displayName,
-          type: getFileType(fileRef.name),
+          type: fileType,
           size: metadata.size || 0,
           uploadedAt: metadata.timeCreated || new Date().toISOString(),
           url: fileRef.fullPath,
-          downloadUrl: downloadUrl,
+          previewUrl: previewUrl || undefined,
           path: fileRef.fullPath,
         });
       }
@@ -172,9 +194,14 @@ export default function FilesPanel() {
     }
   };
 
-  const handleDownload = async (downloadUrl: string, fileName: string) => {
+  const handleDownload = async (filePath: string, fileName: string) => {
     try {
-      const response = await fetch(downloadUrl);
+      const signedUrl = await fetchSignedUrl(filePath);
+      if (!signedUrl) {
+        throw new Error('No se pudo generar la descarga');
+      }
+
+      const response = await fetch(signedUrl);
       const blob = await response.blob();
       const urlBlob = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -302,9 +329,9 @@ export default function FilesPanel() {
                 <div className="flex items-center gap-4">
                   {/* Miniatura o icono */}
                   <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {file.type === 'image' ? (
+                    {file.type === 'image' && file.previewUrl ? (
                       <img
-                        src={file.downloadUrl}
+                        src={file.previewUrl}
                         alt={file.displayName}
                         className="w-full h-full object-cover"
                       />
@@ -331,7 +358,7 @@ export default function FilesPanel() {
                   <div className="flex gap-2 flex-shrink-0">
                     <button
                       className="btn btn-outline btn-sm"
-                      onClick={() => handleDownload(file.downloadUrl, file.displayName)}
+                      onClick={() => handleDownload(file.path, file.displayName)}
                     >
                       Descargar
                     </button>

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Upload, Loader, X } from 'lucide-react';
 import type {
   ImageUploadConfig,
@@ -52,9 +52,7 @@ export default function ImageUploadField({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [preview, setPreview] = useState<string | null>(
-    (value?.imageUrl as string | undefined) || null
-  );
+  const [preview, setPreview] = useState<string | null>(null);
   const [imageQuality, setImageQuality] = useState<ImageQualityResult | null>(null);
 
   // Image transform state
@@ -66,6 +64,63 @@ export default function ImageUploadField({
       rotation: 0,
     }
   );
+
+  const fetchSignedUrl = async (path: string): Promise<string | null> => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return null;
+      const token = await user.getIdToken();
+      const response = await fetch('/api/storage/get-signed-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ path }),
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data?.url || null;
+    } catch (err) {
+      logger.error('[ImageUploadField] Error obteniendo URL firmada', err);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    let isActive = true;
+
+    const syncPreview = async () => {
+      if (value?.imageUrl) {
+        if (isActive) setPreview(value.imageUrl as string);
+        return;
+      }
+      if (!value?.imagePath) {
+        if (isActive) setPreview(null);
+        return;
+      }
+
+      const signedUrl = await fetchSignedUrl(value.imagePath as string);
+      if (!isActive) return;
+
+      if (signedUrl) {
+        setPreview(signedUrl);
+        if (value && !value.imageUrl) {
+          onChange({
+            ...value,
+            imageUrl: signedUrl,
+            imagePath: value.imagePath,
+          });
+        }
+      }
+    };
+
+    syncPreview();
+
+    return () => {
+      isActive = false;
+    };
+  }, [value?.imageUrl, value?.imagePath, onChange]);
 
   const handleTransformChange = (newTransform: ImageTransform) => {
     setTransform(newTransform);
@@ -134,7 +189,8 @@ export default function ImageUploadField({
         maxWidthOrHeight: 1920,
       });
 
-      const { url, path } = await uploadCustomImage(compressedFile, user.uid, productType);
+      const { path } = await uploadCustomImage(compressedFile, user.uid, productType);
+      const signedUrl = await fetchSignedUrl(path);
 
       // Reset transform to default when uploading new image
       const defaultTransform: ImageTransform = {
@@ -148,8 +204,8 @@ export default function ImageUploadField({
       // Update value
       onChange({
         fieldId,
-        value: url,
-        imageUrl: url,
+        value: path,
+        imageUrl: signedUrl || undefined,
         imageTransform: defaultTransform,
         imagePath: path,
         priceModifier: 0,

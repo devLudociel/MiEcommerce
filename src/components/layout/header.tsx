@@ -815,6 +815,24 @@ const Header: React.FC<HeaderProps> = () => {
               {/* Enlaces adicionales - TAILWIND PURO */}
               <div className="flex items-center gap-1 xl:gap-2 flex-shrink-0">
                 <a
+                  href="/listos-para-comprar"
+                  className="flex items-center gap-1 px-1.5 xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-all whitespace-nowrap"
+                >
+                  <svg
+                    className="w-3.5 h-3.5 flex-shrink-0"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-7.072 7.072a1 1 0 01-1.414 0L3.293 8.85a1 1 0 111.414-1.414l3.514 3.514 6.365-6.365a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span className="hidden 2xl:inline">Listos para comprar</span>
+                  <span className="2xl:hidden">Listos</span>
+                </a>
+                <a
                   href="/productos/digitales"
                   className="flex items-center gap-1 px-1.5 xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-medium text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50 rounded-lg transition-all whitespace-nowrap"
                 >
@@ -1021,6 +1039,36 @@ const Header: React.FC<HeaderProps> = () => {
                   marginTop: 'var(--spacing-4)',
                 }}
               >
+                <a
+                  href="/listos-para-comprar"
+                  className="flex items-center justify-between"
+                  style={{
+                    padding: 'var(--spacing-4)',
+                    borderRadius: '8px',
+                    border: '1px solid #f59e0b',
+                    background: '#fffbeb',
+                    textDecoration: 'none',
+                    marginBottom: 'var(--spacing-3)',
+                  }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                    <svg className="w-5 h-5" fill="#f59e0b" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-7.072 7.072a1 1 0 01-1.414 0L3.293 8.85a1 1 0 111.414-1.414l3.514 3.514 6.365-6.365a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span className="font-medium text-sm" style={{ color: '#b45309' }}>
+                      Listos para comprar
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: '#b45309' }}>
+                    Diseños listos →
+                  </span>
+                </a>
+
                 <a
                   href="/productos/digitales"
                   className="flex items-center justify-between"
