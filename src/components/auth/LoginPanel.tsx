@@ -28,18 +28,6 @@ function isFirebaseError(error: unknown): error is FirebaseError {
   return typeof error === 'object' && error !== null && ('code' in error || 'message' in error);
 }
 
-const AUTH_COOKIE_NAME = 'auth_token';
-
-function setAuthCookie(token: string | null): void {
-  if (typeof document === 'undefined') return;
-  if (!token) {
-    document.cookie = `${AUTH_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
-    return;
-  }
-  const encoded = encodeURIComponent(token);
-  document.cookie = `${AUTH_COOKIE_NAME}=${encoded}; Max-Age=3600; Path=/; SameSite=Lax`;
-}
-
 export default function LoginPanel() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -93,8 +81,6 @@ export default function LoginPanel() {
     );
   };
 
-<<<<<<< HEAD
-=======
   const syncSessionCookie = async (token: string | null) => {
     if (typeof window === 'undefined') return;
     try {
@@ -105,26 +91,16 @@ export default function LoginPanel() {
       logger.warn('[LoginPanel] Could not sync session cookie', e);
     }
   };
-
->>>>>>> claude/review-navbar-products-0lJA3
   const getAdminTargetUrl = async (user: User | null, desired?: string) => {
     if (!user || typeof window === 'undefined') return '/account';
     try {
       const tokenResult = await getIdTokenResult(user, true);
-<<<<<<< HEAD
-      setAuthCookie(tokenResult.token);
-=======
       await syncSessionCookie(tokenResult.token);
->>>>>>> claude/review-navbar-products-0lJA3
       const isAdmin = Boolean(tokenResult.claims?.admin);
       return isAdmin ? desired || '/admin/products' : '/account';
     } catch (e) {
       logger.warn('[LoginPanel] Could not verify admin claims', e);
-<<<<<<< HEAD
-      setAuthCookie(null);
-=======
       await syncSessionCookie(null);
->>>>>>> claude/review-navbar-products-0lJA3
       return '/account';
     }
   };

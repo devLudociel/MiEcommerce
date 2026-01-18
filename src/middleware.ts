@@ -1,9 +1,6 @@
 // src/middleware.ts
 import { defineMiddleware } from 'astro:middleware';
-<<<<<<< HEAD
 import { randomBytes } from 'crypto';
-=======
->>>>>>> claude/review-navbar-products-0lJA3
 import { getAdminAuth } from './lib/firebase-admin';
 
 /**
@@ -35,12 +32,6 @@ function getBearerToken(request: Request): string | null {
   return authHeader.replace('Bearer ', '').trim();
 }
 
-<<<<<<< HEAD
-export const onRequest = defineMiddleware(async (context, next) => {
-  const { pathname, search } = context.url;
-  const nonce = randomBytes(16).toString('base64');
-  context.locals.cspNonce = nonce;
-=======
 async function verifyAdminToken(token: string): Promise<{ admin?: boolean } | null> {
   const adminAuth = getAdminAuth();
   try {
@@ -56,7 +47,8 @@ async function verifyAdminToken(token: string): Promise<{ admin?: boolean } | nu
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname, search } = context.url;
->>>>>>> claude/review-navbar-products-0lJA3
+  const nonce = randomBytes(16).toString('base64');
+  context.locals.cspNonce = nonce;
 
   if (pathname === ADMIN_PATH_PREFIX || pathname.startsWith(`${ADMIN_PATH_PREFIX}/`)) {
     const headerToken = getBearerToken(context.request);
@@ -75,13 +67,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
 
     try {
-<<<<<<< HEAD
-      const decodedToken = await getAdminAuth().verifyIdToken(token);
-      if (!decodedToken.admin) {
-=======
       const decodedToken = await verifyAdminToken(token);
       if (!decodedToken?.admin) {
->>>>>>> claude/review-navbar-products-0lJA3
         const redirectUrl = new URL('/account', context.url.origin);
         const response = Response.redirect(redirectUrl, 302);
         const securityHeaders = getSecurityHeaders();
@@ -130,40 +117,3 @@ function getSecurityHeaders(): Record<string, string> {
     }),
   };
 }
-<<<<<<< HEAD
-=======
-
-function getContentSecurityPolicy(): string {
-  const isDev = import.meta.env.DEV;
-
-  if (isDev) {
-    return [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.google.com https://*.googleapis.com https://www.googletagmanager.com https://js.stripe.com",
-      "style-src 'self' 'unsafe-inline' https://*.googleapis.com",
-      "img-src 'self' data: https: blob:",
-      "font-src 'self' data: https://*.googleapis.com https://*.gstatic.com",
-      "connect-src 'self' ws: wss: blob: https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://*.google-analytics.com https://*.googletagmanager.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.zippopotam.us https://api.geoapify.com",
-      "frame-src 'self' https://*.firebaseapp.com https://js.stripe.com https://accounts.google.com https://*.google.com",
-      "object-src 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-    ].join('; ');
-  }
-
-  return [
-    "default-src 'self'",
-    "script-src 'self' https://*.google.com https://*.googleapis.com https://www.googletagmanager.com https://js.stripe.com",
-    "style-src 'self' 'unsafe-inline' https://*.googleapis.com",
-    "img-src 'self' data: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://*.google.com https://*.google-analytics.com",
-    "font-src 'self' data: https://*.googleapis.com https://*.gstatic.com",
-    "connect-src 'self' blob: https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://*.google-analytics.com https://*.googletagmanager.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.zippopotam.us https://api.geoapify.com",
-    "frame-src 'self' https://*.firebaseapp.com https://js.stripe.com https://accounts.google.com https://*.google.com",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-    "frame-ancestors 'self'",
-    'upgrade-insecure-requests',
-  ].join('; ');
-}
->>>>>>> claude/review-navbar-products-0lJA3

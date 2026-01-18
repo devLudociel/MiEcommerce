@@ -1,9 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-<<<<<<< HEAD
-const nonce = Astro.locals?.cspNonce;
-=======
 import { requireAdminPage, AUTH_COOKIE_NAME } from '../lib/auth/requireAdminPage';
+const nonce = Astro.locals?.cspNonce;
 
 const guardResponse = await requireAdminPage(
   Astro.request,
@@ -14,7 +12,6 @@ const guardResponse = await requireAdminPage(
 if (guardResponse) {
   return guardResponse;
 }
->>>>>>> claude/review-navbar-products-0lJA3
 ---
 
 <BaseLayout title="Test 3D Mug Preview">
@@ -140,7 +137,7 @@ if (guardResponse) {
   </div>
 </BaseLayout>
 
-<script nonce={nonce}>
+<script type="module" nonce={nonce}>
   import { createRoot } from 'react-dom/client';
   import { createElement } from 'react';
   import ThreeDMugPreview from '../components/3d/ThreeDMugPreview';

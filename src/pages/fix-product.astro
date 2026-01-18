@@ -1,9 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-<<<<<<< HEAD
-const nonce = Astro.locals?.cspNonce;
-=======
 import { requireAdminPage, AUTH_COOKIE_NAME } from '../lib/auth/requireAdminPage';
+const nonce = Astro.locals?.cspNonce;
 
 const guardResponse = await requireAdminPage(
   Astro.request,
@@ -14,7 +12,6 @@ const guardResponse = await requireAdminPage(
 if (guardResponse) {
   return guardResponse;
 }
->>>>>>> claude/review-navbar-products-0lJA3
 ---
 
 <BaseLayout title="Arreglar Producto">
@@ -66,11 +63,7 @@ if (guardResponse) {
     </div>
   </div>
 
-<<<<<<< HEAD
   <script type="module" nonce={nonce}>
-=======
-  <script type="module">
->>>>>>> claude/review-navbar-products-0lJA3
     import { auth } from '../lib/firebase';
     import { getIdTokenResult } from 'firebase/auth';
 

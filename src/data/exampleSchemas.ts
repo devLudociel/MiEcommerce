@@ -764,7 +764,6 @@ export const exampleSchemas = {
 
 // Schema names for dropdown selection
 export const schemaOptions = [
-<<<<<<< HEAD
   // ───── PRODUCTOS GRÁFICOS ─────
   { value: 'tarjetasVisita', label: '🎴 Tarjetas de Visita' },
   { value: 'flyers', label: '📰 Flyers y Folletos' },
@@ -800,21 +799,6 @@ export const schemaOptions = [
   { value: 'resina', label: '💎 Figuras de Resina (cajas)' },
 
   // ───── EVENTOS ─────
-=======
-  { value: 'camisetas', label: 'Camisetas / Textiles (básico)' },
-  { value: 'camisetasPro', label: 'Camisetas Pro (front/back)' },
-  { value: 'hoodies', label: 'Hoodies / Sudaderas' },
-  { value: 'bolsas', label: 'Bolsas / Tote Bags' },
-  { value: 'tarjetasVisita', label: '💼 Tarjetas de visita' },
-  { value: 'cuadros', label: 'Cuadros / Marcos' },
-  { value: 'resina', label: 'Figuras de Resina' },
-  { value: 'tazas', label: 'Tazas / Sublimados' },
-  // Packaging options
-  { value: 'cajasPersonalizadas', label: '📦 Cajas Personalizadas' },
-  { value: 'bolsasPapel', label: '🛍️ Bolsas de Papel' },
-  { value: 'etiquetasAdhesivas', label: '🏷️ Etiquetas Adhesivas' },
-  // Eventos infantiles
->>>>>>> ebebe39 (estilos card y productos)
   { value: 'cajasChuches', label: '🍬 Cajas de Chuches / Cumpleaños' },
   { value: 'invitacionesEventos', label: '💌 Invitaciones de Eventos' },
   { value: 'photocalls', label: '📸 Photocalls' },
