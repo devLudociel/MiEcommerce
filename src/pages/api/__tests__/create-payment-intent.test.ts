@@ -23,6 +23,7 @@ function createDb() {
     coupon_usage: {},
     users: {},
     shipping_methods: {},
+    shipping_zones: {},
     wallets: {},
   };
 
@@ -109,7 +110,7 @@ describe('API create-payment-intent', () => {
   it('valida body y rechaza orderId faltante', async () => {
     const req = new Request('http://local/api/create-payment-intent', {
       method: 'POST',
-      body: JSON.stringify({ amount: 10 }),
+      body: JSON.stringify({}),
     });
     const res = await POST({ request: req } as any);
     expect(res.status).toBe(400);
@@ -118,7 +119,7 @@ describe('API create-payment-intent', () => {
   it('rechaza si el pedido no existe', async () => {
     const req = new Request('http://local/api/create-payment-intent', {
       method: 'POST',
-      body: JSON.stringify({ orderId: 'missing', amount: 10 }),
+      body: JSON.stringify({ orderId: 'missing' }),
     });
     const res = await POST({ request: req } as any);
     expect(res.status).toBe(404);
@@ -126,6 +127,17 @@ describe('API create-payment-intent', () => {
 
   it('crea Payment Intent cuando el monto coincide', async () => {
     const { __mockDb } = (await import('../../../lib/firebase-admin')) as any;
+    __mockDb.data.shipping_zones['z1'] = {
+      active: true,
+      priority: 1,
+      provinces: ['Las Palmas'],
+      postalCodes: [],
+    };
+    __mockDb.data.shipping_methods['m1'] = {
+      active: true,
+      zoneId: 'z1',
+      basePrice: 0,
+    };
     __mockDb.data.products['p1'] = {
       name: 'Prod 1',
       basePrice: 19.99,
@@ -136,11 +148,11 @@ describe('API create-payment-intent', () => {
       customerEmail: 'ok@example.com',
       userId: 'guest',
       items: [{ productId: 'p1', quantity: 1, name: 'Prod 1' }],
-      shippingInfo: { state: 'Las Palmas' },
+      shippingInfo: { state: 'Las Palmas', zipCode: '35001', shippingMethodId: 'm1' },
     };
     const req = new Request('http://local/api/create-payment-intent', {
       method: 'POST',
-      body: JSON.stringify({ orderId: 'o1', amount: 19.99 }),
+      body: JSON.stringify({ orderId: 'o1' }),
       headers: { 'Content-Type': 'application/json' },
     });
     const res = await POST({ request: req } as any);
@@ -152,6 +164,17 @@ describe('API create-payment-intent', () => {
 
   it('rechaza si el monto no coincide', async () => {
     const { __mockDb } = (await import('../../../lib/firebase-admin')) as any;
+    __mockDb.data.shipping_zones['z1'] = {
+      active: true,
+      priority: 1,
+      provinces: ['Las Palmas'],
+      postalCodes: [],
+    };
+    __mockDb.data.shipping_methods['m1'] = {
+      active: true,
+      zoneId: 'z1',
+      basePrice: 0,
+    };
     __mockDb.data.products['p2'] = {
       name: 'Prod 2',
       basePrice: 50,
@@ -160,7 +183,7 @@ describe('API create-payment-intent', () => {
     };
     __mockDb.data.orders['o2'] = {
       items: [{ productId: 'p2', quantity: 1, name: 'Prod 2' }],
-      shippingInfo: { state: 'Las Palmas' },
+      shippingInfo: { state: 'Las Palmas', zipCode: '35001', shippingMethodId: 'm1' },
       userId: 'guest',
     };
     const req = new Request('http://local/api/create-payment-intent', {

@@ -133,7 +133,6 @@ export default function SecureCardPayment({
             },
             body: JSON.stringify({
               orderId: effectiveOrderId,
-              amount: effectiveAmount,
               currency: 'eur',
             }),
           });

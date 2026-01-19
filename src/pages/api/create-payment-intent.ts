@@ -27,7 +27,7 @@ const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
 // Zod schema para validar datos de Payment Intent
 const paymentIntentSchema = z.object({
   orderId: z.string().min(1).max(255),
-  amount: z.number().min(0.5).max(1000000), // Mínimo €0.50, máximo €1M
+  amount: z.number().min(0.5).max(1000000).optional(), // Opcional para compatibilidad
   currency: z.enum(['eur', 'usd', 'gbp']).default('eur'),
 });
 
@@ -144,7 +144,7 @@ export const POST: APIRoute = async ({ request }) => {
     const orderTotal = pricing.total;
 
     // Validar que el monto coincide con el total calculado por servidor
-    if (Math.abs(orderTotal - amount) > 0.01) {
+    if (amount !== undefined && Math.abs(orderTotal - amount) > 0.01) {
       logger.error(`Mismatch de monto: server=${orderTotal}, requested=${amount}`, { orderId });
       return new Response(
         JSON.stringify({

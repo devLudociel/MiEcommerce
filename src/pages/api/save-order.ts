@@ -49,8 +49,7 @@ const billingInfoSchema = z.object({
 
 const orderItemSchema = z.object({
   productId: z.string(),
-  name: z.string().min(1).max(500),
-  price: z.number().min(0).max(1000000),
+  name: z.string().min(1).max(500).optional(),
   quantity: z.number().int().min(1).max(1000),
   image: z.string().optional(), // Not always a valid URL, can be relative path
   variantId: z.number().optional(),
@@ -70,30 +69,8 @@ const orderDataSchema = z.object({
   // userId: removed - will be set from authenticated user
   customerEmail: z.string().email().optional(),
   paymentMethod: z.enum(['card', 'transfer', 'cash', 'paypal']).default('card'),
-  subtotal: z.number().min(0).max(1000000),
-  shippingCost: z.number().min(0).max(10000).optional(),
-  tax: z.number().min(0).optional(),
-  taxType: z.string().optional(),
-  taxRate: z.number().min(0).max(1).optional(),
-  taxLabel: z.string().optional(),
-  total: z.number().min(0).max(1000000),
-  couponDiscount: z.number().min(0).optional(),
   couponCode: z.string().optional(),
   couponId: z.string().optional(),
-  bundleDiscount: z.number().min(0).optional(),
-  bundleDiscountDetails: z
-    .array(
-      z.object({
-        bundleId: z.string(),
-        bundleName: z.string(),
-        productIds: z.array(z.string()),
-        originalPrice: z.number(),
-        discountedPrice: z.number(),
-        savedAmount: z.number(),
-      })
-    )
-    .optional(),
-  walletDiscount: z.number().min(0).optional(),
   usedWallet: z.boolean().optional(),
   // SECURITY FIX: status is always 'pending' for new orders - removed from client control
   // status: removed - always set to 'pending' server-side
@@ -246,9 +223,13 @@ export const POST: APIRoute = async ({ request }) => {
 
     const sanitizedItems = Array.isArray(orderData.items)
       ? orderData.items.map((i: OrderItem) => ({
-          ...i,
-          price: Number(i?.price) || 0,
+          productId: i.productId,
+          name: i.name,
           quantity: Number(i?.quantity) || 0,
+          image: i.image,
+          variantId: i.variantId,
+          variantName: i.variantName,
+          customization: i.customization,
         }))
       : [];
 

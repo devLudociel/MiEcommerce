@@ -28,6 +28,7 @@ function createDb() {
     bundleDiscounts: {},
     users: {},
     shipping_methods: {},
+    shipping_zones: {},
   };
 
   function wrapInc(current: any, update: any) {
@@ -129,7 +130,7 @@ describe('API save-order', () => {
   it('rechaza datos incompletos (400)', async () => {
     const req = new Request('http://local/api/save-order', {
       method: 'POST',
-      body: JSON.stringify({ items: [], total: 0 }),
+      body: JSON.stringify({ items: [] }),
     });
     const res = await POST({ request: req } as any);
     expect(res.status).toBe(400);
@@ -138,6 +139,17 @@ describe('API save-order', () => {
   it('guarda pedido con precios calculados en servidor', async () => {
     // Inicializar wallet usuario
     const { __mockDb } = (await import('../../../lib/firebase-admin')) as any;
+    __mockDb.data.shipping_zones['z1'] = {
+      active: true,
+      priority: 1,
+      provinces: ['Las Palmas'],
+      postalCodes: [],
+    };
+    __mockDb.data.shipping_methods['m1'] = {
+      active: true,
+      zoneId: 'z1',
+      basePrice: 0,
+    };
     __mockDb.data.products['p1'] = {
       name: 'Prod 1',
       basePrice: 10,
@@ -150,7 +162,7 @@ describe('API save-order', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         idempotencyKey: 'test-key-12345',
-        items: [{ productId: 'p1', name: 'Prod 1', price: 10, quantity: 2 }],
+        items: [{ productId: 'p1', name: 'Prod 1', quantity: 2 }],
         shippingInfo: {
           fullName: 'Juan Pérez',
           email: 'juan@example.com',
@@ -160,10 +172,8 @@ describe('API save-order', () => {
           state: 'Las Palmas',
           zipCode: '28001',
           country: 'España',
+          shippingMethodId: 'm1',
         },
-        subtotal: 20,
-        shippingCost: 0,
-        total: 20,
         usedWallet: false,
       }),
     });
@@ -186,6 +196,17 @@ describe('API save-order', () => {
 
   it('continúa si se solicita wallet sin autenticación (no falla 200)', async () => {
     const { __mockDb } = (await import('../../../lib/firebase-admin')) as any;
+    __mockDb.data.shipping_zones['z1'] = {
+      active: true,
+      priority: 1,
+      provinces: ['Las Palmas'],
+      postalCodes: [],
+    };
+    __mockDb.data.shipping_methods['m1'] = {
+      active: true,
+      zoneId: 'z1',
+      basePrice: 0,
+    };
     __mockDb.data.products['p1'] = {
       name: 'Prod 1',
       basePrice: 10,
@@ -198,7 +219,7 @@ describe('API save-order', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         idempotencyKey: 'test-key-67890',
-        items: [{ productId: 'p1', name: 'Prod 1', price: 10, quantity: 2 }],
+        items: [{ productId: 'p1', name: 'Prod 1', quantity: 2 }],
         shippingInfo: {
           fullName: 'Juan García',
           email: 'juan2@example.com',
@@ -208,12 +229,9 @@ describe('API save-order', () => {
           state: 'Las Palmas',
           zipCode: '08001',
           country: 'España',
+          shippingMethodId: 'm1',
         },
-        subtotal: 20,
-        shippingCost: 0,
-        total: 20,
         usedWallet: true,
-        walletDiscount: 5,
       }),
     });
     const res = await POST({ request: req } as any);
