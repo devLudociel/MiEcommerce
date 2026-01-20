@@ -16,7 +16,12 @@ export const GET: APIRoute = async ({ url, request }) => {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized - Authentication required' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
       });
     }
 
@@ -29,7 +34,12 @@ export const GET: APIRoute = async ({ url, request }) => {
       logger.error('[get-order] Invalid token:', verificationError);
       return new Response(JSON.stringify({ error: 'Unauthorized - Invalid token' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
       });
     }
 
@@ -38,7 +48,12 @@ export const GET: APIRoute = async ({ url, request }) => {
     if (!orderId) {
       return new Response(JSON.stringify({ error: 'Order ID is required' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
       });
     }
 
@@ -50,7 +65,12 @@ export const GET: APIRoute = async ({ url, request }) => {
     if (!orderSnap.exists) {
       return new Response(JSON.stringify({ error: 'Order not found' }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
       });
     }
 
@@ -63,9 +83,14 @@ export const GET: APIRoute = async ({ url, request }) => {
         orderUserId: orderData.userId,
         requestUserId: decodedToken.uid,
       });
-      return new Response(JSON.stringify({ error: 'Forbidden - You do not own this order' }), {
-        status: 403,
-        headers: { 'Content-Type': 'application/json' },
+      return new Response(JSON.stringify({ error: 'Order not found' }), {
+        status: 404,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
       });
     }
 
@@ -91,7 +116,12 @@ export const GET: APIRoute = async ({ url, request }) => {
 
     return new Response(JSON.stringify(order), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+        Pragma: 'no-cache',
+        Expires: '0',
+      },
     });
   } catch (error: unknown) {
     logger.error('Error fetching order:', error);
@@ -103,7 +133,12 @@ export const GET: APIRoute = async ({ url, request }) => {
       }),
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
       }
     );
   }
