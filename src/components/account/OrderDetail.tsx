@@ -55,7 +55,25 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
         });
 
         if (!response.ok) {
-          setError('Pedido no encontrado');
+          let errorMessage = 'Pedido no encontrado';
+          try {
+            const payload = await response.json();
+            if (payload?.error) {
+              errorMessage = String(payload.error);
+            }
+          } catch (parseError) {
+            logger.warn('[OrderDetail] Error parsing order response', parseError);
+          }
+
+          if (response.status === 401) {
+            errorMessage = 'Debes iniciar sesión para ver este pedido';
+          } else if (response.status === 403 || response.status === 404) {
+            errorMessage = 'Pedido no encontrado';
+          } else if (response.status >= 500) {
+            errorMessage = 'Error interno del servidor al cargar el pedido';
+          }
+
+          setError(errorMessage);
           setOrder(null);
           return;
         }
