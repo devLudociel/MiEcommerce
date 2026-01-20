@@ -265,6 +265,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Actualizar pedido con el Payment Intent ID y precios verificados
     const orderUpdate: Record<string, unknown> = {
       paymentIntentId: paymentIntent.id,
+      paymentCurrency: currency,
       paymentStatus: 'pending',
       subtotal: pricing.subtotal,
       bundleDiscount: pricing.bundleDiscount,

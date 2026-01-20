@@ -74,6 +74,94 @@ export const POST: APIRoute = async ({ request }) => {
     const orderData = orderSnap.data() || {};
 
     if (type === 'payment_intent.succeeded') {
+      const paymentIntent = data as Stripe.PaymentIntent;
+      const paymentIntentId = String(paymentIntent?.id || '');
+      const paymentIntentAmount = Number(paymentIntent?.amount ?? 0);
+      const paymentIntentCurrency = String(paymentIntent?.currency || '').toLowerCase();
+      const expectedCurrency = String(orderData.paymentCurrency || orderData.currency || 'eur').toLowerCase();
+      const orderTotal = Number(orderData.total ?? 0);
+      const expectedAmount = Math.round(orderTotal * 100);
+      const orderStatus = String(orderData.status || '').toLowerCase();
+      const paymentStatus = String(orderData.paymentStatus || '').toLowerCase();
+      const expectedPaymentIntentId = String(orderData.paymentIntentId || '');
+      let shouldFinalize = true;
+      let mismatchReason: string | null = null;
+
+      if (paymentStatus === 'paid' || paymentStatus === 'completed') {
+        logger.info('[Stripe Webhook] Order already paid. Skipping finalize.', {
+          orderId,
+          paymentStatus,
+        });
+        shouldFinalize = false;
+      }
+
+      if (!mismatchReason) {
+        const allowedStatuses = new Set(['pending', 'processing', 'reserved']);
+        if (!allowedStatuses.has(orderStatus)) {
+          mismatchReason = `invalid_order_status:${orderStatus || 'unknown'}`;
+          shouldFinalize = false;
+        }
+      }
+
+      if (!mismatchReason) {
+        if (!Number.isFinite(orderTotal) || !Number.isFinite(expectedAmount)) {
+          mismatchReason = 'invalid_order_total';
+          shouldFinalize = false;
+        } else if (paymentIntentAmount !== expectedAmount) {
+          mismatchReason = 'amount_mismatch';
+          shouldFinalize = false;
+        }
+      }
+
+      if (!mismatchReason) {
+        if (!paymentIntentCurrency || paymentIntentCurrency !== expectedCurrency) {
+          mismatchReason = 'currency_mismatch';
+          shouldFinalize = false;
+        }
+      }
+
+      if (!mismatchReason) {
+        if (!expectedPaymentIntentId) {
+          mismatchReason = 'missing_payment_intent_id';
+          shouldFinalize = false;
+        } else if (expectedPaymentIntentId !== paymentIntentId) {
+          mismatchReason = 'payment_intent_id_mismatch';
+          shouldFinalize = false;
+        }
+      }
+
+      if (!shouldFinalize) {
+        if (mismatchReason) {
+          logger.warn('[Stripe Webhook] Payment validation mismatch', {
+            orderId,
+            reason: mismatchReason,
+            paymentIntentId,
+            expectedPaymentIntentId,
+            paymentIntentAmount,
+            expectedAmount,
+            paymentIntentCurrency,
+            expectedCurrency,
+          });
+          await orderRef.set(
+            {
+              paymentMismatch: true,
+              paymentMismatchReason: mismatchReason,
+              paymentMismatchAt: new Date(),
+              paymentIntentId: expectedPaymentIntentId || paymentIntentId || null,
+              paymentIntentAmount,
+              paymentIntentCurrency,
+              expectedAmount,
+              expectedCurrency,
+              updatedAt: new Date(),
+            },
+            { merge: true }
+          );
+        }
+
+        await evtRef.set({ processedAt: new Date(), type, orderId });
+        return new Response(JSON.stringify({ received: true, ignored: true }), { status: 200 });
+      }
+
       try {
         await finalizeOrder({
           db,
