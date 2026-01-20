@@ -314,6 +314,7 @@ export const POST: APIRoute = async ({ request }) => {
       walletDiscount: pricing.walletDiscount,
       usedWallet: pricing.walletDiscount > 0,
       total: pricing.total,
+      totalCents: Math.round(pricing.total * 100),
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
       // SECURITY FIX CRÍTICO: status SIEMPRE es 'pending' para nuevos pedidos

@@ -280,6 +280,7 @@ export const POST: APIRoute = async ({ request }) => {
       walletDiscount: pricing.walletDiscount,
       usedWallet: pricing.walletDiscount > 0,
       total: pricing.total,
+      totalCents: Math.round(pricing.total * 100),
       updatedAt: new Date(),
     };
 

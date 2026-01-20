@@ -78,80 +78,97 @@ export const POST: APIRoute = async ({ request }) => {
       const paymentIntentId = String(paymentIntent?.id || '');
       const paymentIntentAmount = Number(paymentIntent?.amount ?? 0);
       const paymentIntentCurrency = String(paymentIntent?.currency || '').toLowerCase();
-      const expectedCurrency = String(orderData.paymentCurrency || orderData.currency || 'eur').toLowerCase();
-      const orderTotal = Number(orderData.total ?? 0);
-      const expectedAmount = Math.round(orderTotal * 100);
-      const orderStatus = String(orderData.status || '').toLowerCase();
-      const paymentStatus = String(orderData.paymentStatus || '').toLowerCase();
-      const expectedPaymentIntentId = String(orderData.paymentIntentId || '');
-      let shouldFinalize = true;
+
+      let shouldFinalize = false;
       let mismatchReason: string | null = null;
+      let mismatchDetails: Record<string, unknown> | null = null;
+      let freshOrderData: Record<string, unknown> | null = null;
 
-      if (paymentStatus === 'paid' || paymentStatus === 'completed') {
-        logger.info('[Stripe Webhook] Order already paid. Skipping finalize.', {
-          orderId,
-          paymentStatus,
-        });
-        shouldFinalize = false;
-      }
+      await db.runTransaction(async (tx) => {
+        const freshSnap = await tx.get(orderRef);
+        if (!freshSnap.exists) {
+          mismatchReason = 'order_not_found';
+          return;
+        }
 
-      if (!mismatchReason) {
-        const allowedStatuses = new Set(['pending', 'processing', 'reserved']);
+        const data = freshSnap.data() || {};
+        freshOrderData = data;
+
+        const paymentStatus = String(data.paymentStatus || '').toLowerCase();
+        if (paymentStatus === 'paid' || paymentStatus === 'completed') {
+          return;
+        }
+
+        const orderStatus = String(data.status || '').toLowerCase();
+        const allowedStatuses = new Set(['pending', 'reserved']);
         if (!allowedStatuses.has(orderStatus)) {
           mismatchReason = `invalid_order_status:${orderStatus || 'unknown'}`;
-          shouldFinalize = false;
+          mismatchDetails = { orderStatus };
+          return;
         }
-      }
 
-      if (!mismatchReason) {
-        if (!Number.isFinite(orderTotal) || !Number.isFinite(expectedAmount)) {
-          mismatchReason = 'invalid_order_total';
-          shouldFinalize = false;
-        } else if (paymentIntentAmount !== expectedAmount) {
-          mismatchReason = 'amount_mismatch';
-          shouldFinalize = false;
+        const expectedAmount = Number(data.totalCents);
+        if (!Number.isInteger(expectedAmount) || expectedAmount <= 0) {
+          mismatchReason = 'invalid_order_total_cents';
+          mismatchDetails = { expectedAmount: data.totalCents };
+          return;
         }
-      }
 
-      if (!mismatchReason) {
+        const expectedCurrency = String(data.paymentCurrency || data.currency || 'eur').toLowerCase();
         if (!paymentIntentCurrency || paymentIntentCurrency !== expectedCurrency) {
           mismatchReason = 'currency_mismatch';
-          shouldFinalize = false;
+          mismatchDetails = { expectedCurrency, paymentIntentCurrency };
+          return;
         }
-      }
 
-      if (!mismatchReason) {
+        const expectedPaymentIntentId = String(data.paymentIntentId || '');
         if (!expectedPaymentIntentId) {
           mismatchReason = 'missing_payment_intent_id';
-          shouldFinalize = false;
-        } else if (expectedPaymentIntentId !== paymentIntentId) {
-          mismatchReason = 'payment_intent_id_mismatch';
-          shouldFinalize = false;
+          mismatchDetails = { expectedPaymentIntentId };
+          return;
         }
-      }
+        if (expectedPaymentIntentId !== paymentIntentId) {
+          mismatchReason = 'payment_intent_id_mismatch';
+          mismatchDetails = { expectedPaymentIntentId, paymentIntentId };
+          return;
+        }
+
+        if (paymentIntentAmount !== expectedAmount) {
+          mismatchReason = 'amount_mismatch';
+          mismatchDetails = { expectedAmount, paymentIntentAmount };
+          return;
+        }
+
+        shouldFinalize = true;
+      });
 
       if (!shouldFinalize) {
-        if (mismatchReason) {
+        if (mismatchReason && mismatchReason !== 'order_not_found') {
           logger.warn('[Stripe Webhook] Payment validation mismatch', {
             orderId,
             reason: mismatchReason,
             paymentIntentId,
-            expectedPaymentIntentId,
             paymentIntentAmount,
-            expectedAmount,
             paymentIntentCurrency,
-            expectedCurrency,
+            details: mismatchDetails || {},
           });
+
           await orderRef.set(
             {
               paymentMismatch: true,
               paymentMismatchReason: mismatchReason,
               paymentMismatchAt: new Date(),
-              paymentIntentId: expectedPaymentIntentId || paymentIntentId || null,
+              paymentIntentId: paymentIntentId || null,
               paymentIntentAmount,
               paymentIntentCurrency,
-              expectedAmount,
-              expectedCurrency,
+              expectedAmount:
+                freshOrderData && Number.isInteger(Number(freshOrderData.totalCents))
+                  ? Number(freshOrderData.totalCents)
+                  : null,
+              expectedCurrency:
+                freshOrderData
+                  ? String(freshOrderData.paymentCurrency || freshOrderData.currency || 'eur').toLowerCase()
+                  : null,
               updatedAt: new Date(),
             },
             { merge: true }
@@ -166,7 +183,7 @@ export const POST: APIRoute = async ({ request }) => {
         await finalizeOrder({
           db,
           orderId,
-          orderData,
+          orderData: freshOrderData || orderData,
           requestUrl: request.url,
         });
       } catch (finalizeError) {
@@ -176,13 +193,17 @@ export const POST: APIRoute = async ({ request }) => {
         });
       }
 
+      const nextStatus =
+        freshOrderData?.status === 'pending' ? 'processing' : freshOrderData?.status || 'processing';
+
       await orderRef.set(
         {
           paymentStatus: 'paid',
-          status:
-            orderData?.status === 'pending' ? 'processing' : orderData?.status || 'processing',
+          status: nextStatus,
           stockReservationStatus:
-            orderData?.stockReservationStatus === 'reserved' ? 'captured' : orderData?.stockReservationStatus,
+            freshOrderData?.stockReservationStatus === 'reserved'
+              ? 'captured'
+              : freshOrderData?.stockReservationStatus,
           stockCapturedAt: new Date(),
           updatedAt: new Date(),
         },
