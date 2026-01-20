@@ -190,11 +190,25 @@ export function generateInvoiceDefinition(data: InvoiceData): TDocumentDefinitio
               { text: 'Precio Unit.', style: 'tableHeader', alignment: 'right' },
               { text: 'Total', style: 'tableHeader', alignment: 'right' },
             ],
-            ...items.map((item: OrderItem) => {
-              const name = item.productName || 'Producto';
+            ...items.map((item: OrderItem & Record<string, unknown>) => {
+              const name = item.productName || (item as any).name || 'Producto';
               const variantName = item.variantName;
-              const price = Number(item.unitPrice || 0);
               const qty = Number(item.quantity || 0);
+              const explicitUnitPrice = Number(
+                item.unitPrice ??
+                  (item as any).price ??
+                  (item as any).unitPrice ??
+                  0
+              );
+              const lineTotal = Number(
+                (item as any).lineTotal ?? item.totalPrice ?? (item as any).totalPrice ?? 0
+              );
+              const price =
+                Number.isFinite(explicitUnitPrice) && explicitUnitPrice > 0
+                  ? explicitUnitPrice
+                  : qty > 0 && Number.isFinite(lineTotal) && lineTotal > 0
+                    ? lineTotal / qty
+                    : 0;
               return [
                 {
                   stack: [
