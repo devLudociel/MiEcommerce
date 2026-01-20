@@ -3,6 +3,7 @@ import { getAdminDb, getAdminAuth } from '../../lib/firebase-admin';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { FieldValue } from 'firebase-admin/firestore';
 import { releaseWalletReservation } from '../../lib/orders/walletReservations';
+import { releaseReservedStock } from '../../lib/orders/stock';
 
 // Simple console logger for API routes (avoids import issues)
 const logger = {
@@ -142,6 +143,21 @@ export const POST: APIRoute = async ({ request }) => {
       } catch (walletError) {
         logger.error('[cancel-order] Failed to release wallet reservation', walletError);
         return new Response(JSON.stringify({ error: 'No se pudo liberar el saldo reservado' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    if (data?.stockReservationStatus === 'reserved' && Array.isArray(data.stockReservedItems)) {
+      try {
+        await releaseReservedStock({
+          db,
+          items: data.stockReservedItems,
+        });
+      } catch (stockError) {
+        logger.error('[cancel-order] Failed to release stock reservation', stockError);
+        return new Response(JSON.stringify({ error: 'No se pudo liberar el stock reservado' }), {
           status: 500,
           headers: { 'Content-Type': 'application/json' },
         });

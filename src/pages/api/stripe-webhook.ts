@@ -5,6 +5,7 @@ import { finalizeOrder } from '../../lib/orders/finalizeOrder';
 import { FieldValue } from 'firebase-admin/firestore';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
 import { releaseWalletReservation } from '../../lib/orders/walletReservations';
+import { releaseReservedStock } from '../../lib/orders/stock';
 
 const logger = createScopedLogger('stripe-webhook');
 
@@ -92,6 +93,9 @@ export const POST: APIRoute = async ({ request }) => {
           paymentStatus: 'paid',
           status:
             orderData?.status === 'pending' ? 'processing' : orderData?.status || 'processing',
+          stockReservationStatus:
+            orderData?.stockReservationStatus === 'reserved' ? 'captured' : orderData?.stockReservationStatus,
+          stockCapturedAt: new Date(),
           updatedAt: new Date(),
         },
         { merge: true }
@@ -121,6 +125,17 @@ export const POST: APIRoute = async ({ request }) => {
             });
           } catch (walletError) {
             logger.error('[Stripe Webhook] Failed to release wallet reservation', walletError);
+          }
+        }
+
+        if (orderData?.stockReservationStatus === 'reserved' && Array.isArray(orderData.stockReservedItems)) {
+          try {
+            await releaseReservedStock({
+              db,
+              items: orderData.stockReservedItems,
+            });
+          } catch (stockError) {
+            logger.error('[Stripe Webhook] Failed to release stock reservation', stockError);
           }
         }
 

@@ -11,7 +11,8 @@ import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { verifyAuthToken } from '../../lib/auth/authHelpers';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
 import { calculateOrderPricing } from '../../lib/orders/pricing';
-import { validateStockAvailability } from '../../lib/orders/stock';
+import { reserveStockForOrder, releaseReservedStock } from '../../lib/orders/stock';
+import type { StockReservationItem } from '../../lib/orders/stock';
 // SECURITY NOTE: finalizeOrder ya NO se importa aquí
 // Solo debe llamarse desde stripe-webhook.ts después de confirmar pago
 import { z } from 'zod';
@@ -132,6 +133,9 @@ export const POST: APIRoute = async ({ request }) => {
   const isProd = import.meta.env.PROD === true;
   logger.info('API save-order: Solicitud recibida');
 
+  let adminDb: ReturnType<typeof getAdminDb> | null = null;
+  let reservedItems: StockReservationItem[] = [];
+
   try {
     const rawData = await request.json();
 
@@ -183,7 +187,6 @@ export const POST: APIRoute = async ({ request }) => {
     logger.info('API save-order: Intentando guardar en Firestore con Admin SDK...');
 
     // Guardar pedido en Firestore usando Admin SDK (bypasa reglas de seguridad)
-    let adminDb;
     try {
       adminDb = getAdminDb();
     } catch (adminInitError: unknown) {
@@ -248,18 +251,20 @@ export const POST: APIRoute = async ({ request }) => {
       userId: secureUserId,
     });
 
-    const stockCheck = await validateStockAvailability({
+    let reservedItems: Array<Record<string, unknown>> = [];
+
+    const stockReservation = await reserveStockForOrder({
       db: adminDb,
       items: pricing.items,
     });
 
-    if (!stockCheck.ok) {
-      logger.warn('[save-order] Stock validation failed', stockCheck.details);
+    if (!stockReservation.ok) {
+      logger.warn('[save-order] Stock reservation failed', stockReservation.details);
       return new Response(
         JSON.stringify({
-          error: stockCheck.code,
-          message: stockCheck.message,
-          details: stockCheck.details,
+          error: stockReservation.code,
+          message: stockReservation.message,
+          details: stockReservation.details,
         }),
         {
           status: 409,
@@ -267,6 +272,12 @@ export const POST: APIRoute = async ({ request }) => {
         }
       );
     }
+
+    if (!adminDb) {
+      throw new Error('Firebase Admin not initialized');
+    }
+
+    reservedItems = stockReservation.reservedItems;
 
     const itemsForDoc = pricing.items.map((item) => {
       const docItem: Record<string, unknown> = {
@@ -309,7 +320,13 @@ export const POST: APIRoute = async ({ request }) => {
       // Solo el webhook de Stripe o un admin puede cambiar esto
       status: 'pending',
       paymentStatus: 'pending',
+      stockReservationStatus: stockReservation.reservedItems.length > 0 ? 'reserved' : 'not_required',
     };
+
+    if (stockReservation.reservedItems.length > 0) {
+      orderPayload.stockReservedItems = stockReservation.reservedItems;
+      orderPayload.stockReservedAt = FieldValue.serverTimestamp();
+    }
 
     if (orderData.billingInfo) {
       orderPayload.billingInfo = orderData.billingInfo;
@@ -366,6 +383,16 @@ export const POST: APIRoute = async ({ request }) => {
       }
     );
   } catch (error: unknown) {
+    if (adminDb && reservedItems.length > 0) {
+      try {
+        await releaseReservedStock({
+          db: adminDb,
+          items: reservedItems,
+        });
+      } catch (releaseError) {
+        logger.error('[save-order] Failed to release stock reservation after error', releaseError);
+      }
+    }
     // SECURITY: No exponer stack traces en producción
     logger.error('API save-order: Error:', error);
     if (import.meta.env.DEV) {

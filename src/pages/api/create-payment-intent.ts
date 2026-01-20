@@ -142,24 +142,30 @@ export const POST: APIRoute = async ({ request }) => {
       userId: orderUserId || null,
     });
 
-    const stockCheck = await validateStockAvailability({
-      db: adminDb,
-      items: pricing.items,
-    });
+    const stockReservationStatus = String(orderData.stockReservationStatus || '');
+    const hasReservation =
+      stockReservationStatus === 'reserved' || stockReservationStatus === 'captured';
 
-    if (!stockCheck.ok) {
-      logger.warn('[create-payment-intent] Stock validation failed', stockCheck.details);
-      return new Response(
-        JSON.stringify({
-          error: stockCheck.code,
-          message: stockCheck.message,
-          details: stockCheck.details,
-        }),
-        {
-          status: 409,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+    if (!hasReservation) {
+      const stockCheck = await validateStockAvailability({
+        db: adminDb,
+        items: pricing.items,
+      });
+
+      if (!stockCheck.ok) {
+        logger.warn('[create-payment-intent] Stock validation failed', stockCheck.details);
+        return new Response(
+          JSON.stringify({
+            error: stockCheck.code,
+            message: stockCheck.message,
+            details: stockCheck.details,
+          }),
+          {
+            status: 409,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
     }
 
     const orderTotal = pricing.total;

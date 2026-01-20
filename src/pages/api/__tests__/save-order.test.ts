@@ -77,6 +77,13 @@ function createDb() {
 
   return {
     data,
+    async runTransaction(fn: (tx: any) => Promise<any>) {
+      const tx = {
+        get: async (ref: any) => ref.get(),
+        update: async (ref: any, update: any) => ref.update(update),
+      };
+      return fn(tx);
+    },
     collection(name: string) {
       return {
         add: async (doc: any) => {
