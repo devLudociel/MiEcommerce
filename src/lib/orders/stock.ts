@@ -113,13 +113,11 @@ export async function validateStockAvailability(params: {
       };
     }
 
-    const trackInventory = Boolean(data.trackInventory);
-    if (!trackInventory) continue;
-
     const allowBackorder = Boolean(data.allowBackorder);
     if (allowBackorder) continue;
 
     let available = 0;
+    let hasStockValue = false;
     let resolvedVariantName: string | undefined;
     const variants = Array.isArray(data.variants) ? (data.variants as Record<string, unknown>[]) : [];
 
@@ -130,18 +128,27 @@ export async function validateStockAvailability(params: {
 
       if (variant) {
         available = Number(variant.stock ?? 0);
+        hasStockValue = variant.stock !== undefined && variant.stock !== null;
         resolvedVariantName = typeof variant.name === 'string' ? variant.name : undefined;
       } else if (variants.length > 0) {
         available = 0;
+        hasStockValue = true;
       } else {
         available = Number(data.stock ?? 0);
+        hasStockValue = data.stock !== undefined && data.stock !== null;
       }
     } else {
       available = Number(data.stock ?? 0);
+      hasStockValue = data.stock !== undefined && data.stock !== null;
     }
 
     if (!Number.isFinite(available)) {
       available = 0;
+    }
+
+    const trackInventory = Boolean(data.trackInventory);
+    if (!trackInventory && !hasStockValue) {
+      continue;
     }
 
     const productName =
