@@ -24,6 +24,7 @@ interface OrderDetailProps {
 }
 
 export default function OrderDetail({ orderId }: OrderDetailProps) {
+  const [uid, setUid] = useState<string | null>(null);
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +43,7 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
         return;
       }
 
+      setUid(u.uid);
       setLoading(true);
       setError(null);
 
