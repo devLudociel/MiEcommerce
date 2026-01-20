@@ -70,7 +70,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     if (!guestOrderKey) {
       const authResult = await verifyAuthToken(request);
       if (!authResult.success) {
-        return authResult.error!;
+        return createErrorResponse('Unauthorized - Authentication required', 401);
       }
       authUid = authResult.uid || null;
       isAdmin = !!authResult.isAdmin;
@@ -93,7 +93,7 @@ export const GET: APIRoute = async ({ request, url }) => {
         if (import.meta.env.DEV) {
           logger.warn('[generate-invoice] Unauthorized access attempt');
         }
-        return createErrorResponse('Forbidden - No tienes acceso a esta factura', 403);
+        return createErrorResponse('Pedido no encontrado', 404);
       }
     } else {
       // Guest access path
@@ -101,14 +101,14 @@ export const GET: APIRoute = async ({ request, url }) => {
         if (import.meta.env.DEV) {
           logger.warn('[generate-invoice] Guest access rejected (non-guest order)');
         }
-        return createErrorResponse('Forbidden - Se requiere autenticación', 403);
+        return createErrorResponse('Pedido no encontrado', 404);
       }
 
       if (!guestOrderKey || order.idempotencyKey !== guestOrderKey) {
         if (import.meta.env.DEV) {
           logger.warn('[generate-invoice] Guest access rejected (invalid key)');
         }
-        return createErrorResponse('Forbidden - Clave de pedido inválida', 403);
+        return createErrorResponse('Pedido no encontrado', 404);
       }
     }
 
@@ -153,6 +153,10 @@ export const GET: APIRoute = async ({ request, url }) => {
             headers: {
               'Content-Type': 'application/pdf',
               'Content-Disposition': `attachment; filename="Factura-${invoiceNumber}.pdf"`,
+              'Cache-Control': 'no-store',
+              Pragma: 'no-cache',
+              Expires: '0',
+              'X-Content-Type-Options': 'nosniff',
             },
           })
         );
