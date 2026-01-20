@@ -7,6 +7,7 @@ import { executeStripeOperation } from '../../lib/externalServices';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
 import { calculateOrderPricing } from '../../lib/orders/pricing';
 import { verifyAuthToken } from '../../lib/auth/authHelpers';
+import { validateStockAvailability } from '../../lib/orders/stock';
 import {
   releaseWalletReservation,
   reserveWalletFunds,
@@ -140,6 +141,26 @@ export const POST: APIRoute = async ({ request }) => {
       useWallet: Boolean(orderData.usedWallet),
       userId: orderUserId || null,
     });
+
+    const stockCheck = await validateStockAvailability({
+      db: adminDb,
+      items: pricing.items,
+    });
+
+    if (!stockCheck.ok) {
+      logger.warn('[create-payment-intent] Stock validation failed', stockCheck.details);
+      return new Response(
+        JSON.stringify({
+          error: stockCheck.code,
+          message: stockCheck.message,
+          details: stockCheck.details,
+        }),
+        {
+          status: 409,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
     const orderTotal = pricing.total;
 

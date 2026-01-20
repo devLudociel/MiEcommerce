@@ -11,6 +11,7 @@ import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { verifyAuthToken } from '../../lib/auth/authHelpers';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
 import { calculateOrderPricing } from '../../lib/orders/pricing';
+import { validateStockAvailability } from '../../lib/orders/stock';
 // SECURITY NOTE: finalizeOrder ya NO se importa aquí
 // Solo debe llamarse desde stripe-webhook.ts después de confirmar pago
 import { z } from 'zod';
@@ -246,6 +247,26 @@ export const POST: APIRoute = async ({ request }) => {
       useWallet: Boolean(orderData.usedWallet),
       userId: secureUserId,
     });
+
+    const stockCheck = await validateStockAvailability({
+      db: adminDb,
+      items: pricing.items,
+    });
+
+    if (!stockCheck.ok) {
+      logger.warn('[save-order] Stock validation failed', stockCheck.details);
+      return new Response(
+        JSON.stringify({
+          error: stockCheck.code,
+          message: stockCheck.message,
+          details: stockCheck.details,
+        }),
+        {
+          status: 409,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
     const itemsForDoc = pricing.items.map((item) => {
       const docItem: Record<string, unknown> = {

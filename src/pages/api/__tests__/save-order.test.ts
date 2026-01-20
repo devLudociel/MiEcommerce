@@ -239,4 +239,54 @@ describe('API save-order', () => {
     const data = await res.json();
     expect(data.success).toBe(true);
   });
+
+  it('rechaza si la cantidad excede el stock (409)', async () => {
+    const { __mockDb } = (await import('../../../lib/firebase-admin')) as any;
+    __mockDb.data.shipping_zones['z1'] = {
+      active: true,
+      priority: 1,
+      provinces: ['Las Palmas'],
+      postalCodes: [],
+    };
+    __mockDb.data.shipping_methods['m1'] = {
+      active: true,
+      zoneId: 'z1',
+      basePrice: 0,
+    };
+    __mockDb.data.products['p1'] = {
+      name: 'Prod 1',
+      basePrice: 10,
+      active: true,
+      tags: [],
+      trackInventory: true,
+      stock: 1,
+      allowBackorder: false,
+    };
+
+    const req = new Request('http://local/api/save-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        idempotencyKey: 'test-key-stock-1',
+        items: [{ productId: 'p1', name: 'Prod 1', quantity: 2 }],
+        shippingInfo: {
+          fullName: 'Ana Pérez',
+          email: 'ana@example.com',
+          phone: '123456789',
+          address: 'Calle Stock 123',
+          city: 'Madrid',
+          state: 'Las Palmas',
+          zipCode: '28001',
+          country: 'España',
+          shippingMethodId: 'm1',
+        },
+        usedWallet: false,
+      }),
+    });
+
+    const res = await POST({ request: req } as any);
+    expect(res.status).toBe(409);
+    const data = await res.json();
+    expect(data.error).toBe('INSUFFICIENT_STOCK');
+  });
 });

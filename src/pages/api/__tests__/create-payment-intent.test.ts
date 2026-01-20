@@ -194,4 +194,43 @@ describe('API create-payment-intent', () => {
     const res = await POST({ request: req } as any);
     expect(res.status).toBe(400);
   });
+
+  it('rechaza si no hay stock disponible (409)', async () => {
+    const { __mockDb } = (await import('../../../lib/firebase-admin')) as any;
+    __mockDb.data.shipping_zones['z1'] = {
+      active: true,
+      priority: 1,
+      provinces: ['Las Palmas'],
+      postalCodes: [],
+    };
+    __mockDb.data.shipping_methods['m1'] = {
+      active: true,
+      zoneId: 'z1',
+      basePrice: 0,
+    };
+    __mockDb.data.products['p3'] = {
+      name: 'Prod 3',
+      basePrice: 20,
+      active: true,
+      tags: [],
+      trackInventory: true,
+      stock: 0,
+      allowBackorder: false,
+    };
+    __mockDb.data.orders['o3'] = {
+      items: [{ productId: 'p3', quantity: 1, name: 'Prod 3' }],
+      shippingInfo: { state: 'Las Palmas', zipCode: '35001', shippingMethodId: 'm1' },
+      userId: 'guest',
+    };
+
+    const req = new Request('http://local/api/create-payment-intent', {
+      method: 'POST',
+      body: JSON.stringify({ orderId: 'o3' }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const res = await POST({ request: req } as any);
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.error).toBe('OUT_OF_STOCK');
+  });
 });
