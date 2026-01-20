@@ -70,15 +70,19 @@ export const GET: APIRoute = async ({ url, request }) => {
     }
 
     // Formatear la orden para que coincida con la interfaz esperada
+    const createdAtIso =
+      typeof orderData.createdAt?.toDate === 'function'
+        ? orderData.createdAt.toDate().toISOString()
+        : new Date().toISOString();
+
     const order = {
       id: orderSnap.id,
-      date:
-        typeof orderData.createdAt?.toDate === 'function'
-          ? orderData.createdAt.toDate().toISOString()
-          : new Date().toISOString(),
+      date: createdAtIso,
+      createdAt: createdAtIso,
       items: orderData.items || [],
       shippingInfo: orderData.shippingInfo || {},
       paymentInfo: { method: orderData.paymentMethod || 'card' },
+      paymentMethod: orderData.paymentMethod || 'card',
       subtotal: Number(orderData.subtotal || 0),
       shipping: Number(orderData.shipping || orderData.shippingCost || 0),
       total: Number(orderData.total || 0),

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth, getOrderById } from '../../lib/firebase';
+import { auth } from '../../lib/firebase';
 import type { OrderData } from '../../lib/firebase';
 import { logger } from '../../lib/logger';
 import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
@@ -24,7 +24,6 @@ interface OrderDetailProps {
 }
 
 export default function OrderDetail({ orderId }: OrderDetailProps) {
-  const [uid, setUid] = useState<string | null>(null);
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,24 +42,26 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
         return;
       }
 
-      setUid(u.uid);
       setLoading(true);
       setError(null);
 
       try {
         logger.info('[OrderDetail] Cargando pedido', { orderId, userId: u.uid });
-        const orderData = await getOrderById(orderId);
+        const token = await u.getIdToken();
+        const response = await fetch(`/api/get-order?orderId=${encodeURIComponent(orderId)}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-        if (!orderData) {
+        if (!response.ok) {
           setError('Pedido no encontrado');
           setOrder(null);
-        } else if (orderData.userId && orderData.userId !== u.uid) {
-          // Verificar que el pedido pertenece al usuario (si tiene userId)
-          setError('No tienes permiso para ver este pedido');
-          setOrder(null);
-        } else {
-          setOrder(orderData);
+          return;
         }
+
+        const orderData = await response.json();
+        setOrder(orderData);
       } catch (error) {
         logger.error('[OrderDetail] Error cargando pedido', error);
         setError('Error al cargar el pedido');
