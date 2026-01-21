@@ -1,28 +1,42 @@
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
-import type { UserDataDoc } from '../../lib/userProfile';
-import { ensureUserDoc, getUserData } from '../../lib/userProfile';
+import { ensureUserDoc } from '../../lib/userProfile';
 import { useWishlist } from '../../store/wishlistStore';
 
 export default function AccountDashboard() {
   const [user, setUser] = useState<{ uid: string; email: string; displayName?: string } | null>(
     null
   );
-  const [data, setData] = useState<UserDataDoc | null>(null);
+  const [addressCount, setAddressCount] = useState(0);
   const wishlist = useWishlist();
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u || !u.email) {
         setUser(null);
-        setData(null);
+        setAddressCount(0);
         return;
       }
       setUser({ uid: u.uid, email: u.email, displayName: u.displayName ?? undefined });
       await ensureUserDoc(u.uid, u.email, u.displayName ?? undefined);
-      const d = await getUserData(u.uid);
-      setData(d);
+      try {
+        const token = await u.getIdToken();
+        const response = await fetch('/api/addresses', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) {
+          setAddressCount(0);
+          return;
+        }
+        const data = await response.json();
+        const count = Array.isArray(data?.addresses) ? data.addresses.length : 0;
+        setAddressCount(count);
+      } catch {
+        setAddressCount(0);
+      }
     });
     return () => unsub();
   }, []);
@@ -86,9 +100,7 @@ export default function AccountDashboard() {
             <div className="space-y-4">
               <div>
                 <div className="text-sm text-gray-600 mb-1">Direcciones guardadas</div>
-                <div className="text-3xl font-bold text-gray-900">
-                  {data?.addresses?.length ?? 1}
-                </div>
+                <div className="text-3xl font-bold text-gray-900">{addressCount}</div>
               </div>
               <a
                 href="/account/addresses"

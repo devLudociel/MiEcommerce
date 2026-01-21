@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
-import type { Address } from '../../lib/userProfile';
+import type { Address, TaxId } from '../../lib/userProfile';
 import {
   ensureUserDoc,
-  getUserData,
-  saveAddresses,
   saveTaxIds,
   updateUserSettings,
+  getUserData,
 } from '../../lib/userProfile';
-import type { TaxId } from '../../lib/userProfile';
 
 function emptyAddress(): Address {
   return {
@@ -35,6 +33,7 @@ function emptyAddress(): Address {
 }
 
 export default function AddressesPanel() {
+  const [user, setUser] = useState<User | null>(null);
   const [uid, setUid] = useState<string | null>(null);
   const [items, setItems] = useState<Address[]>([]);
   const [taxIds, setTaxIds] = useState<TaxId[]>([]);
@@ -44,18 +43,44 @@ export default function AddressesPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const getAuthHeaders = async (includeJson = true, currentUser?: User | null) => {
+    const activeUser = currentUser ?? user;
+    if (!activeUser) return null;
+    const token = await activeUser.getIdToken();
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${token}`,
+    };
+    if (includeJson) {
+      headers['Content-Type'] = 'application/json';
+    }
+    return headers;
+  };
+
+  const fetchAddresses = async (currentUser?: User | null): Promise<Address[]> => {
+    const headers = await getAuthHeaders(false, currentUser);
+    if (!headers) return [];
+    const response = await fetch('/api/addresses', { headers });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data?.addresses ?? [];
+  };
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u || !u.email) {
+        setUser(null);
         setUid(null);
         setItems([]);
+        setTaxIds([]);
+        setWhiteLabel(false);
         setLoading(false);
         return;
       }
+      setUser(u);
       setUid(u.uid);
       await ensureUserDoc(u.uid, u.email, u.displayName ?? undefined);
-      const data = await getUserData(u.uid);
-      setItems(data?.addresses ?? []);
+      const [data, addresses] = await Promise.all([getUserData(u.uid), fetchAddresses(u)]);
+      setItems(addresses);
       setTaxIds(data?.taxIds ?? []);
       setWhiteLabel(!!data?.whiteLabelShipping);
       setLoading(false);
@@ -69,16 +94,41 @@ export default function AddressesPanel() {
     }
   }, [loading, uid, items.length, editing]);
 
-  async function persist(next: Address[]) {
-    if (!uid) return;
-    setSaving(true);
-    try {
-      await saveAddresses(uid, next);
-      setItems(next);
-    } finally {
-      setSaving(false);
-      setEditing(null);
-    }
+  async function refreshAddresses(currentUser?: User | null) {
+    const list = await fetchAddresses(currentUser);
+    setItems(list);
+  }
+
+  async function createAddress(payload: Address) {
+    const headers = await getAuthHeaders();
+    if (!headers) return false;
+    const response = await fetch('/api/addresses', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+    return response.ok;
+  }
+
+  async function updateAddress(id: string, payload: Address) {
+    const headers = await getAuthHeaders();
+    if (!headers) return false;
+    const response = await fetch(`/api/addresses/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(payload),
+    });
+    return response.ok;
+  }
+
+  async function deleteAddress(id: string) {
+    const headers = await getAuthHeaders();
+    if (!headers) return false;
+    const response = await fetch(`/api/addresses/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers,
+    });
+    return response.ok;
   }
 
   function startCreate() {
@@ -88,7 +138,13 @@ export default function AddressesPanel() {
     setEditing({ ...a });
   }
   async function remove(id: string) {
-    await persist(items.filter((a) => a.id !== id));
+    setSaving(true);
+    try {
+      const ok = await deleteAddress(id);
+      if (ok) await refreshAddresses();
+    } finally {
+      setSaving(false);
+    }
   }
 
   function onChange<K extends keyof Address>(key: K, val: Address[K]) {
@@ -107,15 +163,17 @@ export default function AddressesPanel() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!editing) return;
-    let next = [...items];
-    const idx = next.findIndex((a) => a.id === editing.id);
-    if (editing.isDefaultShipping)
-      next = next.map((a) => ({ ...a, isDefaultShipping: a.id === editing.id }));
-    if (editing.isDefaultBilling)
-      next = next.map((a) => ({ ...a, isDefaultBilling: a.id === editing.id }));
-    if (idx >= 0) next[idx] = editing;
-    else next.unshift(editing);
-    await persist(next);
+    setSaving(true);
+    try {
+      const exists = items.some((a) => a.id === editing.id);
+      const ok = exists
+        ? await updateAddress(editing.id, editing)
+        : await createAddress(editing);
+      if (ok) await refreshAddresses();
+    } finally {
+      setSaving(false);
+      setEditing(null);
+    }
   }
 
   // Tax IDs

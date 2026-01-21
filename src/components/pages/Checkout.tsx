@@ -18,7 +18,6 @@ import { lookupZipES, autocompleteStreetES, debounce } from '../../utils/address
 import type { AddressSuggestion } from '../../utils/address';
 import { useAuth } from '../hooks/useAuth';
 import { useSecureCardPayment } from '../checkout/SecureCardPayment';
-import { getUserData } from '../../lib/userProfile';
 import type { Address } from '../../lib/userProfile';
 import CustomizationDetails from '../cart/CustomizationDetails';
 import { Trash2, Plus, Minus, Gift } from 'lucide-react';
@@ -237,13 +236,25 @@ export default function Checkout() {
     const loadSavedAddresses = async () => {
       try {
         logger.info('[Checkout] Loading saved addresses', { userId: user.uid });
-        const userData = await getUserData(user.uid);
+        const token = await user.getIdToken();
+        const response = await fetch('/api/addresses', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-        if (userData?.addresses && userData.addresses.length > 0) {
-          setSavedAddresses(userData.addresses);
+        if (!response.ok) {
+          throw new Error('Error al cargar direcciones');
+        }
 
+        const data = await response.json();
+        const addresses: Address[] = data?.addresses ?? [];
+
+        setSavedAddresses(addresses);
+
+        if (addresses.length > 0) {
           // Auto-fill with default shipping address if form is empty
-          const defaultShipping = userData.addresses.find((addr) => addr.isDefaultShipping);
+          const defaultShipping = addresses.find((addr) => addr.isDefaultShipping);
           if (defaultShipping && !shippingInfo.firstName) {
             fillAddressFromSaved(defaultShipping);
             logger.info('[Checkout] Auto-filled with default shipping address');

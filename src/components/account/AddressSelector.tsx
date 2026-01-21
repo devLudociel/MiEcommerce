@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import type { Address } from '../../lib/userProfile';
-import { ensureUserDoc, getUserData } from '../../lib/userProfile';
 
 interface Props {
   onChange?: (sel: { shipping: Address | null; billing: Address | null }) => void;
@@ -16,6 +15,18 @@ export default function AddressSelector({ onChange, title = 'Direcciones' }: Pro
   const [billingId, setBillingId] = useState<string | 'none'>('none');
   const [sameAsShipping, setSameAsShipping] = useState(true);
 
+  const fetchAddresses = async (currentUser: User): Promise<Address[]> => {
+    const token = await currentUser.getIdToken();
+    const response = await fetch('/api/addresses', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data?.addresses ?? [];
+  };
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u || !u.email) {
@@ -24,9 +35,7 @@ export default function AddressSelector({ onChange, title = 'Direcciones' }: Pro
         return;
       }
       setUid(u.uid);
-      await ensureUserDoc(u.uid, u.email, u.displayName ?? undefined);
-      const d = await getUserData(u.uid);
-      const list = d?.addresses ?? [];
+      const list = await fetchAddresses(u);
       setAddresses(list);
       const defShip = list.find((a) => a.isDefaultShipping)?.id;
       const defBill = list.find((a) => a.isDefaultBilling)?.id;
