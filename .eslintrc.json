@@ -12,7 +12,7 @@
     "node": true,
     "es2021": true
   },
-  "plugins": ["@typescript-eslint", "react", "react-hooks", "jsx-a11y", "prettier", "astro"],
+  "plugins": ["@typescript-eslint", "react", "react-hooks", "jsx-a11y", "prettier", "astro", "security"],
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
@@ -20,6 +20,7 @@
     "plugin:react-hooks/recommended",
     "plugin:jsx-a11y/recommended",
     "plugin:astro/recommended",
+    "plugin:security/recommended-legacy",
     "plugin:prettier/recommended"
   ],
   "settings": {
