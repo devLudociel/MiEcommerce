@@ -167,6 +167,16 @@ export const POST: APIRoute = async ({ request }) => {
 
   try {
     const body = await request.json().catch(() => null);
+    if (body && typeof body === 'object') {
+      const raw = body as Record<string, unknown>;
+      if ('id' in raw || 'userId' in raw) {
+        return new Response(JSON.stringify({ error: 'Client-controlled id is not allowed' }), {
+          status: 400,
+          headers: NO_STORE_HEADERS,
+        });
+      }
+    }
+
     const payload = sanitizeAddress(body);
     if (!payload) {
       return new Response(JSON.stringify({ error: 'Invalid address payload' }), {
@@ -184,7 +194,7 @@ export const POST: APIRoute = async ({ request }) => {
     await clearDefaultFlags(collectionRef, flagsToClear);
 
     const docRef = collectionRef.doc();
-    await docRef.set({
+    await docRef.create({
       ...payload,
       id: docRef.id,
       userId: auth.uid,
@@ -197,6 +207,14 @@ export const POST: APIRoute = async ({ request }) => {
       headers: NO_STORE_HEADERS,
     });
   } catch (error) {
+    const errorCode =
+      typeof error === 'object' && error && 'code' in error ? String((error as any).code) : '';
+    if (errorCode === '6' || errorCode === 'already-exists') {
+      return new Response(JSON.stringify({ error: 'Address already exists' }), {
+        status: 409,
+        headers: NO_STORE_HEADERS,
+      });
+    }
     logger.error('[addresses] Error creating address:', error);
     return new Response(
       JSON.stringify({
