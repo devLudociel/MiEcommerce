@@ -69,6 +69,60 @@ interface AppliedCoupon {
   freeShipping: boolean;
 }
 
+const CHECKOUT_TOKEN_KEY = 'checkout:token';
+const CHECKOUT_SIG_KEY = 'checkout:signature';
+
+const buildCheckoutSignature = (data: {
+  items: Array<{ id: string; variantId?: number; quantity: number }>;
+  couponId?: string | null;
+  couponCode?: string | null;
+  useWallet: boolean;
+  paymentMethod: PaymentInfo['method'];
+  shippingMethodId?: string | null;
+  shippingZoneId?: string | null;
+  shippingInfo: ShippingInfo;
+  billingInfo: BillingInfo;
+}) => {
+  try {
+    return JSON.stringify(data);
+  } catch {
+    return String(Date.now());
+  }
+};
+
+const getCheckoutToken = (signature: string) => {
+  if (typeof window === 'undefined') {
+    return `checkout_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  }
+  try {
+    const storedSig = sessionStorage.getItem(CHECKOUT_SIG_KEY);
+    const storedToken = sessionStorage.getItem(CHECKOUT_TOKEN_KEY);
+    if (storedSig === signature && storedToken) {
+      return storedToken;
+    }
+  } catch {
+    // Ignore storage errors
+  }
+  const newToken = `checkout_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
+  try {
+    sessionStorage.setItem(CHECKOUT_SIG_KEY, signature);
+    sessionStorage.setItem(CHECKOUT_TOKEN_KEY, newToken);
+  } catch {
+    // Ignore storage errors
+  }
+  return newToken;
+};
+
+const clearCheckoutToken = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.removeItem(CHECKOUT_SIG_KEY);
+    sessionStorage.removeItem(CHECKOUT_TOKEN_KEY);
+  } catch {
+    // Ignore storage errors
+  }
+};
+
 // Canary Islands only - shipping is currently restricted to these provinces
 const CANARY_PROVINCES = ['Las Palmas', 'Santa Cruz de Tenerife'];
 
@@ -717,11 +771,48 @@ export default function Checkout() {
     let cleanupIdempotency: string | null = null;
 
     try {
-      const idempotencyKey = `order_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-      logger.info('[Checkout] Generated idempotency key:', idempotencyKey);
+      const resolvedBillingInfo = useSameAddress
+        ? {
+            fiscalName: `${shippingInfo.firstName} ${shippingInfo.lastName}`,
+            nifCif: billingInfo.nifCif || '',
+            address: shippingInfo.address,
+            city: shippingInfo.city,
+            state: shippingInfo.state,
+            zipCode: shippingInfo.zipCode,
+            country: 'España',
+          }
+        : {
+            fiscalName: billingInfo.fiscalName,
+            nifCif: billingInfo.nifCif,
+            address: billingInfo.address,
+            city: billingInfo.city,
+            state: billingInfo.state,
+            zipCode: billingInfo.zipCode,
+            country: billingInfo.country,
+          };
+
+      const checkoutSignature = buildCheckoutSignature({
+        items: cart.items.map((item) => ({
+          id: item.id,
+          variantId: item.variantId,
+          quantity: item.quantity,
+        })),
+        couponId: appliedCoupon?.id || null,
+        couponCode: appliedCoupon?.code || null,
+        useWallet,
+        paymentMethod: paymentInfo.method,
+        shippingMethodId: selectedShippingQuote?.methodId || null,
+        shippingZoneId: selectedShippingQuote?.zoneId || null,
+        shippingInfo,
+        billingInfo: resolvedBillingInfo,
+      });
+      const checkoutId = getCheckoutToken(checkoutSignature);
+      const idempotencyKey = checkoutId;
+      logger.info('[Checkout] Using checkoutId:', checkoutId);
 
       const orderData = {
         idempotencyKey,
+        checkoutId,
         items: cart.items.map((item) => ({
           productId: item.id,
           name: item.name,
@@ -750,25 +841,7 @@ export default function Checkout() {
           shippingZoneName: selectedShippingQuote?.zoneName,
           estimatedDays: selectedShippingQuote?.estimatedDays,
         },
-        billingInfo: useSameAddress
-          ? {
-              fiscalName: `${shippingInfo.firstName} ${shippingInfo.lastName}`,
-              nifCif: billingInfo.nifCif || '',
-              address: shippingInfo.address,
-              city: shippingInfo.city,
-              state: shippingInfo.state,
-              zipCode: shippingInfo.zipCode,
-              country: 'España',
-            }
-          : {
-              fiscalName: billingInfo.fiscalName,
-              nifCif: billingInfo.nifCif,
-              address: billingInfo.address,
-              city: billingInfo.city,
-              state: billingInfo.state,
-              zipCode: billingInfo.zipCode,
-              country: billingInfo.country,
-            },
+        billingInfo: resolvedBillingInfo,
         paymentMethod: paymentInfo.method,
         subtotal,
         bundleDiscount,
@@ -849,10 +922,12 @@ export default function Checkout() {
           cleanupIdempotency = null;
           throw new Error(paymentResult.error || 'Error procesando pago');
         }
+        clearCheckoutToken();
         cleanupOrderId = null;
         cleanupIdempotency = null;
         // El onSuccess del hook maneja el resto (notificación, carrito y redirección)
       } else {
+        clearCheckoutToken();
         notify.success('¡Pedido realizado con éxito!');
         await clearCartAndStorage();
         setTimeout(() => {

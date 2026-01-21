@@ -5,7 +5,7 @@ import { finalizeOrder } from '../../lib/orders/finalizeOrder';
 import { FieldValue } from 'firebase-admin/firestore';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
 import { releaseWalletReservation } from '../../lib/orders/walletReservations';
-import { releaseReservedStock } from '../../lib/orders/stock';
+import { expireReservedOrder, releaseReservedStock } from '../../lib/orders/stock';
 
 const logger = createScopedLogger('stripe-webhook');
 
@@ -99,6 +99,30 @@ export const POST: APIRoute = async ({ request }) => {
           return;
         }
 
+        const reservationStatus = String(data.stockReservationStatus || '');
+        const rawExpiresAt = data.stockReservationExpiresAt as
+          | { toDate?: () => Date }
+          | Date
+          | undefined;
+        const expiresAt =
+          rawExpiresAt && typeof rawExpiresAt.toDate === 'function'
+            ? rawExpiresAt.toDate()
+            : rawExpiresAt instanceof Date
+              ? rawExpiresAt
+              : null;
+
+        if (reservationStatus === 'expired') {
+          mismatchReason = 'stock_reservation_expired';
+          mismatchDetails = { reservationStatus };
+          return;
+        }
+
+        if (reservationStatus === 'reserved' && expiresAt && expiresAt.getTime() < Date.now()) {
+          mismatchReason = 'stock_reservation_expired';
+          mismatchDetails = { reservationStatus, expiresAt: expiresAt.toISOString() };
+          return;
+        }
+
         const orderStatus = String(data.status || '').toLowerCase();
         const allowedStatuses = new Set(['pending', 'reserved']);
         if (!allowedStatuses.has(orderStatus)) {
@@ -143,6 +167,13 @@ export const POST: APIRoute = async ({ request }) => {
       });
 
       if (!shouldFinalize) {
+        if (mismatchReason === 'stock_reservation_expired') {
+          logger.warn('[webhook_payment_received_for_expired_order]', {
+            orderId,
+            paymentIntentId,
+          });
+          await expireReservedOrder({ db, orderId, reason: 'reservation_expired_webhook' });
+        }
         if (mismatchReason && mismatchReason !== 'order_not_found') {
           logger.warn('[Stripe Webhook] Payment validation mismatch', {
             orderId,

@@ -7,7 +7,7 @@ import { executeStripeOperation } from '../../lib/externalServices';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
 import { calculateOrderPricing } from '../../lib/orders/pricing';
 import { verifyAuthToken } from '../../lib/auth/authHelpers';
-import { validateStockAvailability } from '../../lib/orders/stock';
+import { expireReservedOrder, validateStockAvailability } from '../../lib/orders/stock';
 import {
   releaseWalletReservation,
   reserveWalletFunds,
@@ -133,6 +133,35 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    const stockReservationStatus = String(orderData.stockReservationStatus || '');
+    const rawExpiresAt = orderData.stockReservationExpiresAt as
+      | { toDate?: () => Date }
+      | Date
+      | undefined;
+    const expiresAt =
+      rawExpiresAt && typeof rawExpiresAt.toDate === 'function'
+        ? rawExpiresAt.toDate()
+        : rawExpiresAt instanceof Date
+          ? rawExpiresAt
+          : null;
+
+    if (stockReservationStatus === 'expired') {
+      logger.warn('[create-payment-intent] create_payment_intent_blocked_expired', { orderId });
+      return new Response(
+        JSON.stringify({ error: 'Pedido expirado, vuelve a intentar el checkout' }),
+        { status: 409, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (stockReservationStatus === 'reserved' && expiresAt && expiresAt.getTime() < Date.now()) {
+      await expireReservedOrder({ db: adminDb, orderId, reason: 'reservation_expired_payment' });
+      logger.warn('[create-payment-intent] create_payment_intent_blocked_expired', { orderId });
+      return new Response(
+        JSON.stringify({ error: 'Pedido expirado, vuelve a intentar el checkout' }),
+        { status: 409, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     const pricing = await calculateOrderPricing({
       items: orderData.items || [],
       shippingInfo: orderData.shippingInfo || {},
@@ -142,7 +171,6 @@ export const POST: APIRoute = async ({ request }) => {
       userId: orderUserId || null,
     });
 
-    const stockReservationStatus = String(orderData.stockReservationStatus || '');
     const hasReservation =
       stockReservationStatus === 'reserved' || stockReservationStatus === 'captured';
 

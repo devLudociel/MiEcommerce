@@ -1,4 +1,15 @@
-import type { Firestore, DocumentReference } from 'firebase-admin/firestore';
+import {
+  FieldValue,
+  Timestamp,
+  type Firestore,
+  type DocumentReference,
+  type Transaction,
+} from 'firebase-admin/firestore';
+
+const stockLogger = {
+  info: (message: string, data?: unknown) => console.log(message, data ?? ''),
+  warn: (message: string, data?: unknown) => console.warn(message, data ?? ''),
+};
 
 export type StockValidationCode = 'OUT_OF_STOCK' | 'INSUFFICIENT_STOCK';
 
@@ -136,6 +147,143 @@ const resolveStockState = (
     variants,
   };
 };
+
+export async function reserveStockForOrderTx(params: {
+  db: Firestore;
+  tx: Transaction;
+  items: StockValidationItem[];
+}): Promise<StockReservationResult> {
+  const items = Array.isArray(params.items) ? params.items : [];
+  if (items.length === 0) {
+    return { ok: true, reservedItems: [] };
+  }
+
+  const grouped = groupStockItems(items);
+  if (grouped.size === 0) {
+    return { ok: true, reservedItems: [] };
+  }
+
+  const productIds = [...new Set(Array.from(grouped.values(), (entry) => entry.productId))];
+  const reservedItems: StockReservationItem[] = [];
+
+  const refs = productIds.map((id) => params.db.collection('products').doc(id));
+  const snaps = await Promise.all(refs.map((ref) => params.tx.get(ref)));
+
+  const productMap = new Map<string, { ref: DocumentReference; data: Record<string, unknown> }>();
+  snaps.forEach((snap, idx) => {
+    if (snap.exists) {
+      productMap.set(productIds[idx], {
+        ref: refs[idx],
+        data: { ...(snap.data() || {}) },
+      });
+    }
+  });
+
+  for (const entry of grouped.values()) {
+    const record = productMap.get(entry.productId);
+    if (!record) {
+      const details: StockValidationDetails = {
+        productId: entry.productId,
+        productName: entry.productName,
+        variantId: entry.variantId,
+        variantName: entry.variantName,
+        available: 0,
+        requested: entry.requested,
+      };
+      return {
+        ok: false,
+        code: 'OUT_OF_STOCK',
+        message: details.productName ? `Producto sin stock: ${details.productName}` : 'Producto sin stock',
+        details,
+      };
+    }
+
+    const data = record.data;
+    const allowBackorder = Boolean(data.allowBackorder);
+    if (allowBackorder) {
+      continue;
+    }
+
+    const trackInventory = Boolean(data.trackInventory);
+    const {
+      available,
+      hasStockValue,
+      variantIndex,
+      resolvedVariantName,
+      variants,
+    } = resolveStockState(data, entry);
+
+    if (!trackInventory && !hasStockValue) {
+      continue;
+    }
+
+    const productName =
+      entry.productName || (typeof data.name === 'string' ? data.name : undefined);
+    const variantName = entry.variantName || resolvedVariantName;
+
+    if (available <= 0) {
+      const details: StockValidationDetails = {
+        productId: entry.productId,
+        productName,
+        variantId: entry.variantId,
+        variantName,
+        available,
+        requested: entry.requested,
+      };
+      return {
+        ok: false,
+        code: 'OUT_OF_STOCK',
+        message: productName ? `Producto sin stock: ${productName}` : 'Producto sin stock',
+        details,
+      };
+    }
+
+    if (entry.requested > available) {
+      const details: StockValidationDetails = {
+        productId: entry.productId,
+        productName,
+        variantId: entry.variantId,
+        variantName,
+        available,
+        requested: entry.requested,
+      };
+      return {
+        ok: false,
+        code: 'INSUFFICIENT_STOCK',
+        message: productName
+          ? `Solo hay ${available} unidades disponibles de ${productName}`
+          : `Solo hay ${available} unidades disponibles`,
+        details,
+      };
+    }
+
+    if (entry.variantId !== undefined && variantIndex !== null && variantIndex >= 0) {
+      const newVariants = [...variants];
+      const variant = newVariants[variantIndex] || {};
+      newVariants[variantIndex] = {
+        ...variant,
+        stock: Math.max(0, Number(variant.stock ?? 0) - entry.requested),
+      };
+      record.data = { ...record.data, variants: newVariants };
+      params.tx.update(record.ref, { variants: newVariants });
+    } else {
+      const currentStock = Number(data.stock ?? 0);
+      const newStock = Math.max(0, currentStock - entry.requested);
+      record.data = { ...record.data, stock: newStock };
+      params.tx.update(record.ref, { stock: newStock });
+    }
+
+    reservedItems.push({
+      productId: entry.productId,
+      productName,
+      variantId: entry.variantId,
+      variantName,
+      quantity: entry.requested,
+    });
+  }
+
+  return { ok: true, reservedItems };
+}
 
 export async function validateStockAvailability(params: {
   db: Firestore;
@@ -439,4 +587,146 @@ export async function releaseReservedStock(params: {
       }
     }
   });
+}
+
+export async function releaseStockReservedItemsTx(params: {
+  db: Firestore;
+  tx: Transaction;
+  reservedItems: StockReservationItem[];
+}): Promise<void> {
+  const reservedItems = Array.isArray(params.reservedItems) ? params.reservedItems : [];
+  if (reservedItems.length === 0) return;
+
+  const grouped = groupStockItems(reservedItems);
+  if (grouped.size === 0) return;
+
+  const productIds = [...new Set(Array.from(grouped.values(), (entry) => entry.productId))];
+  const refs = productIds.map((id) => params.db.collection('products').doc(id));
+  const snaps = await Promise.all(refs.map((ref) => params.tx.get(ref)));
+
+  const productMap = new Map<string, { ref: DocumentReference; data: Record<string, unknown> }>();
+  snaps.forEach((snap, idx) => {
+    if (snap.exists) {
+      productMap.set(productIds[idx], {
+        ref: refs[idx],
+        data: { ...(snap.data() || {}) },
+      });
+    }
+  });
+
+  for (const entry of grouped.values()) {
+    const record = productMap.get(entry.productId);
+    if (!record) {
+      continue;
+    }
+
+    const data = record.data;
+    const allowBackorder = Boolean(data.allowBackorder);
+    if (allowBackorder) {
+      continue;
+    }
+
+    const trackInventory = Boolean(data.trackInventory);
+    const { hasStockValue, variantIndex, variants } = resolveStockState(data, entry);
+    if (!trackInventory && !hasStockValue) {
+      continue;
+    }
+
+    const qtyToRestore = entry.requested;
+
+    if (entry.variantId !== undefined && variantIndex !== null && variantIndex >= 0) {
+      const newVariants = [...variants];
+      const variant = newVariants[variantIndex] || {};
+      const current = Number(variant.stock ?? 0);
+      newVariants[variantIndex] = {
+        ...variant,
+        stock: Math.max(0, current + qtyToRestore),
+      };
+      record.data = { ...record.data, variants: newVariants };
+      params.tx.update(record.ref, { variants: newVariants });
+    } else {
+      const currentStock = Number(data.stock ?? 0);
+      const newStock = Math.max(0, currentStock + qtyToRestore);
+      record.data = { ...record.data, stock: newStock };
+      params.tx.update(record.ref, { stock: newStock });
+    }
+  }
+}
+
+export async function expireReservedOrder(params: {
+  db: Firestore;
+  orderId: string;
+  reason?: string;
+}): Promise<{ ok: boolean; skipped?: boolean }> {
+  const { db, orderId, reason } = params;
+  const orderRef = db.collection('orders').doc(orderId);
+  let skipped = false;
+  let currentStatus: string | null = null;
+
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(orderRef);
+    if (!snap.exists) {
+      skipped = true;
+      currentStatus = 'missing';
+      return;
+    }
+
+    const data = snap.data() || {};
+    const status = String(data.stockReservationStatus || '');
+    if (status !== 'reserved') {
+      skipped = true;
+      currentStatus = status || 'unknown';
+      return;
+    }
+
+    const rawItems = Array.isArray(data.stockReservedItems) ? data.stockReservedItems : [];
+    const reservedItems: StockReservationItem[] = rawItems
+      .map((item: any) => ({
+        productId: typeof item?.productId === 'string' ? item.productId : '',
+        variantId: item?.variantId === undefined ? undefined : Number(item.variantId),
+        quantity: Number(item?.quantity ?? 0),
+        productName: typeof item?.productName === 'string' ? item.productName : undefined,
+        variantName: typeof item?.variantName === 'string' ? item.variantName : undefined,
+      }))
+      .filter((item) => item.productId && Number.isFinite(item.quantity) && item.quantity > 0);
+
+    await releaseStockReservedItemsTx({
+      db,
+      tx,
+      reservedItems,
+    });
+
+    tx.update(orderRef, {
+      stockReservationStatus: 'expired',
+      stockReservationReleasedAt: FieldValue.serverTimestamp(),
+      stockReservationReleaseReason: reason || 'reservation_expired',
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  });
+
+  if (skipped) {
+    stockLogger.info('[reservation_expire_skipped]', { orderId, status: currentStatus });
+  } else {
+    stockLogger.info('[reservation_expired]', { orderId });
+  }
+
+  return { ok: true, ...(skipped ? { skipped: true } : {}) };
+}
+
+export async function cleanupExpiredReservations(db: Firestore): Promise<number> {
+  const now = Timestamp.now();
+  const snap = await db
+    .collection('orders')
+    .where('stockReservationStatus', '==', 'reserved')
+    .where('stockReservationExpiresAt', '<=', now)
+    .limit(50)
+    .get();
+
+  let processed = 0;
+  for (const doc of snap.docs) {
+    await expireReservedOrder({ db, orderId: doc.id, reason: 'reservation_expired' });
+    processed += 1;
+  }
+
+  return processed;
 }

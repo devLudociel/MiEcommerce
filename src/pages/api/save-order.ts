@@ -1,7 +1,7 @@
 // src/pages/api/save-order.ts
 import type { APIRoute } from 'astro';
 import { getAdminDb } from '../../lib/firebase-admin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import {
   checkRateLimit,
   createRateLimitResponse,
@@ -11,7 +11,7 @@ import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { verifyAuthToken } from '../../lib/auth/authHelpers';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
 import { calculateOrderPricing } from '../../lib/orders/pricing';
-import { reserveStockForOrder, releaseReservedStock } from '../../lib/orders/stock';
+import { reserveStockForOrderTx } from '../../lib/orders/stock';
 import type { StockReservationItem } from '../../lib/orders/stock';
 // SECURITY NOTE: finalizeOrder ya NO se importa aquí
 // Solo debe llamarse desde stripe-webhook.ts después de confirmar pago
@@ -64,6 +64,7 @@ type OrderItem = z.infer<typeof orderItemSchema>;
 
 const orderDataSchema = z.object({
   idempotencyKey: z.string().min(10).max(255),
+  checkoutId: z.string().min(10).max(255).regex(/^[a-zA-Z0-9_-]+$/),
   items: z.array(orderItemSchema).min(1).max(100),
   shippingInfo: shippingInfoSchema,
   billingInfo: billingInfoSchema.optional(),
@@ -134,7 +135,7 @@ export const POST: APIRoute = async ({ request }) => {
   logger.info('API save-order: Solicitud recibida');
 
   let adminDb: ReturnType<typeof getAdminDb> | null = null;
-  let reservedItems: StockReservationItem[] = [];
+  let orderId: string | null = null;
 
   try {
     const rawData = await request.json();
@@ -172,6 +173,14 @@ export const POST: APIRoute = async ({ request }) => {
     // Datos validados y sanitizados por Zod
     const orderData = validationResult.data;
     const idempotencyKey = orderData.idempotencyKey;
+    const checkoutId = orderData.checkoutId;
+
+    if (idempotencyKey !== checkoutId) {
+      return new Response(JSON.stringify({ error: 'checkoutId must match idempotencyKey' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     if (isProd) {
       const redacted = {
@@ -197,31 +206,6 @@ export const POST: APIRoute = async ({ request }) => {
           hint: 'Configura credenciales: FIREBASE_SERVICE_ACCOUNT (JSON) o FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY + PUBLIC_FIREBASE_PROJECT_ID en .env',
         }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // IDEMPOTENCY: Check if an order with this idempotency key already exists
-    logger.info('[save-order] Checking idempotency key:', idempotencyKey);
-    const existingOrderQuery = await adminDb
-      .collection('orders')
-      .where('idempotencyKey', '==', idempotencyKey)
-      .limit(1)
-      .get();
-
-    if (!existingOrderQuery.empty) {
-      const existingOrder = existingOrderQuery.docs[0];
-      logger.info('[save-order] Order with this idempotency key already exists:', existingOrder.id);
-      return new Response(
-        JSON.stringify({
-          success: true,
-          orderId: existingOrder.id,
-          duplicate: true,
-          message: 'Order already created (idempotency key matched)',
-        }),
-        {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        }
       );
     }
 
@@ -251,33 +235,9 @@ export const POST: APIRoute = async ({ request }) => {
       userId: secureUserId,
     });
 
-    let reservedItems: Array<Record<string, unknown>> = [];
-
-    const stockReservation = await reserveStockForOrder({
-      db: adminDb,
-      items: pricing.items,
-    });
-
-    if (!stockReservation.ok) {
-      logger.warn('[save-order] Stock reservation failed', stockReservation.details);
-      return new Response(
-        JSON.stringify({
-          error: stockReservation.code,
-          message: stockReservation.message,
-          details: stockReservation.details,
-        }),
-        {
-          status: 409,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
     if (!adminDb) {
       throw new Error('Firebase Admin not initialized');
     }
-
-    reservedItems = stockReservation.reservedItems;
 
     const itemsForDoc = pricing.items.map((item) => {
       const docItem: Record<string, unknown> = {
@@ -293,8 +253,9 @@ export const POST: APIRoute = async ({ request }) => {
       return docItem;
     });
 
-    const orderPayload: Record<string, unknown> = {
+    const baseOrderPayload: Record<string, unknown> = {
       idempotencyKey,
+      checkoutId,
       items: itemsForDoc,
       shippingInfo: orderData.shippingInfo,
       paymentMethod: orderData.paymentMethod,
@@ -321,33 +282,84 @@ export const POST: APIRoute = async ({ request }) => {
       // Solo el webhook de Stripe o un admin puede cambiar esto
       status: 'pending',
       paymentStatus: 'pending',
-      stockReservationStatus: stockReservation.reservedItems.length > 0 ? 'reserved' : 'not_required',
     };
 
-    if (stockReservation.reservedItems.length > 0) {
-      orderPayload.stockReservedItems = stockReservation.reservedItems;
-      orderPayload.stockReservedAt = FieldValue.serverTimestamp();
-    }
-
     if (orderData.billingInfo) {
-      orderPayload.billingInfo = orderData.billingInfo;
+      baseOrderPayload.billingInfo = orderData.billingInfo;
     }
 
     if (pricing.couponCode) {
-      orderPayload.couponCode = pricing.couponCode;
+      baseOrderPayload.couponCode = pricing.couponCode;
     }
 
     if (pricing.couponId) {
-      orderPayload.couponId = pricing.couponId;
+      baseOrderPayload.couponId = pricing.couponId;
     }
 
     if (orderData.notes) {
-      orderPayload.notes = orderData.notes;
+      baseOrderPayload.notes = orderData.notes;
     }
 
-    const docRef = await adminDb.collection('orders').add(orderPayload);
+    const orderRef = adminDb.collection('orders').doc(`${secureUserId}_${checkoutId}`);
+    orderId = orderRef.id;
+    const expiresAt = Timestamp.fromMillis(Date.now() + 15 * 60 * 1000);
 
-    logger.info('API save-order: Pedido guardado con ID:', docRef.id);
+    const txResult = await adminDb.runTransaction(async (tx) => {
+      const existingSnap = await tx.get(orderRef);
+      if (existingSnap.exists) {
+        const existingData = existingSnap.data() || {};
+        const status = String(existingData.stockReservationStatus || '');
+        if (status === 'reserved' || status === 'captured' || status === 'not_required') {
+          const existingItems = Array.isArray(existingData.stockReservedItems)
+            ? (existingData.stockReservedItems as StockReservationItem[])
+            : [];
+          return { reservedItems: existingItems, alreadyReserved: true, status };
+        }
+      }
+
+      const stockReservation = await reserveStockForOrderTx({
+        db: adminDb,
+        tx,
+        items: pricing.items,
+      });
+
+      if (!stockReservation.ok) {
+        const err = new Error(stockReservation.code || 'STOCK_ERROR');
+        (err as any).stock = stockReservation;
+        throw err;
+      }
+
+      const reservationItems = stockReservation.reservedItems;
+      const orderPayload: Record<string, unknown> = {
+        ...baseOrderPayload,
+        stockReservationStatus: reservationItems.length > 0 ? 'reserved' : 'not_required',
+      };
+
+      if (reservationItems.length > 0) {
+        orderPayload.stockReservedItems = reservationItems;
+        orderPayload.stockReservedAt = FieldValue.serverTimestamp();
+        orderPayload.stockReservationExpiresAt = expiresAt;
+      }
+
+      tx.set(orderRef, orderPayload, { merge: true });
+
+      return {
+        reservedItems: reservationItems,
+        alreadyReserved: false,
+        status: reservationItems.length > 0 ? 'reserved' : 'not_required',
+      };
+    });
+
+    const reservationStatus = String(txResult?.status || '');
+    const reservedCount = Array.isArray(txResult?.reservedItems) ? txResult.reservedItems.length : 0;
+
+    if (reservationStatus === 'reserved') {
+      logger.info('[reserve_stock_success]', { orderId, itemsCount: reservedCount });
+    } else if (reservationStatus === 'not_required') {
+      logger.info('[reserve_stock_success]', { orderId, itemsCount: 0 });
+    }
+
+    logger.info('API save-order: Pedido guardado con ID:', orderId);
 
     // SECURITY FIX CRÍTICO: NUNCA ejecutar finalizeOrder desde save-order
     // finalizeOrder SOLO debe ejecutarse desde:
@@ -359,14 +371,14 @@ export const POST: APIRoute = async ({ request }) => {
     // - Cashback/créditos en wallet sin pagar
     // - Uso de cupones sin completar la compra
     logger.info(
-      `[save-order] Order ${docRef.id} created with status 'pending'. ` +
+      `[save-order] Order ${orderId} created with status 'pending'. ` +
       'Post-payment actions will run after payment confirmation via webhook.'
     );
 
     return new Response(
       JSON.stringify({
         success: true,
-        orderId: docRef.id,
+        orderId,
         totals: {
           subtotal: pricing.subtotal,
           bundleDiscount: pricing.bundleDiscount,
@@ -384,15 +396,25 @@ export const POST: APIRoute = async ({ request }) => {
       }
     );
   } catch (error: unknown) {
-    if (adminDb && reservedItems.length > 0) {
-      try {
-        await releaseReservedStock({
-          db: adminDb,
-          items: reservedItems,
-        });
-      } catch (releaseError) {
-        logger.error('[save-order] Failed to release stock reservation after error', releaseError);
-      }
+    const stockError =
+      error && typeof error === 'object' && 'stock' in error ? (error as any).stock : null;
+    if (stockError && stockError.details) {
+      logger.warn('[reserve_stock_fail]', {
+        orderId: orderId || 'unknown',
+        reason: stockError.code,
+      });
+      logger.warn('[save-order] Stock reservation failed', stockError.details);
+      return new Response(
+        JSON.stringify({
+          error: stockError.code,
+          message: stockError.message,
+          details: stockError.details,
+        }),
+        {
+          status: 409,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
     // SECURITY: No exponer stack traces en producción
     logger.error('API save-order: Error:', error);
