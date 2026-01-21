@@ -145,6 +145,15 @@ export const PUT: APIRoute = async ({ params, request }) => {
     }
 
     const body = await request.json().catch(() => null);
+    if (body && typeof body === 'object') {
+      const raw = body as Record<string, unknown>;
+      if ('id' in raw && raw.id !== addressId) {
+        return new Response(JSON.stringify({ error: 'Address ID mismatch' }), {
+          status: 400,
+          headers: NO_STORE_HEADERS,
+        });
+      }
+    }
     const payload = sanitizeAddress(body);
     if (!payload) {
       return new Response(JSON.stringify({ error: 'Invalid address payload' }), {
@@ -172,8 +181,6 @@ export const PUT: APIRoute = async ({ params, request }) => {
 
     await docRef.update({
       ...payload,
-      userId: auth.uid,
-      id: addressId,
       updatedAt: FieldValue.serverTimestamp(),
     });
 
