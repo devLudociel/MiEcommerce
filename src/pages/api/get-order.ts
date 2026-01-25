@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { FieldPath } from 'firebase-admin/firestore';
 import { getAdminDb, getAdminAuth } from '../../lib/firebase-admin';
 
 // Simple console logger for API routes (avoids import issues)
@@ -59,10 +60,21 @@ export const GET: APIRoute = async ({ url, request }) => {
 
     // Obtener la orden desde Firestore con Admin SDK (ignora reglas)
     const db = getAdminDb();
-    const orderRef = db.collection('orders').doc(orderId);
-    const orderSnap = await orderRef.get();
+    let orderSnap;
 
-    if (!orderSnap.exists) {
+    if (decodedToken.admin) {
+      orderSnap = await db.collection('orders').doc(orderId).get();
+    } else {
+      const orderQuery = db
+        .collection('orders')
+        .where('userId', '==', decodedToken.uid)
+        .where(FieldPath.documentId(), '==', orderId)
+        .limit(1);
+      const querySnap = await orderQuery.get();
+      orderSnap = querySnap.docs[0];
+    }
+
+    if (!orderSnap || !orderSnap.exists) {
       return new Response(JSON.stringify({ error: 'Order not found' }), {
         status: 404,
         headers: {
@@ -75,24 +87,6 @@ export const GET: APIRoute = async ({ url, request }) => {
     }
 
     const orderData = orderSnap.data() as any;
-
-    // SECURITY: Verify user owns this order or is admin
-    if (orderData.userId !== decodedToken.uid && !decodedToken.admin) {
-      logger.warn('[get-order] Unauthorized access attempt:', {
-        orderId,
-        orderUserId: orderData.userId,
-        requestUserId: decodedToken.uid,
-      });
-      return new Response(JSON.stringify({ error: 'Order not found' }), {
-        status: 404,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store',
-          Pragma: 'no-cache',
-          Expires: '0',
-        },
-      });
-    }
 
     // Formatear la orden para que coincida con la interfaz esperada
     const createdAtIso =

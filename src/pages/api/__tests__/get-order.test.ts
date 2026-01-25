@@ -10,34 +10,72 @@ vi.mock('../../../lib/firebase-admin', () => ({
       if (token === 'valid-token') {
         return { uid: 'test-user-123', email: 'test@example.com' };
       }
+      if (token === 'valid-token-other') {
+        return { uid: 'other-user-999', email: 'other@example.com' };
+      }
       throw new Error('Invalid token');
     }),
   }),
   getAdminDb: () => ({
-    collection: (name: string) => ({
-      doc: (id: string) => ({
+    collection: (_name: string) => {
+      const filters: Array<[any, string, any]> = [];
+      const query = {
+        where: (field: any, op: string, value: any) => {
+          filters.push([field, op, value]);
+          return query;
+        },
+        limit: (_n: number) => query,
         get: async () => {
-          if (id === 'exists') {
+          const hasUserMatch = filters.some(([, , value]) => value === 'test-user-123');
+          const hasOrderMatch = filters.some(([, , value]) => value === 'exists');
+          if (hasUserMatch && hasOrderMatch) {
             return {
-              exists: true,
-              id: 'exists',
-              data: () => ({
-                createdAt: new Date('2024-01-01'),
-                items: [{ name: 'A' }],
-                shippingInfo: { city: 'Madrid' },
-                paymentMethod: 'card',
-                subtotal: 10,
-                shippingCost: 0,
-                total: 10,
-                status: 'pending',
-                userId: 'test-user-123',
-              }),
+              docs: [
+                {
+                  exists: true,
+                  id: 'exists',
+                  data: () => ({
+                    createdAt: new Date('2024-01-01'),
+                    items: [{ name: 'A' }],
+                    shippingInfo: { city: 'Madrid' },
+                    paymentMethod: 'card',
+                    subtotal: 10,
+                    shippingCost: 0,
+                    total: 10,
+                    status: 'pending',
+                    userId: 'test-user-123',
+                  }),
+                },
+              ],
             };
           }
-          return { exists: false };
+          return { docs: [] };
         },
-      }),
-    }),
+        doc: (id: string) => ({
+          get: async () => {
+            if (id === 'exists') {
+              return {
+                exists: true,
+                id: 'exists',
+                data: () => ({
+                  createdAt: new Date('2024-01-01'),
+                  items: [{ name: 'A' }],
+                  shippingInfo: { city: 'Madrid' },
+                  paymentMethod: 'card',
+                  subtotal: 10,
+                  shippingCost: 0,
+                  total: 10,
+                  status: 'pending',
+                  userId: 'test-user-123',
+                }),
+              };
+            }
+            return { exists: false };
+          },
+        }),
+      };
+      return query;
+    },
   }),
 }));
 
@@ -92,6 +130,16 @@ describe('API get-order', () => {
     const request = new Request(url.toString(), {
       method: 'GET',
       headers: { Authorization: 'Bearer valid-token' },
+    });
+    const res = await GET({ url, request } as any);
+    expect(res.status).toBe(404);
+  });
+
+  it('404 cuando el pedido no pertenece al usuario autenticado', async () => {
+    const url = new URL('http://local/api/get-order?orderId=exists');
+    const request = new Request(url.toString(), {
+      method: 'GET',
+      headers: { Authorization: 'Bearer valid-token-other' },
     });
     const res = await GET({ url, request } as any);
     expect(res.status).toBe(404);
