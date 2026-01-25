@@ -128,13 +128,18 @@ function getContentSecurityPolicy(nonce: string): string {
   const scriptSrc = [
     "'self'",
     `'nonce-${nonce}'`,
+    "'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c='",
+    "'sha256-U7a72oKuFFz8D7GUHLA1NZ0ciymHmDOc9T9aVDg2rWU='",
+    "'sha256-Q2BPg90ZMplYY+FSdApNErhpWafg2hcRRbndmvxuL/Q='",
+    "'sha256-BF0290pkb3jxQsE7z00xR8Imp8X34FLC88L0lkMnrGw='",
+    "'sha256-eIXWvAmxkr251LJZkjniEK5LcPF3NkapbJepohwYRIc='",
     'https://*.google.com',
     'https://*.googleapis.com',
     'https://www.googletagmanager.com',
     'https://js.stripe.com',
   ];
 
-  const styleSrc = ["'self'", "'unsafe-inline'", `'nonce-${nonce}'`, 'https://*.googleapis.com'];
+  const styleSrc = ["'self'", "'unsafe-inline'", 'https://*.googleapis.com'];
 
   return [
     "default-src 'self'",
