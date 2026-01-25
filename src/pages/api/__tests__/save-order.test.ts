@@ -169,6 +169,7 @@ describe('API save-order', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         idempotencyKey: 'test-key-12345',
+        checkoutId: 'test-key-12345',
         items: [{ productId: 'p1', name: 'Prod 1', quantity: 2 }],
         shippingInfo: {
           fullName: 'Juan Pérez',
@@ -226,6 +227,7 @@ describe('API save-order', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         idempotencyKey: 'test-key-67890',
+        checkoutId: 'test-key-67890',
         items: [{ productId: 'p1', name: 'Prod 1', quantity: 2 }],
         shippingInfo: {
           fullName: 'Juan García',
@@ -275,6 +277,7 @@ describe('API save-order', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         idempotencyKey: 'test-key-stock-1',
+        checkoutId: 'test-key-stock-1',
         items: [{ productId: 'p1', name: 'Prod 1', quantity: 2 }],
         shippingInfo: {
           fullName: 'Ana Pérez',

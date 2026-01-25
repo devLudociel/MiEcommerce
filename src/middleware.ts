@@ -127,14 +127,14 @@ function getSecurityHeaders(nonce?: string): Record<string, string> {
 function getContentSecurityPolicy(nonce: string): string {
   const scriptSrc = [
     "'self'",
-    "'unsafe-inline'",
+    `'nonce-${nonce}'`,
     'https://*.google.com',
     'https://*.googleapis.com',
     'https://www.googletagmanager.com',
     'https://js.stripe.com',
   ];
 
-  const styleSrc = ["'self'", "'unsafe-inline'", 'https://*.googleapis.com'];
+  const styleSrc = ["'self'", "'unsafe-inline'", `'nonce-${nonce}'`, 'https://*.googleapis.com'];
 
   return [
     "default-src 'self'",

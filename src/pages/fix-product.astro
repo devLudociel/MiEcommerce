@@ -73,6 +73,14 @@ if (guardResponse) {
     const results = document.getElementById('results')!;
     const loading = document.getElementById('loading')!;
 
+    results.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement | null;
+      const reloadButton = target?.closest('[data-action="reload"]') as HTMLElement | null;
+      if (!reloadButton) return;
+      event.preventDefault();
+      window.location.reload();
+    });
+
     // XSS Protection: Escape HTML entities
     function escapeHtml(text: string | undefined | null): string {
       if (text == null) return '';
@@ -231,7 +239,8 @@ if (guardResponse) {
                 </a>
                 ${!schema.detected || !schema.exists ? `
                   <button
-                    onclick="window.location.reload()"
+                    type="button"
+                    data-action="reload"
                     class="px-5 py-3 bg-gray-500 text-white rounded-lg font-bold hover:bg-gray-600 transition-colors"
                   >
                     🔄 Volver a Verificar
@@ -335,7 +344,8 @@ if (guardResponse) {
                   Ver Customizer →
                 </a>
                 <button
-                  onclick="location.reload()"
+                  type="button"
+                  data-action="reload"
                   class="px-5 py-3 bg-gray-500 text-white rounded-lg font-bold hover:bg-gray-600 transition-colors"
                 >
                   🔄 Verificar Otro
