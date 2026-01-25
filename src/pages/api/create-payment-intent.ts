@@ -1,6 +1,7 @@
 // src/pages/api/create-payment-intent.ts
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
+import { FieldPath } from 'firebase-admin/firestore';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { executeStripeOperation } from '../../lib/externalServices';
@@ -28,8 +29,6 @@ const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
 // Zod schema para validar datos de Payment Intent
 const paymentIntentSchema = z.object({
   orderId: z.string().min(1).max(255),
-  amount: z.number().min(0.5).max(1000000).optional(), // Opcional para compatibilidad
-  currency: z.enum(['eur', 'usd', 'gbp']).default('eur'),
 });
 
 /**
@@ -48,6 +47,12 @@ export const POST: APIRoute = async ({ request }) => {
   if (!rateLimitResult.allowed) {
     logger.warn('[create-payment-intent] Rate limit exceeded');
     return createRateLimitResponse(rateLimitResult);
+  }
+
+  // SECURITY: Authentication required for payment operations
+  const authResult = await verifyAuthToken(request);
+  if (!authResult.success) {
+    return authResult.error!;
   }
 
   // SECURITY: CSRF protection
@@ -83,14 +88,19 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const { orderId, amount, currency } = validationResult.data;
+    const { orderId } = validationResult.data;
 
-    // Validar que el pedido existe y obtener el monto real
+    // Validar que el pedido existe y pertenece al usuario autenticado
     adminDb = getAdminDb();
-    const orderRef = adminDb.collection('orders').doc(orderId);
-    const orderSnap = await orderRef.get();
+    const orderQuery = adminDb
+      .collection('orders')
+      .where('userId', '==', authResult.uid)
+      .where(FieldPath.documentId(), '==', orderId)
+      .limit(1);
+    const orderQuerySnap = await orderQuery.get();
+    const orderSnap = orderQuerySnap.docs[0];
 
-    if (!orderSnap.exists) {
+    if (!orderSnap || !orderSnap.exists) {
       return new Response(JSON.stringify({ error: 'Pedido no encontrado' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
@@ -99,29 +109,23 @@ export const POST: APIRoute = async ({ request }) => {
 
     const orderData = orderSnap.data() || {};
     const orderUserId = typeof orderData.userId === 'string' ? orderData.userId : null;
-    const requiresAuth = Boolean(orderUserId && orderUserId !== 'guest');
-
-    if (requiresAuth) {
-      const authResult = await verifyAuthToken(request);
-      if (!authResult.success) {
-        return authResult.error!;
-      }
-
-      if (authResult.uid !== orderUserId && !authResult.isAdmin) {
-        logger.warn('[create-payment-intent] Unauthorized order access', {
-          orderId,
-          orderUserId,
-          requester: authResult.uid,
-        });
-        return new Response(
-          JSON.stringify({ error: 'No tienes permiso para pagar este pedido' }),
-          { status: 403, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
+    if (!orderUserId || orderUserId !== authResult.uid) {
+      logger.warn('[create-payment-intent] Unauthorized order access', {
+        orderId,
+        orderUserId,
+        requester: authResult.uid,
+      });
+      return new Response(JSON.stringify({ error: 'Pedido no encontrado' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
+    const orderStatus = String(orderData?.status || 'pending').toLowerCase();
+    const paymentStatus = String(orderData?.paymentStatus || 'pending').toLowerCase();
+
     // Validar que el pedido no haya sido pagado ya
-    if (orderData?.paymentStatus === 'paid' || orderData?.paymentStatus === 'completed') {
+    if (paymentStatus === 'paid' || paymentStatus === 'completed') {
       return new Response(
         JSON.stringify({
           error: 'Este pedido ya ha sido pagado',
@@ -131,6 +135,21 @@ export const POST: APIRoute = async ({ request }) => {
           headers: { 'Content-Type': 'application/json' },
         }
       );
+    }
+
+    // Validar que el pedido esté en estado válido para pagar
+    if (orderStatus !== 'pending') {
+      return new Response(JSON.stringify({ error: 'Pedido no disponible para pago' }), {
+        status: 409,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (paymentStatus !== 'pending') {
+      return new Response(JSON.stringify({ error: 'Pedido no disponible para pago' }), {
+        status: 409,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const stockReservationStatus = String(orderData.stockReservationStatus || '');
@@ -198,19 +217,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     const orderTotal = pricing.total;
 
-    // Validar que el monto coincide con el total calculado por servidor
-    if (amount !== undefined && Math.abs(orderTotal - amount) > 0.01) {
-      logger.error(`Mismatch de monto: server=${orderTotal}, requested=${amount}`, { orderId });
-      return new Response(
-        JSON.stringify({
-          error: 'El monto no coincide con el total del pedido',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
+    // Moneda controlada por backend (no aceptar input del cliente)
+    const normalizedCurrency = String(
+      orderData.paymentCurrency || orderData.currency || 'eur'
+    ).toLowerCase();
+    const allowedCurrencies = new Set(['eur', 'usd', 'gbp']);
+    const currency = allowedCurrencies.has(normalizedCurrency) ? normalizedCurrency : 'eur';
 
     const reservationStatus = String(orderData.walletReservationStatus || '');
     const reservedAmount = Number(orderData.walletReservedAmount || 0);
@@ -272,6 +284,62 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
+    const existingPaymentIntentId = String(orderData.paymentIntentId || '');
+    if (existingPaymentIntentId) {
+      const existingPaymentIntent = await executeStripeOperation(
+        () => stripe.paymentIntents.retrieve(existingPaymentIntentId),
+        `retrieve-payment-intent-${orderId}`
+      );
+
+      const existingStatus = existingPaymentIntent.status;
+      const reusableStatuses = new Set([
+        'requires_payment_method',
+        'requires_confirmation',
+        'requires_action',
+        'processing',
+        'requires_capture',
+      ]);
+
+      if (!reusableStatuses.has(existingStatus)) {
+        return new Response(JSON.stringify({ error: 'Pedido no disponible para pago' }), {
+          status: 409,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (existingPaymentIntent.currency !== currency) {
+        return new Response(JSON.stringify({ error: 'Pedido no disponible para pago' }), {
+          status: 409,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (existingPaymentIntent.amount !== Math.round(orderTotal * 100)) {
+        return new Response(JSON.stringify({ error: 'Pedido no disponible para pago' }), {
+          status: 409,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (!orderData.paymentCurrency || orderData.paymentCurrency !== currency) {
+        await orderSnap.ref.update({
+          paymentCurrency: currency,
+          updatedAt: new Date(),
+        });
+      }
+
+      return new Response(
+        JSON.stringify({
+          clientSecret: existingPaymentIntent.client_secret,
+          paymentIntentId: existingPaymentIntent.id,
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     // Crear Payment Intent with circuit breaker protection
     const paymentIntent = await executeStripeOperation(
       () =>
@@ -319,7 +387,7 @@ export const POST: APIRoute = async ({ request }) => {
       orderUpdate.couponId = pricing.couponId;
     }
 
-    await orderRef.update(orderUpdate);
+    await orderSnap.ref.update(orderUpdate);
 
     logger.info(`✅ Payment Intent creado para pedido ${orderId}: ${paymentIntent.id}`);
 
