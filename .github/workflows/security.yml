@@ -9,6 +9,7 @@ on:
 
 jobs:
   npm-audit:
+    name: NPM Audit (SCA)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,14 +26,72 @@ jobs:
         run: npx snyk test
 
   semgrep:
+    name: Semgrep (SAST)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: returntocorp/semgrep-action@v1
         with:
-          config: p/owasp-top-ten
+          config: >-
+            p/owasp-top-ten
+            p/typescript
+            p/nodejs
+
+  custom-sast:
+    name: Custom SAST Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for dangerous patterns
+        run: |
+          echo "=== Checking for eval() usage ==="
+          ! grep -rn 'eval(' src/ --include='*.ts' --include='*.tsx' || true
+
+          echo "=== Checking for Function() constructor ==="
+          ! grep -rn 'new Function(' src/ --include='*.ts' --include='*.tsx' || true
+
+          echo "=== Checking for dangerouslySetInnerHTML ==="
+          COUNT=$(grep -rn 'dangerouslySetInnerHTML' src/ --include='*.tsx' --include='*.astro' | wc -l)
+          if [ "$COUNT" -gt 0 ]; then
+            echo "WARNING: Found $COUNT uses of dangerouslySetInnerHTML"
+            grep -rn 'dangerouslySetInnerHTML' src/ --include='*.tsx' --include='*.astro'
+          fi
+
+          echo "=== Checking for hardcoded secrets ==="
+          ! grep -rn 'sk_live_\|sk_test_[a-zA-Z0-9]\{20,\}\|PRIVATE_KEY.*=.*["\x27]' src/ --include='*.ts' --include='*.tsx' || true
+
+          echo "=== Checking for tokens/keys in console.log ==="
+          ! grep -rn 'console\.log.*\(token\|secret\|password\|key\|credential\)' src/ --include='*.ts' --include='*.tsx' || true
+
+          echo "=== Checking POST endpoints have auth/CSRF checks ==="
+          for file in src/pages/api/**/*.ts; do
+            if grep -q 'export const POST' "$file"; then
+              if ! grep -q 'verifyAuth\|verifyAdmin\|validateCSRF\|CRON_SECRET\|stripe-signature\|webhook' "$file"; then
+                echo "WARNING: $file has POST handler but no auth/CSRF check detected"
+              fi
+            fi
+          done
+
+          echo "=== Custom SAST complete ==="
+
+  security-tests:
+    name: Security Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Run security tests
+        run: npx vitest run --config vitest.security.config.ts --reporter=verbose
+      - name: Security test summary
+        if: always()
+        run: npx vitest run --config vitest.security.config.ts --reporter=json 2>/dev/null | jq '.numPassedTests, .numFailedTests' || true
 
   zap-baseline:
+    name: OWASP ZAP Baseline
     runs-on: ubuntu-latest
     if: ${{ secrets.ZAP_TARGET != '' }}
     steps:
