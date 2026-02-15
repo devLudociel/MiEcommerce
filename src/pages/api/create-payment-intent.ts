@@ -1,7 +1,6 @@
 // src/pages/api/create-payment-intent.ts
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
-import { FieldPath } from 'firebase-admin/firestore';
 import { getAdminDb } from '../../lib/firebase-admin';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { executeStripeOperation } from '../../lib/externalServices';
@@ -19,6 +18,7 @@ import {
   createRateLimitResponse,
   RATE_LIMIT_CONFIGS,
 } from '../../lib/rate-limiter';
+import crypto from 'crypto';
 
 const logger = createScopedLogger('create-payment-intent');
 
@@ -29,7 +29,11 @@ const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY, {
 // Zod schema para validar datos de Payment Intent
 const paymentIntentSchema = z.object({
   orderId: z.string().min(1).max(255),
+  orderAccessToken: z.string().min(16).max(512).optional(),
 });
+
+const hashOrderAccessToken = (token: string): string =>
+  crypto.createHash('sha256').update(token).digest('hex');
 
 /**
  * Crea un Payment Intent de Stripe asociado a un pedido
@@ -47,12 +51,6 @@ export const POST: APIRoute = async ({ request }) => {
   if (!rateLimitResult.allowed) {
     logger.warn('[create-payment-intent] Rate limit exceeded');
     return createRateLimitResponse(rateLimitResult);
-  }
-
-  // SECURITY: Authentication required for payment operations
-  const authResult = await verifyAuthToken(request);
-  if (!authResult.success) {
-    return authResult.error!;
   }
 
   // SECURITY: CSRF protection
@@ -88,17 +86,14 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const { orderId } = validationResult.data;
+    const { orderId, orderAccessToken } = validationResult.data;
+
+    const authResult = await verifyAuthToken(request);
 
     // Validar que el pedido existe y pertenece al usuario autenticado
     adminDb = getAdminDb();
-    const orderQuery = adminDb
-      .collection('orders')
-      .where('userId', '==', authResult.uid)
-      .where(FieldPath.documentId(), '==', orderId)
-      .limit(1);
-    const orderQuerySnap = await orderQuery.get();
-    const orderSnap = orderQuerySnap.docs[0];
+    const orderRef = adminDb.collection('orders').doc(orderId);
+    const orderSnap = await orderRef.get();
 
     if (!orderSnap || !orderSnap.exists) {
       return new Response(JSON.stringify({ error: 'Pedido no encontrado' }), {
@@ -109,16 +104,42 @@ export const POST: APIRoute = async ({ request }) => {
 
     const orderData = orderSnap.data() || {};
     const orderUserId = typeof orderData.userId === 'string' ? orderData.userId : null;
-    if (!orderUserId || orderUserId !== authResult.uid) {
-      logger.warn('[create-payment-intent] Unauthorized order access', {
-        orderId,
-        orderUserId,
-        requester: authResult.uid,
-      });
-      return new Response(JSON.stringify({ error: 'Pedido no encontrado' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    const isGuestOrder = !orderUserId || orderUserId === 'guest';
+
+    if (isGuestOrder) {
+      const storedHash =
+        typeof orderData.orderAccessTokenHash === 'string'
+          ? orderData.orderAccessTokenHash
+          : null;
+      const providedHash =
+        orderAccessToken && orderAccessToken.length > 0
+          ? hashOrderAccessToken(orderAccessToken)
+          : null;
+
+      if (!storedHash || !providedHash || storedHash !== providedHash) {
+        logger.warn('[create-payment-intent] Unauthorized guest order access', {
+          orderId,
+        });
+        return new Response(JSON.stringify({ error: 'Pedido no encontrado' }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    } else {
+      if (!authResult.success) {
+        return authResult.error!;
+      }
+      if (orderUserId !== authResult.uid) {
+        logger.warn('[create-payment-intent] Unauthorized order access', {
+          orderId,
+          orderUserId,
+          requester: authResult.uid,
+        });
+        return new Response(JSON.stringify({ error: 'Pedido no encontrado' }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     const orderStatus = String(orderData?.status || 'pending').toLowerCase();
@@ -187,7 +208,7 @@ export const POST: APIRoute = async ({ request }) => {
       couponCode: orderData.couponCode || null,
       couponId: orderData.couponId || null,
       useWallet: Boolean(orderData.usedWallet),
-      userId: orderUserId || null,
+      userId: orderUserId && orderUserId !== 'guest' ? orderUserId : null,
     });
 
     const hasReservation =
@@ -343,18 +364,21 @@ export const POST: APIRoute = async ({ request }) => {
     // Crear Payment Intent with circuit breaker protection
     const paymentIntent = await executeStripeOperation(
       () =>
-        stripe.paymentIntents.create({
-          amount: Math.round(orderTotal * 100), // Usar el monto del pedido, no el enviado
-          currency,
-          automatic_payment_methods: {
-            enabled: true,
+        stripe.paymentIntents.create(
+          {
+            amount: Math.round(orderTotal * 100), // Usar el monto del pedido, no el enviado
+            currency,
+            automatic_payment_methods: {
+              enabled: true,
+            },
+            metadata: {
+              orderId: orderId,
+              customerEmail: orderData?.customerEmail || '',
+            },
+            description: `Pedido #${orderId}`,
           },
-          metadata: {
-            orderId: orderId,
-            customerEmail: orderData?.customerEmail || '',
-          },
-          description: `Pedido #${orderId}`,
-        }),
+          { idempotencyKey: `pi_${orderId}` }
+        ),
       `create-payment-intent-${orderId}`
     );
 

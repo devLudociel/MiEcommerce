@@ -1,10 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '../create-payment-intent';
 
-vi.mock('firebase-admin/firestore', () => ({
-  FieldPath: { documentId: () => '__name__' },
-}));
-
 // Mock Stripe
 vi.mock('stripe', () => {
   class StripeMock {
@@ -88,7 +84,18 @@ function createDb() {
           async get() {
             const col = collections[name] || {};
             const exists = !!col[id];
-            return { exists, id, data: () => (exists ? col[id] : undefined) } as any;
+            const ref = {
+              async update(update: any) {
+                const target = (collections[name] = collections[name] || {});
+                target[id] = { ...(target[id] || {}), ...update };
+              },
+              async set(update: any) {
+                const target = (collections[name] = collections[name] || {});
+                target[id] = update;
+              },
+              id,
+            };
+            return { exists, id, data: () => (exists ? col[id] : undefined), ref } as any;
           },
           async update(update: any) {
             const col = (collections[name] = collections[name] || {});

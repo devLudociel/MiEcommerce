@@ -16,8 +16,39 @@ import type { StockReservationItem } from '../../lib/orders/stock';
 // SECURITY NOTE: finalizeOrder ya NO se importa aquí
 // Solo debe llamarse desde stripe-webhook.ts después de confirmar pago
 import { z } from 'zod';
+import crypto from 'crypto';
 
 const logger = createScopedLogger('save-order');
+
+const ORDER_LOCK_STATUSES = new Set(['processing', 'paid', 'cancelled', 'refunded']);
+
+const createOrderAccessToken = (): string => crypto.randomBytes(32).toString('hex');
+const hashOrderAccessToken = (token: string): string =>
+  crypto.createHash('sha256').update(token).digest('hex');
+
+const isOrderLocked = (orderData: Record<string, unknown>): boolean => {
+  const status = String(orderData.status || 'pending').toLowerCase();
+  const paymentStatus = String(orderData.paymentStatus || 'pending').toLowerCase();
+  const paymentIntentId =
+    typeof orderData.paymentIntentId === 'string' ? orderData.paymentIntentId.trim() : '';
+
+  return (
+    Boolean(paymentIntentId) ||
+    ORDER_LOCK_STATUSES.has(status) ||
+    paymentStatus !== 'pending'
+  );
+};
+
+const buildTotalsFromOrder = (orderData: Record<string, unknown>) => ({
+  subtotal: Number(orderData.subtotal || 0),
+  bundleDiscount: Number(orderData.bundleDiscount || 0),
+  couponDiscount: Number(orderData.couponDiscount || 0),
+  shippingCost: Number(orderData.shippingCost ?? orderData.shipping ?? 0),
+  tax: Number(orderData.tax || 0),
+  taxLabel: typeof orderData.taxLabel === 'string' ? orderData.taxLabel : undefined,
+  walletDiscount: Number(orderData.walletDiscount || 0),
+  total: Number(orderData.total || 0),
+});
 
 // SECURITY: Zod schema para validar datos de pedido
 // Schema matches actual Checkout.tsx data structure
@@ -185,7 +216,6 @@ export const POST: APIRoute = async ({ request }) => {
     if (isProd) {
       const redacted = {
         itemsCount: orderData.items.length,
-        total: orderData.total,
         hasShippingInfo: Boolean(orderData.shippingInfo),
       };
       logger.info('API save-order: Datos recibidos (redacted):', redacted);
@@ -222,9 +252,11 @@ export const POST: APIRoute = async ({ request }) => {
       : [];
 
     // SECURITY FIX CRÍTICO: Usar userId del token autenticado, NO del cliente
-    // Si no hay autenticación, se guarda como 'guest'
-    const secureUserId = authenticatedUserId || 'guest';
+    // Si no hay autenticación, userId = null (guest)
+    const secureUserId = authenticatedUserId || null;
     const secureCustomerEmail = orderData.customerEmail || authenticatedEmail || orderData.shippingInfo.email;
+    const orderAccessToken = secureUserId ? null : createOrderAccessToken();
+    const orderAccessTokenHash = orderAccessToken ? hashOrderAccessToken(orderAccessToken) : null;
 
     const pricing = await calculateOrderPricing({
       items: sanitizedItems,
@@ -284,6 +316,10 @@ export const POST: APIRoute = async ({ request }) => {
       paymentStatus: 'pending',
     };
 
+    if (orderAccessTokenHash) {
+      baseOrderPayload.orderAccessTokenHash = orderAccessTokenHash;
+    }
+
     if (orderData.billingInfo) {
       baseOrderPayload.billingInfo = orderData.billingInfo;
     }
@@ -300,25 +336,51 @@ export const POST: APIRoute = async ({ request }) => {
       baseOrderPayload.notes = orderData.notes;
     }
 
-    const orderRef = adminDb.collection('orders').doc(`${secureUserId}_${checkoutId}`);
-    orderId = orderRef.id;
     const expiresAt = Timestamp.fromMillis(Date.now() + 15 * 60 * 1000);
 
+    const checkoutIndexRef = adminDb.collection('orders_by_checkout').doc(checkoutId);
+
     const txResult = await adminDb.runTransaction(async (tx) => {
-      const existingSnap = await tx.get(orderRef);
-      if (existingSnap.exists) {
-        const existingData = existingSnap.data() || {};
-        const status = String(existingData.stockReservationStatus || '');
-        if (status === 'reserved' || status === 'captured' || status === 'not_required') {
-          const existingItems = Array.isArray(existingData.stockReservedItems)
-            ? (existingData.stockReservedItems as StockReservationItem[])
-            : [];
-          return { reservedItems: existingItems, alreadyReserved: true, status };
+      const indexSnap = await tx.get(checkoutIndexRef);
+      if (indexSnap.exists) {
+        const indexData = indexSnap.data() || {};
+        const existingOrderId =
+          typeof indexData.orderId === 'string' ? indexData.orderId.trim() : '';
+        if (!existingOrderId) {
+          throw new Error('ORDER_INDEX_INVALID');
         }
+
+        const existingOrderRef = adminDb!.collection('orders').doc(existingOrderId);
+        const existingOrderSnap = await tx.get(existingOrderRef);
+        if (!existingOrderSnap.exists) {
+          throw new Error('ORDER_NOT_FOUND');
+        }
+
+        const existingOrder = existingOrderSnap.data() || {};
+        const existingUserId =
+          typeof existingOrder.userId === 'string' ? existingOrder.userId : null;
+
+        if (secureUserId && existingUserId !== secureUserId) {
+          throw new Error('ORDER_ACCESS_DENIED');
+        }
+        if (!secureUserId && existingUserId) {
+          throw new Error('ORDER_ACCESS_DENIED');
+        }
+
+        const locked = isOrderLocked(existingOrder);
+        return {
+          kind: 'existing',
+          orderId: existingOrderId,
+          orderData: existingOrder,
+          locked,
+        } as const;
       }
 
+      const orderRef = adminDb!.collection('orders').doc();
+      const newOrderId = orderRef.id;
+
       const stockReservation = await reserveStockForOrderTx({
-        db: adminDb,
+        db: adminDb!,
         tx,
         items: pricing.items,
       });
@@ -341,22 +403,44 @@ export const POST: APIRoute = async ({ request }) => {
         orderPayload.stockReservationExpiresAt = expiresAt;
       }
 
-      tx.set(orderRef, orderPayload, { merge: true });
+      tx.create(orderRef, orderPayload);
+      tx.create(checkoutIndexRef, {
+        orderId: newOrderId,
+        userId: secureUserId,
+        ...(orderAccessTokenHash ? { orderAccessTokenHash } : {}),
+        createdAt: FieldValue.serverTimestamp(),
+      });
 
       return {
+        kind: 'created',
+        orderId: newOrderId,
         reservedItems: reservationItems,
-        alreadyReserved: false,
         status: reservationItems.length > 0 ? 'reserved' : 'not_required',
-      };
+      } as const;
     });
 
-    const reservationStatus = String(txResult?.status || '');
-    const reservedCount = Array.isArray(txResult?.reservedItems) ? txResult.reservedItems.length : 0;
+    orderId = txResult.orderId;
+
+    const reservationStatus =
+      txResult.kind === 'created'
+        ? String(txResult.status || '')
+        : String((txResult.orderData || {}).stockReservationStatus || '');
+    const reservedCount =
+      txResult.kind === 'created' && Array.isArray(txResult.reservedItems)
+        ? txResult.reservedItems.length
+        : Array.isArray((txResult as any).orderData?.stockReservedItems)
+          ? (txResult as any).orderData.stockReservedItems.length
+          : 0;
 
     if (reservationStatus === 'reserved') {
       logger.info('[reserve_stock_success]', { orderId, itemsCount: reservedCount });
     } else if (reservationStatus === 'not_required') {
       logger.info('[reserve_stock_success]', { orderId, itemsCount: 0 });
+    }
+    if (txResult.kind === 'existing' && (txResult as any).locked) {
+      logger.info('[save-order] Existing order is locked. Returning persisted data only.', {
+        orderId,
+      });
     }
 
     logger.info('API save-order: Pedido guardado con ID:', orderId);
@@ -375,26 +459,34 @@ export const POST: APIRoute = async ({ request }) => {
       'Post-payment actions will run after payment confirmation via webhook.'
     );
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        orderId,
-        totals: {
-          subtotal: pricing.subtotal,
-          bundleDiscount: pricing.bundleDiscount,
-          couponDiscount: pricing.couponDiscount,
-          shippingCost: pricing.shippingCost,
-          tax: pricing.tax,
-          taxLabel: pricing.taxLabel,
-          walletDiscount: pricing.walletDiscount,
-          total: pricing.total,
-        },
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    const totals =
+      txResult.kind === 'existing'
+        ? buildTotalsFromOrder(txResult.orderData || {})
+        : {
+            subtotal: pricing.subtotal,
+            bundleDiscount: pricing.bundleDiscount,
+            couponDiscount: pricing.couponDiscount,
+            shippingCost: pricing.shippingCost,
+            tax: pricing.tax,
+            taxLabel: pricing.taxLabel,
+            walletDiscount: pricing.walletDiscount,
+            total: pricing.total,
+          };
+
+    const responsePayload: Record<string, unknown> = {
+      success: true,
+      orderId,
+      totals,
+    };
+
+    if (txResult.kind === 'created' && orderAccessToken) {
+      responsePayload.orderAccessToken = orderAccessToken;
+    }
+
+    return new Response(JSON.stringify(responsePayload), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error: unknown) {
     const stockError =
       error && typeof error === 'object' && 'stock' in error ? (error as any).stock : null;
@@ -415,6 +507,18 @@ export const POST: APIRoute = async ({ request }) => {
           headers: { 'Content-Type': 'application/json' },
         }
       );
+    }
+    if (error instanceof Error && error.message === 'ORDER_ACCESS_DENIED') {
+      return new Response(JSON.stringify({ error: 'Pedido no encontrado' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (error instanceof Error && (error.message === 'ORDER_INDEX_INVALID' || error.message === 'ORDER_NOT_FOUND')) {
+      return new Response(JSON.stringify({ error: 'Pedido no disponible' }), {
+        status: 409,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
     // SECURITY: No exponer stack traces en producción
     logger.error('API save-order: Error:', error);

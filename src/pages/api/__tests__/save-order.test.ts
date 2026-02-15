@@ -13,6 +13,9 @@ vi.mock('firebase-admin/firestore', () => ({
     serverTimestamp: () => new Date(),
     increment: (n: number) => ({ __inc: n }),
   },
+  Timestamp: {
+    fromMillis: (ms: number) => new Date(ms),
+  },
 }));
 
 // In-memory DB mock
@@ -20,6 +23,7 @@ function createDb() {
   let idSeq = 1;
   const data: Record<string, Record<string, any>> = {
     orders: {},
+    orders_by_checkout: {},
     products: {},
     wallets: {},
     wallet_transactions: {},
@@ -81,6 +85,14 @@ function createDb() {
       const tx = {
         get: async (ref: any) => ref.get(),
         update: async (ref: any, update: any) => ref.update(update),
+        set: async (ref: any, update: any, opts?: any) => ref.set(update, opts),
+        create: async (ref: any, update: any) => {
+          const snap = await ref.get();
+          if (snap.exists) {
+            throw new Error('ALREADY_EXISTS');
+          }
+          return ref.set(update);
+        },
       };
       return fn(tx);
     },

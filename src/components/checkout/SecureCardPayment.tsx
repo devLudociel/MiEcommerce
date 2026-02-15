@@ -8,6 +8,7 @@ import StripeCardElement from './StripeCardElement';
 interface SecureCardPaymentProps {
   orderId: string;
   orderTotal: number;
+  orderAccessToken?: string | null;
   billingDetails: {
     name: string;
     email: string;
@@ -44,6 +45,7 @@ interface SecureCardPaymentProps {
 export default function SecureCardPayment({
   orderId,
   orderTotal,
+  orderAccessToken,
   billingDetails,
   onSuccess,
   onError,
@@ -69,7 +71,8 @@ export default function SecureCardPayment({
    */
   const processPayment = async (
     orderIdOverride?: string,
-    amountOverride?: number
+    amountOverride?: number,
+    orderAccessTokenOverride?: string | null
   ): Promise<{ success: boolean; error?: string }> => {
     if (!stripe || !elements) {
       logger.error('[SecureCardPayment] Stripe.js has not loaded yet');
@@ -84,6 +87,8 @@ export default function SecureCardPayment({
 
     try {
       const effectiveOrderId = orderIdOverride || orderId;
+      const effectiveOrderAccessToken =
+        orderAccessTokenOverride ?? orderAccessToken ?? null;
 
       if (!effectiveOrderId) {
         logger.error('[SecureCardPayment] Missing orderId for payment');
@@ -125,16 +130,21 @@ export default function SecureCardPayment({
       const paymentIntentData = await withRetry(
         async () => {
           const token = getAuthToken ? await getAuthToken() : null;
+          const payload: Record<string, unknown> = {
+            orderId: effectiveOrderId,
+            currency: 'eur',
+          };
+          if (effectiveOrderAccessToken) {
+            payload.orderAccessToken = effectiveOrderAccessToken;
+          }
+
           const paymentIntentResponse = await fetch('/api/create-payment-intent', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
-            body: JSON.stringify({
-              orderId: effectiveOrderId,
-              currency: 'eur',
-            }),
+            body: JSON.stringify(payload),
           });
 
           const data = await paymentIntentResponse.json();

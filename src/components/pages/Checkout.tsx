@@ -193,6 +193,7 @@ export default function Checkout() {
 
   // Order tracking for Stripe Elements payments
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [orderAccessToken, setOrderAccessToken] = useState<string | null>(null);
 
   // Validación con Zod para el formulario de envío
   const shippingValidation = useFormValidation(shippingInfoSchema, {
@@ -493,6 +494,7 @@ export default function Checkout() {
   const securePayment = useSecureCardPayment({
     orderId: orderId ?? '',
     orderTotal: total,
+    orderAccessToken,
     billingDetails: {
       name: `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim(),
       email: shippingInfo.email,
@@ -878,7 +880,10 @@ export default function Checkout() {
         throw new Error('Error al guardar la orden');
       }
 
-      const { orderId: newOrderId, totals } = await response.json();
+      const { orderId: newOrderId, totals, orderAccessToken: newOrderAccessToken } =
+        await response.json();
+      const resolvedOrderAccessToken =
+        typeof newOrderAccessToken === 'string' ? newOrderAccessToken : null;
       const resolvedTotals = totals || {
         subtotal: orderData.subtotal,
         shippingCost: orderData.shippingCost,
@@ -887,6 +892,7 @@ export default function Checkout() {
         total: orderData.total,
       };
       setOrderId(newOrderId);
+      setOrderAccessToken(resolvedOrderAccessToken);
       cleanupOrderId = newOrderId;
       cleanupIdempotency = idempotencyKey;
 
@@ -905,7 +911,7 @@ export default function Checkout() {
           total: Number(resolvedTotals.total || 0),
           status: orderData.status,
           userId: orderData.userId,
-          accessKey: idempotencyKey,
+          accessKey: resolvedOrderAccessToken || null,
         };
         sessionStorage.setItem('checkout:lastOrder', JSON.stringify(fallbackOrder));
       }
@@ -914,7 +920,11 @@ export default function Checkout() {
 
       if (paymentInfo.method === 'card') {
         logger.info('[Checkout] Processing card payment...');
-        const paymentResult = await securePayment.processPayment(newOrderId, totals?.total);
+        const paymentResult = await securePayment.processPayment(
+          newOrderId,
+          totals?.total,
+          resolvedOrderAccessToken
+        );
 
         if (!paymentResult.success) {
           await cancelPendingOrder(newOrderId, idempotencyKey);

@@ -6,6 +6,7 @@ import type { InvoiceData } from '../../lib/invoiceGenerator';
 import type { OrderData } from '../../lib/firebase';
 // PERFORMANCE: PdfPrinter se carga dinámicamente cuando se necesita (línea 133)
 import { verifyAuthToken, logErrorSafely, createErrorResponse } from '../../lib/auth-helpers';
+import crypto from 'crypto';
 
 // Simple console logger for API routes (avoids import issues)
 const logger = {
@@ -36,6 +37,9 @@ const COMPANY_INFO = {
   phone: import.meta.env.COMPANY_PHONE || '+34 912 345 678',
 };
 
+const hashOrderAccessToken = (token: string): string =>
+  crypto.createHash('sha256').update(token).digest('hex');
+
 async function getNextInvoiceNumber(): Promise<string> {
   const db = getAdminDb();
   const counterRef = db.collection('system').doc('invoiceCounter');
@@ -62,7 +66,10 @@ export const GET: APIRoute = async ({ request, url }) => {
       return createErrorResponse('Se requiere orderId', 400);
     }
 
-    const guestOrderKey = request.headers.get('x-order-key')?.trim() || null;
+    const guestOrderKey =
+      request.headers.get('x-order-access-token')?.trim() ||
+      request.headers.get('x-order-key')?.trim() ||
+      null;
 
     let authUid: string | null = null;
     let isAdmin = false;
@@ -97,14 +104,22 @@ export const GET: APIRoute = async ({ request, url }) => {
       }
     } else {
       // Guest access path
-      if (order.userId !== 'guest') {
+      const isGuestOrder = !order.userId || order.userId === 'guest';
+      if (!isGuestOrder) {
         if (import.meta.env.DEV) {
           logger.warn('[generate-invoice] Guest access rejected (non-guest order)');
         }
         return createErrorResponse('Pedido no encontrado', 404);
       }
 
-      if (!guestOrderKey || order.idempotencyKey !== guestOrderKey) {
+      const storedHash =
+        typeof (order as any).orderAccessTokenHash === 'string'
+          ? (order as any).orderAccessTokenHash
+          : null;
+      const providedHash =
+        guestOrderKey && guestOrderKey.length > 0 ? hashOrderAccessToken(guestOrderKey) : null;
+
+      if (!storedHash || !providedHash || storedHash !== providedHash) {
         if (import.meta.env.DEV) {
           logger.warn('[generate-invoice] Guest access rejected (invalid key)');
         }
