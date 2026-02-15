@@ -18,6 +18,45 @@ import { buildRequest } from '../../helpers/request-builder';
 import { resetRateLimits } from '../../helpers/rate-limit-reset';
 
 // ---------------------------------------------------------------------------
+// rateLimitPersistent mock – prevents setInterval side effect and ensures
+// clearAllRateLimits() properly resets state between tests.
+// Without this mock, the persistent module's internal memoryStore accumulates
+// across tests and exhausts the VERY_STRICT rate limit.
+// ---------------------------------------------------------------------------
+const _persistentStore = new Map<string, { count: number; resetAt: number }>();
+
+vi.mock('../../../src/lib/rateLimitPersistent', () => ({
+  rateLimitPersistent: vi.fn(
+    async (request: Request, scope: string, opts: Record<string, number> = {}) => {
+      const interval = opts.intervalMs ?? opts.windowMs ?? 60_000;
+      const max = opts.max ?? opts.maxRequests ?? 30;
+      const ip =
+        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+        request.headers.get('cf-connecting-ip') ||
+        request.headers.get('x-real-ip') ||
+        'unknown';
+      const key = `${scope}:${ip}`;
+      const now = Date.now();
+
+      const existing = _persistentStore.get(key);
+      if (!existing || now > existing.resetAt) {
+        _persistentStore.set(key, { count: 1, resetAt: now + interval });
+        return { ok: true, remaining: max - 1, resetAt: now + interval };
+      }
+
+      existing.count += 1;
+      const ok = existing.count <= max;
+      return {
+        ok,
+        remaining: Math.max(0, max - existing.count),
+        resetAt: existing.resetAt,
+      };
+    }
+  ),
+  cleanupOldRateLimits: vi.fn(async () => 0),
+}));
+
+// ---------------------------------------------------------------------------
 // firebase-admin/firestore mock (same pattern as save-order.test.ts)
 // ---------------------------------------------------------------------------
 vi.mock('firebase-admin/firestore', () => ({
@@ -166,6 +205,8 @@ function seedOrder(id: string, data: Record<string, unknown> = {}) {
 // ---------------------------------------------------------------------------
 beforeEach(() => {
   resetRateLimits();
+  // Also clear the persistent rate-limiter mock store so limits reset between tests
+  _persistentStore.clear();
   // Reset mock DB to empty orders collection
   mockDb['orders'] = {};
   mockVerifyAdminAuth.mockClear();
