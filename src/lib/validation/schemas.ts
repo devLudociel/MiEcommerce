@@ -300,6 +300,14 @@ export const couponSchema = z
       .positive('El límite de uso debe ser mayor que 0')
       .optional(),
 
+    usageLimitPerUser: z
+      .number({
+        invalid_type_error: 'El límite por usuario debe ser un número',
+      })
+      .int('El límite por usuario debe ser un número entero')
+      .positive('El límite por usuario debe ser mayor que 0')
+      .optional(),
+
     timesUsed: z.number().int().min(0).default(0),
 
     active: z.boolean().default(true),

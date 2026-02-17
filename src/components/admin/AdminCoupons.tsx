@@ -32,6 +32,7 @@ export default function AdminCoupons() {
     value: 10,
     expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     usageLimit: undefined as number | undefined,
+    usageLimitPerUser: undefined as number | undefined,
     timesUsed: 0,
     active: true,
     minPurchase: undefined as number | undefined,
@@ -94,7 +95,7 @@ export default function AdminCoupons() {
         minPurchase: validatedData.minPurchase,
         maxDiscount: undefined, // Not in our schema
         maxUses: validatedData.usageLimit,
-        maxUsesPerUser: undefined, // Not in our schema
+        maxUsesPerUser: validatedData.usageLimitPerUser,
       };
 
       await createCoupon(payload);
@@ -112,6 +113,7 @@ export default function AdminCoupons() {
         value: 10,
         expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         usageLimit: undefined,
+        usageLimitPerUser: undefined,
         timesUsed: 0,
         active: true,
         minPurchase: undefined,
@@ -291,7 +293,7 @@ export default function AdminCoupons() {
               {/* Usos máximos */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Límite de Usos <span className="text-gray-400 font-normal">(opcional)</span>
+                  Límite total de usos <span className="text-gray-400 font-normal">(opcional)</span>
                 </label>
                 <input
                   type="number"
@@ -310,6 +312,33 @@ export default function AdminCoupons() {
                 />
                 {errors.usageLimit && (
                   <p className="text-red-500 text-sm mt-1">{errors.usageLimit}</p>
+                )}
+              </div>
+
+              {/* Usos por usuario */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Límite por usuario <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input
+                  type="number"
+                  value={formData.usageLimitPerUser || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      usageLimitPerUser: e.target.value ? Number(e.target.value) : undefined,
+                    })
+                  }
+                  min="1"
+                  placeholder="1 por usuario"
+                  className={`w-full px-4 py-2 border-2 rounded-xl outline-none ${
+                    errors.usageLimitPerUser
+                      ? 'border-red-500'
+                      : 'border-gray-200 focus:border-cyan-500'
+                  }`}
+                />
+                {errors.usageLimitPerUser && (
+                  <p className="text-red-500 text-sm mt-1">{errors.usageLimitPerUser}</p>
                 )}
               </div>
 
@@ -406,17 +435,18 @@ export default function AdminCoupons() {
                 </span>
               </div>
 
-              <div className="space-y-2 text-sm text-gray-700 mb-4">
-                {coupon.minPurchase && <div>Compra mínima: ${coupon.minPurchase.toFixed(2)}</div>}
-                {coupon.maxUses && (
+                <div className="space-y-2 text-sm text-gray-700 mb-4">
+                  {coupon.minPurchase && <div>Compra mínima: ${coupon.minPurchase.toFixed(2)}</div>}
+                  {coupon.maxUses && (
+                    <div>
+                      Usos: {coupon.currentUses}/{coupon.maxUses}
+                    </div>
+                  )}
+                  {coupon.maxUsesPerUser && <div>Usos por usuario: {coupon.maxUsesPerUser}</div>}
                   <div>
-                    Usos: {coupon.currentUses}/{coupon.maxUses}
+                    Válido: {formatDate(coupon.startDate)} - {formatDate(coupon.endDate)}
                   </div>
-                )}
-                <div>
-                  Válido: {formatDate(coupon.startDate)} - {formatDate(coupon.endDate)}
                 </div>
-              </div>
 
               <button
                 onClick={() => coupon.id && handleDeactivate(coupon.id, coupon.code)}
