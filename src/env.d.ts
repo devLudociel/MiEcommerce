@@ -39,6 +39,10 @@ interface ImportMetaEnv {
   readonly PUBLIC_ADMIN_EMAILS?: string;
   readonly ADMIN_SETUP_SECRET: string;
 
+  // Analytics
+  readonly PUBLIC_GA4_MEASUREMENT_ID?: string;
+  readonly PUBLIC_FACEBOOK_PIXEL_ID?: string;
+
   // Site
   readonly PUBLIC_SITE_URL?: string;
 

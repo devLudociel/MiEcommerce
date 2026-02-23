@@ -1,0 +1,44 @@
+{
+  "slug": "ofertas-verano",
+  "title": "Ofertas de Verano | Hasta 30% Descuento | ImprimeArte",
+  "description": "Aprovecha nuestras ofertas de verano en personalizacion. Camisetas, gorras, bolsas y mas con hasta un 30% de descuento.",
+  "active": true,
+  "hero": {
+    "title": "Ofertas de Verano",
+    "subtitle": "Hasta un 30% de descuento en todos nuestros servicios de personalizacion. Oferta limitada hasta fin de existencias.",
+    "ctaText": "Ver Ofertas",
+    "ctaUrl": "/ofertas",
+    "secondaryCtaText": "Contactar",
+    "secondaryCtaUrl": "#contacto"
+  },
+  "benefits": [
+    {
+      "icon": "Percent",
+      "title": "Hasta 30% Descuento",
+      "description": "Descuentos exclusivos de verano en todos los servicios de personalizacion."
+    },
+    {
+      "icon": "Sun",
+      "title": "Productos de Temporada",
+      "description": "Camisetas, gorras, bolsas de playa y accesorios de verano personalizados."
+    },
+    {
+      "icon": "Truck",
+      "title": "Envio Gratis +50EUR",
+      "description": "En pedidos superiores a 50 euros el envio corre por nuestra cuenta."
+    },
+    {
+      "icon": "Clock",
+      "title": "Entrega Express",
+      "description": "Recibe tu pedido en 48 horas con nuestra opcion de envio express."
+    }
+  ],
+  "cta": {
+    "type": "link",
+    "title": "No dejes pasar estas ofertas",
+    "subtitle": "Ofertas limitadas hasta agotar existencias. Personaliza al mejor precio del ano.",
+    "buttonText": "Ir a la Tienda",
+    "target": "/ofertas"
+  },
+  "campaignId": "ofertas-verano-2026"
+}

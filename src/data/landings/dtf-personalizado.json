@@ -1,0 +1,107 @@
+{
+  "slug": "dtf-personalizado",
+  "title": "Impresion DTF Personalizada | ImprimeArte",
+  "description": "Personaliza tus prendas con impresion DTF de alta calidad. Colores vibrantes, durabilidad extrema y sin minimos de pedido.",
+  "active": true,
+  "hero": {
+    "title": "Impresion DTF de Alta Calidad",
+    "subtitle": "Personaliza camisetas, sudaderas y todo tipo de textiles con la mejor tecnologia de transferencia directa. Colores vibrantes que duran.",
+    "ctaText": "Pedir Presupuesto",
+    "ctaUrl": "#contacto",
+    "secondaryCtaText": "Ver Catalogo",
+    "secondaryCtaUrl": "/productos"
+  },
+  "benefits": [
+    {
+      "icon": "Palette",
+      "title": "Colores Vibrantes",
+      "description": "Impresion a todo color con acabado profesional. Los colores se mantienen lavado tras lavado."
+    },
+    {
+      "icon": "Zap",
+      "title": "Produccion Rapida",
+      "description": "Entrega en 3-5 dias habiles. Pedidos urgentes disponibles con entrega en 24-48h."
+    },
+    {
+      "icon": "ShieldCheck",
+      "title": "Durabilidad Extrema",
+      "description": "La transferencia DTF resiste mas de 60 lavados sin perder calidad ni color."
+    },
+    {
+      "icon": "Package",
+      "title": "Sin Minimo de Pedido",
+      "description": "Desde 1 unidad. Perfecto para muestras, regalos personalizados o pequenos lotes."
+    },
+    {
+      "icon": "Shirt",
+      "title": "Todo Tipo de Textiles",
+      "description": "Funciona en algodon, poliester, mezclas, nylon y mas. Prendas claras y oscuras."
+    },
+    {
+      "icon": "Euro",
+      "title": "Precio Competitivo",
+      "description": "Mejor relacion calidad-precio del mercado. Descuentos por volumen disponibles."
+    }
+  ],
+  "gallery": [
+    {
+      "image": "/placeholder-product.jpg",
+      "alt": "Camiseta DTF personalizada con diseno a todo color",
+      "caption": "Camiseta personalizada"
+    },
+    {
+      "image": "/placeholder-product.jpg",
+      "alt": "Sudadera con estampado DTF premium",
+      "caption": "Sudadera premium"
+    },
+    {
+      "image": "/placeholder-product.jpg",
+      "alt": "Bolsa de tela con impresion DTF",
+      "caption": "Bolsa personalizada"
+    },
+    {
+      "image": "/placeholder-product.jpg",
+      "alt": "Gorra personalizada con DTF",
+      "caption": "Gorra deportiva"
+    },
+    {
+      "image": "/placeholder-product.jpg",
+      "alt": "Conjunto de uniformes personalizados",
+      "caption": "Uniformes de empresa"
+    },
+    {
+      "image": "/placeholder-product.jpg",
+      "alt": "Camiseta evento con diseno especial",
+      "caption": "Merchandising eventos"
+    }
+  ],
+  "testimonials": [
+    {
+      "name": "Maria Garcia",
+      "role": "Tienda de moda online",
+      "text": "La calidad de impresion es increible. Mis clientes siempre quedan encantados con los colores y la durabilidad. Repito pedido cada mes.",
+      "rating": 5
+    },
+    {
+      "name": "Carlos Rodriguez",
+      "role": "Organizador de eventos",
+      "text": "Necesitaba 200 camisetas para un evento en 4 dias y lo consiguieron. Calidad excelente y cumplieron el plazo sin problemas.",
+      "rating": 5
+    },
+    {
+      "name": "Laura Martinez",
+      "role": "Emprendedora",
+      "text": "Empece pidiendo solo 5 camisetas para probar y ahora hago pedidos semanales. El mejor servicio de personalizacion que he encontrado.",
+      "rating": 5
+    }
+  ],
+  "cta": {
+    "type": "whatsapp",
+    "title": "Listo para personalizar tus prendas?",
+    "subtitle": "Contactanos por WhatsApp y te enviamos presupuesto sin compromiso en menos de 1 hora.",
+    "buttonText": "Pedir Presupuesto por WhatsApp",
+    "target": "34645341452",
+    "whatsappMessage": "Hola! Vengo de la landing de DTF personalizado y me gustaria pedir presupuesto para impresion DTF. Podrian ayudarme?"
+  },
+  "campaignId": "dtf-personalizado-2026"
+}

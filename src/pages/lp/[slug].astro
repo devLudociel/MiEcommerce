@@ -1,0 +1,54 @@
+---
+import LandingLayout from '../../layouts/LandingLayout.astro';
+import LandingHero from '../../components/landing/LandingHero.tsx';
+import LandingBenefits from '../../components/landing/LandingBenefits.tsx';
+import LandingGallery from '../../components/landing/LandingGallery.tsx';
+import LandingTestimonials from '../../components/landing/LandingTestimonials.tsx';
+import LandingCTA from '../../components/landing/LandingCTA.tsx';
+import LandingFooter from '../../components/landing/LandingFooter.tsx';
+import { getLandingBySlug, activeLandings } from '../../data/landings/index';
+
+// SSR: obtener slug del parametro de ruta
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/404');
+}
+
+const landing = getLandingBySlug(slug);
+
+if (!landing) {
+  return Astro.redirect('/404');
+}
+---
+
+<LandingLayout
+  title={landing.title}
+  description={landing.description}
+  ogImage={landing.ogImage}
+  slug={landing.slug}
+  campaignId={landing.campaignId}
+  facebookPixelId={landing.facebookPixelId}
+>
+  <!-- Hero Section -->
+  <LandingHero client:load data={landing.hero} slug={landing.slug} />
+
+  <!-- Beneficios -->
+  <LandingBenefits client:visible data={landing.benefits} />
+
+  <!-- Galeria (opcional) -->
+  {landing.gallery && landing.gallery.length > 0 && (
+    <LandingGallery client:visible items={landing.gallery} />
+  )}
+
+  <!-- Testimonios (opcional) -->
+  {landing.testimonials && landing.testimonials.length > 0 && (
+    <LandingTestimonials client:visible testimonials={landing.testimonials} />
+  )}
+
+  <!-- CTA Final -->
+  <LandingCTA client:visible data={landing.cta} slug={landing.slug} />
+
+  <!-- Footer Minimo -->
+  <LandingFooter client:visible data={landing.footer} />
+</LandingLayout>
