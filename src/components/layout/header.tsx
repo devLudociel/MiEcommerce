@@ -273,9 +273,12 @@ const Header: React.FC<HeaderProps> = () => {
               href="/"
               className="flex items-center gap-2 flex-shrink-0 hover:opacity-80 transition-opacity"
             >
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg md:text-xl shadow-md">
-                IA
-              </div>
+              <img
+                src="/logoFac.png"
+                alt="ImprimeArte"
+                className="w-10 h-10 md:w-12 md:h-12 object-contain rounded-xl shadow-md"
+                loading="eager"
+              />
               <div className="hidden md:block">
                 <h1 className="text-lg md:text-xl font-bold text-gray-800 leading-tight">
                   ImprimeArte
