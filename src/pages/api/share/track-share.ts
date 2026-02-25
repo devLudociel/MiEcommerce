@@ -24,7 +24,7 @@ const trackShareSchema = z.object({
  * Returns: { success: boolean }
  */
 export const POST: APIRoute = async ({ request }) => {
-  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'share-track');
+  const rateLimitResult = await checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'share-track');
   if (!rateLimitResult.allowed) {
     logger.warn('[share/track-share] Rate limit exceeded');
     return createRateLimitResponse(rateLimitResult);

@@ -25,7 +25,7 @@ const duplicateDesignSchema = z.object({
  */
 export const POST: APIRoute = async ({ request }) => {
   // SECURITY: Rate limiting (standard limit for duplicating designs)
-  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'designs-duplicate');
+  const rateLimitResult = await checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'designs-duplicate');
   if (!rateLimitResult.allowed) {
     logger.warn('[designs/duplicate] Rate limit exceeded');
     return createRateLimitResponse(rateLimitResult);

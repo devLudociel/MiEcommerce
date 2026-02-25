@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '../save-order';
+import { createDb } from './testDb';
 
 // Mock CSRF protection (tested separately, should not block business logic tests)
 vi.mock('../../../lib/csrf', () => ({
@@ -16,121 +17,10 @@ vi.mock('firebase-admin/firestore', () => ({
   Timestamp: {
     fromMillis: (ms: number) => new Date(ms),
   },
+  FieldPath: {
+    documentId: () => '__name__',
+  },
 }));
-
-// In-memory DB mock
-function createDb() {
-  let idSeq = 1;
-  const data: Record<string, Record<string, any>> = {
-    orders: {},
-    orders_by_checkout: {},
-    products: {},
-    wallets: {},
-    wallet_transactions: {},
-    coupons: {},
-    coupon_usage: {},
-    bundleDiscounts: {},
-    users: {},
-    shipping_methods: {},
-    shipping_zones: {},
-  };
-
-  function wrapInc(current: any, update: any) {
-    const result: any = { ...current };
-    for (const [k, v] of Object.entries(update)) {
-      if (v && typeof v === 'object' && '__inc' in (v as any)) {
-        result[k] = (Number(result[k] || 0) + (v as any).__inc) as any;
-      } else {
-        result[k] = v;
-      }
-    }
-    return result;
-  }
-
-  const buildQuery = (
-    name: string,
-    filters: Array<[string, string, any]> = [],
-    limitCount?: number
-  ) => ({
-    where: (field: string, op: string, value: any) =>
-      buildQuery(name, [...filters, [field, op, value]], limitCount),
-    limit: (count: number) => buildQuery(name, filters, count),
-    async get() {
-      const col = data[name] || {};
-      let docs = Object.entries(col).map(([id, doc]) => ({ id, doc }));
-      for (const [field, op, value] of filters) {
-        if (op === '==') {
-          docs = docs.filter((item) => item.doc?.[field] === value);
-        }
-      }
-      if (typeof limitCount === 'number') {
-        docs = docs.slice(0, limitCount);
-      }
-      const snapDocs = docs.map((item) => ({
-        id: item.id,
-        data: () => item.doc,
-      }));
-      return {
-        empty: snapDocs.length === 0,
-        size: snapDocs.length,
-        docs: snapDocs,
-        forEach: (cb: (doc: any) => void) => snapDocs.forEach(cb),
-      } as any;
-    },
-  });
-
-  return {
-    data,
-    async runTransaction(fn: (tx: any) => Promise<any>) {
-      const tx = {
-        get: async (ref: any) => ref.get(),
-        update: async (ref: any, update: any) => ref.update(update),
-        set: async (ref: any, update: any, opts?: any) => ref.set(update, opts),
-        create: async (ref: any, update: any) => {
-          const snap = await ref.get();
-          if (snap.exists) {
-            throw new Error('ALREADY_EXISTS');
-          }
-          return ref.set(update);
-        },
-      };
-      return fn(tx);
-    },
-    collection(name: string) {
-      return {
-        add: async (doc: any) => {
-          const id = `${name}_${idSeq++}`;
-          data[name] = data[name] || {};
-          data[name][id] = doc;
-          return { id } as any;
-        },
-        where: (field: string, op: string, value: any) =>
-          buildQuery(name, [[field, op, value]]),
-        doc: (id: string) => ({
-          async get() {
-            const col = data[name] || {};
-            const exists = !!col[id];
-            return {
-              exists,
-              id,
-              data: () => (exists ? col[id] : undefined),
-            } as any;
-          },
-          async set(update: any, opts?: any) {
-            const col = (data[name] = data[name] || {});
-            const current = col[id] || {};
-            col[id] = opts?.merge ? wrapInc(current, update) : update;
-          },
-          async update(update: any) {
-            const col = (data[name] = data[name] || {});
-            const current = col[id] || {};
-            col[id] = wrapInc(current, update);
-          },
-        }),
-      } as any;
-    },
-  };
-}
 
 // Mock Admin DB provider
 vi.mock('../../../lib/firebase-admin', () => {
@@ -259,6 +149,60 @@ describe('API save-order', () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
+  });
+
+  it('ignora __proto__ en customization y no rompe con 500', async () => {
+    const { __mockDb } = (await import('../../../lib/firebase-admin')) as any;
+    __mockDb.data.shipping_zones['z1'] = {
+      active: true,
+      priority: 1,
+      provinces: ['Las Palmas'],
+      postalCodes: [],
+    };
+    __mockDb.data.shipping_methods['m1'] = {
+      active: true,
+      zoneId: 'z1',
+      basePrice: 0,
+    };
+    __mockDb.data.products['p1'] = {
+      name: 'Prod 1',
+      basePrice: 10,
+      active: true,
+      tags: [],
+    };
+
+    const req = new Request('http://local/api/save-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        idempotencyKey: 'test-key-proto-1',
+        checkoutId: 'test-key-proto-1',
+        items: [
+          {
+            productId: 'p1',
+            name: 'Prod 1',
+            quantity: 1,
+            customization: JSON.parse('{"__proto__":{"polluted":"yes"},"safe":"ok"}'),
+          },
+        ],
+        shippingInfo: {
+          fullName: 'Ana García',
+          email: 'ana2@example.com',
+          phone: '987654321',
+          address: 'Avenida Test 456',
+          city: 'Barcelona',
+          state: 'Las Palmas',
+          zipCode: '08001',
+          country: 'España',
+          shippingMethodId: 'm1',
+        },
+        usedWallet: false,
+      }),
+    });
+
+    const res = await POST({ request: req } as any);
+    expect(res.status).toBe(200);
+    expect((Object.prototype as any).polluted).toBeUndefined();
   });
 
   it('rechaza si la cantidad excede el stock (409)', async () => {

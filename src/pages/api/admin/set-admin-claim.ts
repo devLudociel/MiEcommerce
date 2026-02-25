@@ -17,7 +17,7 @@ const ADMIN_EMAILS = (import.meta.env.ADMIN_EMAILS || '')
 
 export const POST: APIRoute = async ({ request }) => {
   // SECURITY FIX HIGH-004: Add rate limiting
-  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.VERY_STRICT, 'set-admin-claim');
+  const rateLimitResult = await checkRateLimit(request, RATE_LIMIT_CONFIGS.VERY_STRICT, 'set-admin-claim');
   if (!rateLimitResult.allowed) {
     return createRateLimitResponse(rateLimitResult);
   }

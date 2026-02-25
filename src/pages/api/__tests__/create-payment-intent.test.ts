@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '../create-payment-intent';
+import { createDb } from './testDb';
 
 // Mock Stripe
 vi.mock('stripe', () => {
@@ -19,99 +20,18 @@ vi.mock('stripe', () => {
   return { default: StripeMock };
 });
 
-// In-memory DB mock
-function createDb() {
-  let idSeq = 1;
-  const collections: Record<string, Record<string, any>> = {
-    orders: {},
-    products: {},
-    bundleDiscounts: {},
-    coupons: {},
-    coupon_usage: {},
-    users: {},
-    shipping_methods: {},
-    shipping_zones: {},
-    wallets: {},
-  };
-
-  const buildQuery = (
-    name: string,
-    filters: Array<[string, string, any]> = [],
-    limitCount?: number
-  ) => ({
-    where: (field: string, op: string, value: any) =>
-      buildQuery(name, [...filters, [field, op, value]], limitCount),
-    limit: (count: number) => buildQuery(name, filters, count),
-    async get() {
-      const col = collections[name] || {};
-      let docs = Object.entries(col).map(([id, data]) => ({ id, data }));
-      for (const [field, op, value] of filters) {
-        if (op === '==') {
-          if (field === '__name__') {
-            docs = docs.filter((doc) => doc.id === value);
-          } else {
-            docs = docs.filter((doc) => doc.data?.[field] === value);
-          }
-        }
-      }
-      if (typeof limitCount === 'number') {
-        docs = docs.slice(0, limitCount);
-      }
-      const snapDocs = docs.map((doc) => ({
-        id: doc.id,
-        data: () => doc.data,
-      }));
-      return {
-        empty: snapDocs.length === 0,
-        size: snapDocs.length,
-        docs: snapDocs,
-        forEach: (cb: (doc: any) => void) => snapDocs.forEach(cb),
-      } as any;
-    },
-  });
-
-  return {
-    data: collections,
-    collection(name: string) {
-      return {
-        add: async (doc: any) => {
-          const id = `${name}_${idSeq++}`;
-          collections[name] = collections[name] || {};
-          collections[name][id] = doc;
-          return { id } as any;
-        },
-        doc: (id: string) => ({
-          async get() {
-            const col = collections[name] || {};
-            const exists = !!col[id];
-            const ref = {
-              async update(update: any) {
-                const target = (collections[name] = collections[name] || {});
-                target[id] = { ...(target[id] || {}), ...update };
-              },
-              async set(update: any) {
-                const target = (collections[name] = collections[name] || {});
-                target[id] = update;
-              },
-              id,
-            };
-            return { exists, id, data: () => (exists ? col[id] : undefined), ref } as any;
-          },
-          async update(update: any) {
-            const col = (collections[name] = collections[name] || {});
-            col[id] = { ...(col[id] || {}), ...update };
-          },
-          async set(update: any) {
-            const col = (collections[name] = collections[name] || {});
-            col[id] = update;
-          },
-        }),
-        where: (field: string, op: string, value: any) =>
-          buildQuery(name, [[field, op, value]]),
-      } as any;
-    },
-  };
-}
+vi.mock('firebase-admin/firestore', () => ({
+  FieldValue: {
+    serverTimestamp: () => new Date(),
+    increment: (n: number) => ({ __inc: n }),
+  },
+  Timestamp: {
+    fromMillis: (ms: number) => new Date(ms),
+  },
+  FieldPath: {
+    documentId: () => '__name__',
+  },
+}));
 
 vi.mock('../../../lib/firebase-admin', () => {
   const db = createDb();

@@ -12,6 +12,12 @@ const requestSchema = z.object({
   path: z.string().min(1).max(500),
 });
 
+function isTokenValidationError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const code = 'code' in error ? String((error as { code?: unknown }).code || '') : '';
+  return code.startsWith('auth/');
+}
+
 function normalizePath(path: string): string {
   return path.replace(/\.\./g, '').replace(/\/+/g, '/').replace(/^\/+/, '');
 }
@@ -41,7 +47,7 @@ function isAllowedPath(path: string, uid: string, isAdmin: boolean): boolean {
 }
 
 export const POST: APIRoute = async ({ request }) => {
-  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'signed-url');
+  const rateLimitResult = await checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'signed-url');
   if (!rateLimitResult.allowed) {
     return createRateLimitResponse(rateLimitResult);
   }
@@ -97,6 +103,13 @@ export const POST: APIRoute = async ({ request }) => {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
+    if (isTokenValidationError(error)) {
+      return new Response(JSON.stringify({ error: 'Token inválido o expirado' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     return new Response(
       JSON.stringify({
         error: 'No se pudo generar la URL de descarga',

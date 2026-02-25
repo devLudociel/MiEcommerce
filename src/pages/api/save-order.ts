@@ -112,6 +112,8 @@ const orderDataSchema = z.object({
   notes: z.string().max(1000).optional(),
 });
 
+const UNSAFE_OBJECT_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+
 function stripImageUrls(input: unknown): unknown {
   if (Array.isArray(input)) {
     return input.map(stripImageUrls);
@@ -123,7 +125,7 @@ function stripImageUrls(input: unknown): unknown {
 
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
-    if (key === 'imageUrl' || key === 'previewImage') {
+    if (key === 'imageUrl' || key === 'previewImage' || UNSAFE_OBJECT_KEYS.has(key)) {
       continue;
     }
     result[key] = stripImageUrls(value);
@@ -134,7 +136,7 @@ function stripImageUrls(input: unknown): unknown {
 
 export const POST: APIRoute = async ({ request }) => {
   // SECURITY: Rate limiting (strict for order creation)
-  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STRICT, 'save-order');
+  const rateLimitResult = await checkRateLimit(request, RATE_LIMIT_CONFIGS.STRICT, 'save-order');
   if (!rateLimitResult.allowed) {
     logger.warn('[save-order] Rate limit exceeded');
     return createRateLimitResponse(rateLimitResult);

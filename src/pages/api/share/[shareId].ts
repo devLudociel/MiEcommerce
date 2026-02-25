@@ -50,7 +50,7 @@ function isPrivatePath(path: string): boolean {
  * Returns: SharedDesign object or 404
  */
 export const GET: APIRoute = async ({ params, request }) => {
-  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'share-get');
+  const rateLimitResult = await checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'share-get');
   if (!rateLimitResult.allowed) {
     logger.warn('[share/get] Rate limit exceeded');
     return createRateLimitResponse(rateLimitResult);

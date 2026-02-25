@@ -25,7 +25,7 @@ const toggleFavoriteSchema = z.object({
  */
 export const POST: APIRoute = async ({ request }) => {
   // SECURITY: Rate limiting (standard limit for toggling favorites)
-  const rateLimitResult = checkRateLimit(
+  const rateLimitResult = await checkRateLimit(
     request,
     RATE_LIMIT_CONFIGS.STANDARD,
     'designs-toggle-favorite'

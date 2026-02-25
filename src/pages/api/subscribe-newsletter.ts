@@ -34,7 +34,7 @@ const subscribeSchema = z.object({
  */
 export const POST: APIRoute = async ({ request }) => {
   // SECURITY: Rate limiting (strict to prevent spam subscriptions)
-  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STRICT, 'newsletter');
+  const rateLimitResult = await checkRateLimit(request, RATE_LIMIT_CONFIGS.STRICT, 'newsletter');
   if (!rateLimitResult.allowed) {
     logger.warn('[subscribe-newsletter] Rate limit exceeded');
     return createRateLimitResponse(rateLimitResult);

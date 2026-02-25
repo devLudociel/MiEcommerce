@@ -33,7 +33,7 @@ const logger = createScopedLogger('validate-coupon');
 
 export const POST: APIRoute = async ({ request }) => {
   // SECURITY: Rate limiting (standard limit for coupon validation)
-  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'validate-coupon');
+  const rateLimitResult = await checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'validate-coupon');
   if (!rateLimitResult.allowed) {
     logger.warn('[validate-coupon] Rate limit exceeded');
     return createRateLimitResponse(rateLimitResult);

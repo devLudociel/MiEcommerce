@@ -1,5 +1,6 @@
 // src/lib/rate-limiter.ts
 import { logger } from './logger';
+import { rateLimitPersistent } from './rateLimitPersistent';
 
 interface RateLimitEntry {
   count: number;
@@ -11,8 +12,8 @@ interface RateLimitConfig {
   maxRequests: number; // Max requests per window
 }
 
-// In-memory store for rate limiting (use Redis in production for multi-instance deployments)
-const rateLimitStore = new Map<string, RateLimitEntry>();
+// In-memory fallback store used only if persistent limiter fails unexpectedly.
+const fallbackRateLimitStore = new Map<string, RateLimitEntry>();
 
 // Predefined rate limit configurations
 export const RATE_LIMIT_CONFIGS = {
@@ -65,9 +66,9 @@ function cleanupExpiredEntries(): void {
   const now = Date.now();
   let removedCount = 0;
 
-  for (const [key, entry] of rateLimitStore.entries()) {
+  for (const [key, entry] of fallbackRateLimitStore.entries()) {
     if (entry.resetAt < now) {
-      rateLimitStore.delete(key);
+      fallbackRateLimitStore.delete(key);
       removedCount++;
     }
   }
@@ -90,7 +91,7 @@ export interface RateLimitResult {
   resetAt?: number; // timestamp when limit resets
 }
 
-export function checkRateLimit(
+function checkRateLimitFallback(
   request: Request,
   config: RateLimitConfig,
   namespace: string = 'default'
@@ -105,7 +106,7 @@ export function checkRateLimit(
   }
 
   // Get or create entry
-  let entry = rateLimitStore.get(key);
+  let entry = fallbackRateLimitStore.get(key);
 
   if (!entry || entry.resetAt < now) {
     // Create new entry or reset expired one
@@ -113,7 +114,7 @@ export function checkRateLimit(
       count: 1,
       resetAt: now + config.windowMs,
     };
-    rateLimitStore.set(key, entry);
+    fallbackRateLimitStore.set(key, entry);
 
     logger.debug(`[rate-limiter] New window created for ${key}`);
 
@@ -156,6 +157,31 @@ export function checkRateLimit(
   };
 }
 
+export async function checkRateLimit(
+  request: Request,
+  config: RateLimitConfig,
+  namespace: string = 'default'
+): Promise<RateLimitResult> {
+  try {
+    const result = await rateLimitPersistent(request, namespace, {
+      intervalMs: config.windowMs,
+      max: config.maxRequests,
+    });
+    const retryAfter = result.ok ? undefined : Math.ceil((result.resetAt - Date.now()) / 1000);
+
+    return {
+      allowed: result.ok,
+      retryAfter: retryAfter && retryAfter > 0 ? retryAfter : 1,
+      remaining: result.remaining,
+      limit: config.maxRequests,
+      resetAt: result.resetAt,
+    };
+  } catch (error) {
+    logger.error('[rate-limiter] Persistent limiter failed, using in-memory fallback', error);
+    return checkRateLimitFallback(request, config, namespace);
+  }
+}
+
 /**
  * Create a rate limit response for when limit is exceeded
  */
@@ -185,9 +211,9 @@ export function createRateLimitResponse(result: RateLimitResult): Response {
 export function withRateLimit(
   config: RateLimitConfig,
   namespace?: string
-): (request: Request) => RateLimitResult {
-  return (request: Request) => {
-    return checkRateLimit(request, config, namespace);
+): (request: Request) => Promise<RateLimitResult> {
+  return async (request: Request) => {
+    return await checkRateLimit(request, config, namespace);
   };
 }
 
@@ -203,7 +229,7 @@ export function getRateLimitStats(
 } {
   const identifier = getRequestIdentifier(request);
   const key = `${namespace}:${identifier}`;
-  const entry = rateLimitStore.get(key);
+  const entry = fallbackRateLimitStore.get(key);
 
   return {
     identifier,
@@ -216,7 +242,7 @@ export function getRateLimitStats(
  */
 export function clearRateLimit(identifier: string, namespace: string = 'default'): void {
   const key = `${namespace}:${identifier}`;
-  rateLimitStore.delete(key);
+  fallbackRateLimitStore.delete(key);
   logger.info(`[rate-limiter] Cleared rate limit for ${key}`);
 }
 
@@ -224,7 +250,7 @@ export function clearRateLimit(identifier: string, namespace: string = 'default'
  * Clear all rate limits (for testing)
  */
 export function clearAllRateLimits(): void {
-  const size = rateLimitStore.size;
-  rateLimitStore.clear();
+  const size = fallbackRateLimitStore.size;
+  fallbackRateLimitStore.clear();
   logger.info(`[rate-limiter] Cleared all rate limits (${size} entries)`);
 }

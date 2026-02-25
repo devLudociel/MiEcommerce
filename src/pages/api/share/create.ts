@@ -16,7 +16,7 @@ const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklm
 const createShareSchema = z.object({
   productId: z.string().min(1),
   productName: z.string().min(1),
-  designData: z.any(), // ProductCustomization object
+  designData: z.record(z.unknown()), // ProductCustomization object
   previewImage: z.string().url().optional(),
 });
 
@@ -68,7 +68,7 @@ function isPrivatePath(path: string): boolean {
  */
 export const POST: APIRoute = async ({ request }) => {
   // SECURITY: Rate limiting (standard limit for share creation)
-  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'share-create');
+  const rateLimitResult = await checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'share-create');
   if (!rateLimitResult.allowed) {
     logger.warn('[share/create] Rate limit exceeded');
     return createRateLimitResponse(rateLimitResult);
@@ -143,11 +143,12 @@ export const POST: APIRoute = async ({ request }) => {
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('[share/create] Error:', error);
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Error creating share link',
+        error: 'Error creating share link',
+        details: import.meta.env.DEV ? (error instanceof Error ? error.message : undefined) : undefined,
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

@@ -23,7 +23,7 @@ const incrementUsageSchema = z.object({
  * Returns: { success: boolean }
  */
 export const POST: APIRoute = async ({ request }) => {
-  const rateLimitResult = checkRateLimit(
+  const rateLimitResult = await checkRateLimit(
     request,
     RATE_LIMIT_CONFIGS.STANDARD,
     'templates-increment-usage'

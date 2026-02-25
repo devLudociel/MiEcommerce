@@ -43,7 +43,7 @@ export const POST: APIRoute = async ({ request }) => {
   const headers = getSecurityHeaders();
 
   // SECURITY: Rate limiting for admin clipart creation
-  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STRICT, 'cliparts-create');
+  const rateLimitResult = await checkRateLimit(request, RATE_LIMIT_CONFIGS.STRICT, 'cliparts-create');
   if (!rateLimitResult.allowed) {
     logger.warn('[admin/cliparts/create] Rate limit exceeded');
     return createRateLimitResponse(rateLimitResult);

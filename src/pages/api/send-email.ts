@@ -53,7 +53,7 @@ export const POST: APIRoute = async ({ request }) => {
   logger.info('📧 API send-email: Solicitud recibida');
 
   // SECURITY FIX CRIT-003: Rate limiting
-  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STRICT, 'send-email');
+  const rateLimitResult = await checkRateLimit(request, RATE_LIMIT_CONFIGS.STRICT, 'send-email');
   if (!rateLimitResult.allowed) {
     logger.warn('📧 Rate limit exceeded for send-email');
     return createRateLimitResponse(rateLimitResult);

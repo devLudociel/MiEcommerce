@@ -47,7 +47,7 @@ const hashOrderAccessToken = (token: string): string =>
  */
 export const POST: APIRoute = async ({ request }) => {
   // SECURITY: Rate limiting (very strict for payment operations)
-  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.VERY_STRICT, 'payment');
+  const rateLimitResult = await checkRateLimit(request, RATE_LIMIT_CONFIGS.VERY_STRICT, 'payment');
   if (!rateLimitResult.allowed) {
     logger.warn('[create-payment-intent] Rate limit exceeded');
     return createRateLimitResponse(rateLimitResult);

@@ -20,7 +20,7 @@ import {
  * Returns: { templates: DesignTemplate[] }
  */
 export const GET: APIRoute = async ({ request, url }) => {
-  const rateLimitResult = checkRateLimit(
+  const rateLimitResult = await checkRateLimit(
     request,
     RATE_LIMIT_CONFIGS.STANDARD,
     'templates-get-by-category'

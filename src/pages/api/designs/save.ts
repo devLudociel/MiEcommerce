@@ -15,7 +15,7 @@ const saveDesignSchema = z.object({
   productId: z.string().min(1),
   productName: z.string().min(1),
   categoryId: z.string().min(1),
-  designData: z.any(), // ProductCustomization object
+  designData: z.record(z.unknown()), // ProductCustomization object
   previewImage: z.string().url().optional(),
   tags: z.array(z.string()).optional(),
 });
@@ -72,7 +72,7 @@ function isPrivatePath(path: string): boolean {
  */
 export const POST: APIRoute = async ({ request }) => {
   // SECURITY: Rate limiting (standard limit for saving designs)
-  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'designs-save');
+  const rateLimitResult = await checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'designs-save');
   if (!rateLimitResult.allowed) {
     logger.warn('[designs/save] Rate limit exceeded');
     return createRateLimitResponse(rateLimitResult);

@@ -16,7 +16,7 @@ interface MemoryRateLimitWindow {
 const memoryStore = new Map<string, MemoryRateLimitWindow>();
 
 // Clean up expired memory entries periodically
-setInterval(() => {
+const memoryCleanupTimer = setInterval(() => {
   const now = Date.now();
   for (const [key, window] of memoryStore.entries()) {
     if (now > window.resetAt) {
@@ -24,6 +24,7 @@ setInterval(() => {
     }
   }
 }, 60_000); // Clean every minute
+memoryCleanupTimer.unref?.();
 
 /**
  * In-memory rate limiting fallback

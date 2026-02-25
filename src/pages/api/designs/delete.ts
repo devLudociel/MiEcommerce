@@ -24,7 +24,7 @@ const deleteDesignSchema = z.object({
  */
 export const DELETE: APIRoute = async ({ request }) => {
   // SECURITY: Rate limiting (standard limit for deleting designs)
-  const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'designs-delete');
+  const rateLimitResult = await checkRateLimit(request, RATE_LIMIT_CONFIGS.STANDARD, 'designs-delete');
   if (!rateLimitResult.allowed) {
     logger.warn('[designs/delete] Rate limit exceeded');
     return createRateLimitResponse(rateLimitResult);
