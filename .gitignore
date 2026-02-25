@@ -28,3 +28,12 @@ playwright-report/
 .vercel/
 .env
 .env
+docs-private/
+.env
+docs-private/
+test-results/
+test-results.txt
+lint-errors.txt
+lint-warnings.txt
+informeCSP/
+node_modules/

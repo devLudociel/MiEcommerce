@@ -1,5 +1,6 @@
 ---
 import LandingAnalytics from '../components/landing/LandingAnalytics.tsx';
+import CookieConsent from '../components/analytics/CookieConsent.tsx';
 import '../styles/global.css';
 
 interface Props {
@@ -106,6 +107,9 @@ const {
     <main>
       <slot />
     </main>
+
+    <!-- Cookie Consent Banner -->
+    <CookieConsent client:load />
 
     <!-- Analytics para landing pages -->
     <LandingAnalytics

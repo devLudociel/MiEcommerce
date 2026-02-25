@@ -3,6 +3,7 @@ import Header from '../components/layout/header.tsx';
 import { Toaster } from '../lib/notifications';
 import { toasterConfig } from '../lib/notifications';
 import Analytics from '../components/analytics/Analytics.tsx';
+import CookieConsent from '../components/analytics/CookieConsent.tsx';
 import CompareBar from '../components/products/CompareBar';
 import ChatWidget from '../components/support/ChatWidget';
 import PromoPopupDisplay from '../components/promo/PromoPopupDisplay';
@@ -103,6 +104,8 @@ const nonce = Astro.locals?.cspNonce;
     <ChatWidget client:idle />
     <!-- Promotional Popups -->
     <PromoPopupDisplay client:idle />
+    <!-- Cookie Consent Banner -->
+    <CookieConsent client:load />
     <!-- Analytics Tracking -->
     <Analytics client:load />
   </body>

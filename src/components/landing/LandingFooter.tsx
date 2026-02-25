@@ -91,9 +91,23 @@ export default function LandingFooter({ data }: LandingFooterProps) {
         <div className="mt-8 pt-6 border-t border-gray-800 text-center text-sm text-gray-500">
           &copy; {new Date().getFullYear()} ImprimeArte. Todos los derechos reservados.
           <span className="mx-2">|</span>
-          <a href="/privacidad" className="hover:text-cyan-400 transition-colors">Privacidad</a>
+          <a
+            href="/politica-privacidad"
+            className="hover:text-cyan-400 transition-colors"
+          >
+            Privacidad
+          </a>
           <span className="mx-2">|</span>
-          <a href="/terminos-condiciones" className="hover:text-cyan-400 transition-colors">Terminos</a>
+          <a
+            href="/terminos-condiciones"
+            className="hover:text-cyan-400 transition-colors"
+          >
+            Terminos
+          </a>
+          <span className="mx-2">|</span>
+          <a href="/politica-cookies" className="hover:text-cyan-400 transition-colors">
+            Cookies
+          </a>
         </div>
       </div>
     </footer>

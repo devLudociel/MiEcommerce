@@ -67,7 +67,7 @@ const Footer: React.FC = () => {
         { name: 'Contacto', href: '/contacto' },
         { name: 'Envíos', href: '/envios' },
         { name: 'Devoluciones', href: '/devoluciones' },
-        { name: 'Política de Privacidad', href: '/privacidad' },
+        { name: 'Política de Privacidad', href: '/politica-privacidad' },
         { name: 'Términos y Condiciones', href: '/terminos-condiciones' },
       ],
     },
@@ -365,13 +365,22 @@ const Footer: React.FC = () => {
 
             {/* Legal Links */}
             <div className="flex flex-wrap justify-center gap-6 text-sm">
-              <a href="/privacidad" className="text-gray-400 hover:text-cyan-400 transition-colors">
+              <a
+                href="/politica-privacidad"
+                className="text-gray-400 hover:text-cyan-400 transition-colors"
+              >
                 Privacidad
               </a>
-              <a href="/terminos" className="text-gray-400 hover:text-cyan-400 transition-colors">
+              <a
+                href="/terminos-condiciones"
+                className="text-gray-400 hover:text-cyan-400 transition-colors"
+              >
                 Términos
               </a>
-              <a href="/cookies" className="text-gray-400 hover:text-cyan-400 transition-colors">
+              <a
+                href="/politica-cookies"
+                className="text-gray-400 hover:text-cyan-400 transition-colors"
+              >
                 Cookies
               </a>
               <a

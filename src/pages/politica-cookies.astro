@@ -1,0 +1,66 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const title = 'Política de Cookies - ImprimeArte';
+const description =
+  'Información sobre el uso de cookies y tecnologías similares en ImprimeArte. Controla tus preferencias y conoce cómo protegemos tu privacidad.';
+const ogImage = '/og-cookies.jpg';
+---
+
+<BaseLayout title={title} description={description} ogImage={ogImage}>
+  <section class="container mx-auto px-6 py-16">
+    <div class="max-w-3xl mx-auto">
+      <h1 class="text-3xl md:text-4xl font-black text-gray-900 mb-4">Política de Cookies</h1>
+      <p class="text-gray-600 mb-8">
+        En ImprimeArte utilizamos cookies y tecnologías similares para mejorar tu experiencia,
+        medir el rendimiento del sitio y ofrecer publicidad relevante. Puedes aceptar o rechazar
+        estas cookies desde el aviso de consentimiento.
+      </p>
+
+      <div class="space-y-6 text-gray-700">
+        <div>
+          <h2 class="text-xl font-bold text-gray-900 mb-2">¿Qué son las cookies?</h2>
+          <p>
+            Las cookies son pequeños archivos que se almacenan en tu navegador cuando visitas un
+            sitio web. Permiten recordar preferencias y recoger información anónima sobre el uso
+            del sitio.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-xl font-bold text-gray-900 mb-2">Tipos de cookies que usamos</h2>
+          <ul class="list-disc pl-5 space-y-2">
+            <li>
+              <strong>Cookies técnicas:</strong> necesarias para el funcionamiento básico del sitio
+              (por ejemplo, sesiones o carrito). No requieren consentimiento.
+            </li>
+            <li>
+              <strong>Cookies analíticas:</strong> nos ayudan a entender el uso del sitio (GA4).
+              Requieren consentimiento.
+            </li>
+            <li>
+              <strong>Cookies de marketing:</strong> permiten medir campañas y personalizar
+              anuncios (Meta Pixel). Requieren consentimiento.
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 class="text-xl font-bold text-gray-900 mb-2">Cómo gestionar tu consentimiento</h2>
+          <p>
+            Puedes aceptar o rechazar cookies desde el aviso de consentimiento. También puedes
+            eliminar o bloquear cookies desde la configuración de tu navegador.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-xl font-bold text-gray-900 mb-2">Actualizaciones</h2>
+          <p>
+            Esta política puede actualizarse para reflejar cambios en el uso de cookies o en la
+            normativa aplicable. Recomendamos revisarla periódicamente.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

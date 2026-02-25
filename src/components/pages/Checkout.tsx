@@ -1550,11 +1550,11 @@ export default function Checkout() {
                 />
                 <span className="text-sm text-gray-600">
                   Acepto los{' '}
-                  <a href="/terminos" className="text-cyan-600 hover:underline">
+                  <a href="/terminos-condiciones" className="text-cyan-600 hover:underline">
                     términos y condiciones
                   </a>{' '}
                   y la{' '}
-                  <a href="/privacidad" className="text-cyan-600 hover:underline">
+                  <a href="/politica-privacidad" className="text-cyan-600 hover:underline">
                     política de privacidad
                   </a>
                 </span>
