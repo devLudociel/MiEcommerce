@@ -136,6 +136,7 @@ function getContentSecurityPolicy(nonce: string): string {
     'https://*.google.com',
     'https://*.googleapis.com',
     'https://www.googletagmanager.com',
+    'https://connect.facebook.net',
     'https://js.stripe.com',
   ];
 
@@ -146,9 +147,9 @@ function getContentSecurityPolicy(nonce: string): string {
     `script-src ${scriptSrc.join(' ')}`,
     `style-src ${styleSrc.join(' ')}`,
     "style-src-attr 'unsafe-inline'",
-    "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://*.google.com https://*.google-analytics.com https://images.unsplash.com",
+    "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://*.google.com https://*.google-analytics.com https://images.unsplash.com https://www.facebook.com",
     "font-src 'self' data: https://*.googleapis.com https://*.gstatic.com",
-    "connect-src 'self' blob: https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://*.google-analytics.com https://*.googletagmanager.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.zippopotam.us https://api.geoapify.com",
+    "connect-src 'self' blob: https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://*.google-analytics.com https://*.googletagmanager.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.zippopotam.us https://api.geoapify.com https://www.facebook.com https://graph.facebook.com https://connect.facebook.net",
     "frame-src 'self' https://*.firebaseapp.com https://js.stripe.com https://accounts.google.com https://*.google.com",
     "object-src 'none'",
     "base-uri 'self'",
