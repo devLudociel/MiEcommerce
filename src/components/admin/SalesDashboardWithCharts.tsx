@@ -3,6 +3,12 @@ import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { DashboardChartSkeleton } from '../ui/Skeleton';
 
+const COLORS = {
+  pending: '#eab308', // yellow-500
+  processing: '#3b82f6', // blue-500
+  completed: '#10b981', // green-500
+};
+
 interface OrderItem {
   productId?: string;
   id?: string;

@@ -11,6 +11,32 @@ export interface LandingHeroData {
   /** Segundo CTA opcional */
   secondaryCtaText?: string;
   secondaryCtaUrl?: string;
+  /** Variante visual del hero */
+  variant?: 'centered' | 'split';
+  /** Texto superior (eyebrow) */
+  eyebrow?: string;
+  /** Texto de ubicacion / etiqueta */
+  location?: string;
+  /** Palabra a resaltar dentro del titulo */
+  titleAccent?: string;
+  /** Badge corto en la zona visual */
+  badgeText?: string;
+  /** Tarjetas visuales en el hero */
+  cards?: LandingHeroCard[];
+  /** Estadisticas debajo del hero */
+  stats?: LandingStat[];
+  /** Aviso corto bajo el hero */
+  notice?: string;
+}
+
+export interface LandingHeroCard {
+  icon: string;
+  label: string;
+}
+
+export interface LandingStat {
+  value: string;
+  label: string;
 }
 
 export interface LandingBenefit {
@@ -44,6 +70,8 @@ export interface LandingCtaData {
   target: string;
   /** Mensaje predefinido para WhatsApp */
   whatsappMessage?: string;
+  /** Variante de estilo del boton */
+  variant?: 'brand' | 'whatsapp';
 }
 
 export interface LandingFooterData {
@@ -53,6 +81,62 @@ export interface LandingFooterData {
   whatsapp?: string;
   address?: string;
   showSocialLinks?: boolean;
+}
+
+export interface LandingHeaderNavItem {
+  label: string;
+  href: string;
+}
+
+export interface LandingHeaderData {
+  navItems?: LandingHeaderNavItem[];
+  ctaText?: string;
+  ctaUrl?: string;
+}
+
+export interface LandingServiceItem {
+  icon: string;
+  title: string;
+  description: string;
+  linkText?: string;
+  linkUrl?: string;
+}
+
+export interface LandingServicesSection {
+  eyebrow?: string;
+  title: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  items: LandingServiceItem[];
+}
+
+export interface LandingProcessStep {
+  step: string;
+  title: string;
+  description: string;
+}
+
+export interface LandingProcessSection {
+  eyebrow?: string;
+  title: string;
+  steps: LandingProcessStep[];
+}
+
+export interface LandingProductItem {
+  image?: string;
+  title: string;
+  category: string;
+  price: string;
+  ctaText: string;
+  ctaUrl: string;
+}
+
+export interface LandingProductsSection {
+  eyebrow?: string;
+  title: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  items: LandingProductItem[];
 }
 
 export interface LandingPageData {
@@ -69,7 +153,7 @@ export interface LandingPageData {
 
   // Secciones
   hero: LandingHeroData;
-  benefits: LandingBenefit[];
+  benefits?: LandingBenefit[];
 
   /** Galeria de trabajos (opcional) */
   gallery?: LandingGalleryItem[];
@@ -82,6 +166,14 @@ export interface LandingPageData {
 
   /** Footer minimo - usa datos de contactInfo por defecto */
   footer?: LandingFooterData;
+
+  /** Header opcional con navegacion */
+  header?: LandingHeaderData;
+
+  /** Secciones nuevas (opcionales) */
+  services?: LandingServicesSection;
+  process?: LandingProcessSection;
+  featuredProducts?: LandingProductsSection;
 
   // Tracking
   /** ID de campana para analytics */

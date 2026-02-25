@@ -42,6 +42,8 @@ interface ImportMetaEnv {
   // Analytics
   readonly PUBLIC_GA4_MEASUREMENT_ID?: string;
   readonly PUBLIC_FACEBOOK_PIXEL_ID?: string;
+  readonly META_CONVERSIONS_API_TOKEN?: string;
+  readonly META_CONVERSIONS_API_TEST_EVENT_CODE?: string;
 
   // Site
   readonly PUBLIC_SITE_URL?: string;

@@ -124,6 +124,10 @@ const serverEnvSchema = z.object({
     .optional()
     .default('noreply@imprimearte.es'),
 
+  // Meta Conversions API (server-side)
+  META_CONVERSIONS_API_TOKEN: z.string().optional(),
+  META_CONVERSIONS_API_TEST_EVENT_CODE: z.string().optional(),
+
   // Admin Setup Secret
   ADMIN_SETUP_SECRET: z.string().min(16, 'Admin Setup Secret debe tener al menos 16 caracteres'),
 

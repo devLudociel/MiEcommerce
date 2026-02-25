@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import type { LandingHeroData } from '../../types/landing';
 import { trackCtaClick } from '../../lib/analytics/landingTracking';
+import Icon from '../ui/Icon';
 
 interface LandingHeroProps {
   data: LandingHeroData;
@@ -15,6 +16,115 @@ export default function LandingHero({ data, slug }: LandingHeroProps) {
     },
     [slug]
   );
+
+  if (data.variant === 'split') {
+    const accent = data.titleAccent;
+    const titleParts = accent && data.title.includes(accent)
+      ? data.title.split(accent)
+      : null;
+
+    return (
+      <section className="relative overflow-hidden py-16 md:py-24 bg-gradient-to-br from-white via-sky-50 to-sky-100">
+        <div className="absolute -top-24 -right-24 w-72 h-72 bg-fuchsia-200/40 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-100/60 rounded-full blur-3xl" />
+
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center">
+            <div>
+              {data.eyebrow && (
+                <p className="text-xs uppercase tracking-[0.3em] text-gray-400 font-semibold mb-4">
+                  {data.eyebrow}
+                </p>
+              )}
+
+              {data.location && (
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-fuchsia-200 text-xs text-fuchsia-700 bg-fuchsia-50 mb-5">
+                  <Icon name="MapPin" size={14} />
+                  {data.location}
+                </span>
+              )}
+
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 leading-tight mb-6">
+                {titleParts ? (
+                  <>
+                    {titleParts[0]}
+                    <span className="text-fuchsia-600">{accent}</span>
+                    {titleParts.slice(1).join(accent)}
+                  </>
+                ) : (
+                  data.title
+                )}
+              </h1>
+
+              <p className="text-base md:text-lg text-gray-600 leading-relaxed max-w-xl mb-8">
+                {data.subtitle}
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 mb-10">
+                <a
+                  href={data.ctaUrl}
+                  onClick={() => handleCtaClick('primary')}
+                  className="inline-flex items-center justify-center px-7 py-3 text-sm md:text-base font-semibold rounded-full bg-fuchsia-600 text-white hover:bg-fuchsia-700 transition-colors"
+                >
+                  {data.ctaText}
+                </a>
+
+                {data.secondaryCtaText && data.secondaryCtaUrl && (
+                  <a
+                    href={data.secondaryCtaUrl}
+                    onClick={() => handleCtaClick('secondary')}
+                    className="inline-flex items-center justify-center px-7 py-3 text-sm md:text-base font-semibold rounded-full border border-fuchsia-200 text-fuchsia-700 hover:bg-fuchsia-50 transition-colors"
+                  >
+                    {data.secondaryCtaText}
+                  </a>
+                )}
+              </div>
+
+              {data.stats && data.stats.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6 border-t border-gray-200 pt-6 text-sm">
+                  {data.stats.map((stat, index) => (
+                    <div key={index}>
+                      <p className="text-lg font-black text-gray-900">{stat.value}</p>
+                      <p className="text-xs text-gray-500">{stat.label}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {data.cards && data.cards.length > 0 && (
+              <div className="relative">
+                {data.badgeText && (
+                  <span className="absolute -top-4 left-6 px-3 py-1 text-xs font-semibold text-white bg-fuchsia-600 rounded-full shadow-md">
+                    {data.badgeText}
+                  </span>
+                )}
+                <div className="grid grid-cols-2 gap-4 bg-white/70 backdrop-blur rounded-3xl p-6 border border-gray-100 shadow-lg">
+                  {data.cards.map((card, index) => (
+                    <div
+                      key={index}
+                      className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 h-32"
+                    >
+                      <div className="w-12 h-12 rounded-2xl bg-fuchsia-50 text-fuchsia-600 flex items-center justify-center">
+                        <Icon name={card.icon} size={24} />
+                      </div>
+                      <p className="text-sm font-semibold text-gray-700">{card.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {data.notice && (
+            <div className="mt-10 px-4 py-3 text-xs md:text-sm text-fuchsia-700 bg-fuchsia-50 border border-fuchsia-100 rounded-lg text-center">
+              {data.notice}
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section

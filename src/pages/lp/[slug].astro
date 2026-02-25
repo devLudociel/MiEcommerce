@@ -3,10 +3,13 @@ import LandingLayout from '../../layouts/LandingLayout.astro';
 import LandingHero from '../../components/landing/LandingHero.tsx';
 import LandingBenefits from '../../components/landing/LandingBenefits.tsx';
 import LandingGallery from '../../components/landing/LandingGallery.tsx';
+import LandingServices from '../../components/landing/LandingServices.tsx';
+import LandingProcess from '../../components/landing/LandingProcess.tsx';
+import LandingFeaturedProducts from '../../components/landing/LandingFeaturedProducts.tsx';
 import LandingTestimonials from '../../components/landing/LandingTestimonials.tsx';
 import LandingCTA from '../../components/landing/LandingCTA.tsx';
 import LandingFooter from '../../components/landing/LandingFooter.tsx';
-import { getLandingBySlug, activeLandings } from '../../data/landings/index';
+import { getLandingBySlug } from '../../data/landings/index';
 
 // SSR: obtener slug del parametro de ruta
 const { slug } = Astro.params;
@@ -29,12 +32,30 @@ if (!landing) {
   slug={landing.slug}
   campaignId={landing.campaignId}
   facebookPixelId={landing.facebookPixelId}
+  header={landing.header}
 >
   <!-- Hero Section -->
   <LandingHero client:load data={landing.hero} slug={landing.slug} />
 
   <!-- Beneficios -->
-  <LandingBenefits client:visible data={landing.benefits} />
+  {landing.benefits && landing.benefits.length > 0 && (
+    <LandingBenefits client:visible benefits={landing.benefits} />
+  )}
+
+  <!-- Servicios -->
+  {landing.services && landing.services.items.length > 0 && (
+    <LandingServices client:visible data={landing.services} />
+  )}
+
+  <!-- Proceso -->
+  {landing.process && landing.process.steps.length > 0 && (
+    <LandingProcess client:visible data={landing.process} />
+  )}
+
+  <!-- Productos destacados -->
+  {landing.featuredProducts && landing.featuredProducts.items.length > 0 && (
+    <LandingFeaturedProducts client:visible data={landing.featuredProducts} />
+  )}
 
   <!-- Galeria (opcional) -->
   {landing.gallery && landing.gallery.length > 0 && (

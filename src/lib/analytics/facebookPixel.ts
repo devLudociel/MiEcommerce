@@ -45,22 +45,40 @@ export function initFacebookPixel(pixelId: string) {
   if (typeof window === 'undefined') return;
 
   // Create fbq function
-  const fbq: FbqFunction = function (...args: unknown[]) {
-    if (fbq.callMethod) {
-      fbq.callMethod(...args);
-    } else {
-      fbq.queue?.push(args);
+  const existingFbq = window.fbq;
+  const fbq: FbqFunction =
+    existingFbq ||
+    function (...args: unknown[]) {
+      if (fbq.callMethod) {
+        fbq.callMethod(...args);
+      } else {
+        fbq.queue?.push(args);
+      }
+    };
+
+  if (!window.fbq) window.fbq = fbq;
+  if (!window._fbq) window._fbq = fbq;
+
+  if (!existingFbq) {
+    fbq.push = fbq;
+    fbq.loaded = true;
+    fbq.version = '2.0';
+    fbq.queue = [];
+
+    const scriptId = 'facebook-pixel-script';
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.async = true;
+      script.src = 'https://connect.facebook.net/en_US/fbevents.js';
+      const firstScript = document.getElementsByTagName('script')[0];
+      if (firstScript?.parentNode) {
+        firstScript.parentNode.insertBefore(script, firstScript);
+      } else {
+        document.head.appendChild(script);
+      }
     }
-  };
-
-  if (!window.fbq) {
-    window.fbq = fbq;
   }
-
-  fbq.push = fbq;
-  fbq.loaded = true;
-  fbq.version = '2.0';
-  fbq.queue = [];
 
   // Initialize pixel
   window.fbq('init', pixelId);
@@ -147,16 +165,25 @@ export function trackFBInitiateCheckout(items: AnalyticsItem[], value: number) {
 /**
  * Track purchase (Purchase) - CRITICAL FOR CONVERSIONS
  */
-export function trackFBPurchase(order: { id: string; total: number; items: AnalyticsItem[] }) {
+export function trackFBPurchase(
+  order: { id: string; total: number; items: AnalyticsItem[] },
+  eventId?: string
+) {
   if (!window.fbq) return;
 
-  window.fbq('track', 'Purchase', {
+  const params = {
     content_ids: order.items.map((item) => item.id || item.productId),
     content_type: 'product',
     value: order.total,
     currency: 'EUR',
     num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),
-  });
+  };
+
+  if (eventId) {
+    window.fbq('track', 'Purchase', params, { eventID: eventId });
+  } else {
+    window.fbq('track', 'Purchase', params);
+  }
 
   console.log('[FB Pixel] Purchase:', order.id, order.total);
 }

@@ -38,10 +38,13 @@ export default function LandingTestimonials({ testimonials }: LandingTestimonial
     <section className="py-16 md:py-24 bg-white">
       <div className="container mx-auto px-6">
         <div className="text-center mb-12 md:mb-16">
+          <p className="text-xs uppercase tracking-[0.3em] text-fuchsia-500 font-semibold mb-3">
+            Testimonios
+          </p>
           <h2 className="text-3xl md:text-4xl font-black text-gray-800 mb-4">
             Lo que dicen nuestros clientes
           </h2>
-          <div className="w-20 h-1 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 mx-auto rounded-full" />
+          <div className="w-16 h-1 bg-fuchsia-200 mx-auto rounded-full" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">

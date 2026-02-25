@@ -3,78 +3,134 @@
   "title": "Impresion DTF Personalizada | ImprimeArte",
   "description": "Personaliza tus prendas con impresion DTF de alta calidad. Colores vibrantes, durabilidad extrema y sin minimos de pedido.",
   "active": true,
-  "hero": {
-    "title": "Impresion DTF de Alta Calidad",
-    "subtitle": "Personaliza camisetas, sudaderas y todo tipo de textiles con la mejor tecnologia de transferencia directa. Colores vibrantes que duran.",
+  "header": {
+    "navItems": [
+      { "label": "Servicios", "href": "#servicios" },
+      { "label": "Productos", "href": "#catalogo" },
+      { "label": "Como funciona", "href": "#proceso" },
+      { "label": "Contacto", "href": "#contacto" }
+    ],
     "ctaText": "Pedir Presupuesto",
-    "ctaUrl": "#contacto",
-    "secondaryCtaText": "Ver Catalogo",
-    "secondaryCtaUrl": "/productos"
+    "ctaUrl": "#contacto"
   },
-  "benefits": [
-    {
-      "icon": "Palette",
-      "title": "Colores Vibrantes",
-      "description": "Impresion a todo color con acabado profesional. Los colores se mantienen lavado tras lavado."
-    },
-    {
-      "icon": "Zap",
-      "title": "Produccion Rapida",
-      "description": "Entrega en 3-5 dias habiles. Pedidos urgentes disponibles con entrega en 24-48h."
-    },
-    {
-      "icon": "ShieldCheck",
-      "title": "Durabilidad Extrema",
-      "description": "La transferencia DTF resiste mas de 60 lavados sin perder calidad ni color."
-    },
-    {
-      "icon": "Package",
-      "title": "Sin Minimo de Pedido",
-      "description": "Desde 1 unidad. Perfecto para muestras, regalos personalizados o pequenos lotes."
-    },
-    {
-      "icon": "Shirt",
-      "title": "Todo Tipo de Textiles",
-      "description": "Funciona en algodon, poliester, mezclas, nylon y mas. Prendas claras y oscuras."
-    },
-    {
-      "icon": "Euro",
-      "title": "Precio Competitivo",
-      "description": "Mejor relacion calidad-precio del mercado. Descuentos por volumen disponibles."
-    }
-  ],
-  "gallery": [
-    {
-      "image": "/placeholder-product.jpg",
-      "alt": "Camiseta DTF personalizada con diseno a todo color",
-      "caption": "Camiseta personalizada"
-    },
-    {
-      "image": "/placeholder-product.jpg",
-      "alt": "Sudadera con estampado DTF premium",
-      "caption": "Sudadera premium"
-    },
-    {
-      "image": "/placeholder-product.jpg",
-      "alt": "Bolsa de tela con impresion DTF",
-      "caption": "Bolsa personalizada"
-    },
-    {
-      "image": "/placeholder-product.jpg",
-      "alt": "Gorra personalizada con DTF",
-      "caption": "Gorra deportiva"
-    },
-    {
-      "image": "/placeholder-product.jpg",
-      "alt": "Conjunto de uniformes personalizados",
-      "caption": "Uniformes de empresa"
-    },
-    {
-      "image": "/placeholder-product.jpg",
-      "alt": "Camiseta evento con diseno especial",
-      "caption": "Merchandising eventos"
-    }
-  ],
+  "hero": {
+    "variant": "split",
+    "eyebrow": "ImprimeArte - Personalizacion",
+    "location": "Impresion personalizada - La Palma, Canarias",
+    "title": "Tu idea, impresa a medida",
+    "titleAccent": "impresa",
+    "subtitle": "DTF, bordado, corte laser e impresion 3D. Productos personalizados para empresas y particulares, con entrega rapida en toda la isla.",
+    "ctaText": "Ver catalogo",
+    "ctaUrl": "#catalogo",
+    "secondaryCtaText": "Como funciona",
+    "secondaryCtaUrl": "#proceso",
+    "badgeText": "+25 mil en catalogo",
+    "cards": [
+      { "icon": "Shirt", "label": "Textil" },
+      { "icon": "Trophy", "label": "Premios" },
+      { "icon": "Gift", "label": "Regalos" },
+      { "icon": "Square", "label": "Branding" }
+    ],
+    "stats": [
+      { "value": "+500", "label": "pedidos entregados" },
+      { "value": "4", "label": "tecnologias de impresion" },
+      { "value": "48h", "label": "plazo medio" }
+    ]
+  },
+  "services": {
+    "eyebrow": "Servicios",
+    "title": "Todo lo que puedes personalizar",
+    "ctaText": "Ver todos los servicios",
+    "ctaUrl": "/servicios",
+    "items": [
+      {
+        "icon": "Printer",
+        "title": "DTF & Sublimacion",
+        "description": "Impresion directa en textil con colores vivos y durabilidad profesional. Ideal para ropa, accesorios y textiles.",
+        "linkText": "Ver productos",
+        "linkUrl": "/productos"
+      },
+      {
+        "icon": "Edit",
+        "title": "Bordado",
+        "description": "Acabado premium para uniformes, gorras y prendas corporativas. Imagen profesional garantizada.",
+        "linkText": "Ver productos",
+        "linkUrl": "/productos"
+      },
+      {
+        "icon": "Scissors",
+        "title": "Corte Laser",
+        "description": "Corte y grabado de precision en madera, metacrilato, cuero y mas. Para trofeos y senaletica.",
+        "linkText": "Ver productos",
+        "linkUrl": "/productos"
+      },
+      {
+        "icon": "Package",
+        "title": "Impresion 3D",
+        "description": "Prototipos, figuras y piezas unicas en resina y filamento. Del diseno a la realidad en horas.",
+        "linkText": "Ver productos",
+        "linkUrl": "/productos"
+      }
+    ]
+  },
+  "process": {
+    "eyebrow": "Proceso",
+    "title": "Pedir es facil",
+    "steps": [
+      {
+        "step": "1",
+        "title": "Elige el producto",
+        "description": "Navega el catalogo y selecciona lo que quieres personalizar."
+      },
+      {
+        "step": "2",
+        "title": "Sube tu diseno",
+        "description": "Carga tu logo o imagen y dinos como lo prefieres."
+      },
+      {
+        "step": "3",
+        "title": "Confirmamos",
+        "description": "Revisamos tu propuesta y te enviamos una prueba digital."
+      },
+      {
+        "step": "4",
+        "title": "Entrega rapida",
+        "description": "Recibes tu pedido en La Palma, habitualmente en 48h."
+      }
+    ]
+  },
+  "featuredProducts": {
+    "eyebrow": "Catalogo",
+    "title": "Los mas pedidos",
+    "ctaText": "Ver catalogo completo",
+    "ctaUrl": "/productos",
+    "items": [
+      {
+        "image": "/placeholder-product.jpg",
+        "category": "DTF",
+        "title": "Camiseta personalizada",
+        "price": "Desde 8,50 EUR / unidad",
+        "ctaText": "Personalizar este producto",
+        "ctaUrl": "/productos"
+      },
+      {
+        "image": "/placeholder-product.jpg",
+        "category": "Corte laser",
+        "title": "Trofeo de madera grabado",
+        "price": "Desde 14 EUR / unidad",
+        "ctaText": "Personalizar este producto",
+        "ctaUrl": "/productos"
+      },
+      {
+        "image": "/placeholder-product.jpg",
+        "category": "Bordado",
+        "title": "Gorra bordada corporativa",
+        "price": "Desde 12 EUR / unidad",
+        "ctaText": "Personalizar este producto",
+        "ctaUrl": "/productos"
+      }
+    ]
+  },
   "testimonials": [
     {
       "name": "Maria Garcia",
@@ -97,9 +153,10 @@
   ],
   "cta": {
     "type": "whatsapp",
-    "title": "Listo para personalizar tus prendas?",
-    "subtitle": "Contactanos por WhatsApp y te enviamos presupuesto sin compromiso en menos de 1 hora.",
-    "buttonText": "Pedir Presupuesto por WhatsApp",
+    "variant": "brand",
+    "title": "Tienes un proyecto en mente?",
+    "subtitle": "Cuentanos que necesitas y te enviaremos un presupuesto sin compromiso en menos de 24h.",
+    "buttonText": "Pedir presupuesto gratis",
     "target": "34645341452",
     "whatsappMessage": "Hola! Vengo de la landing de DTF personalizado y me gustaria pedir presupuesto para impresion DTF. Podrian ayudarme?"
   },

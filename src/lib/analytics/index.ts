@@ -102,7 +102,7 @@ export function trackPurchase(order: {
   items: AnalyticsItem[];
 }) {
   GA4.trackPurchase(order);
-  FB.trackFBPurchase(order);
+  FB.trackFBPurchase(order, order.id);
 }
 
 /**

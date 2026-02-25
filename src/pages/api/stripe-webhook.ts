@@ -6,6 +6,8 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { createScopedLogger } from '../../lib/utils/apiLogger';
 import { releaseWalletReservation } from '../../lib/orders/walletReservations';
 import { expireReservedOrder, releaseReservedStock } from '../../lib/orders/stock';
+import type { OrderData } from '../../types/firebase';
+import { sendMetaPurchaseEvent } from '../../lib/analytics/metaConversions';
 
 const logger = createScopedLogger('stripe-webhook');
 
@@ -222,6 +224,18 @@ export const POST: APIRoute = async ({ request }) => {
         return new Response(JSON.stringify({ error: 'Post-payment actions failed' }), {
           status: 500,
         });
+      }
+
+      try {
+        const orderForCapi = (freshOrderData || orderData) as OrderData;
+        await sendMetaPurchaseEvent({
+          order: orderForCapi,
+          orderId,
+          eventId: orderId,
+          testEventCode: import.meta.env.META_CONVERSIONS_API_TEST_EVENT_CODE,
+        });
+      } catch (capiError) {
+        logger.warn('[Stripe Webhook] Meta CAPI failed', { orderId, error: capiError });
       }
 
       const nextStatus =
