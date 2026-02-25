@@ -9,6 +9,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
+.env.example
 
 # VS Code (opcional: comenta si quieres subir configuraciones)
 .vscode/
