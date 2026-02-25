@@ -5,7 +5,7 @@ import { createScopedLogger } from '../utils/apiLogger';
 
 const logger = createScopedLogger('meta-capi');
 
-const META_API_VERSION = 'v19.0';
+const META_API_VERSION = 'v21.0';
 const DEFAULT_CURRENCY = 'EUR';
 
 type StringMap = Record<string, string>;
@@ -73,7 +73,7 @@ function buildContents(items: OrderItem[]): Array<{ id: string; quantity: number
   return contents;
 }
 
-function buildUserData(order: OrderData, orderId: string): StringMap | null {
+function buildUserData(order: OrderData, orderId: string, context?: EventContext): StringMap | null {
   const shipping = order.shippingInfo;
   if (!shipping) return null;
 
@@ -91,7 +91,39 @@ function buildUserData(order: OrderData, orderId: string): StringMap | null {
   const externalIdSource = order.userId || orderId;
   addHashedField(userData, 'external_id', externalIdSource);
 
+  // Add fbc/fbp cookies for browser-server event matching (not hashed per Meta docs)
+  const fbc = context?.fbc || (order as Record<string, unknown>).fbc;
+  const fbp = context?.fbp || (order as Record<string, unknown>).fbp;
+  if (typeof fbc === 'string' && fbc) {
+    userData.fbc = fbc;
+  }
+  if (typeof fbp === 'string' && fbp) {
+    userData.fbp = fbp;
+  }
+
+  // Add client IP and user agent for improved matching
+  if (context?.clientIpAddress) {
+    userData.client_ip_address = context.clientIpAddress;
+  }
+  if (context?.clientUserAgent) {
+    userData.client_user_agent = context.clientUserAgent;
+  }
+
   return Object.keys(userData).length ? userData : null;
+}
+
+/** Optional context from the original HTTP request for better event matching */
+export interface EventContext {
+  /** Facebook click ID cookie (_fbc) */
+  fbc?: string;
+  /** Facebook browser ID cookie (_fbp) */
+  fbp?: string;
+  /** Client IP address from the original checkout request */
+  clientIpAddress?: string;
+  /** Client User-Agent from the original checkout request */
+  clientUserAgent?: string;
+  /** URL of the page where the event originated */
+  eventSourceUrl?: string;
 }
 
 export async function sendMetaPurchaseEvent(params: {
@@ -99,6 +131,7 @@ export async function sendMetaPurchaseEvent(params: {
   orderId: string;
   eventId?: string;
   testEventCode?: string;
+  context?: EventContext;
 }) {
   const pixelId = import.meta.env.PUBLIC_FACEBOOK_PIXEL_ID;
   const accessToken = import.meta.env.META_CONVERSIONS_API_TOKEN;
@@ -108,8 +141,8 @@ export async function sendMetaPurchaseEvent(params: {
     return;
   }
 
-  const { order, orderId } = params;
-  const userData = buildUserData(order, orderId);
+  const { order, orderId, context } = params;
+  const userData = buildUserData(order, orderId, context);
 
   if (!userData) {
     logger.warn('[Meta CAPI] Missing user data. Skipping event.', { orderId });
@@ -121,7 +154,7 @@ export async function sendMetaPurchaseEvent(params: {
   const numItems = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
 
   const eventId = params.eventId || orderId;
-  const event = {
+  const event: Record<string, unknown> = {
     event_name: 'Purchase',
     event_time: Math.floor(Date.now() / 1000),
     event_id: eventId,
@@ -137,14 +170,20 @@ export async function sendMetaPurchaseEvent(params: {
     },
   };
 
+  // Add event_source_url if available
+  const sourceUrl = context?.eventSourceUrl || (order as Record<string, unknown>).checkoutUrl;
+  if (typeof sourceUrl === 'string' && sourceUrl) {
+    event.event_source_url = sourceUrl;
+  }
+
   const payload: Record<string, unknown> = {
     data: [event],
     access_token: accessToken,
   };
 
-  const testEventCode = params.testEventCode || import.meta.env.META_CONVERSIONS_API_TEST_EVENT_CODE;
-  if (testEventCode) {
-    payload.test_event_code = testEventCode;
+  // Only add test_event_code if explicitly passed (not from env by default)
+  if (params.testEventCode) {
+    payload.test_event_code = params.testEventCode;
   }
 
   const controller = new AbortController();

@@ -20,6 +20,23 @@ import crypto from 'crypto';
 
 const logger = createScopedLogger('save-order');
 
+/** Extract a specific cookie value from the Cookie header */
+function getCookieValue(request: Request, name: string): string | null {
+  const cookieHeader = request.headers.get('cookie');
+  if (!cookieHeader) return null;
+  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+/** Get the client IP from common headers */
+function getClientIp(request: Request): string | null {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    null
+  );
+}
+
 const ORDER_LOCK_STATUSES = new Set(['processing', 'paid', 'cancelled', 'refunded']);
 
 const createOrderAccessToken = (): string => crypto.randomBytes(32).toString('hex');
@@ -335,6 +352,17 @@ export const POST: APIRoute = async ({ request }) => {
     if (orderData.notes) {
       baseOrderPayload.notes = orderData.notes;
     }
+
+    // Capture Facebook cookies and client info for Meta Conversions API (server-side)
+    const fbClickId = getCookieValue(request, '_fbc');
+    const fbBrowserId = getCookieValue(request, '_fbp');
+    const clientIp = getClientIp(request);
+    const clientUserAgent = request.headers.get('user-agent');
+
+    if (fbClickId) baseOrderPayload.fbClickId = fbClickId;
+    if (fbBrowserId) baseOrderPayload.fbBrowserId = fbBrowserId;
+    if (clientIp) baseOrderPayload.clientIpAddress = clientIp;
+    if (clientUserAgent) baseOrderPayload.clientUserAgent = clientUserAgent;
 
     const expiresAt = Timestamp.fromMillis(Date.now() + 15 * 60 * 1000);
 

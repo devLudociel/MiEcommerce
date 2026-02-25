@@ -8,6 +8,7 @@ import { releaseWalletReservation } from '../../lib/orders/walletReservations';
 import { expireReservedOrder, releaseReservedStock } from '../../lib/orders/stock';
 import type { OrderData } from '../../types/firebase';
 import { sendMetaPurchaseEvent } from '../../lib/analytics/metaConversions';
+import type { EventContext } from '../../lib/analytics/metaConversions';
 
 const logger = createScopedLogger('stripe-webhook');
 
@@ -228,11 +229,30 @@ export const POST: APIRoute = async ({ request }) => {
 
       try {
         const orderForCapi = (freshOrderData || orderData) as OrderData;
+        const orderRecord = orderForCapi as unknown as Record<string, unknown>;
+
+        // Build context from order-stored data (captured at checkout time)
+        const capiContext: EventContext = {};
+        if (typeof orderRecord.fbClickId === 'string' && orderRecord.fbClickId) {
+          capiContext.fbc = orderRecord.fbClickId;
+        }
+        if (typeof orderRecord.fbBrowserId === 'string' && orderRecord.fbBrowserId) {
+          capiContext.fbp = orderRecord.fbBrowserId;
+        }
+        if (typeof orderRecord.clientIpAddress === 'string' && orderRecord.clientIpAddress) {
+          capiContext.clientIpAddress = orderRecord.clientIpAddress;
+        }
+        if (typeof orderRecord.clientUserAgent === 'string' && orderRecord.clientUserAgent) {
+          capiContext.clientUserAgent = orderRecord.clientUserAgent;
+        }
+
         await sendMetaPurchaseEvent({
           order: orderForCapi,
           orderId,
           eventId: orderId,
-          testEventCode: import.meta.env.META_CONVERSIONS_API_TEST_EVENT_CODE,
+          // Only pass test event code when explicitly set; remove env var in production
+          testEventCode: import.meta.env.META_CONVERSIONS_API_TEST_EVENT_CODE || undefined,
+          context: capiContext,
         });
       } catch (capiError) {
         logger.warn('[Stripe Webhook] Meta CAPI failed', { orderId, error: capiError });
