@@ -398,6 +398,8 @@ export const POST: APIRoute = async ({ request }) => {
       taxRate: pricing.taxRate,
       taxLabel: pricing.taxLabel,
       walletDiscount: pricing.walletDiscount,
+      walletPromoDiscount: pricing.walletPromoDiscount || 0,
+      walletPromoMinPurchase: pricing.walletPromoMinPurchase || 50,
       usedWallet: pricing.walletDiscount > 0,
       total: pricing.total,
       totalCents: Math.round(pricing.total * 100),

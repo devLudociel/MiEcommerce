@@ -189,6 +189,8 @@ export interface Wallet {
   userId: string;
   balance: number; // Saldo disponible en moneda local
   reservedBalance?: number; // Saldo reservado para pedidos en proceso
+  promoBalance?: number; // Saldo promocional (ej: bono bienvenida)
+  promoMinPurchase?: number; // Mínimo de compra para usar saldo promocional
   totalEarned: number; // Total acumulado históricamente
   totalSpent: number; // Total gastado del wallet
   createdAt?: Timestamp;
@@ -406,6 +408,9 @@ export interface OrderData {
   couponDiscount?: number;
   // Wallet information
   walletDiscount?: number;
+  walletPromoDiscount?: number;
+  walletPromoMinPurchase?: number;
+  walletPromoCapturedAmount?: number;
   walletReservationStatus?: 'reserved' | 'released' | 'captured';
   walletReservedAmount?: number;
   walletCapturedAmount?: number;

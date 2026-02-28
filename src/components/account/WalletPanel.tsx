@@ -15,6 +15,8 @@ interface WalletTransaction {
 
 interface WalletData {
   balance: number;
+  promoBalance?: number;
+  promoMinPurchase?: number;
   transactions: WalletTransaction[];
 }
 
@@ -49,6 +51,8 @@ export default function WalletPanel() {
 
       const balanceData = await balanceResponse.json();
       const balance = balanceData.balance || 0;
+      const promoBalance = balanceData.promoBalance || 0;
+      const promoMinPurchase = Number(balanceData.promoMinPurchase || 50);
 
       // Fetch transactions
       const transactionsResponse = await fetch(`/api/get-wallet-transactions?userId=${user.uid}`, {
@@ -71,7 +75,7 @@ export default function WalletPanel() {
         createdAt: new Date(t.createdAt || ''),
       }));
 
-      setWallet({ balance, transactions });
+      setWallet({ balance, promoBalance, promoMinPurchase, transactions });
       logger.info('[WalletPanel] Wallet loaded', {
         balance,
         transactionCount: transactions.length,
@@ -164,6 +168,12 @@ export default function WalletPanel() {
           <div>
             <p className="text-sm text-gray-600 mb-2">Saldo disponible</p>
             <p className="text-5xl font-black text-gray-900">€{wallet.balance.toFixed(2)}</p>
+            {wallet.promoBalance && wallet.promoBalance > 0 && (
+              <p className="mt-2 text-sm text-purple-700 font-semibold">
+                Bono de bienvenida: €{wallet.promoBalance.toFixed(2)} (usable en compras ≥{' '}
+                {wallet.promoMinPurchase || 50} €)
+              </p>
+            )}
           </div>
           <div className="text-6xl">💰</div>
         </div>

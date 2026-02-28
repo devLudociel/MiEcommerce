@@ -11,6 +11,7 @@ interface WalletReservationParams {
   orderId: string;
   userId: string;
   amount: number;
+  promoAmount?: number;
 }
 
 export async function reserveWalletFunds({
@@ -134,6 +135,7 @@ export async function captureWalletReservation({
   orderId,
   userId,
   amount,
+  promoAmount,
 }: WalletReservationParams): Promise<number> {
   const captureAmount = roundMoney(amount);
   if (captureAmount <= 0) return 0;
@@ -151,17 +153,22 @@ export async function captureWalletReservation({
 
     const data = walletSnap.data() as Record<string, unknown>;
     const reservedBalance = Number(data.reservedBalance || 0);
+    const promoBalance = Number(data.promoBalance || 0);
 
     captured = Math.min(reservedBalance, captureAmount);
     const newReserved = roundMoney(reservedBalance - captured);
     const totalSpent = Number(data.totalSpent || 0);
     const newTotalSpent = roundMoney(totalSpent + captured);
 
+    const promoToUse = Math.max(0, Math.min(Number(promoAmount || 0), promoBalance, captured));
+    const newPromoBalance = Math.max(0, Number((promoBalance - promoToUse).toFixed(2)));
+
     transaction.set(
       walletRef,
       {
         reservedBalance: newReserved,
         totalSpent: newTotalSpent,
+        promoBalance: newPromoBalance,
         updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true }
@@ -173,6 +180,7 @@ export async function captureWalletReservation({
         walletReservationStatus: 'captured',
         walletCapturedAt: FieldValue.serverTimestamp(),
         walletCapturedAmount: captured,
+        walletPromoCapturedAmount: promoToUse,
         updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true }

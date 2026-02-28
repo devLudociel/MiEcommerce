@@ -1118,6 +1118,8 @@ export async function getOrCreateWallet(userId: string): Promise<Wallet> {
     const newWallet: Wallet = {
       userId,
       balance: 0,
+      promoBalance: 0,
+      promoMinPurchase: 50,
       totalEarned: 0,
       totalSpent: 0,
     };

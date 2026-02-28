@@ -142,6 +142,8 @@ export default function Checkout() {
 
   // Wallet state
   const [walletBalance, setWalletBalance] = useState(0);
+  const [walletPromoBalance, setWalletPromoBalance] = useState(0);
+  const [walletPromoMinPurchase, setWalletPromoMinPurchase] = useState(50);
   const [useWallet, setUseWallet] = useState(false);
 
   // Saved addresses state
@@ -270,11 +272,16 @@ export default function Checkout() {
 
         const data = await response.json();
         const balance = data.balance || 0;
+        const promoBalance = data.promoBalance || 0;
+        const promoMinPurchase = Number(data.promoMinPurchase || 50);
         setWalletBalance(balance);
-        logger.info('[Checkout] Wallet balance loaded', { balance });
+        setWalletPromoBalance(promoBalance);
+        setWalletPromoMinPurchase(promoMinPurchase);
+        logger.info('[Checkout] Wallet balance loaded', { balance, promoBalance });
       } catch (error) {
         logger.error('[Checkout] Error loading wallet balance', error);
         setWalletBalance(0);
+        setWalletPromoBalance(0);
       }
     };
 
@@ -456,7 +463,19 @@ export default function Checkout() {
 
   // Calculate wallet discount
   const totalBeforeWallet = subtotalAfterDiscount + shippingCost + tax;
-  const walletDiscount = useWallet ? Math.min(walletBalance, totalBeforeWallet) : 0;
+  const eligibleWalletBalance =
+    totalBeforeWallet >= walletPromoMinPurchase
+      ? walletBalance
+      : Math.max(0, walletBalance - walletPromoBalance);
+  const walletDiscount = useWallet ? Math.min(eligibleWalletBalance, totalBeforeWallet) : 0;
+  const walletMinPurchaseApplies =
+    walletPromoBalance > 0 && totalBeforeWallet < walletPromoMinPurchase;
+
+  useEffect(() => {
+    if (useWallet && eligibleWalletBalance <= 0) {
+      setUseWallet(false);
+    }
+  }, [useWallet, eligibleWalletBalance]);
 
   // Total includes: subtotal - bundle discount - coupon discount + shipping + tax - wallet discount
   const total = totalBeforeWallet - walletDiscount;
@@ -1711,11 +1730,23 @@ export default function Checkout() {
                       <div className="text-xs text-gray-600 mt-1">
                         Saldo disponible: {walletBalance.toFixed(2)} €
                       </div>
+                      {walletPromoBalance > 0 && (
+                        <div className="text-[11px] text-purple-700 mt-1">
+                          Bono de bienvenida: {walletPromoBalance.toFixed(2)} € (usable en compras
+                          ≥ {walletPromoMinPurchase} €)
+                        </div>
+                      )}
+                      {walletMinPurchaseApplies && (
+                        <div className="text-[11px] text-amber-700 mt-1">
+                          Necesitas un total mínimo de {walletPromoMinPurchase} € para usar el bono.
+                        </div>
+                      )}
                     </div>
                     <input
                       id="checkout-use-wallet"
                       type="checkbox"
                       checked={useWallet}
+                      disabled={eligibleWalletBalance <= 0}
                       onChange={(e) => setUseWallet(e.target.checked)}
                       className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
                     />

@@ -7,6 +7,8 @@ import CookieConsent from '../components/analytics/CookieConsent.tsx';
 import CompareBar from '../components/products/CompareBar';
 import ChatWidget from '../components/support/ChatWidget';
 import PromoPopupDisplay from '../components/promo/PromoPopupDisplay';
+import WelcomeBonusPopup from '../components/common/WelcomeBonusPopup';
+import LeadSignupPopup from '../components/common/LeadSignupPopup';
 import '../styles/global.css';
 
 interface Props {
@@ -105,6 +107,8 @@ const nonce = Astro.locals?.cspNonce;
     <ChatWidget client:idle />
     <!-- Promotional Popups -->
     <PromoPopupDisplay client:idle />
+    <WelcomeBonusPopup client:load />
+    <LeadSignupPopup client:load />
     <!-- Cookie Consent Banner -->
     <CookieConsent client:load />
     <!-- Analytics Tracking -->

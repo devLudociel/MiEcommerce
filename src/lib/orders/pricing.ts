@@ -42,6 +42,8 @@ export interface OrderPricingResult {
   taxType: string;
   taxLabel: string;
   walletDiscount: number;
+  walletPromoDiscount?: number;
+  walletPromoMinPurchase?: number;
   total: number;
 }
 
@@ -724,18 +726,42 @@ async function getShippingCost(
   return roundMoney(basePrice);
 }
 
+interface WalletDiscountResult {
+  discount: number;
+  promoDiscount: number;
+  promoMinPurchase: number;
+}
+
 async function getWalletDiscount(
   db: ReturnType<typeof getAdminDb>,
   userId: string | null,
   useWallet: boolean,
   totalBeforeWallet: number
-): Promise<number> {
-  if (!useWallet) return 0;
-  if (!userId || userId === 'guest') return 0;
+): Promise<WalletDiscountResult> {
+  if (!useWallet) return { discount: 0, promoDiscount: 0, promoMinPurchase: 50 };
+  if (!userId || userId === 'guest')
+    return { discount: 0, promoDiscount: 0, promoMinPurchase: 50 };
   const walletSnap = await db.collection('wallets').doc(userId).get();
-  if (!walletSnap.exists) return 0;
-  const balance = Number(walletSnap.data()?.balance ?? 0);
-  return floorMoney(Math.min(balance, totalBeforeWallet));
+  if (!walletSnap.exists) return { discount: 0, promoDiscount: 0, promoMinPurchase: 50 };
+
+  const data = walletSnap.data() || {};
+  const balance = Number((data as Record<string, unknown>).balance ?? 0);
+  const promoBalance = Number((data as Record<string, unknown>).promoBalance ?? 0);
+  const promoMinPurchase = Number((data as Record<string, unknown>).promoMinPurchase ?? 50);
+
+  const regularBalance = Math.max(0, balance - promoBalance);
+  const eligibleBalance =
+    totalBeforeWallet >= promoMinPurchase ? balance : Math.max(0, regularBalance);
+
+  const discount = floorMoney(Math.min(eligibleBalance, totalBeforeWallet));
+  const promoDiscount =
+    totalBeforeWallet >= promoMinPurchase ? Math.min(promoBalance, discount) : 0;
+
+  return {
+    discount,
+    promoDiscount,
+    promoMinPurchase,
+  };
 }
 
 export async function calculateOrderPricing(
@@ -854,12 +880,13 @@ export async function calculateOrderPricing(
   );
 
   const totalBeforeWallet = roundMoney(subtotalAfterDiscount + shippingCost + tax);
-  const walletDiscount = await getWalletDiscount(
+  const walletInfo = await getWalletDiscount(
     db,
     input.userId || null,
     Boolean(input.useWallet),
     totalBeforeWallet
   );
+  const walletDiscount = walletInfo.discount;
 
   const total = roundMoney(Math.max(0, totalBeforeWallet - walletDiscount));
 
@@ -878,6 +905,8 @@ export async function calculateOrderPricing(
     taxType: taxInfo.name,
     taxLabel: taxInfo.label,
     walletDiscount,
+    walletPromoDiscount: walletInfo.promoDiscount,
+    walletPromoMinPurchase: walletInfo.promoMinPurchase,
     total,
   };
 }

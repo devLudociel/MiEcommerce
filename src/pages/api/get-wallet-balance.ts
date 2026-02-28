@@ -66,14 +66,20 @@ export const GET: APIRoute = async ({ request }) => {
     const walletDoc = await walletRef.get();
 
     let balance = 0;
+    let promoBalance = 0;
+    let promoMinPurchase = 50;
 
     if (walletDoc.exists) {
       const data = walletDoc.data();
       balance = data?.balance || 0;
+      promoBalance = data?.promoBalance || 0;
+      promoMinPurchase = Number(data?.promoMinPurchase || 50);
     } else {
       // Create wallet if doesn't exist
       await walletRef.set({
         balance: 0,
+        promoBalance: 0,
+        promoMinPurchase: 50,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -81,7 +87,7 @@ export const GET: APIRoute = async ({ request }) => {
 
     logger.info('[API get-wallet-balance] Balance retrieved', { userId: requestedUserId, balance });
 
-    return new Response(JSON.stringify({ balance }), {
+    return new Response(JSON.stringify({ balance, promoBalance, promoMinPurchase }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

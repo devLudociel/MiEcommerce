@@ -1,6 +1,8 @@
 ---
 import LandingAnalytics from '../components/landing/LandingAnalytics.tsx';
 import CookieConsent from '../components/analytics/CookieConsent.tsx';
+import WelcomeBonusPopup from '../components/common/WelcomeBonusPopup';
+import LeadSignupPopup from '../components/common/LeadSignupPopup';
 import '../styles/global.css';
 
 interface Props {
@@ -122,5 +124,7 @@ const {
       campaignId={campaignId}
       facebookPixelId={facebookPixelId}
     />
+    <WelcomeBonusPopup client:load />
+    <LeadSignupPopup client:load />
   </body>
 </html>

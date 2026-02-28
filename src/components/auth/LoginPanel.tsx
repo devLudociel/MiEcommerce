@@ -48,6 +48,8 @@ export default function LoginPanel() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
 
+  const WELCOME_BONUS_STORAGE_KEY = 'welcome_bonus_popup';
+
   // Modal state
   const [modal, setModal] = useState<{
     isOpen: boolean;
@@ -71,6 +73,41 @@ export default function LoginPanel() {
 
   const closeModal = () => {
     setModal({ ...modal, isOpen: false });
+  };
+
+  const persistWelcomeBonusPopup = (amount: number, minPurchase: number) => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(
+        WELCOME_BONUS_STORAGE_KEY,
+        JSON.stringify({ amount, minPurchase })
+      );
+    } catch (e) {
+      logger.warn('[LoginPanel] Could not persist welcome bonus popup', e);
+    }
+  };
+
+  const grantWelcomeBonus = async (user: User | null) => {
+    if (!user) return;
+    try {
+      const token = await user.getIdToken();
+      if (!token) return;
+      const response = await fetch('/api/wallet/grant-welcome-bonus', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ subscribe: true }),
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data?.granted && typeof data.amount === 'number') {
+        persistWelcomeBonusPopup(data.amount, Number(data.minPurchase || 50));
+      }
+    } catch (e) {
+      logger.warn('[LoginPanel] Error granting welcome bonus (non-critical)', e);
+    }
   };
 
   // Helper to detect mobile device
@@ -133,6 +170,10 @@ export default function LoginPanel() {
             providerId: result.providerId,
             operationType: result.operationType,
           });
+
+          if (result?.additionalUserInfo?.isNewUser) {
+            await grantWelcomeBonus(result.user);
+          }
 
           // Clear the redirect flag
           sessionStorage.removeItem('auth_redirect_pending');
@@ -241,8 +282,11 @@ export default function LoginPanel() {
       // Try popup first on all devices (works better with dev tunnels)
       try {
         logger.info('[LoginPanel] signInWithGoogle via popup: start', { isMobile });
-        await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider);
         logger.info('[LoginPanel] signInWithGoogle via popup: success');
+        if (result?.additionalUserInfo?.isNewUser) {
+          await grantWelcomeBonus(result.user);
+        }
         await redirectAfterLogin();
         return;
       } catch (e: unknown) {
@@ -336,6 +380,7 @@ export default function LoginPanel() {
 
       if (tabMode === 'register') {
         await createUserWithEmailAndPassword(auth, email.trim(), password);
+        await grantWelcomeBonus(auth.currentUser);
         showModal(
           'success',
           '¡Cuenta creada!',

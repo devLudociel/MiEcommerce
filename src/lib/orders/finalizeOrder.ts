@@ -66,6 +66,10 @@ export async function finalizeOrder({
   ) {
     const userId: string = String(data.userId);
     const walletAmount: number = Number(data.walletDiscount) || 0;
+    const promoAmount: number = Math.max(
+      0,
+      Math.min(Number(data.walletPromoDiscount || 0), walletAmount)
+    );
     const reservationStatus = String(data.walletReservationStatus || '');
     const reservedAmount = Number(data.walletReservedAmount || 0);
     const epsilon = 0.01;
@@ -82,18 +86,22 @@ export async function finalizeOrder({
 
         const current = snap.data() as Record<string, unknown>;
         const currentBalance = Number(current.balance || 0);
+        const currentPromo = Number(current.promoBalance || 0);
 
         if (currentBalance + epsilon < walletAmount) {
           throw new Error('Saldo insuficiente en el monedero');
         }
 
         const newBalance = Math.max(0, Number((currentBalance - walletAmount).toFixed(2)));
+        const promoToUse = Math.max(0, Math.min(currentPromo, promoAmount));
+        const newPromoBalance = Math.max(0, Number((currentPromo - promoToUse).toFixed(2)));
 
         transaction.set(
           walletRef,
           {
             userId,
             balance: newBalance,
+            promoBalance: newPromoBalance,
             totalSpent: Number(current.totalSpent || 0) + walletAmount,
             totalEarned: Number(current.totalEarned || 0),
             updatedAt: FieldValue.serverTimestamp(),
@@ -130,6 +138,7 @@ export async function finalizeOrder({
           orderId,
           userId,
           amount: amountToCapture,
+          promoAmount,
         });
 
         logger.info('[finalizeOrder] Wallet reservation captured', {
