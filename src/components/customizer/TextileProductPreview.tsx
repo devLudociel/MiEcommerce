@@ -104,7 +104,7 @@ export default function TextileProductPreview({
   };
 
   return (
-    <div className="sticky top-4">
+    <div className="w-full">
       <div className="bg-white rounded-2xl shadow-2xl border-2 border-gray-200 overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-500 to-cyan-500 p-4">

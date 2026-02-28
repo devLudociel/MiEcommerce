@@ -39,7 +39,7 @@ export default function SplitProductPreview({
   const handleRefResetZoom = () => setRefZoom(1);
 
   return (
-    <div className="sticky top-4 space-y-4">
+    <div className="w-full space-y-4">
       {/* Preview 1: Caja/Producto Base */}
       <div className="bg-white rounded-2xl shadow-2xl border-2 border-gray-200 overflow-hidden">
         {/* Header */}

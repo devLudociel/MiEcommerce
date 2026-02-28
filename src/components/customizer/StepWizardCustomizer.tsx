@@ -7,6 +7,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
+  CheckCircle2,
+  ClipboardList,
   RotateCcw,
   Save,
   Palette,
@@ -100,6 +102,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
   const [showDraftNotification, setShowDraftNotification] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [reviewConfirmed, setReviewConfirmed] = useState(false);
 
   // Auto-save draft functionality
   const draftKey = `draft_${product.id}`;
@@ -109,6 +112,10 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     true,
     30000
   );
+
+  useEffect(() => {
+    setReviewConfirmed(false);
+  }, [currentStep]);
 
   // Detectar tipos de producto
   const isResinProduct = useCallback((): boolean => {
@@ -159,6 +166,39 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     );
   }, [product]);
 
+  const isAccessoryProduct = useCallback((): boolean => {
+    const categoryLower = product.categoryId?.toLowerCase() || '';
+    const nameLower = product.name?.toLowerCase() || '';
+    const subcategoryLower = product.subcategoryId?.toLowerCase() || '';
+    const tags = product.tags?.map((t) => t.toLowerCase()) || [];
+
+    const accessoryKeywords = [
+      'gorra',
+      'gorras',
+      'cap',
+      'caps',
+      'sombrero',
+      'bolsa',
+      'bolsas',
+      'tote',
+      'tote bag',
+      'delantal',
+      'mochila',
+      'riñonera',
+      'rinonera',
+    ];
+
+    const hayAccesorio = (text: string) =>
+      accessoryKeywords.some((keyword) => text.includes(keyword));
+
+    return (
+      hayAccesorio(categoryLower) ||
+      hayAccesorio(subcategoryLower) ||
+      hayAccesorio(nameLower) ||
+      tags.some((tag) => hayAccesorio(tag))
+    );
+  }, [product]);
+
   // Clasificar campos por tipo para los pasos
   const fieldsByStep = useMemo(() => {
     const optionFields: CustomizationField[] = [];
@@ -178,6 +218,16 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
 
     return { optionFields, designFields };
   }, [schema.fields]);
+
+  const sortedFields = useMemo(
+    () =>
+      [...schema.fields].sort((a, b) => {
+        const orderA = a.order ?? 999;
+        const orderB = b.order ?? 999;
+        return orderA - orderB;
+      }),
+    [schema.fields]
+  );
 
   // Determinar pasos dinámicamente
   const steps = useMemo((): WizardStep[] => {
@@ -207,7 +257,8 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
 
     // Paso 3: Posición - solo para productos que lo necesiten y tengan imagen
     const hasImageUpload = fieldsByStep.designFields.length > 0;
-    const needsPositioning = !isResinProduct() && hasImageUpload;
+    const needsPositioning =
+      !isResinProduct() && hasImageUpload && (isTextileProduct() || isAccessoryProduct());
     if (needsPositioning) {
       stepList.push({
         id: 'position',
@@ -228,7 +279,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     });
 
     return stepList;
-  }, [fieldsByStep, isResinProduct]);
+  }, [fieldsByStep, isResinProduct, isTextileProduct, isAccessoryProduct]);
 
   // Check for reorder/shared design on mount
   useEffect(() => {
@@ -424,6 +475,85 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     extractQuantity,
     getTieredUnitPrice,
   ]);
+
+  const isFieldVisibleForSummary = useCallback(
+    (field: CustomizationField): boolean => {
+      if (!field.condition) return true;
+      const dependentValue = values[field.condition.dependsOn]?.value;
+      const showWhen = Array.isArray(field.condition.showWhen)
+        ? field.condition.showWhen
+        : [field.condition.showWhen];
+      return showWhen.includes(String(dependentValue));
+    },
+    [values]
+  );
+
+  const hasFieldValue = useCallback((field: CustomizationField, value?: CustomizationValue) => {
+    if (!value) return false;
+    if (field.fieldType === 'checkbox') return value.value === true;
+    if (field.fieldType === 'image_upload') {
+      return Boolean(value.imageUrl || value.imagePath || value.value);
+    }
+    if (value.value === undefined || value.value === null) return false;
+    if (typeof value.value === 'string') return value.value.trim().length > 0;
+    return true;
+  }, []);
+
+  const getFieldDisplayValue = useCallback(
+    (field: CustomizationField, value?: CustomizationValue): string | null => {
+      if (!value) return null;
+      if (field.fieldType === 'checkbox') return value.value === true ? 'Sí' : 'No';
+      if (field.fieldType === 'image_upload') {
+        return value.imageUrl || value.imagePath ? 'Imagen subida' : null;
+      }
+      if (value.displayValue) return String(value.displayValue);
+      if (value.value === undefined || value.value === null) return null;
+      return String(value.value);
+    },
+    []
+  );
+
+  const summaryItems = useMemo(
+    () =>
+      sortedFields
+        .filter((field) => isFieldVisibleForSummary(field))
+        .map((field) => {
+          const fieldValue = values[field.id];
+          const displayValue = getFieldDisplayValue(field, fieldValue);
+          if (!displayValue) return null;
+          return { id: field.id, label: field.label, value: displayValue };
+        })
+        .filter(Boolean) as Array<{ id: string; label: string; value: string }>,
+    [sortedFields, values, isFieldVisibleForSummary, getFieldDisplayValue]
+  );
+
+  const uploadedImages = useMemo(
+    () =>
+      sortedFields
+        .filter((field) => field.fieldType === 'image_upload')
+        .map((field) => {
+          const fieldValue = values[field.id];
+          const imageUrl =
+            (fieldValue?.imageUrl as string | undefined) ||
+            (typeof fieldValue?.value === 'string' ? fieldValue?.value : undefined);
+          if (!imageUrl) return null;
+          return { id: field.id, label: field.label, imageUrl };
+        })
+        .filter(Boolean) as Array<{ id: string; label: string; imageUrl: string }>,
+    [sortedFields, values]
+  );
+
+  const requiredFields = useMemo(
+    () => sortedFields.filter((field) => field.required && isFieldVisibleForSummary(field)),
+    [sortedFields, isFieldVisibleForSummary]
+  );
+
+  const missingRequiredFields = useMemo(
+    () => requiredFields.filter((field) => !hasFieldValue(field, values[field.id])),
+    [requiredFields, hasFieldValue, values]
+  );
+
+  const isReadyToReview = missingRequiredFields.length === 0;
 
   const handleFieldChange = useCallback(
     (fieldId: string, value: CustomizationValue) => {
@@ -1064,18 +1194,22 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
           <div className="space-y-6">
             {/* Selected options summary */}
             <div className="bg-gray-50 rounded-xl p-4">
-              <h4 className="font-bold text-gray-800 mb-3">Tu seleccion:</h4>
+              <div className="flex items-center gap-2 mb-3">
+                <CheckCircle2 className="w-5 h-5 text-purple-600" />
+                <h4 className="font-bold text-gray-800">Tu seleccion:</h4>
+              </div>
               <div className="space-y-2">
-                {Object.entries(values).map(([fieldId, val]) => {
-                  const field = schema.fields.find((f) => f.id === fieldId);
-                  if (!field || !val.displayValue) return null;
-                  return (
-                    <div key={fieldId} className="flex justify-between text-sm">
-                      <span className="text-gray-600">{field.label}:</span>
-                      <span className="font-medium text-gray-800">{val.displayValue}</span>
-                    </div>
-                  );
-                })}
+                {summaryItems.map((item) => (
+                  <div key={item.id} className="flex justify-between text-sm">
+                    <span className="text-gray-600">{item.label}:</span>
+                    <span className="font-medium text-gray-800">{item.value}</span>
+                  </div>
+                ))}
+                {summaryItems.length === 0 && (
+                  <p className="text-sm text-gray-500">
+                    Aun no hay opciones seleccionadas.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -1120,6 +1254,40 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
                 </div>
               </div>
             </div>
+
+            {/* Uploaded images */}
+            {uploadedImages.length > 0 && (
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <ImageIcon className="w-4 h-4 text-cyan-600" />
+                  <h4 className="font-bold text-gray-800">Archivos del cliente</h4>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {uploadedImages.map((img) => (
+                    <div key={img.id} className="border border-gray-200 rounded-xl p-2 bg-white">
+                      <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden">
+                        <img
+                          src={img.imageUrl}
+                          alt={img.label}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <p className="mt-2 text-xs text-gray-600 line-clamp-2">{img.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <label className="flex items-start gap-3 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={reviewConfirmed}
+                onChange={(e) => setReviewConfirmed(e.target.checked)}
+                className="mt-1 w-5 h-5 rounded border-2 border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+              />
+              <span>He revisado mis opciones y confirmo que todo esta correcto.</span>
+            </label>
 
             {/* Save & Share */}
             {Object.keys(values).length > 0 && (
@@ -1191,9 +1359,10 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     return (
       <ProductPreview
         baseImage={getBaseImage()}
-        userImage={getUserImage()}
+        userImage={isAccessoryProduct() ? getUserImage() : null}
         transform={getImageTransform()}
         productName={product.name}
+        showPrintArea={isAccessoryProduct()}
       />
     );
   };
@@ -1313,7 +1482,68 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Preview - arriba en movil */}
           <div className="order-1 lg:order-1">
-            <div className="sticky top-4">{renderPreview()}</div>
+            <div className="w-full">{renderPreview()}</div>
+
+            {/* Summary Panel */}
+            <div className="mt-6 space-y-4">
+              <div className="bg-white rounded-2xl border-2 border-gray-200 p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <ClipboardList className="w-5 h-5 text-purple-600" />
+                  <h3 className="font-bold text-gray-900">Informacion del cliente</h3>
+                </div>
+
+                {missingRequiredFields.length > 0 && (
+                  <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+                    Faltan campos obligatorios:{' '}
+                    <span className="font-semibold">
+                      {missingRequiredFields.map((field) => field.label).join(', ')}
+                    </span>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  {summaryItems.map((item) => (
+                    <div key={item.id} className="flex items-start justify-between gap-4 text-sm">
+                      <span className="text-gray-600">{item.label}</span>
+                      <span className="font-semibold text-gray-900 text-right">{item.value}</span>
+                    </div>
+                  ))}
+
+                  {summaryItems.length === 0 && (
+                    <p className="text-sm text-gray-500">
+                      A medida que completes el formulario, veras aqui el resumen de tus opciones.
+                    </p>
+                  )}
+
+                  {isReadyToReview && summaryItems.length > 0 && (
+                    <p className="text-xs text-green-600 font-medium">Todo listo para revisar.</p>
+                  )}
+                </div>
+              </div>
+
+              {uploadedImages.length > 0 && (
+                <div className="bg-white rounded-2xl border-2 border-gray-200 p-5 shadow-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ImageIcon className="w-5 h-5 text-cyan-600" />
+                    <h3 className="font-bold text-gray-900">Archivos del cliente</h3>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {uploadedImages.map((img) => (
+                      <div key={img.id} className="border border-gray-200 rounded-xl p-2">
+                        <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden">
+                          <img
+                            src={img.imageUrl}
+                            alt={img.label}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                        <p className="mt-2 text-xs text-gray-600 line-clamp-2">{img.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Step Content - abajo en movil */}
@@ -1373,7 +1603,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
                 ) : (
                   <button
                     onClick={handleAddToCart}
-                    disabled={isAddingToCart}
+                    disabled={isAddingToCart || !reviewConfirmed}
                     className="flex items-center gap-2 px-4 sm:px-6 py-2.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-xl font-bold text-sm hover:shadow-lg transition-all disabled:opacity-50 active:scale-95"
                   >
                     {isAddingToCart ? (
@@ -1384,12 +1614,17 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
                     ) : (
                       <>
                         <ShoppingCart className="w-4 h-4" />
-                        <span>Anadir</span>
+                        <span>Confirmar y anadir</span>
                       </>
                     )}
                   </button>
                 )}
               </div>
+              {currentStep === steps.length - 1 && !reviewConfirmed && (
+                <p className="text-center text-xs text-amber-700 mt-3">
+                  Confirma la revision para poder anadir al carrito.
+                </p>
+              )}
             </div>
 
             {/* Help text */}

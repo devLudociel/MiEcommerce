@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Loader, RotateCcw, Save, Palette, X } from 'lucide-react';
+import {
+  ShoppingCart,
+  Loader,
+  RotateCcw,
+  Save,
+  Palette,
+  X,
+  ClipboardList,
+  Image as ImageIcon,
+  CheckCircle2,
+} from 'lucide-react';
 import type {
   CustomizationSchema,
   CustomizationField,
@@ -73,6 +83,8 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   const [layers, setLayers] = useState<DesignLayer[]>([]);
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
   const [showDraftNotification, setShowDraftNotification] = useState(false);
+  const [showReview, setShowReview] = useState(false);
+  const [reviewConfirmed, setReviewConfirmed] = useState(false);
 
   // Centralized themes state
   const [centralizedThemes, setCentralizedThemes] = useState<Theme[]>([]);
@@ -121,10 +133,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
             // Give React time to update state before adding to cart
             setTimeout(() => {
-              const addButton = document.querySelector('[data-add-to-cart]') as HTMLButtonElement;
-              if (addButton) {
-                addButton.click();
-              }
+              handleAddToCart();
             }, 500);
           }
 
@@ -594,12 +603,12 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     logger.info('[DynamicCustomizer] Draft dismissed', { productId: product.id });
   };
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (): Promise<boolean> => {
     setError(null);
 
     // Validate required fields
     if (!validateFields()) {
-      return;
+      return false;
     }
 
     // Stock validation
@@ -610,13 +619,13 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
       // Check if out of stock and backorder not allowed
       if (currentStock === 0 && !product.allowBackorder) {
         setError('Este producto está agotado y no admite pedidos bajo demanda.');
-        return;
+        return false;
       }
 
       // Check if requested quantity exceeds stock (and backorder not allowed)
       if (currentStock > 0 && requestedQuantity > currentStock && !product.allowBackorder) {
         setError(`Solo hay ${currentStock} unidades disponibles. Por favor, reduce la cantidad.`);
-        return;
+        return false;
       }
 
       // Warn if ordering more than available but backorder is allowed
@@ -660,9 +669,11 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
       // Reset form
       setValues({});
+      return true;
     } catch (err) {
       logger.error('[DynamicCustomizer] Error adding to cart', err);
       setError('Error al añadir al carrito. Por favor, inténtalo de nuevo.');
+      return false;
     } finally {
       setIsAddingToCart(false);
     }
@@ -1169,6 +1180,96 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     return orderA - orderB;
   });
 
+  const isFieldVisibleForSummary = (field: CustomizationField): boolean => {
+    if (!field.condition) return true;
+    const dependentValue = values[field.condition.dependsOn]?.value;
+    const showWhen = Array.isArray(field.condition.showWhen)
+      ? field.condition.showWhen
+      : [field.condition.showWhen];
+    return showWhen.includes(String(dependentValue));
+  };
+
+  const hasFieldValue = (field: CustomizationField, value?: CustomizationValue): boolean => {
+    if (!value) return false;
+    if (field.fieldType === 'checkbox') return value.value === true;
+    if (field.fieldType === 'image_upload') {
+      return Boolean(value.imageUrl || value.imagePath || value.value);
+    }
+    if (value.value === undefined || value.value === null) return false;
+    if (typeof value.value === 'string') return value.value.trim().length > 0;
+    return true;
+  };
+
+  const getFieldDisplayValue = (
+    field: CustomizationField,
+    value?: CustomizationValue
+  ): string | null => {
+    if (!value) return null;
+    if (field.fieldType === 'checkbox') return value.value === true ? 'Sí' : 'No';
+    if (field.fieldType === 'image_upload') {
+      return value.imageUrl || value.imagePath ? 'Imagen subida' : null;
+    }
+    if (value.displayValue) return String(value.displayValue);
+    if (value.value === undefined || value.value === null) return null;
+    return String(value.value);
+  };
+
+  const summaryItems = sortedFields
+    .filter((field) => isFieldVisibleForSummary(field))
+    .map((field) => {
+      const fieldValue = values[field.id];
+      const displayValue = getFieldDisplayValue(field, fieldValue);
+      if (!displayValue) return null;
+      return {
+        id: field.id,
+        label: field.label,
+        value: displayValue,
+      };
+    })
+    .filter(Boolean) as Array<{ id: string; label: string; value: string }>;
+
+  const uploadedImages = sortedFields
+    .filter((field) => field.fieldType === 'image_upload')
+    .map((field) => {
+      const fieldValue = values[field.id];
+      const imageUrl =
+        (fieldValue?.imageUrl as string | undefined) ||
+        (typeof fieldValue?.value === 'string' ? fieldValue?.value : undefined);
+      if (!imageUrl) return null;
+      return {
+        id: field.id,
+        label: field.label,
+        imageUrl,
+      };
+    })
+    .filter(Boolean) as Array<{ id: string; label: string; imageUrl: string }>;
+
+  const requiredFields = sortedFields.filter(
+    (field) => field.required && isFieldVisibleForSummary(field)
+  );
+
+  const missingRequiredFields = requiredFields.filter(
+    (field) => !hasFieldValue(field, values[field.id])
+  );
+
+  const isReadyToReview = missingRequiredFields.length === 0;
+  const selectedThemeInfo = getSelectedTheme();
+
+  const handleOpenReview = () => {
+    if (!isReadyToReview) return;
+    setReviewConfirmed(false);
+    setShowReview(true);
+  };
+
+  const handleConfirmAddToCart = async () => {
+    if (!reviewConfirmed) return;
+    const success = await handleAddToCart();
+    if (success) {
+      setShowReview(false);
+      setReviewConfirmed(false);
+    }
+  };
+
   // Get base image for preview based on selected theme, color, or default
   const getBaseImage = (): string => {
     // PRIORIDAD 1: Variante seleccionada de temática centralizada
@@ -1304,6 +1405,40 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
           tag.includes('textil') ||
           tag.includes('ropa')
       )
+    );
+  };
+
+  // Detectar complementos/accesorios (gorras, bolsas, etc.)
+  const isAccessoryProduct = (): boolean => {
+    const categoryLower = product.categoryId?.toLowerCase() || '';
+    const nameLower = product.name?.toLowerCase() || '';
+    const subcategoryLower = (product as any).subcategoryId?.toLowerCase() || '';
+    const tags = (product as any).tags?.map((t: string) => t.toLowerCase()) || [];
+
+    const accessoryKeywords = [
+      'gorra',
+      'gorras',
+      'cap',
+      'caps',
+      'sombrero',
+      'bolsa',
+      'bolsas',
+      'tote',
+      'tote bag',
+      'delantal',
+      'mochila',
+      'riñonera',
+      'rinonera',
+    ];
+
+    const hayAccesorio = (text: string) =>
+      accessoryKeywords.some((keyword) => text.includes(keyword));
+
+    return (
+      hayAccesorio(categoryLower) ||
+      hayAccesorio(subcategoryLower) ||
+      hayAccesorio(nameLower) ||
+      tags.some((tag: string) => hayAccesorio(tag))
     );
   };
 
@@ -1710,9 +1845,10 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
               /* ProductPreview normal para otros productos */
               <ProductPreview
                 baseImage={getBaseImage()}
-                userImage={getUserImage()}
+                userImage={isAccessoryProduct() ? getUserImage() : null}
                 transform={getImageTransform()}
                 productName={product.name}
+                showPrintArea={isAccessoryProduct()}
               />
             )}
 
@@ -1728,6 +1864,72 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                 </p>
               </div>
             )}
+
+            {/* Summary Panel */}
+            <div className="mt-6 space-y-4">
+              <div className="bg-white rounded-2xl border-2 border-gray-200 p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <ClipboardList className="w-5 h-5 text-purple-600" />
+                  <h3 className="font-bold text-gray-900">Información del cliente</h3>
+                </div>
+
+                {missingRequiredFields.length > 0 && (
+                  <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+                    Faltan campos obligatorios:{' '}
+                    <span className="font-semibold">
+                      {missingRequiredFields.map((field) => field.label).join(', ')}
+                    </span>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  {selectedThemeInfo && (
+                    <div className="flex items-start justify-between gap-4 text-sm">
+                      <span className="text-gray-600">Temática / Diseño</span>
+                      <span className="font-semibold text-gray-900 text-right">
+                        {selectedThemeInfo.label}
+                      </span>
+                    </div>
+                  )}
+
+                  {summaryItems.map((item) => (
+                    <div key={item.id} className="flex items-start justify-between gap-4 text-sm">
+                      <span className="text-gray-600">{item.label}</span>
+                      <span className="font-semibold text-gray-900 text-right">{item.value}</span>
+                    </div>
+                  ))}
+
+                  {summaryItems.length === 0 && !selectedThemeInfo && (
+                    <p className="text-sm text-gray-500">
+                      A medida que completes el formulario, verás aquí el resumen de tus opciones.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {uploadedImages.length > 0 && (
+                <div className="bg-white rounded-2xl border-2 border-gray-200 p-5 shadow-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ImageIcon className="w-5 h-5 text-cyan-600" />
+                    <h3 className="font-bold text-gray-900">Archivos del cliente</h3>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {uploadedImages.map((img) => (
+                      <div key={img.id} className="border border-gray-200 rounded-xl p-2">
+                        <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden">
+                          <img
+                            src={img.imageUrl}
+                            alt={img.label}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                        <p className="mt-2 text-xs text-gray-600 line-clamp-2">{img.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right Column: Fields */}
@@ -1788,25 +1990,30 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
               </div>
             )}
 
-            {/* Add to Cart button */}
+            {/* Review & Add to Cart */}
             <button
-              onClick={handleAddToCart}
-              disabled={isAddingToCart}
+              onClick={handleOpenReview}
+              disabled={!isReadyToReview || isAddingToCart}
               data-add-to-cart="true"
               className="w-full bg-gradient-to-r from-purple-500 to-cyan-500 text-white py-4 rounded-xl font-bold text-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
             >
               {isAddingToCart ? (
                 <>
                   <Loader className="w-6 h-6 animate-spin" />
-                  Añadiendo...
+                  Procesando...
                 </>
               ) : (
                 <>
-                  <ShoppingCart className="w-6 h-6" />
-                  Añadir al Carrito
+                  <CheckCircle2 className="w-6 h-6" />
+                  Revisar y Añadir al Carrito
                 </>
               )}
             </button>
+            {!isReadyToReview && (
+              <p className="text-sm text-amber-700 mt-3 text-center">
+                Completa los campos obligatorios para continuar.
+              </p>
+            )}
 
             {/* Save & Share Buttons */}
             {Object.keys(values).length > 0 && (
@@ -1846,6 +2053,144 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
             </p>
           </div>
         </div>
+
+        {/* Review Modal */}
+        {showReview && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-purple-500 to-cyan-500 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-white" />
+                  <h3 className="text-xl font-bold text-white">Revisión Final</h3>
+                </div>
+                <button
+                  onClick={() => setShowReview(false)}
+                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6 text-white" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-160px)] space-y-6">
+                <p className="text-gray-600">
+                  Revisa tus opciones antes de añadir al carrito para evitar errores.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                    <h4 className="font-bold text-gray-900">Resumen de opciones</h4>
+                    {selectedThemeInfo && (
+                      <div className="flex items-start justify-between gap-4 text-sm">
+                        <span className="text-gray-600">Temática / Diseño</span>
+                        <span className="font-semibold text-gray-900 text-right">
+                          {selectedThemeInfo.label}
+                        </span>
+                      </div>
+                    )}
+                    {summaryItems.map((item) => (
+                      <div key={item.id} className="flex items-start justify-between gap-4 text-sm">
+                        <span className="text-gray-600">{item.label}</span>
+                        <span className="font-semibold text-gray-900 text-right">{item.value}</span>
+                      </div>
+                    ))}
+                    {summaryItems.length === 0 && !selectedThemeInfo && (
+                      <p className="text-sm text-gray-500">
+                        Aún no hay opciones seleccionadas.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                    <h4 className="font-bold text-gray-900">Resumen de precio</h4>
+                    <div className="flex justify-between text-sm text-gray-700">
+                      <span>Precio por unidad:</span>
+                      <span className="font-semibold">€{pricing.basePrice.toFixed(2)}</span>
+                    </div>
+                    {pricing.customizationPrice > 0 && (
+                      <div className="flex justify-between text-sm text-gray-700">
+                        <span>Extras:</span>
+                        <span className="font-semibold">+€{pricing.customizationPrice.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {pricing.quantity > 1 && (
+                      <div className="flex justify-between text-sm text-gray-700">
+                        <span>Cantidad:</span>
+                        <span className="font-semibold">{pricing.quantity} unidades</span>
+                      </div>
+                    )}
+                    <div className="border-t border-gray-200 pt-2 flex justify-between">
+                      <span className="font-bold text-gray-900">Total</span>
+                      <span className="font-bold text-purple-600">
+                        €{pricing.totalPrice.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {uploadedImages.length > 0 && (
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <h4 className="font-bold text-gray-900 mb-3">Archivos del cliente</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {uploadedImages.map((img) => (
+                        <div key={img.id} className="border border-gray-200 rounded-xl p-2 bg-white">
+                          <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden">
+                            <img
+                              src={img.imageUrl}
+                              alt={img.label}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <p className="mt-2 text-xs text-gray-600 line-clamp-2">{img.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <label className="flex items-start gap-3 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={reviewConfirmed}
+                    onChange={(e) => setReviewConfirmed(e.target.checked)}
+                    className="mt-1 w-5 h-5 rounded border-2 border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                  />
+                  <span>
+                    He revisado mis opciones y confirmo que todo está correcto.
+                  </span>
+                </label>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="border-t border-gray-200 p-4 flex flex-col sm:flex-row gap-3 sm:justify-between">
+                <button
+                  onClick={() => setShowReview(false)}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all"
+                >
+                  Seguir editando
+                </button>
+                <button
+                  onClick={handleConfirmAddToCart}
+                  disabled={!reviewConfirmed || isAddingToCart}
+                  className="px-6 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-bold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isAddingToCart ? (
+                    <>
+                      <Loader className="w-5 h-5 animate-spin" />
+                      Añadiendo...
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-5 h-5" />
+                      Confirmar y añadir al carrito
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Theme Selection Modal */}
         {showThemes && hasThemes && (

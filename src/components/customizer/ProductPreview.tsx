@@ -17,7 +17,7 @@ export default function ProductPreview({
   transform,
   productName = 'Producto',
   printAreaPercentage = 70,
-  showPrintArea = true,
+  showPrintArea = false,
 }: ProductPreviewProps) {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showGuides, setShowGuides] = useState(true);
@@ -47,7 +47,7 @@ export default function ProductPreview({
   };
 
   return (
-    <div className="sticky top-4">
+    <div className="w-full">
       <div className="bg-white rounded-2xl shadow-2xl border-2 border-gray-200 overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-500 to-cyan-500 p-4">
