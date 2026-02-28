@@ -139,6 +139,10 @@ function getContentSecurityPolicy(nonce: string): string {
     'https://connect.facebook.net',
     'https://js.stripe.com',
     'https://static.klaviyo.com',
+    'https://static-forms.klaviyo.com',
+    'https://fast.a.klaviyo.com',
+    'https://a.klaviyo.com',
+    'https://d3k81ch9hvuctc.cloudfront.net',
   ];
 
   const styleSrc = ["'self'", "'unsafe-inline'", 'https://*.googleapis.com'];
@@ -150,7 +154,7 @@ function getContentSecurityPolicy(nonce: string): string {
     `style-src ${styleSrc.join(' ')} https://static.klaviyo.com`,
     `style-src-elem ${styleSrc.join(' ')} https://static.klaviyo.com`,
     "style-src-attr 'unsafe-inline'",
-    "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://*.google.com https://*.google-analytics.com https://images.unsplash.com https://www.facebook.com https://static.klaviyo.com https://*.klaviyo.com",
+    "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://*.google.com https://*.google-analytics.com https://images.unsplash.com https://www.facebook.com https://static.klaviyo.com https://*.klaviyo.com https://d3k81ch9hvuctc.cloudfront.net",
     "font-src 'self' data: https://*.googleapis.com https://*.gstatic.com",
     "connect-src 'self' blob: https://firebasestorage.googleapis.com https://*.googleapis.com https://*.google.com https://*.google-analytics.com https://*.googletagmanager.com https://*.stripe.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.zippopotam.us https://api.geoapify.com https://www.facebook.com https://graph.facebook.com https://connect.facebook.net https://fast.a.klaviyo.com https://static-forms.klaviyo.com https://a.klaviyo.com",
     "frame-src 'self' https://*.firebaseapp.com https://js.stripe.com https://accounts.google.com https://*.google.com",
