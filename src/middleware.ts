@@ -138,6 +138,7 @@ function getContentSecurityPolicy(nonce: string): string {
     'https://www.googletagmanager.com',
     'https://connect.facebook.net',
     'https://js.stripe.com',
+    'https://static.klaviyo.com',
   ];
 
   const styleSrc = ["'self'", "'unsafe-inline'", 'https://*.googleapis.com'];
