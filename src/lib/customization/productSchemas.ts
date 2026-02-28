@@ -2102,6 +2102,1369 @@ export const MAQUETAS_SCHEMA: CustomizationSchema = {
 };
 
 // ============================================================================
+// TEXTILES - ROPA PERSONALIZADA
+// ============================================================================
+
+export const ROPA_PERSONALIZADA_SCHEMA: CustomizationSchema = {
+  displayComponent: 'DynamicCustomizer',
+  fields: [
+    {
+      id: 'garment_type',
+      fieldType: 'card_selector',
+      label: 'Tipo de prenda',
+      required: true,
+      priceModifier: 0,
+      order: 1,
+      config: {
+        displayStyle: 'visual_cards',
+        layout: 'grid',
+        options: [
+          { value: 'tshirt', label: 'Camiseta', icon: '👕', description: 'Algodón 100%' },
+          { value: 'hoodie', label: 'Sudadera', icon: '🧥', priceModifier: 15, description: 'Con o sin capucha' },
+          { value: 'polo', label: 'Polo', icon: '👔', priceModifier: 8, description: 'Cuello y botones' },
+          { value: 'tanktop', label: 'Tirantes', icon: '🩱', priceModifier: -2 },
+          { value: 'longsleeve', label: 'Manga larga', icon: '👕', priceModifier: 5 },
+          { value: 'sweatshirt', label: 'Sudadera sin capucha', icon: '🧤', priceModifier: 12 },
+        ],
+      },
+    },
+    {
+      id: 'size',
+      fieldType: 'size_selector',
+      label: 'Talla',
+      required: true,
+      priceModifier: 0,
+      order: 2,
+      config: {
+        displayStyle: 'buttons',
+        availableSizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'],
+        showSizeGuide: true,
+      },
+    },
+    {
+      id: 'color',
+      fieldType: 'color_selector',
+      label: 'Color de la prenda',
+      required: true,
+      priceModifier: 0,
+      order: 3,
+      config: {
+        displayStyle: 'color_blocks',
+        availableColors: [
+          { id: 'white', name: 'Blanco', hex: '#FFFFFF' },
+          { id: 'black', name: 'Negro', hex: '#000000' },
+          { id: 'navy', name: 'Azul Marino', hex: '#1E3A8A' },
+          { id: 'red', name: 'Rojo', hex: '#DC2626' },
+          { id: 'gray', name: 'Gris Jaspeado', hex: '#9CA3AF' },
+          { id: 'royal_blue', name: 'Azul Real', hex: '#2563EB' },
+          { id: 'green', name: 'Verde Botella', hex: '#166534' },
+          { id: 'pink', name: 'Rosa', hex: '#EC4899' },
+          { id: 'yellow', name: 'Amarillo', hex: '#EAB308' },
+          { id: 'orange', name: 'Naranja', hex: '#EA580C' },
+        ],
+      },
+    },
+    {
+      id: 'print_technique',
+      fieldType: 'card_selector',
+      label: 'Técnica de personalización',
+      required: true,
+      priceModifier: 0,
+      order: 4,
+      config: {
+        displayStyle: 'visual_cards',
+        layout: 'horizontal',
+        options: [
+          { value: 'dtf', label: 'DTF (Full color)', icon: '🖨️', badge: 'Recomendado', description: 'Máxima calidad de imagen' },
+          { value: 'vinyl', label: 'Vinilo textil', icon: '✂️', description: 'Textos y logos simples' },
+          { value: 'embroidery', label: 'Bordado', icon: '🧵', priceModifier: 8, badge: 'Premium', description: 'Elegante y duradero' },
+          { value: 'sublimation', label: 'Sublimación', icon: '✨', description: 'Solo prendas blancas/claras' },
+        ],
+      },
+    },
+    {
+      id: 'print_position',
+      fieldType: 'card_selector',
+      label: 'Posición del diseño',
+      required: true,
+      priceModifier: 0,
+      order: 5,
+      config: {
+        displayStyle: 'simple_cards',
+        layout: 'grid',
+        options: [
+          { value: 'front_center', label: 'Pecho (centrado)' },
+          { value: 'front_left', label: 'Pecho (izquierda)', description: 'Tipo polo' },
+          { value: 'back_full', label: 'Espalda completa', priceModifier: 3 },
+          { value: 'front_and_back', label: 'Pecho + espalda', priceModifier: 8 },
+          { value: 'sleeve_left', label: 'Manga izquierda', priceModifier: 4 },
+          { value: 'full_front', label: 'Frontal completo', priceModifier: 5 },
+        ],
+      },
+    },
+    {
+      id: 'design_option',
+      fieldType: 'card_selector',
+      label: 'Diseño',
+      required: true,
+      priceModifier: 0,
+      order: 6,
+      config: {
+        displayStyle: 'simple_cards',
+        layout: 'horizontal',
+        options: [
+          { value: 'upload', label: 'Subir mi diseño', icon: '📤' },
+          { value: 'design_service', label: 'Que lo diseñéis', icon: '🎨', priceModifier: 15 },
+        ],
+      },
+    },
+    {
+      id: 'design_file',
+      fieldType: 'image_upload',
+      label: 'Tu diseño',
+      required: true,
+      priceModifier: 0,
+      order: 7,
+      condition: {
+        dependsOn: 'design_option',
+        showWhen: 'upload',
+      },
+      helpText: 'PNG transparente recomendado. Mínimo 150 DPI.',
+      config: {
+        maxSizeMB: 20,
+        allowedFormats: ['png', 'jpg', 'jpeg', 'svg', 'pdf', 'ai'],
+        showPreview: true,
+        showPositionControls: true,
+      },
+    },
+    {
+      id: 'design_brief',
+      fieldType: 'text_input',
+      label: 'Describe lo que necesitas',
+      required: true,
+      priceModifier: 0,
+      order: 7,
+      condition: {
+        dependsOn: 'design_option',
+        showWhen: 'design_service',
+      },
+      config: {
+        placeholder: 'Describe el diseño, colores, estilo que buscas...',
+        maxLength: 500,
+        showCharCounter: true,
+      },
+    },
+    {
+      id: 'quantity',
+      fieldType: 'dropdown',
+      label: 'Cantidad',
+      required: true,
+      priceModifier: 0,
+      order: 8,
+      isQuantityMultiplier: true,
+      config: {
+        options: [
+          { value: '1', label: '1 unidad', unitPriceOverride: 18 },
+          { value: '5', label: '5 unidades', unitPriceOverride: 14, description: '€14/ud' },
+          { value: '10', label: '10 unidades', unitPriceOverride: 12, description: '€12/ud' },
+          { value: '25', label: '25 unidades', unitPriceOverride: 10, description: '€10/ud' },
+          { value: '50', label: '50 unidades', unitPriceOverride: 8, description: '€8/ud' },
+        ],
+      },
+    },
+  ],
+};
+
+// ============================================================================
+// TEXTILES - COMPLEMENTOS TEXTILES (TOTEBAGS)
+// ============================================================================
+
+export const COMPLEMENTOS_TEXTILES_SCHEMA: CustomizationSchema = {
+  displayComponent: 'DynamicCustomizer',
+  fields: [
+    {
+      id: 'bag_type',
+      fieldType: 'card_selector',
+      label: 'Tipo de bolsa',
+      required: true,
+      priceModifier: 0,
+      order: 1,
+      config: {
+        displayStyle: 'visual_cards',
+        layout: 'grid',
+        options: [
+          { value: 'tote_standard', label: 'Totebag estándar', icon: '🛍️', description: 'Algodón 140g, asas largas' },
+          { value: 'tote_premium', label: 'Totebag premium', icon: '👜', priceModifier: 4, description: 'Algodón 220g, más gruesa', badge: 'Popular' },
+          { value: 'tote_organic', label: 'Totebag orgánica', icon: '🌱', priceModifier: 3, description: 'Algodón orgánico certificado' },
+          { value: 'drawstring', label: 'Mochila de cuerdas', icon: '🎒', description: 'Ligera y práctica' },
+        ],
+      },
+    },
+    {
+      id: 'color',
+      fieldType: 'color_selector',
+      label: 'Color',
+      required: true,
+      priceModifier: 0,
+      order: 2,
+      config: {
+        displayStyle: 'color_blocks',
+        availableColors: [
+          { id: 'natural', name: 'Natural/Crudo', hex: '#F5F0E1' },
+          { id: 'white', name: 'Blanco', hex: '#FFFFFF' },
+          { id: 'black', name: 'Negro', hex: '#000000' },
+          { id: 'navy', name: 'Azul Marino', hex: '#1E3A8A' },
+          { id: 'red', name: 'Rojo', hex: '#DC2626' },
+          { id: 'green', name: 'Verde', hex: '#166534' },
+          { id: 'pink', name: 'Rosa', hex: '#EC4899' },
+        ],
+      },
+    },
+    {
+      id: 'personalization_type',
+      fieldType: 'card_selector',
+      label: 'Tipo de personalización',
+      required: true,
+      priceModifier: 0,
+      order: 3,
+      config: {
+        displayStyle: 'simple_cards',
+        layout: 'horizontal',
+        options: [
+          { value: 'dtf', label: 'DTF (Full color)', badge: 'Recomendado' },
+          { value: 'vinyl', label: 'Vinilo textil' },
+          { value: 'screen', label: 'Serigrafía', description: 'Ideal para grandes cantidades' },
+        ],
+      },
+    },
+    {
+      id: 'design_option',
+      fieldType: 'card_selector',
+      label: 'Diseño',
+      required: true,
+      priceModifier: 0,
+      order: 4,
+      config: {
+        displayStyle: 'simple_cards',
+        layout: 'horizontal',
+        options: [
+          { value: 'upload', label: 'Subir mi diseño', icon: '📤' },
+          { value: 'design_service', label: 'Que lo diseñéis', icon: '🎨', priceModifier: 12 },
+        ],
+      },
+    },
+    {
+      id: 'design_file',
+      fieldType: 'image_upload',
+      label: 'Tu diseño',
+      required: true,
+      priceModifier: 0,
+      order: 5,
+      condition: {
+        dependsOn: 'design_option',
+        showWhen: 'upload',
+      },
+      config: {
+        maxSizeMB: 15,
+        allowedFormats: ['png', 'jpg', 'jpeg', 'svg', 'pdf'],
+        showPreview: true,
+        showPositionControls: true,
+      },
+    },
+    {
+      id: 'design_brief',
+      fieldType: 'text_input',
+      label: 'Describe lo que necesitas',
+      required: true,
+      priceModifier: 0,
+      order: 5,
+      condition: {
+        dependsOn: 'design_option',
+        showWhen: 'design_service',
+      },
+      config: {
+        placeholder: 'Describe el diseño que te gustaría...',
+        maxLength: 500,
+        showCharCounter: true,
+      },
+    },
+    {
+      id: 'quantity',
+      fieldType: 'dropdown',
+      label: 'Cantidad',
+      required: true,
+      priceModifier: 0,
+      order: 6,
+      isQuantityMultiplier: true,
+      config: {
+        options: [
+          { value: '1', label: '1 unidad', unitPriceOverride: 10 },
+          { value: '10', label: '10 unidades', unitPriceOverride: 7, description: '€7/ud' },
+          { value: '25', label: '25 unidades', unitPriceOverride: 5.5, description: '€5.50/ud' },
+          { value: '50', label: '50 unidades', unitPriceOverride: 4.5, description: '€4.50/ud' },
+          { value: '100', label: '100 unidades', unitPriceOverride: 3.5, description: '€3.50/ud' },
+        ],
+      },
+    },
+  ],
+};
+
+// ============================================================================
+// PAPELERÍA - PACKAGING CORPORATIVO
+// ============================================================================
+
+export const PACKAGING_CORPORATIVO_SCHEMA: CustomizationSchema = {
+  displayComponent: 'DynamicCustomizer',
+  fields: [
+    {
+      id: 'product_type',
+      fieldType: 'card_selector',
+      label: 'Tipo de producto',
+      required: true,
+      priceModifier: 0,
+      order: 1,
+      config: {
+        displayStyle: 'visual_cards',
+        layout: 'grid',
+        options: [
+          { value: 'paper_bag', label: 'Bolsa de papel', icon: '🛍️', description: 'Kraft o estucada' },
+          { value: 'box', label: 'Caja corporativa', icon: '📦', priceModifier: 3 },
+          { value: 'envelope', label: 'Sobre personalizado', icon: '✉️' },
+          { value: 'tissue', label: 'Papel de seda', icon: '🎀', description: 'Para envolver' },
+          { value: 'sticker_roll', label: 'Rollo de etiquetas', icon: '🏷️' },
+        ],
+      },
+    },
+    {
+      id: 'size',
+      fieldType: 'dropdown',
+      label: 'Tamaño',
+      required: true,
+      priceModifier: 0,
+      order: 2,
+      config: {
+        placeholder: 'Selecciona tamaño',
+        options: [
+          { value: 'small', label: 'Pequeño', description: 'Joyería, detalles' },
+          { value: 'medium', label: 'Mediano', description: 'Ropa, complementos' },
+          { value: 'large', label: 'Grande', description: 'Zapatos, cajas' },
+          { value: 'custom', label: 'Medida personalizada', priceModifier: 2 },
+        ],
+      },
+    },
+    {
+      id: 'printing',
+      fieldType: 'card_selector',
+      label: 'Tipo de impresión',
+      required: true,
+      priceModifier: 0,
+      order: 3,
+      config: {
+        displayStyle: 'simple_cards',
+        layout: 'vertical',
+        options: [
+          { value: 'one_color', label: 'Un color (logo)', priceModifier: 0 },
+          { value: 'two_color', label: 'Dos colores', priceModifier: 2 },
+          { value: 'full_color', label: 'Full color', priceModifier: 5, badge: 'Recomendado' },
+          { value: 'foil', label: 'Stamping (dorado/plateado)', priceModifier: 10, badge: 'Premium' },
+        ],
+      },
+    },
+    {
+      id: 'logo_file',
+      fieldType: 'image_upload',
+      label: 'Logo de tu empresa',
+      required: true,
+      priceModifier: 0,
+      order: 4,
+      helpText: 'Vectorial (AI, SVG, PDF) para mejor resultado',
+      config: {
+        maxSizeMB: 15,
+        allowedFormats: ['ai', 'svg', 'pdf', 'png', 'jpg'],
+        showPreview: true,
+      },
+    },
+    {
+      id: 'brand_colors',
+      fieldType: 'text_input',
+      label: 'Colores corporativos (opcional)',
+      required: false,
+      priceModifier: 0,
+      order: 5,
+      config: {
+        placeholder: 'Ej: Azul #003366 y Blanco, o "los del logo"',
+        maxLength: 100,
+      },
+    },
+    {
+      id: 'quantity',
+      fieldType: 'dropdown',
+      label: 'Cantidad',
+      required: true,
+      priceModifier: 0,
+      order: 6,
+      isQuantityMultiplier: true,
+      config: {
+        options: [
+          { value: '100', label: '100 unidades', unitPriceOverride: 1.5, description: '€1.50/ud' },
+          { value: '250', label: '250 unidades', unitPriceOverride: 1.1, description: '€1.10/ud' },
+          { value: '500', label: '500 unidades', unitPriceOverride: 0.85, description: '€0.85/ud' },
+          { value: '1000', label: '1000 unidades', unitPriceOverride: 0.65, description: '€0.65/ud' },
+          { value: '2500', label: '2500+ unidades', unitPriceOverride: 0.50, description: '€0.50/ud' },
+        ],
+      },
+    },
+  ],
+};
+
+// ============================================================================
+// CORTE LÁSER - CUADROS DE MADERA
+// ============================================================================
+
+export const CUADROS_MADERA_SCHEMA: CustomizationSchema = {
+  displayComponent: 'DynamicCustomizer',
+  fields: [
+    {
+      id: 'frame_style',
+      fieldType: 'card_selector',
+      label: 'Estilo del cuadro',
+      required: true,
+      priceModifier: 0,
+      order: 1,
+      config: {
+        displayStyle: 'visual_cards',
+        layout: 'grid',
+        options: [
+          { value: 'visor', label: 'Visor con flores', icon: '🌸', badge: 'Popular', description: 'Flores preservadas dentro' },
+          { value: 'layered', label: 'Capas 3D', icon: '🏔️', description: 'Profundidad con capas de madera', priceModifier: 10 },
+          { value: 'silhouette', label: 'Silueta calada', icon: '✨', description: 'Diseño calado en madera' },
+          { value: 'name_frame', label: 'Marco con nombre', icon: '🖼️', description: 'Nombre integrado en el marco' },
+          { value: 'photo_frame', label: 'Marco para foto', icon: '📷', description: 'Con grabado personalizado' },
+        ],
+      },
+    },
+    {
+      id: 'size',
+      fieldType: 'card_selector',
+      label: 'Tamaño',
+      required: true,
+      priceModifier: 0,
+      order: 2,
+      config: {
+        displayStyle: 'simple_cards',
+        layout: 'horizontal',
+        options: [
+          { value: 'small', label: 'Pequeño (15×15cm)' },
+          { value: 'medium', label: 'Mediano (20×20cm)', badge: 'Popular', priceModifier: 5 },
+          { value: 'large', label: 'Grande (30×30cm)', priceModifier: 12 },
+          { value: 'rectangular', label: 'Rectangular (30×20cm)', priceModifier: 8 },
+        ],
+      },
+    },
+    {
+      id: 'wood_type',
+      fieldType: 'dropdown',
+      label: 'Tipo de madera',
+      required: true,
+      priceModifier: 0,
+      order: 3,
+      config: {
+        options: [
+          { value: 'mdf_painted', label: 'MDF pintado blanco', description: 'Limpio y moderno' },
+          { value: 'birch', label: 'Abedul natural', priceModifier: 5 },
+          { value: 'walnut', label: 'Nogal oscuro', priceModifier: 10 },
+        ],
+      },
+    },
+    {
+      id: 'flower_type',
+      fieldType: 'card_selector',
+      label: 'Tipo de flores',
+      required: true,
+      priceModifier: 0,
+      order: 4,
+      condition: {
+        dependsOn: 'frame_style',
+        showWhen: 'visor',
+      },
+      config: {
+        displayStyle: 'visual_cards',
+        layout: 'grid',
+        options: [
+          { value: 'roses', label: 'Rosas preservadas', icon: '🌹' },
+          { value: 'wildflowers', label: 'Flores silvestres', icon: '🌻' },
+          { value: 'lavender', label: 'Lavanda', icon: '💜' },
+          { value: 'mixed_pastel', label: 'Mix pastel', icon: '🌸', badge: 'Popular' },
+          { value: 'mixed_vibrant', label: 'Mix vibrante', icon: '💐', priceModifier: 3 },
+        ],
+      },
+    },
+    {
+      id: 'text',
+      fieldType: 'text_input',
+      label: 'Texto personalizado',
+      required: true,
+      priceModifier: 0,
+      order: 5,
+      config: {
+        placeholder: 'Ej: María & Juan, Familia García, Mamá',
+        maxLength: 40,
+      },
+    },
+    {
+      id: 'date_text',
+      fieldType: 'text_input',
+      label: 'Fecha o texto adicional (opcional)',
+      required: false,
+      priceModifier: 0,
+      order: 6,
+      config: {
+        placeholder: 'Ej: 15.06.2025, Desde 2010',
+        maxLength: 30,
+      },
+    },
+    {
+      id: 'quantity',
+      fieldType: 'dropdown',
+      label: 'Cantidad',
+      required: true,
+      priceModifier: 0,
+      order: 7,
+      isQuantityMultiplier: true,
+      config: {
+        options: [
+          { value: '1', label: '1 unidad', unitPriceOverride: 25 },
+          { value: '2', label: '2 unidades', unitPriceOverride: 22 },
+          { value: '3', label: '3 unidades', unitPriceOverride: 20 },
+        ],
+      },
+    },
+  ],
+};
+
+// ============================================================================
+// IMPRESIÓN 3D - IMPRESIÓN EN RESINA
+// ============================================================================
+
+export const IMPRESION_RESINA_SCHEMA: CustomizationSchema = {
+  displayComponent: 'DynamicCustomizer',
+  fields: [
+    {
+      id: 'piece_type',
+      fieldType: 'card_selector',
+      label: 'Tipo de pieza',
+      required: true,
+      priceModifier: 0,
+      order: 1,
+      config: {
+        displayStyle: 'visual_cards',
+        layout: 'grid',
+        options: [
+          { value: 'figure', label: 'Figura/personaje', icon: '🎭', description: 'Figuras detalladas' },
+          { value: 'miniature', label: 'Miniaturas', icon: '♟️', description: 'Juegos de mesa, wargames' },
+          { value: 'jewelry', label: 'Joyería/bisutería', icon: '💍', description: 'Anillos, colgantes' },
+          { value: 'dental_model', label: 'Modelo dental', icon: '🦷', priceModifier: 10 },
+          { value: 'precision_part', label: 'Pieza de precisión', icon: '🔬', description: 'Alta exactitud dimensional' },
+          { value: 'bust', label: 'Busto personalizado', icon: '👤', priceModifier: 15, description: 'A partir de foto' },
+        ],
+      },
+    },
+    {
+      id: 'resin_type',
+      fieldType: 'card_selector',
+      label: 'Tipo de resina',
+      required: true,
+      priceModifier: 0,
+      order: 2,
+      config: {
+        displayStyle: 'simple_cards',
+        layout: 'vertical',
+        options: [
+          { value: 'standard', label: 'Estándar', description: 'Buen detalle, uso general' },
+          { value: 'abs_like', label: 'ABS-like', priceModifier: 5, description: 'Mayor resistencia a impactos' },
+          { value: 'flexible', label: 'Flexible', priceModifier: 8, description: 'Deformable y elástica' },
+          { value: 'transparent', label: 'Transparente', priceModifier: 6, description: 'Efecto cristal' },
+          { value: 'castable', label: 'Calcinable', priceModifier: 12, description: 'Para fundición de metales' },
+        ],
+      },
+    },
+    {
+      id: 'detail_level',
+      fieldType: 'radio_group',
+      label: 'Nivel de detalle',
+      required: true,
+      priceModifier: 0,
+      order: 3,
+      config: {
+        layout: 'vertical',
+        options: [
+          { value: 'standard', label: 'Estándar (50 micras)', description: 'Buen balance calidad/precio' },
+          { value: 'high', label: 'Alto (25 micras)', priceModifier: 10, description: 'Detalles finos' },
+          { value: 'ultra', label: 'Ultra (10 micras)', priceModifier: 25, description: 'Máximo detalle posible' },
+        ],
+      },
+    },
+    {
+      id: 'size_category',
+      fieldType: 'card_selector',
+      label: 'Tamaño aproximado',
+      required: true,
+      priceModifier: 0,
+      order: 4,
+      config: {
+        displayStyle: 'simple_cards',
+        layout: 'horizontal',
+        options: [
+          { value: 'mini', label: 'Mini (hasta 3cm)', description: 'Miniaturas, joyería' },
+          { value: 'small', label: 'Pequeño (3-8cm)' },
+          { value: 'medium', label: 'Mediano (8-15cm)', priceModifier: 15 },
+          { value: 'large', label: 'Grande (15-25cm)', priceModifier: 35 },
+        ],
+      },
+    },
+    {
+      id: 'has_file',
+      fieldType: 'card_selector',
+      label: '¿Tienes el archivo 3D?',
+      required: true,
+      priceModifier: 0,
+      order: 5,
+      config: {
+        displayStyle: 'simple_cards',
+        layout: 'horizontal',
+        options: [
+          { value: 'yes', label: 'Sí, lo subiré', icon: '📁' },
+          { value: 'need_scan', label: 'Necesito escaneado 3D', icon: '📷', priceModifier: 30 },
+          { value: 'need_model', label: 'Necesito modelado 3D', icon: '🎨', priceModifier: 50 },
+        ],
+      },
+    },
+    {
+      id: 'file_3d',
+      fieldType: 'image_upload',
+      label: 'Archivo 3D',
+      required: true,
+      priceModifier: 0,
+      order: 6,
+      condition: {
+        dependsOn: 'has_file',
+        showWhen: 'yes',
+      },
+      config: {
+        maxSizeMB: 200,
+        allowedFormats: ['stl', 'obj', '3mf'],
+        showPreview: false,
+        helpText: 'Formatos: STL, OBJ, 3MF',
+      },
+    },
+    {
+      id: 'reference_images',
+      fieldType: 'image_upload',
+      label: 'Imágenes de referencia',
+      required: true,
+      priceModifier: 0,
+      order: 6,
+      condition: {
+        dependsOn: 'has_file',
+        showWhen: ['need_scan', 'need_model'],
+      },
+      helpText: 'Fotos desde varios ángulos del objeto o idea',
+      config: {
+        maxSizeMB: 15,
+        allowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
+        showPreview: true,
+      },
+    },
+    {
+      id: 'finish',
+      fieldType: 'dropdown',
+      label: 'Acabado',
+      required: true,
+      priceModifier: 0,
+      order: 7,
+      config: {
+        options: [
+          { value: 'raw_cleaned', label: 'Limpiado y curado (sin pintar)' },
+          { value: 'sanded', label: 'Lijado', priceModifier: 8 },
+          { value: 'primed', label: 'Imprimado (listo para pintar)', priceModifier: 12 },
+          { value: 'painted', label: 'Pintado a mano', priceModifier: 30 },
+        ],
+      },
+    },
+    {
+      id: 'quantity',
+      fieldType: 'dropdown',
+      label: 'Cantidad',
+      required: true,
+      priceModifier: 0,
+      order: 8,
+      isQuantityMultiplier: true,
+      config: {
+        options: [
+          { value: '1', label: '1 unidad', unitPriceOverride: 15 },
+          { value: '2', label: '2 unidades', unitPriceOverride: 13 },
+          { value: '5', label: '5 unidades', unitPriceOverride: 11 },
+          { value: '10', label: '10 unidades', unitPriceOverride: 9 },
+        ],
+      },
+    },
+  ],
+};
+
+// ============================================================================
+// IMPRESIÓN 3D - IMPRESIÓN EN FILAMENTO
+// ============================================================================
+
+export const IMPRESION_FILAMENTO_SCHEMA: CustomizationSchema = {
+  displayComponent: 'DynamicCustomizer',
+  fields: [
+    {
+      id: 'material',
+      fieldType: 'card_selector',
+      label: 'Material',
+      required: true,
+      priceModifier: 0,
+      order: 1,
+      config: {
+        displayStyle: 'visual_cards',
+        layout: 'grid',
+        options: [
+          { value: 'pla', label: 'PLA', icon: '🌱', badge: 'Más usado', description: 'Biodegradable, fácil postproceso' },
+          { value: 'petg', label: 'PETG', icon: '💧', priceModifier: 3, description: 'Resistente y algo flexible' },
+          { value: 'abs', label: 'ABS', icon: '🔥', priceModifier: 3, description: 'Resistente al calor' },
+          { value: 'tpu', label: 'TPU (Flexible)', icon: '🤸', priceModifier: 5, description: 'Elástico y resistente' },
+          { value: 'nylon', label: 'Nylon', icon: '⚙️', priceModifier: 8, description: 'Industrial, muy resistente' },
+          { value: 'carbon_fiber', label: 'Fibra de carbono', icon: '🏎️', priceModifier: 15, badge: 'Pro', description: 'Ligero y ultra resistente' },
+        ],
+      },
+    },
+    {
+      id: 'color',
+      fieldType: 'color_selector',
+      label: 'Color',
+      required: true,
+      priceModifier: 0,
+      order: 2,
+      config: {
+        displayStyle: 'color_blocks',
+        availableColors: [
+          { id: 'black', name: 'Negro', hex: '#000000' },
+          { id: 'white', name: 'Blanco', hex: '#FFFFFF' },
+          { id: 'red', name: 'Rojo', hex: '#DC2626' },
+          { id: 'blue', name: 'Azul', hex: '#2563EB' },
+          { id: 'green', name: 'Verde', hex: '#16A34A' },
+          { id: 'yellow', name: 'Amarillo', hex: '#EAB308' },
+          { id: 'orange', name: 'Naranja', hex: '#EA580C' },
+          { id: 'gray', name: 'Gris', hex: '#6B7280' },
+          { id: 'transparent', name: 'Transparente', hex: '#E0E7FF' },
+        ],
+      },
+    },
+    {
+      id: 'quality',
+      fieldType: 'radio_group',
+      label: 'Calidad de impresión',
+      required: true,
+      priceModifier: 0,
+      order: 3,
+      config: {
+        layout: 'vertical',
+        options: [
+          { value: 'draft', label: 'Borrador (0.3mm)', description: 'Rápido, para prototipos' },
+          { value: 'standard', label: 'Estándar (0.2mm)', description: 'Buen balance' },
+          { value: 'high', label: 'Alta calidad (0.12mm)', priceModifier: 8, description: 'Capas finas, mejor acabado' },
+        ],
+      },
+    },
+    {
+      id: 'infill',
+      fieldType: 'dropdown',
+      label: 'Relleno',
+      required: true,
+      priceModifier: 0,
+      order: 4,
+      helpText: 'Mayor relleno = más resistencia y peso',
+      config: {
+        options: [
+          { value: '15', label: '15% (ligero)', description: 'Decorativo, no funcional' },
+          { value: '30', label: '30% (estándar)', description: 'Uso general' },
+          { value: '50', label: '50% (resistente)', priceModifier: 5, description: 'Piezas funcionales' },
+          { value: '80', label: '80% (muy sólido)', priceModifier: 12, description: 'Máxima resistencia' },
+          { value: '100', label: '100% (sólido)', priceModifier: 20, description: 'Industrial' },
+        ],
+      },
+    },
+    {
+      id: 'has_file',
+      fieldType: 'card_selector',
+      label: '¿Tienes el archivo 3D?',
+      required: true,
+      priceModifier: 0,
+      order: 5,
+      config: {
+        displayStyle: 'simple_cards',
+        layout: 'horizontal',
+        options: [
+          { value: 'yes', label: 'Sí, lo subiré', icon: '📁' },
+          { value: 'need_model', label: 'Necesito modelado 3D', icon: '🎨', priceModifier: 40 },
+        ],
+      },
+    },
+    {
+      id: 'file_3d',
+      fieldType: 'image_upload',
+      label: 'Archivo 3D',
+      required: true,
+      priceModifier: 0,
+      order: 6,
+      condition: {
+        dependsOn: 'has_file',
+        showWhen: 'yes',
+      },
+      config: {
+        maxSizeMB: 200,
+        allowedFormats: ['stl', 'obj', '3mf', 'step', 'stp'],
+        showPreview: false,
+        helpText: 'STL, OBJ, 3MF, STEP',
+      },
+    },
+    {
+      id: 'description',
+      fieldType: 'text_input',
+      label: 'Describe lo que necesitas',
+      required: true,
+      priceModifier: 0,
+      order: 6,
+      condition: {
+        dependsOn: 'has_file',
+        showWhen: 'need_model',
+      },
+      config: {
+        placeholder: 'Describe la pieza: uso, medidas aproximadas, requisitos...',
+        maxLength: 800,
+        showCharCounter: true,
+      },
+    },
+    {
+      id: 'reference_image',
+      fieldType: 'image_upload',
+      label: 'Imagen de referencia (opcional)',
+      required: false,
+      priceModifier: 0,
+      order: 7,
+      condition: {
+        dependsOn: 'has_file',
+        showWhen: 'need_model',
+      },
+      config: {
+        maxSizeMB: 10,
+        allowedFormats: ['jpg', 'jpeg', 'png', 'pdf'],
+        showPreview: true,
+      },
+    },
+    {
+      id: 'post_processing',
+      fieldType: 'dropdown',
+      label: 'Post-procesado',
+      required: true,
+      priceModifier: 0,
+      order: 8,
+      config: {
+        options: [
+          { value: 'none', label: 'Sin acabado (directo de impresora)' },
+          { value: 'sanded', label: 'Lijado básico', priceModifier: 5 },
+          { value: 'sanded_primed', label: 'Lijado + imprimado', priceModifier: 12 },
+          { value: 'painted', label: 'Pintado completo', priceModifier: 25 },
+        ],
+      },
+    },
+    {
+      id: 'quantity',
+      fieldType: 'dropdown',
+      label: 'Cantidad',
+      required: true,
+      priceModifier: 0,
+      order: 9,
+      isQuantityMultiplier: true,
+      config: {
+        options: [
+          { value: '1', label: '1 unidad', unitPriceOverride: 10 },
+          { value: '2', label: '2 unidades', unitPriceOverride: 9 },
+          { value: '5', label: '5 unidades', unitPriceOverride: 7.5 },
+          { value: '10', label: '10 unidades', unitPriceOverride: 6 },
+        ],
+      },
+    },
+  ],
+};
+
+// ============================================================================
+// PACKAGING - BOLSAS DE TELA
+// ============================================================================
+
+export const BOLSAS_TELA_SCHEMA: CustomizationSchema = {
+  displayComponent: 'DynamicCustomizer',
+  fields: [
+    {
+      id: 'bag_type',
+      fieldType: 'card_selector',
+      label: 'Tipo de bolsa',
+      required: true,
+      priceModifier: 0,
+      order: 1,
+      config: {
+        displayStyle: 'visual_cards',
+        layout: 'grid',
+        options: [
+          { value: 'cotton_flat', label: 'Algodón plana', icon: '🛍️', description: 'Sin fuelle, básica' },
+          { value: 'cotton_gusset', label: 'Algodón con fuelle', icon: '👜', priceModifier: 1, description: 'Mayor capacidad' },
+          { value: 'canvas_premium', label: 'Lona premium', icon: '💎', priceModifier: 3, badge: 'Premium', description: 'Gruesa y resistente' },
+          { value: 'jute', label: 'Yute natural', icon: '🌾', priceModifier: 2, description: 'Eco y rústico' },
+          { value: 'organza', label: 'Organza', icon: '✨', description: 'Para regalos y detalles' },
+          { value: 'drawstring_cotton', label: 'Saco con cordón', icon: '🎒' },
+        ],
+      },
+    },
+    {
+      id: 'size',
+      fieldType: 'dropdown',
+      label: 'Tamaño',
+      required: true,
+      priceModifier: 0,
+      order: 2,
+      config: {
+        options: [
+          { value: 'xs', label: 'XS (10×15cm)', description: 'Joyería, pequeños detalles' },
+          { value: 's', label: 'S (20×25cm)', description: 'Complementos' },
+          { value: 'm', label: 'M (35×40cm)', description: 'Ropa, compras' },
+          { value: 'l', label: 'L (40×45cm)', description: 'Totebag estándar', priceModifier: 1 },
+          { value: 'xl', label: 'XL (50×60cm)', description: 'Compras grandes', priceModifier: 2 },
+        ],
+      },
+    },
+    {
+      id: 'color',
+      fieldType: 'color_selector',
+      label: 'Color de la bolsa',
+      required: true,
+      priceModifier: 0,
+      order: 3,
+      config: {
+        displayStyle: 'color_blocks',
+        availableColors: [
+          { id: 'natural', name: 'Natural/Crudo', hex: '#F5F0E1' },
+          { id: 'white', name: 'Blanco', hex: '#FFFFFF' },
+          { id: 'black', name: 'Negro', hex: '#000000' },
+          { id: 'brown', name: 'Marrón', hex: '#78350F' },
+          { id: 'navy', name: 'Azul Marino', hex: '#1E3A8A' },
+        ],
+      },
+    },
+    {
+      id: 'printing',
+      fieldType: 'card_selector',
+      label: 'Impresión',
+      required: true,
+      priceModifier: 0,
+      order: 4,
+      config: {
+        displayStyle: 'simple_cards',
+        layout: 'vertical',
+        options: [
+          { value: 'screen_1color', label: 'Serigrafía 1 color', description: 'Económico en cantidad' },
+          { value: 'screen_2color', label: 'Serigrafía 2 colores', priceModifier: 1 },
+          { value: 'dtf', label: 'DTF (Full color)', priceModifier: 2, badge: 'Recomendado' },
+          { value: 'embroidery', label: 'Bordado', priceModifier: 5, badge: 'Premium' },
+        ],
+      },
+    },
+    {
+      id: 'design_file',
+      fieldType: 'image_upload',
+      label: 'Tu logo o diseño',
+      required: true,
+      priceModifier: 0,
+      order: 5,
+      helpText: 'Vectorial (SVG, AI) para mejor resultado. PNG alta resolución también aceptado.',
+      config: {
+        maxSizeMB: 10,
+        allowedFormats: ['svg', 'ai', 'pdf', 'png', 'jpg'],
+        showPreview: true,
+      },
+    },
+    {
+      id: 'quantity',
+      fieldType: 'dropdown',
+      label: 'Cantidad',
+      required: true,
+      priceModifier: 0,
+      order: 6,
+      isQuantityMultiplier: true,
+      config: {
+        options: [
+          { value: '25', label: '25 unidades', unitPriceOverride: 4.5, description: '€4.50/ud' },
+          { value: '50', label: '50 unidades', unitPriceOverride: 3.5, description: '€3.50/ud' },
+          { value: '100', label: '100 unidades', unitPriceOverride: 2.8, description: '€2.80/ud' },
+          { value: '250', label: '250 unidades', unitPriceOverride: 2.2, description: '€2.20/ud' },
+          { value: '500', label: '500 unidades', unitPriceOverride: 1.8, description: '€1.80/ud' },
+        ],
+      },
+    },
+  ],
+};
+
+// ============================================================================
+// SERVICIOS DIGITALES - DISEÑO GRÁFICO
+// ============================================================================
+
+export const DISENO_GRAFICO_SCHEMA: CustomizationSchema = {
+  displayComponent: 'DynamicCustomizer',
+  fields: [
+    {
+      id: 'service_type',
+      fieldType: 'card_selector',
+      label: 'Tipo de servicio',
+      required: true,
+      priceModifier: 0,
+      order: 1,
+      config: {
+        displayStyle: 'visual_cards',
+        layout: 'grid',
+        options: [
+          { value: 'logo', label: 'Diseño de logo', icon: '🎯', description: 'Logo + variaciones' },
+          { value: 'brand_identity', label: 'Identidad corporativa', icon: '🏢', priceModifier: 80, description: 'Logo + manual de marca', badge: 'Completo' },
+          { value: 'social_media', label: 'Redes sociales', icon: '📱', description: 'Posts, stories, banners' },
+          { value: 'flyer_design', label: 'Diseño de flyer/cartel', icon: '📄' },
+          { value: 'menu', label: 'Carta/menú', icon: '🍽️', description: 'Para restaurantes' },
+          { value: 'illustration', label: 'Ilustración personalizada', icon: '🎨', priceModifier: 20 },
+        ],
+      },
+    },
+    {
+      id: 'style_preference',
+      fieldType: 'card_selector',
+      label: 'Estilo visual',
+      required: true,
+      priceModifier: 0,
+      order: 2,
+      config: {
+        displayStyle: 'visual_cards',
+        layout: 'grid',
+        options: [
+          { value: 'minimalist', label: 'Minimalista', icon: '◯' },
+          { value: 'modern', label: 'Moderno', icon: '✨' },
+          { value: 'vintage', label: 'Vintage/retro', icon: '📼' },
+          { value: 'elegant', label: 'Elegante/lujo', icon: '💎' },
+          { value: 'playful', label: 'Divertido/infantil', icon: '🎪' },
+          { value: 'corporate', label: 'Corporativo', icon: '💼' },
+        ],
+      },
+    },
+    {
+      id: 'brief',
+      fieldType: 'text_input',
+      label: 'Describe tu proyecto',
+      required: true,
+      priceModifier: 0,
+      order: 3,
+      helpText: 'Cuanta más información, mejor resultado. Incluye: qué es tu negocio, público objetivo, qué transmitir.',
+      config: {
+        placeholder: 'Ej: Necesito un logo para mi cafetería "El Rincón". Estilo acogedor y moderno, colores cálidos...',
+        maxLength: 1500,
+        showCharCounter: true,
+      },
+    },
+    {
+      id: 'reference_images',
+      fieldType: 'image_upload',
+      label: 'Imágenes de referencia (opcional)',
+      required: false,
+      priceModifier: 0,
+      order: 4,
+      helpText: 'Ejemplos de diseños que te gustan, logos de referencia, etc.',
+      config: {
+        maxSizeMB: 15,
+        allowedFormats: ['jpg', 'jpeg', 'png', 'webp', 'pdf'],
+        showPreview: true,
+      },
+    },
+    {
+      id: 'existing_logo',
+      fieldType: 'image_upload',
+      label: 'Logo actual (si tienes)',
+      required: false,
+      priceModifier: 0,
+      order: 5,
+      config: {
+        maxSizeMB: 10,
+        allowedFormats: ['jpg', 'jpeg', 'png', 'svg', 'ai', 'pdf'],
+        showPreview: true,
+      },
+    },
+    {
+      id: 'revisions',
+      fieldType: 'dropdown',
+      label: 'Rondas de revisión',
+      required: true,
+      priceModifier: 0,
+      order: 6,
+      config: {
+        options: [
+          { value: '2', label: '2 revisiones (estándar)' },
+          { value: '4', label: '4 revisiones', priceModifier: 15 },
+          { value: 'unlimited', label: 'Revisiones ilimitadas', priceModifier: 30 },
+        ],
+      },
+    },
+    {
+      id: 'urgency',
+      fieldType: 'radio_group',
+      label: 'Plazo de entrega',
+      required: true,
+      priceModifier: 0,
+      order: 7,
+      config: {
+        layout: 'vertical',
+        options: [
+          { value: 'standard', label: 'Estándar (5-7 días laborables)' },
+          { value: 'express', label: 'Express (2-3 días)', priceModifier: 25 },
+          { value: 'urgent', label: 'Urgente (24h)', priceModifier: 50 },
+        ],
+      },
+    },
+  ],
+};
+
+// ============================================================================
+// SERVICIOS DIGITALES - DESARROLLO WEB
+// ============================================================================
+
+export const DESARROLLO_WEB_SCHEMA: CustomizationSchema = {
+  displayComponent: 'DynamicCustomizer',
+  fields: [
+    {
+      id: 'site_type',
+      fieldType: 'card_selector',
+      label: 'Tipo de web',
+      required: true,
+      priceModifier: 0,
+      order: 1,
+      config: {
+        displayStyle: 'visual_cards',
+        layout: 'grid',
+        options: [
+          { value: 'landing', label: 'Landing Page', icon: '📄', description: 'Una página única' },
+          { value: 'corporate', label: 'Web corporativa', icon: '🏢', priceModifier: 200, description: '3-5 páginas' },
+          { value: 'portfolio', label: 'Portfolio', icon: '🎨', priceModifier: 150, description: 'Muestra tu trabajo' },
+          { value: 'blog', label: 'Blog', icon: '📝', priceModifier: 180, description: 'Con gestor de contenidos' },
+          { value: 'ecommerce', label: 'Tienda online', icon: '🛒', priceModifier: 400, description: 'Venta de productos', badge: 'Completo' },
+          { value: 'booking', label: 'Reservas/citas', icon: '📅', priceModifier: 250, description: 'Sistema de reservas' },
+        ],
+      },
+    },
+    {
+      id: 'pages_count',
+      fieldType: 'dropdown',
+      label: 'Número de páginas',
+      required: true,
+      priceModifier: 0,
+      order: 2,
+      config: {
+        options: [
+          { value: '1', label: '1 página (Landing)' },
+          { value: '3-5', label: '3-5 páginas', priceModifier: 50 },
+          { value: '6-10', label: '6-10 páginas', priceModifier: 120 },
+          { value: '10+', label: 'Más de 10', priceModifier: 200 },
+        ],
+      },
+    },
+    {
+      id: 'features',
+      fieldType: 'card_selector',
+      label: 'Características adicionales',
+      required: false,
+      priceModifier: 0,
+      order: 3,
+      helpText: 'Selecciona las funcionalidades extra que necesites',
+      config: {
+        displayStyle: 'simple_cards',
+        layout: 'vertical',
+        options: [
+          { value: 'contact_form', label: 'Formulario de contacto' },
+          { value: 'google_maps', label: 'Integración Google Maps' },
+          { value: 'social_links', label: 'Enlaces a redes sociales' },
+          { value: 'whatsapp', label: 'Botón de WhatsApp' },
+        ],
+      },
+    },
+    {
+      id: 'description',
+      fieldType: 'text_input',
+      label: 'Describe tu negocio y lo que necesitas',
+      required: true,
+      priceModifier: 0,
+      order: 4,
+      helpText: 'Tu sector, público objetivo, qué quieres conseguir con la web',
+      config: {
+        placeholder: 'Ej: Soy fotógrafo de bodas y quiero una web para mostrar mi portfolio y recibir consultas...',
+        maxLength: 2000,
+        showCharCounter: true,
+      },
+    },
+    {
+      id: 'reference_sites',
+      fieldType: 'text_input',
+      label: 'Webs de referencia (opcional)',
+      required: false,
+      priceModifier: 0,
+      order: 5,
+      helpText: 'URLs de webs que te gusten o sirvan de inspiración',
+      config: {
+        placeholder: 'Ej: www.ejemplo1.com, www.ejemplo2.com',
+        maxLength: 300,
+      },
+    },
+    {
+      id: 'existing_logo',
+      fieldType: 'image_upload',
+      label: 'Logo y materiales (opcional)',
+      required: false,
+      priceModifier: 0,
+      order: 6,
+      helpText: 'Sube tu logo, fotos o cualquier material para la web',
+      config: {
+        maxSizeMB: 20,
+        allowedFormats: ['jpg', 'jpeg', 'png', 'svg', 'ai', 'pdf', 'zip'],
+        showPreview: true,
+      },
+    },
+    {
+      id: 'hosting_domain',
+      fieldType: 'card_selector',
+      label: '¿Necesitas dominio y hosting?',
+      required: true,
+      priceModifier: 0,
+      order: 7,
+      config: {
+        displayStyle: 'simple_cards',
+        layout: 'vertical',
+        options: [
+          { value: 'full', label: 'Sí, dominio + hosting (1 año)', priceModifier: 60, description: 'Te lo gestionamos todo' },
+          { value: 'hosting_only', label: 'Solo hosting (ya tengo dominio)', priceModifier: 40 },
+          { value: 'none', label: 'No, ya tengo ambos' },
+        ],
+      },
+    },
+  ],
+};
+
+// ============================================================================
+// SERVICIOS DIGITALES - PRODUCTOS DIGITALES
+// ============================================================================
+
+export const PRODUCTOS_DIGITALES_SCHEMA: CustomizationSchema = {
+  displayComponent: 'DynamicCustomizer',
+  fields: [
+    {
+      id: 'product_type',
+      fieldType: 'card_selector',
+      label: 'Tipo de producto digital',
+      required: true,
+      priceModifier: 0,
+      order: 1,
+      config: {
+        displayStyle: 'visual_cards',
+        layout: 'grid',
+        options: [
+          { value: 'invitation_template', label: 'Plantilla de invitación', icon: '💌', description: 'Editable en Canva' },
+          { value: 'social_template', label: 'Pack redes sociales', icon: '📱', description: 'Templates para posts/stories' },
+          { value: 'business_card', label: 'Tarjeta de visita digital', icon: '📇', description: 'PDF + formato Canva' },
+          { value: 'menu_template', label: 'Plantilla de carta/menú', icon: '🍽️', description: 'Editable' },
+          { value: 'planner', label: 'Planner/agenda digital', icon: '📒', description: 'PDF interactivo' },
+          { value: 'custom', label: 'Diseño a medida', icon: '🎨', priceModifier: 10, description: 'Cuéntanos qué necesitas' },
+        ],
+      },
+    },
+    {
+      id: 'style',
+      fieldType: 'card_selector',
+      label: 'Estilo',
+      required: true,
+      priceModifier: 0,
+      order: 2,
+      config: {
+        displayStyle: 'visual_cards',
+        layout: 'grid',
+        options: [
+          { value: 'minimalist', label: 'Minimalista', icon: '◯' },
+          { value: 'floral', label: 'Floral', icon: '🌸' },
+          { value: 'modern', label: 'Moderno', icon: '✨' },
+          { value: 'elegant', label: 'Elegante', icon: '💎' },
+          { value: 'fun', label: 'Divertido', icon: '🎉' },
+          { value: 'rustic', label: 'Rústico', icon: '🌿' },
+        ],
+      },
+    },
+    {
+      id: 'personalize_text',
+      fieldType: 'text_input',
+      label: 'Textos a incluir',
+      required: false,
+      priceModifier: 0,
+      order: 3,
+      helpText: 'Si quieres que personalicemos la plantilla con tus datos',
+      config: {
+        placeholder: 'Ej: Nombre de tu negocio, datos de contacto, textos de la invitación...',
+        maxLength: 500,
+        showCharCounter: true,
+      },
+    },
+    {
+      id: 'color_preference',
+      fieldType: 'text_input',
+      label: 'Colores preferidos (opcional)',
+      required: false,
+      priceModifier: 0,
+      order: 4,
+      config: {
+        placeholder: 'Ej: Tonos rosados, azul y dorado, colores neutros...',
+        maxLength: 100,
+      },
+    },
+    {
+      id: 'reference_image',
+      fieldType: 'image_upload',
+      label: 'Imagen de referencia (opcional)',
+      required: false,
+      priceModifier: 0,
+      order: 5,
+      helpText: 'Ejemplo de diseño o estilo que te guste',
+      config: {
+        maxSizeMB: 10,
+        allowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
+        showPreview: true,
+      },
+    },
+    {
+      id: 'format',
+      fieldType: 'dropdown',
+      label: 'Formato de entrega',
+      required: true,
+      priceModifier: 0,
+      order: 6,
+      config: {
+        options: [
+          { value: 'pdf', label: 'PDF listo para imprimir' },
+          { value: 'canva', label: 'Enlace Canva editable', description: 'Podrás modificarlo tú mismo' },
+          { value: 'both', label: 'PDF + Canva', priceModifier: 3 },
+          { value: 'source', label: 'Archivos fuente (AI/PSD)', priceModifier: 8 },
+        ],
+      },
+    },
+  ],
+};
+
+// ============================================================================
 // EXPORT ALL SCHEMAS
 // ============================================================================
 
@@ -2112,7 +3475,13 @@ export const ALL_PRODUCT_SCHEMAS = {
   cartelesEventos: CARTELES_EVENTOS_SCHEMA,
 
   // Textiles
+  ropaPersonalizada: ROPA_PERSONALIZADA_SCHEMA,
+  complementosTextiles: COMPLEMENTOS_TEXTILES_SCHEMA,
   delantales: DELANTALES_SCHEMA,
+
+  // Papelería
+  cuadernos: CUADERNOS_SCHEMA,
+  packagingCorporativo: PACKAGING_CORPORATIVO_SCHEMA,
 
   // Sublimación
   alfombrillas: ALFOMBRILLAS_SCHEMA,
@@ -2121,6 +3490,7 @@ export const ALL_PRODUCT_SCHEMAS = {
 
   // Corte Láser
   decoracionMadera: DECORACION_MADERA_SCHEMA,
+  cuadrosMadera: CUADROS_MADERA_SCHEMA,
   senalizacion: SENALIZACION_SCHEMA,
   cajasMadera: CAJAS_MADERA_SCHEMA,
 
@@ -2128,13 +3498,20 @@ export const ALL_PRODUCT_SCHEMAS = {
   banderines: BANDERINES_SCHEMA,
   meseros: MESEROS_SCHEMA,
 
-  // Papelería
-  cuadernos: CUADERNOS_SCHEMA,
-  papelRegalo: PAPEL_REGALO_SCHEMA,
-
   // Impresión 3D
+  impresionResina: IMPRESION_RESINA_SCHEMA,
+  impresionFilamento: IMPRESION_FILAMENTO_SCHEMA,
   figurasGaming: FIGURAS_GAMING_SCHEMA,
   maquetas: MAQUETAS_SCHEMA,
+
+  // Packaging
+  bolsasTela: BOLSAS_TELA_SCHEMA,
+  papelRegalo: PAPEL_REGALO_SCHEMA,
+
+  // Servicios Digitales
+  disenoGrafico: DISENO_GRAFICO_SCHEMA,
+  desarrolloWeb: DESARROLLO_WEB_SCHEMA,
+  productosDigitales: PRODUCTOS_DIGITALES_SCHEMA,
 };
 
 // Lista completa para el selector del admin
@@ -2145,7 +3522,13 @@ export const ALL_SCHEMA_OPTIONS = [
   { value: 'cartelesEventos', label: '📋 Carteles para Eventos', category: 'Productos Gráficos' },
 
   // Textiles
+  { value: 'ropaPersonalizada', label: '👕 Ropa Personalizada', category: 'Textiles' },
+  { value: 'complementosTextiles', label: '🛍️ Complementos Textiles (Totebags)', category: 'Textiles' },
   { value: 'delantales', label: '👨‍🍳 Delantales', category: 'Textiles' },
+
+  // Papelería
+  { value: 'cuadernos', label: '📓 Cuadernos y Libretas', category: 'Papelería' },
+  { value: 'packagingCorporativo', label: '📦 Packaging Corporativo', category: 'Papelería' },
 
   // Sublimación
   { value: 'alfombrillas', label: '🖱️ Alfombrillas de Ratón', category: 'Sublimación' },
@@ -2154,18 +3537,26 @@ export const ALL_SCHEMA_OPTIONS = [
 
   // Corte Láser
   { value: 'decoracionMadera', label: '🌳 Decoración en Madera', category: 'Corte Láser' },
+  { value: 'cuadrosMadera', label: '🌸 Cuadros de Madera', category: 'Corte Láser' },
   { value: 'senalizacion', label: '🪧 Señalización', category: 'Corte Láser' },
   { value: 'cajasMadera', label: '📦 Cajas de Madera', category: 'Corte Láser' },
 
   // Eventos
-  { value: 'banderines', label: '🎏 Banderines y Guirnaldas', category: 'Eventos' },
+  { value: 'banderines', label: '🎊 Banderines y Guirnaldas', category: 'Eventos' },
   { value: 'meseros', label: '🔢 Meseros / Números de Mesa', category: 'Eventos' },
 
-  // Papelería
-  { value: 'cuadernos', label: '📓 Cuadernos y Libretas', category: 'Papelería' },
-  { value: 'papelRegalo', label: '🎀 Papel de Regalo', category: 'Papelería' },
-
   // Impresión 3D
+  { value: 'impresionResina', label: '🎭 Impresión en Resina', category: 'Impresión 3D' },
+  { value: 'impresionFilamento', label: '⚙️ Impresión en Filamento', category: 'Impresión 3D' },
   { value: 'figurasGaming', label: '🎮 Figuras Gaming/Anime', category: 'Impresión 3D' },
   { value: 'maquetas', label: '🏗️ Maquetas y Prototipos', category: 'Impresión 3D' },
+
+  // Packaging
+  { value: 'bolsasTela', label: '👜 Bolsas de Tela', category: 'Packaging' },
+  { value: 'papelRegalo', label: '🎀 Papel de Regalo', category: 'Packaging' },
+
+  // Servicios Digitales
+  { value: 'disenoGrafico', label: '🎨 Diseño Gráfico', category: 'Servicios Digitales' },
+  { value: 'desarrolloWeb', label: '💻 Desarrollo Web', category: 'Servicios Digitales' },
+  { value: 'productosDigitales', label: '🪄 Productos Digitales', category: 'Servicios Digitales' },
 ];
