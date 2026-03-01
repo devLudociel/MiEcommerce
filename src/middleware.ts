@@ -139,6 +139,7 @@ function getContentSecurityPolicy(nonce: string): string {
     'https://connect.facebook.net',
     'https://js.stripe.com',
     'https://static.klaviyo.com',
+    'https://static-tracking.klaviyo.com',
     'https://static-forms.klaviyo.com',
     'https://fast.a.klaviyo.com',
     'https://a.klaviyo.com',
