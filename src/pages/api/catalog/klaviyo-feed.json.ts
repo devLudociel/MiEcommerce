@@ -34,45 +34,14 @@ export const GET: APIRoute = async () => {
       }
 
       return {
-        // Campos requeridos por Klaviyo
         id: doc.id,
         title: data.name || '',
-        link: productUrl,
         description: data.description || '',
+        link: productUrl,
         image_link: imageUrl,
         price: `${price.toFixed(2)} EUR`,
-
-        // Campos opcionales pero utiles
-        categories: data.category ? [data.category] : [],
-        tags: data.tags || [],
-        inventory_quantity: data.trackInventory ? data.stock || 0 : null,
-        featured: data.featured || false,
-        customizable: data.customizable || false,
-
-        // Imagenes adicionales
-        additional_image_links: data.images?.slice(1) || [],
-
-        // Variantes
-        variants:
-          data.variants?.map((v: any, index: number) => ({
-            id: `${doc.id}-variant-${index}`,
-            title: `${data.name} - ${v.name || v.color || v.size || ''}`.trim(),
-            price: `${(v.price || price).toFixed(2)} EUR`,
-            inventory_quantity: v.stock || null,
-            option_values: {
-              ...(v.size && { size: v.size }),
-              ...(v.color && { color: v.color }),
-              ...(v.name && { name: v.name }),
-            },
-          })) || [],
-
-        // SEO
-        meta_title: data.metaTitle || data.name || '',
-        meta_description: data.metaDescription || data.description || '',
-
-        // Estado
+        category: data.category || '',
         in_stock: data.trackInventory ? (data.stock || 0) > 0 : true,
-        is_digital: data.isDigital || false,
       };
     });
 
