@@ -7,6 +7,7 @@ import { db } from '../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { withRetry } from '../lib/resilience';
 import { debounce } from '../lib/utils/debounce';
+import { klaviyoAddedToCart } from '../lib/klaviyo';
 
 export interface CartItem {
   id: string;
@@ -324,6 +325,16 @@ export function addToCart(item: CartItem): void {
   if (currentUserId) {
     saveCartToFirestoreDebounced(currentUserId, newState);
   }
+
+  // Klaviyo event: Added to Cart
+  klaviyoAddedToCart({
+    productId: item.id,
+    productName: item.name,
+    price: item.price,
+    quantity: item.quantity,
+    imageUrl: item.image,
+    productUrl: `https://imprimearte.es/producto/${item.id}`,
+  });
 }
 
 // Actualizar cantidad de un item

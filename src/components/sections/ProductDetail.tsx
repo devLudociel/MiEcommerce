@@ -19,6 +19,7 @@ import {
   trackAddToCart as trackAnalyticsAddToCart,
   trackCustomizeProduct,
 } from '../../lib/analytics';
+import { klaviyoViewedProduct } from '../../lib/klaviyo';
 // React Query hooks
 import { useProduct, useRelatedProducts } from '../../hooks/react-query/useProducts';
 
@@ -261,6 +262,16 @@ export default function ProductDetail({ id, slug }: Props) {
       price: uiProduct.basePrice,
       category: uiProduct.category,
       brand: uiProduct.brand,
+    });
+
+    // Track product view in Klaviyo
+    klaviyoViewedProduct({
+      productId: uiProduct.id,
+      productName: uiProduct.name,
+      price: uiProduct.basePrice,
+      imageUrl: uiProduct.images[0]?.url || '',
+      productUrl: `https://imprimearte.es/producto/${uiProduct.slug || uiProduct.id}`,
+      category: uiProduct.category,
     });
 
     // Reset selections when product changes

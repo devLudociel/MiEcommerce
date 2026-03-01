@@ -29,6 +29,11 @@ import ShippingSelector from '../checkout/ShippingSelector';
 import { isCanaryIslandsPostalCode, type ShippingQuote } from '../../lib/shipping';
 // Bundle discounts
 import { useBundleDiscounts } from '../../lib/bundleDiscounts';
+import {
+  klaviyoIdentify,
+  klaviyoPlacedOrder,
+  klaviyoStartedCheckout,
+} from '../../lib/klaviyo';
 
 interface ShippingInfo {
   firstName: string;
@@ -207,6 +212,8 @@ export default function Checkout() {
 
   // Track flag to prevent duplicate begin_checkout events
   const trackingInitialized = React.useRef(false);
+  const klaviyoEmailIdentified = React.useRef<string | null>(null);
+  const klaviyoIdentifyTimer = React.useRef<number | null>(null);
 
   // Track begin_checkout when checkout page loads with items
   useEffect(() => {
@@ -224,6 +231,21 @@ export default function Checkout() {
         })),
         cart.total
       );
+
+      // Track Started Checkout in Klaviyo
+      const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+      klaviyoStartedCheckout({
+        items: cart.items.map((item) => ({
+          ProductID: item.id,
+          ProductName: item.name,
+          Quantity: item.quantity,
+          ItemPrice: item.price,
+          ImageURL: item.image,
+          ProductURL: `https://imprimearte.es/producto/${item.id}`,
+        })),
+        totalPrice: cart.total,
+        itemCount,
+      });
     }
   }, [authLoading, isCartSyncing, cart.items, cart.total]);
 
@@ -355,6 +377,30 @@ export default function Checkout() {
       setShippingInfo((prev) => ({ ...prev, email: user.email || '' }));
     }
   }, [user]);
+
+  // Identify user in Klaviyo when email is available
+  useEffect(() => {
+    const email = shippingInfo.email?.trim();
+    if (!email) return;
+    if (klaviyoEmailIdentified.current === email) return;
+    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return;
+
+    if (typeof window !== 'undefined') {
+      if (klaviyoIdentifyTimer.current) {
+        window.clearTimeout(klaviyoIdentifyTimer.current);
+      }
+      klaviyoIdentifyTimer.current = window.setTimeout(() => {
+        klaviyoIdentify(email, shippingInfo.firstName || undefined, shippingInfo.lastName || undefined);
+        klaviyoEmailIdentified.current = email;
+      }, 600);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined' && klaviyoIdentifyTimer.current) {
+        window.clearTimeout(klaviyoIdentifyTimer.current);
+      }
+    };
+  }, [shippingInfo.email, shippingInfo.firstName, shippingInfo.lastName]);
 
   // ZIP code lookup effect
   useEffect(() => {
@@ -532,6 +578,27 @@ export default function Checkout() {
         paymentIntentId,
         orderId: completedOrderId,
       });
+
+      // Klaviyo event: Placed Order
+      try {
+        const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+        klaviyoPlacedOrder({
+          orderId: completedOrderId,
+          items: cart.items.map((item) => ({
+            ProductID: item.id,
+            ProductName: item.name,
+            Quantity: item.quantity,
+            ItemPrice: item.price,
+            ImageURL: item.image,
+            ProductURL: `https://imprimearte.es/producto/${item.id}`,
+          })),
+          totalPrice: total,
+          itemCount,
+          paymentMethod: paymentInfo.method === 'card' ? 'Stripe' : paymentInfo.method,
+        });
+      } catch (klaviyoError) {
+        logger.warn('[Checkout] Klaviyo placed order tracking failed', klaviyoError);
+      }
 
       // Execute post-payment actions (wallet debit, coupon tracking, cashback, email)
       try {
