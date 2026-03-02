@@ -72,45 +72,6 @@ interface Props {
   slug?: string;
 }
 
-const DESCRIPTION_BULLET_REGEX = /^\s*([-*•·–—])\s+/;
-
-type DescriptionBlock =
-  | { type: 'p'; text: string }
-  | { type: 'ul'; items: string[] };
-
-function buildDescriptionBlocks(text: string): DescriptionBlock[] {
-  if (!text) return [];
-  const lines = text.split(/\r?\n/);
-  const blocks: DescriptionBlock[] = [];
-  let listItems: string[] = [];
-
-  const flushList = () => {
-    if (!listItems.length) return;
-    blocks.push({ type: 'ul', items: listItems });
-    listItems = [];
-  };
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line) {
-      flushList();
-      continue;
-    }
-
-    if (DESCRIPTION_BULLET_REGEX.test(line)) {
-      const itemText = line.replace(DESCRIPTION_BULLET_REGEX, '').trim();
-      listItems.push(itemText);
-      continue;
-    }
-
-    flushList();
-    blocks.push({ type: 'p', text: line });
-  }
-
-  flushList();
-  return blocks;
-}
-
 function toUIProduct(data: FirebaseProduct & { id: string }): UIProduct {
   const onSale = !!(data as any).onSale;
   const salePrice = (data as any).salePrice ? Number((data as any).salePrice) : undefined;
@@ -227,11 +188,6 @@ export default function ProductDetail({ id, slug }: Props) {
     if (!productData) return null;
     return toUIProduct({ id: productData.id, ...productData } as any);
   }, [productData]);
-
-  const descriptionBlocks = useMemo(
-    () => buildDescriptionBlocks(uiProduct?.description ?? ''),
-    [uiProduct?.description]
-  );
 
   // Use category field for related products (most products use string category like 'general', 'tech')
   const categoryForRelated = uiProduct?.category;
@@ -823,30 +779,6 @@ export default function ProductDetail({ id, slug }: Props) {
                     {stockStatus.text}
                   </div>
                 </div>
-                <div className="text-base md:text-lg text-gray-700 leading-relaxed">
-                  {descriptionBlocks.length > 0 ? (
-                    <div className="space-y-4">
-                      {descriptionBlocks.map((block, idx) =>
-                        block.type === 'p' ? (
-                          <p key={`desc-p-${idx}`}>{block.text}</p>
-                        ) : (
-                          <ul
-                            key={`desc-ul-${idx}`}
-                            className="list-disc pl-5 space-y-2 marker:text-cyan-500"
-                          >
-                            {block.items.map((item, itemIdx) => (
-                              <li key={`desc-li-${idx}-${itemIdx}`} className="pl-1">
-                                {item}
-                              </li>
-                            ))}
-                          </ul>
-                        )
-                      )}
-                    </div>
-                  ) : (
-                    <p>{product.description}</p>
-                  )}
-                </div>
               </div>
 
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
@@ -910,34 +842,6 @@ export default function ProductDetail({ id, slug }: Props) {
                     {product.warranty}
                   </div>
                 </div>
-              </div>
-
-              {/* Qué Incluye */}
-              <div className="bg-white rounded-2xl p-6 border-2 border-cyan-200">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">📦 Qué Incluye</h3>
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-3">
-                    <span className="text-green-500 text-xl">✓</span>
-                    <span>
-                      1x {product.name}
-                      {product.customizable ? ' personalizado' : ''}
-                    </span>
-                  </li>
-                  {product.customizable && (
-                    <li className="flex items-center gap-3">
-                      <span className="text-green-500 text-xl">✓</span>
-                      <span>Diseño digital previo para aprobación</span>
-                    </li>
-                  )}
-                  <li className="flex items-center gap-3">
-                    <span className="text-green-500 text-xl">✓</span>
-                    <span>Embalaje de protección</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <span className="text-green-500 text-xl">✓</span>
-                    <span>Garantía de calidad</span>
-                  </li>
-                </ul>
               </div>
 
               <div>
@@ -1124,6 +1028,34 @@ export default function ProductDetail({ id, slug }: Props) {
                     ⚡ Comprar Ahora
                   </button>
                 </div>
+              </div>
+
+              {/* Qué Incluye */}
+              <div className="bg-white rounded-2xl p-6 border-2 border-cyan-200">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">📦 Qué Incluye</h3>
+                <ul className="space-y-2">
+                  <li className="flex items-center gap-3">
+                    <span className="text-green-500 text-xl">✓</span>
+                    <span>
+                      1x {product.name}
+                      {product.customizable ? ' personalizado' : ''}
+                    </span>
+                  </li>
+                  {product.customizable && (
+                    <li className="flex items-center gap-3">
+                      <span className="text-green-500 text-xl">✓</span>
+                      <span>Diseño digital previo para aprobación</span>
+                    </li>
+                  )}
+                  <li className="flex items-center gap-3">
+                    <span className="text-green-500 text-xl">✓</span>
+                    <span>Embalaje de protección</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <span className="text-green-500 text-xl">✓</span>
+                    <span>Garantía de calidad</span>
+                  </li>
+                </ul>
               </div>
 
               <div className="bg-gradient-to-r from-cyan-50 to-magenta-50 rounded-2xl p-6">
