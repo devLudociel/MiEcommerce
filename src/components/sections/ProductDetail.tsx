@@ -844,44 +844,6 @@ export default function ProductDetail({ id, slug }: Props) {
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-lg font-bold text-gray-800 mb-4">
-                  {product.readyMade ? 'Elige talla y color:' : 'Elige tu modelo:'}
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {product.variants.map((variant, i) => (
-                    <button
-                      key={variant.id}
-                      data-testid={`product-variant-${i}`}
-                      onClick={() => setSelectedVariant(i)}
-                      className={`relative p-4 rounded-xl border-2 text-left transition-all duration-300 ${i === selectedVariant ? 'border-cyan-500 bg-cyan-50 shadow-cyan' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'} group hover:scale-105 hover:-translate-y-1`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-8 h-8 rounded-full border-2 border-gray-300 shadow-md group-hover:scale-110 transition-transform"
-                          style={{ backgroundColor: variant.color }}
-                        />
-                        <div className="flex-1">
-                          <div className="font-semibold text-gray-800">{variant.colorName}</div>
-                          <div className="text-sm text-gray-500">{variant.name}</div>
-                          <div className="text-lg font-bold text-cyan-600">
-                            €{variant.price.toFixed(2)}
-                          </div>
-                        </div>
-                        <div
-                          className={`w-3 h-3 rounded-full ${variant.stock > 10 ? 'bg-green-500' : variant.stock > 5 ? 'bg-yellow-500' : variant.stock > 0 ? 'bg-orange-500' : 'bg-red-500'}`}
-                        />
-                      </div>
-                      {i === selectedVariant && (
-                        <div className="absolute top-2 right-2 w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-white text-sm animate-pulse">
-                          ✓
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-bold text-gray-800 mb-4">Cantidad:</h3>
