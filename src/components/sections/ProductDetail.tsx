@@ -228,6 +228,11 @@ export default function ProductDetail({ id, slug }: Props) {
     return toUIProduct({ id: productData.id, ...productData } as any);
   }, [productData]);
 
+  const descriptionBlocks = useMemo(
+    () => buildDescriptionBlocks(uiProduct?.description ?? ''),
+    [uiProduct?.description]
+  );
+
   // Use category field for related products (most products use string category like 'general', 'tech')
   const categoryForRelated = uiProduct?.category;
 
@@ -552,10 +557,6 @@ export default function ProductDetail({ id, slug }: Props) {
   const product = uiProduct;
   const currentVariant = product.variants[selectedVariant] || product.variants[0];
   const currentImage = product.images[selectedImage] || product.images[0];
-  const descriptionBlocks = useMemo(
-    () => buildDescriptionBlocks(product.description),
-    [product.description]
-  );
   const getStockStatus = (stock: number) =>
     stock === 0
       ? { text: 'Agotado', color: 'text-red-500', bg: 'bg-red-100' }
