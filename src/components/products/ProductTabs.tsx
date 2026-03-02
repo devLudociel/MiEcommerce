@@ -11,6 +11,54 @@ interface ProductTabsProps {
   onTabChange: (tab: 'description' | 'specifications' | 'reviews') => void;
 }
 
+const DESCRIPTION_BULLET_REGEX = /^\s*([-*•·–—])\s+/;
+const HTML_TAG_REGEX = /<\/?[a-z][\s\S]*>/i;
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function formatDescriptionToHtml(text: string): string {
+  if (!text) return '';
+  if (HTML_TAG_REGEX.test(text)) return text;
+
+  const lines = text.split(/\r?\n/);
+  let html = '';
+  let listItems: string[] = [];
+
+  const flushList = () => {
+    if (!listItems.length) return;
+    html += `<ul class="list-disc pl-5 space-y-2 marker:text-cyan-500">${listItems.join('')}</ul>`;
+    listItems = [];
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) {
+      flushList();
+      continue;
+    }
+
+    const bulletMatch = line.match(DESCRIPTION_BULLET_REGEX);
+    if (bulletMatch) {
+      const itemText = line.replace(DESCRIPTION_BULLET_REGEX, '').trim();
+      listItems.push(`<li class="pl-1">${escapeHtml(itemText)}</li>`);
+      continue;
+    }
+
+    flushList();
+    html += `<p>${escapeHtml(line)}</p>`;
+  }
+
+  flushList();
+  return html;
+}
+
 /**
  * PERFORMANCE OPTIMIZED: Memoized tabs component
  * Contains description, specifications, and reviews sections
@@ -33,13 +81,16 @@ export const ProductTabs = memo(function ProductTabs({
   const [sanitizedDescription, setSanitizedDescription] = useState('');
 
   useEffect(() => {
-    if (!longDescription) {
+    const sourceDescription = longDescription || description;
+    if (!sourceDescription) {
       setSanitizedDescription('');
       return;
     }
+
+    const preparedDescription = formatDescriptionToHtml(sourceDescription);
     // Dynamic import to avoid SSR issues with jsdom
     import('dompurify').then((DOMPurify) => {
-      const clean = DOMPurify.default.sanitize(longDescription, {
+      const clean = DOMPurify.default.sanitize(preparedDescription, {
         ALLOWED_TAGS: [
           'p',
           'br',
@@ -66,7 +117,7 @@ export const ProductTabs = memo(function ProductTabs({
       });
       setSanitizedDescription(clean);
     });
-  }, [longDescription]);
+  }, [longDescription, description]);
 
   const hasSpecifications = Object.keys(specifications).length > 0;
 

@@ -72,6 +72,45 @@ interface Props {
   slug?: string;
 }
 
+const DESCRIPTION_BULLET_REGEX = /^\s*([-*•·–—])\s+/;
+
+type DescriptionBlock =
+  | { type: 'p'; text: string }
+  | { type: 'ul'; items: string[] };
+
+function buildDescriptionBlocks(text: string): DescriptionBlock[] {
+  if (!text) return [];
+  const lines = text.split(/\r?\n/);
+  const blocks: DescriptionBlock[] = [];
+  let listItems: string[] = [];
+
+  const flushList = () => {
+    if (!listItems.length) return;
+    blocks.push({ type: 'ul', items: listItems });
+    listItems = [];
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) {
+      flushList();
+      continue;
+    }
+
+    if (DESCRIPTION_BULLET_REGEX.test(line)) {
+      const itemText = line.replace(DESCRIPTION_BULLET_REGEX, '').trim();
+      listItems.push(itemText);
+      continue;
+    }
+
+    flushList();
+    blocks.push({ type: 'p', text: line });
+  }
+
+  flushList();
+  return blocks;
+}
+
 function toUIProduct(data: FirebaseProduct & { id: string }): UIProduct {
   const onSale = !!(data as any).onSale;
   const salePrice = (data as any).salePrice ? Number((data as any).salePrice) : undefined;
@@ -513,6 +552,10 @@ export default function ProductDetail({ id, slug }: Props) {
   const product = uiProduct;
   const currentVariant = product.variants[selectedVariant] || product.variants[0];
   const currentImage = product.images[selectedImage] || product.images[0];
+  const descriptionBlocks = useMemo(
+    () => buildDescriptionBlocks(product.description),
+    [product.description]
+  );
   const getStockStatus = (stock: number) =>
     stock === 0
       ? { text: 'Agotado', color: 'text-red-500', bg: 'bg-red-100' }
@@ -779,7 +822,30 @@ export default function ProductDetail({ id, slug }: Props) {
                     {stockStatus.text}
                   </div>
                 </div>
-                <p className="text-lg text-gray-600 leading-relaxed">{product.description}</p>
+                <div className="text-base md:text-lg text-gray-700 leading-relaxed">
+                  {descriptionBlocks.length > 0 ? (
+                    <div className="space-y-4">
+                      {descriptionBlocks.map((block, idx) =>
+                        block.type === 'p' ? (
+                          <p key={`desc-p-${idx}`}>{block.text}</p>
+                        ) : (
+                          <ul
+                            key={`desc-ul-${idx}`}
+                            className="list-disc pl-5 space-y-2 marker:text-cyan-500"
+                          >
+                            {block.items.map((item, itemIdx) => (
+                              <li key={`desc-li-${idx}-${itemIdx}`} className="pl-1">
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        )
+                      )}
+                    </div>
+                  ) : (
+                    <p>{product.description}</p>
+                  )}
+                </div>
               </div>
 
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
