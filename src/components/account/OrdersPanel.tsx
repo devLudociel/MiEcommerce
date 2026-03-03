@@ -374,7 +374,7 @@ export default function OrdersPanel() {
                       <img
                         src={item.image || '/placeholder.jpg'}
                         alt={item.name}
-                        className="w-16 h-16 object-cover rounded-lg border-2 border-gray-200"
+                        className="w-16 h-16 object-contain rounded-lg border-2 border-gray-200 bg-white"
                       />
                     </div>
                   ))}

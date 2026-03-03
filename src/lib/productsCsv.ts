@@ -1,8 +1,8 @@
 // src/lib/productsCsv.ts
 // Utilidades para importar/exportar productos en formato CSV
 
-import type { FirebaseProduct, ProductCategory } from '../types/firebase';
-import type { Timestamp } from 'firebase/firestore';
+// NOTE: Keep this module decoupled from app-specific Product types to avoid
+// mismatches when the product schema evolves in the admin UI.
 
 // ============================================================================
 // TIPOS
@@ -12,15 +12,22 @@ export interface CsvProduct {
   id?: string;
   name: string;
   description: string;
-  category: ProductCategory;
+  category?: string; // Slug (textiles, sublimados, etc.)
+  categoryId?: string; // ID numérico del navbar (1..9)
+  subcategory?: string; // Slug de subcategoría (ropa-personalizada, etc.)
+  subcategoryId?: string; // ID numérico de subcategoría
   basePrice: number;
-  images: string;
-  customizable: boolean;
-  tags: string;
+  images: string[]; // URLs separadas por |
+  customizable?: boolean; // Legacy
+  customizationSchemaId?: string;
+  readyMade?: boolean;
+  tags: string[];
   featured: boolean;
   slug: string;
   active: boolean;
-  isDigital?: boolean;
+  onSale?: boolean;
+  salePrice?: number;
+  isDigital?: boolean; // Digital product
   trackInventory?: boolean;
   stock?: number;
   lowStockThreshold?: number;
@@ -44,13 +51,20 @@ const CSV_HEADERS = [
   'name',
   'description',
   'category',
+  'categoryId',
+  'subcategory',
+  'subcategoryId',
   'basePrice',
   'images',
   'customizable',
+  'customizationSchemaId',
+  'readyMade',
   'tags',
   'featured',
   'slug',
   'active',
+  'onSale',
+  'salePrice',
   'isDigital',
   'trackInventory',
   'stock',
@@ -60,7 +74,7 @@ const CSV_HEADERS = [
   'metaDescription',
 ];
 
-const VALID_CATEGORIES: ProductCategory[] = [
+const LEGACY_CATEGORIES = [
   'textil',
   'impresion-3d',
   'laser',
@@ -70,11 +84,25 @@ const VALID_CATEGORIES: ProductCategory[] = [
   'digital',
 ];
 
+const NAVBAR_CATEGORIES = [
+  'graficos-impresos',
+  'textiles',
+  'papeleria',
+  'sublimados',
+  'corte-grabado',
+  'eventos',
+  'impresion-3d',
+  'packaging',
+  'servicios-digitales',
+];
+
+const DEFAULT_VALID_CATEGORIES = Array.from(new Set([...LEGACY_CATEGORIES, ...NAVBAR_CATEGORIES]));
+
 // ============================================================================
 // EXPORTAR PRODUCTOS A CSV
 // ============================================================================
 
-export function exportProductsToCsv(products: FirebaseProduct[]): string {
+export function exportProductsToCsv(products: CsvProduct[]): string {
   const rows: string[] = [];
 
   // Añadir cabeceras
@@ -82,18 +110,27 @@ export function exportProductsToCsv(products: FirebaseProduct[]): string {
 
   // Añadir cada producto
   for (const product of products) {
+    const customizable =
+      product.customizable ?? (!!product.customizationSchemaId && !product.readyMade);
     const row = [
       escapeCSV(product.id || ''),
       escapeCSV(product.name),
-      escapeCSV(product.description),
-      escapeCSV(product.category),
-      product.basePrice.toString(),
-      escapeCSV(product.images.join('|')), // Separar imágenes con |
-      product.customizable ? 'true' : 'false',
-      escapeCSV(product.tags.join('|')), // Separar tags con |
+      escapeCSV(product.description || ''),
+      escapeCSV(product.category || ''),
+      escapeCSV(product.categoryId || ''),
+      escapeCSV(product.subcategory || ''),
+      escapeCSV(product.subcategoryId || ''),
+      product.basePrice?.toString() || '0',
+      escapeCSV((product.images || []).join('|')), // Separar imágenes con |
+      customizable ? 'true' : 'false',
+      escapeCSV(product.customizationSchemaId || ''),
+      product.readyMade ? 'true' : 'false',
+      escapeCSV((product.tags || []).join('|')), // Separar tags con |
       product.featured ? 'true' : 'false',
       escapeCSV(product.slug),
       product.active ? 'true' : 'false',
+      product.onSale ? 'true' : 'false',
+      (product.salePrice ?? '').toString(),
       product.isDigital ? 'true' : 'false',
       product.trackInventory ? 'true' : 'false',
       (product.stock ?? '').toString(),
@@ -112,12 +149,20 @@ export function exportProductsToCsv(products: FirebaseProduct[]): string {
 // IMPORTAR PRODUCTOS DESDE CSV
 // ============================================================================
 
-export function parseProductsCsv(csvContent: string): {
-  products: Partial<FirebaseProduct>[];
+export function parseProductsCsv(
+  csvContent: string,
+  options?: {
+    validCategorySlugs?: string[];
+    validCategoryIds?: string[];
+    validSubcategorySlugs?: string[];
+    validSubcategoryIds?: string[];
+  }
+): {
+  products: Partial<CsvProduct>[];
   errors: { row: number; message: string; data?: string }[];
 } {
   const lines = csvContent.split(/\r?\n/).filter((line) => line.trim());
-  const products: Partial<FirebaseProduct>[] = [];
+  const products: Partial<CsvProduct>[] = [];
   const errors: { row: number; message: string; data?: string }[] = [];
 
   if (lines.length < 2) {
@@ -133,11 +178,17 @@ export function parseProductsCsv(csvContent: string): {
   });
 
   // Verificar columnas requeridas
-  const requiredColumns = ['name', 'category', 'baseprice', 'slug'];
+  const requiredColumns = ['name', 'baseprice', 'slug'];
   for (const col of requiredColumns) {
     if (!headerMap.has(col)) {
       errors.push({ row: 1, message: `Falta la columna requerida: ${col}` });
     }
+  }
+  if (!headerMap.has('category') && !headerMap.has('categoryid')) {
+    errors.push({
+      row: 1,
+      message: 'Falta la columna requerida: category o categoryId',
+    });
   }
 
   if (errors.length > 0) {
@@ -153,7 +204,7 @@ export function parseProductsCsv(csvContent: string): {
 
     try {
       const values = parseCSVLine(line);
-      const product = parseProductRow(values, headerMap, rowNumber, errors);
+      const product = parseProductRow(values, headerMap, rowNumber, errors, options);
 
       if (product) {
         products.push(product);
@@ -174,8 +225,14 @@ function parseProductRow(
   values: string[],
   headerMap: Map<string, number>,
   rowNumber: number,
-  errors: { row: number; message: string; data?: string }[]
-): Partial<FirebaseProduct> | null {
+  errors: { row: number; message: string; data?: string }[],
+  options?: {
+    validCategorySlugs?: string[];
+    validCategoryIds?: string[];
+    validSubcategorySlugs?: string[];
+    validSubcategoryIds?: string[];
+  }
+): Partial<CsvProduct> | null {
   const getValue = (column: string): string => {
     const index = headerMap.get(column.toLowerCase());
     return index !== undefined ? (values[index] || '').trim() : '';
@@ -206,13 +263,33 @@ function parseProductRow(
     return null;
   }
 
-  const category = getValue('category') as ProductCategory;
-  if (!VALID_CATEGORIES.includes(category)) {
+  const category = getValue('category');
+  const categoryId = getValue('categoryid');
+  const validCategories = options?.validCategorySlugs || DEFAULT_VALID_CATEGORIES;
+  if (category && validCategories.length > 0 && !validCategories.includes(category)) {
     errors.push({
       row: rowNumber,
-      message: `Categoría inválida: "${category}". Válidas: ${VALID_CATEGORIES.join(', ')}`,
+      message: `Categoría inválida: "${category}". Válidas: ${validCategories.join(', ')}`,
     });
     return null;
+  }
+  if (!category && !categoryId) {
+    errors.push({
+      row: rowNumber,
+      message: 'La categoría es requerida (category o categoryId)',
+    });
+    return null;
+  }
+  if (categoryId && options?.validCategoryIds?.length) {
+    if (!options.validCategoryIds.includes(categoryId)) {
+      errors.push({
+        row: rowNumber,
+        message: `categoryId inválido: "${categoryId}". Válidos: ${options.validCategoryIds.join(
+          ', '
+        )}`,
+      });
+      return null;
+    }
   }
 
   const basePrice = getNumberValue('baseprice');
@@ -242,17 +319,24 @@ function parseProductRow(
         .filter(Boolean)
     : [];
 
-  const product: Partial<FirebaseProduct> = {
+  const product: Partial<CsvProduct> = {
     name,
     description: getValue('description') || '',
-    category,
+    category: category || undefined,
+    categoryId: categoryId || undefined,
+    subcategory: getValue('subcategory') || undefined,
+    subcategoryId: getValue('subcategoryid') || undefined,
     basePrice,
     images,
-    customizable: getBoolValue('customizable'),
+    customizable: getValue('customizable') ? getBoolValue('customizable') : undefined,
+    customizationSchemaId: getValue('customizationschemaid') || undefined,
+    readyMade: getValue('readymade') ? getBoolValue('readymade') : undefined,
     tags,
     featured: getBoolValue('featured'),
     slug,
     active: getBoolValue('active'),
+    onSale: getValue('onsale') ? getBoolValue('onsale') : undefined,
+    salePrice: getNumberValue('saleprice'),
   };
 
   // Campos opcionales
@@ -261,13 +345,8 @@ function parseProductRow(
     product.id = id;
   }
 
-  if (getValue('isdigital')) {
-    product.isDigital = getBoolValue('isdigital');
-  }
-
-  if (getValue('trackinventory')) {
-    product.trackInventory = getBoolValue('trackinventory');
-  }
+  if (getValue('isdigital')) product.isDigital = getBoolValue('isdigital');
+  if (getValue('trackinventory')) product.trackInventory = getBoolValue('trackinventory');
 
   const stock = getNumberValue('stock');
   if (stock !== undefined) {
@@ -279,18 +358,37 @@ function parseProductRow(
     product.lowStockThreshold = lowStockThreshold;
   }
 
-  if (getValue('allowbackorder')) {
-    product.allowBackorder = getBoolValue('allowbackorder');
-  }
+  if (getValue('allowbackorder')) product.allowBackorder = getBoolValue('allowbackorder');
 
   const metaTitle = getValue('metatitle');
-  if (metaTitle) {
-    product.metaTitle = metaTitle;
-  }
-
+  if (metaTitle) product.metaTitle = metaTitle;
   const metaDescription = getValue('metadescription');
-  if (metaDescription) {
-    product.metaDescription = metaDescription;
+  if (metaDescription) product.metaDescription = metaDescription;
+
+  // Validar subcategorías si vienen
+  const subcategory = product.subcategory;
+  const subcategoryId = product.subcategoryId;
+  if (subcategory && options?.validSubcategorySlugs?.length) {
+    if (!options.validSubcategorySlugs.includes(subcategory)) {
+      errors.push({
+        row: rowNumber,
+        message: `Subcategoría inválida: "${subcategory}". Válidas: ${options.validSubcategorySlugs.join(
+          ', '
+        )}`,
+      });
+      return null;
+    }
+  }
+  if (subcategoryId && options?.validSubcategoryIds?.length) {
+    if (!options.validSubcategoryIds.includes(subcategoryId)) {
+      errors.push({
+        row: rowNumber,
+        message: `subcategoryId inválido: "${subcategoryId}". Válidos: ${options.validSubcategoryIds.join(
+          ', '
+        )}`,
+      });
+      return null;
+    }
   }
 
   return product;
@@ -358,25 +456,40 @@ function parseCSVLine(line: string): string[] {
 // GENERAR PLANTILLA CSV
 // ============================================================================
 
-export function generateCsvTemplate(): string {
+export function generateCsvTemplate(options?: {
+  categories?: { id: string; slug: string }[];
+  subcategories?: { id: string; slug: string; categoryId?: string }[];
+}): string {
   const rows: string[] = [];
 
   // Cabeceras
   rows.push(CSV_HEADERS.join(','));
+
+  const categoryExample = options?.categories?.[0];
+  const subcategoryExample = options?.subcategories?.find(
+    (sub) => !categoryExample || sub.categoryId === categoryExample.id
+  );
 
   // Fila de ejemplo
   const exampleRow = [
     '', // id - vacío para nuevos productos
     'Camiseta Personalizada',
     'Camiseta de algodón 100% personalizable con tu diseño',
-    'textil',
+    categoryExample?.slug || 'textiles',
+    categoryExample?.id || '2',
+    subcategoryExample?.slug || 'ropa-personalizada',
+    subcategoryExample?.id || '4',
     '19.99',
     'https://ejemplo.com/imagen1.jpg|https://ejemplo.com/imagen2.jpg',
     'true',
+    'cat_camisetas',
+    'false',
     'nuevo|oferta',
     'true',
     'camiseta-personalizada',
     'true',
+    'false',
+    '',
     'false',
     'true',
     '50',
@@ -395,7 +508,7 @@ export function generateCsvTemplate(): string {
 // ============================================================================
 
 export function validateUniqueSlugs(
-  products: Partial<FirebaseProduct>[],
+  products: Partial<CsvProduct>[],
   existingSlugs: Set<string>
 ): { row: number; message: string }[] {
   const errors: { row: number; message: string }[] = [];

@@ -133,11 +133,11 @@ export default function SaveDesignButton({
                 <>
                   {/* Preview */}
                   {previewImage && (
-                    <div className="mb-4">
+                    <div className="mb-4 bg-gray-50 rounded-lg border-2 border-gray-200 p-2">
                       <img
                         src={previewImage}
                         alt="Preview del diseño"
-                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200"
+                        className="w-full h-48 object-contain rounded-md bg-white"
                       />
                     </div>
                   )}

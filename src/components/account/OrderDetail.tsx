@@ -394,7 +394,7 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
               <img
                 src={item.image || FALLBACK_IMG_400x300}
                 alt={item.name}
-                className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200"
+                className="w-20 h-20 object-contain rounded-lg border-2 border-gray-200 bg-white"
                 onError={(e) => {
                   const img = e.currentTarget as HTMLImageElement;
                   img.onerror = null;

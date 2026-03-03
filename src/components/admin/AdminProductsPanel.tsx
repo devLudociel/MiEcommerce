@@ -37,8 +37,8 @@ import {
   parseProductsCsv,
   generateCsvTemplate,
   validateUniqueSlugs,
+  type CsvProduct,
 } from '../../lib/productsCsv';
-import type { FirebaseProduct } from '../../types/firebase';
 
 // ============================================================================
 // TIPOS
@@ -164,7 +164,7 @@ export default function AdminProductsPanelV2() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importPreview, setImportPreview] = useState<{
-    products: Partial<FirebaseProduct>[];
+    products: Partial<CsvProduct>[];
     errors: { row: number; message: string; data?: string }[];
   } | null>(null);
   const [importing, setImporting] = useState(false);
@@ -591,31 +591,7 @@ export default function AdminProductsPanelV2() {
 
   const handleExportCsv = () => {
     try {
-      // Convert products to FirebaseProduct format
-      const firebaseProducts: FirebaseProduct[] = products.map((p) => ({
-        id: p.id,
-        name: p.name,
-        description: p.description,
-        category: p.category as any,
-        basePrice: p.basePrice,
-        images: p.images,
-        customizable: !!p.customizationSchemaId,
-        tags: p.tags,
-        featured: p.featured,
-        slug: p.slug,
-        active: p.active,
-        isDigital: false,
-        trackInventory: p.trackInventory,
-        stock: p.stock,
-        lowStockThreshold: p.lowStockThreshold,
-        allowBackorder: p.allowBackorder,
-        metaTitle: p.metaTitle,
-        metaDescription: p.metaDescription,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      }));
-
-      const csv = exportProductsToCsv(firebaseProducts);
+      const csv = exportProductsToCsv(products);
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
@@ -637,7 +613,7 @@ export default function AdminProductsPanelV2() {
 
   const handleDownloadTemplate = () => {
     try {
-      const csv = generateCsvTemplate();
+      const csv = generateCsvTemplate({ categories, subcategories });
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
@@ -667,7 +643,12 @@ export default function AdminProductsPanelV2() {
 
     try {
       const text = await file.text();
-      const result = parseProductsCsv(text);
+      const result = parseProductsCsv(text, {
+        validCategorySlugs: categories.map((c) => c.slug),
+        validCategoryIds: categories.map((c) => c.id),
+        validSubcategorySlugs: subcategories.map((s) => s.slug),
+        validSubcategoryIds: subcategories.map((s) => s.id),
+      });
 
       // Validate unique slugs against existing products
       const existingSlugs = new Set(products.map((p) => p.slug));
@@ -701,48 +682,76 @@ export default function AdminProductsPanelV2() {
 
       for (const product of importPreview.products) {
         try {
-          // Check if product has an ID (update existing)
-          if (product.id) {
-            const existingProduct = products.find((p) => p.id === product.id);
-            if (existingProduct) {
-              // Update existing product
-              await updateDoc(doc(db, 'products', product.id), {
-                ...product,
-                id: undefined, // Remove id from data
-                updatedAt: Timestamp.now(),
-              });
-              successCount++;
-              continue;
-            }
+          const categoryById = product.categoryId
+            ? categories.find((c) => c.id === product.categoryId)
+            : undefined;
+          const categoryBySlug = product.category
+            ? categories.find((c) => c.slug === product.category)
+            : undefined;
+          const resolvedCategory = categoryBySlug || categoryById || categories[0];
+          const categoryId = product.categoryId || resolvedCategory?.id || '';
+          const categorySlug = product.category || categoryById?.slug || resolvedCategory?.slug || 'otros';
+
+          const subcategoryById = product.subcategoryId
+            ? subcategories.find((s) => s.id === product.subcategoryId)
+            : undefined;
+          const subcategoryBySlug = product.subcategory
+            ? subcategories.find((s) => s.slug === product.subcategory)
+            : undefined;
+          const resolvedSubcategory = subcategoryBySlug || subcategoryById;
+          const subcategoryId = product.subcategoryId || resolvedSubcategory?.id || '';
+          const subcategorySlug =
+            product.subcategory || subcategoryById?.slug || resolvedSubcategory?.slug || '';
+
+          const readyMade = !!product.readyMade;
+          let schemaId = product.customizationSchemaId || '';
+          if (!readyMade && !schemaId && product.customizable) {
+            const schemaMatch = schemas.find(
+              (s) => s.categoryId === categoryId || s.id === categoryId || s.id === categorySlug
+            );
+            schemaId = schemaMatch?.id || '';
           }
 
-          // Create new product
-          const category = categories.find((c) => c.slug === product.category);
-          const newProduct = {
+          const productData = {
             name: product.name,
             description: product.description || '',
-            categoryId: category?.id || categories[0]?.id || '',
-            category: product.category || 'otros',
-            subcategoryId: '',
-            subcategory: '',
+            categoryId,
+            category: categorySlug,
+            subcategoryId,
+            subcategory: subcategorySlug,
             basePrice: product.basePrice || 0,
             images: product.images || [],
             tags: product.tags || [],
             featured: product.featured || false,
             slug: product.slug,
             active: product.active ?? true,
-            onSale: false,
-            trackInventory: product.trackInventory || false,
-            stock: product.stock || 0,
-            lowStockThreshold: product.lowStockThreshold || 5,
-            allowBackorder: product.allowBackorder || false,
+            onSale: product.onSale ?? false,
+            ...(product.onSale && product.salePrice && { salePrice: product.salePrice }),
+            readyMade,
+            ...(!readyMade && schemaId && { customizationSchemaId: schemaId }),
+            trackInventory: product.trackInventory ?? false,
+            stock: product.stock ?? 0,
+            lowStockThreshold: product.lowStockThreshold ?? 5,
+            allowBackorder: product.allowBackorder ?? false,
             metaTitle: product.metaTitle || '',
             metaDescription: product.metaDescription || '',
-            createdAt: Timestamp.now(),
             updatedAt: Timestamp.now(),
           };
 
-          await addDoc(collection(db, 'products'), newProduct);
+          // Check if product has an ID (update existing)
+          if (product.id) {
+            const existingProduct = products.find((p) => p.id === product.id);
+            if (existingProduct) {
+              await updateDoc(doc(db, 'products', product.id), productData);
+              successCount++;
+              continue;
+            }
+          }
+
+          await addDoc(collection(db, 'products'), {
+            ...productData,
+            createdAt: Timestamp.now(),
+          });
           successCount++;
         } catch (error) {
           errorCount++;

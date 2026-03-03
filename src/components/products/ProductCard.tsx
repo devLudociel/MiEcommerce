@@ -60,7 +60,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
           alt={product.name}
           loading="lazy"
           decoding="async"
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="absolute inset-0 w-full h-full object-contain bg-white"
           onError={handleImageError}
         />
 

@@ -84,7 +84,7 @@ export const ProductGallery = memo(function ProductGallery({
             alt={currentImage?.alt || productName}
             loading="eager"
             decoding="async"
-            className={`w-full h-80 md:h-[380px] lg:h-[420px] object-cover transition-all duration-700 ${
+            className={`w-full h-80 md:h-[380px] lg:h-[420px] object-contain bg-white transition-all duration-700 ${
               isZoomed ? 'scale-150' : 'scale-100 group-hover:scale-105'
             }`}
             onError={(e) => {
@@ -159,7 +159,7 @@ export const ProductGallery = memo(function ProductGallery({
               alt={img.alt}
               loading="lazy"
               decoding="async"
-              className="w-full h-20 sm:h-24 object-cover"
+              className="w-full h-20 sm:h-24 object-contain bg-white"
               onError={(e) => {
                 const imgEl = e.currentTarget as HTMLImageElement;
                 imgEl.onerror = null;

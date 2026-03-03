@@ -333,7 +333,7 @@ export default function FilesPanel() {
                       <img
                         src={file.previewUrl}
                         alt={file.displayName}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain bg-white"
                       />
                     ) : (
                       <div className={`text-3xl ${getFileTypeColor(file.type)}`}>
