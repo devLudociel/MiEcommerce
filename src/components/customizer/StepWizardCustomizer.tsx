@@ -9,7 +9,6 @@ import {
   Check,
   CheckCircle2,
   ClipboardList,
-  RotateCcw,
   Save,
   Palette,
   Ruler,
@@ -81,11 +80,61 @@ const getEffectiveBasePrice = (product: FirebaseProduct): number => {
   return basePrice;
 };
 
+const getShortTitle = (label: string, maxLength = 10): string =>
+  label.length > maxLength ? `${label.slice(0, maxLength)}...` : label;
+
+const getDefaultFieldDescription = (field: CustomizationField): string => {
+  switch (field.fieldType) {
+    case 'color_selector':
+      return 'Selecciona el color';
+    case 'size_selector':
+      return 'Elige la talla';
+    case 'dropdown':
+      return 'Selecciona una opcion';
+    case 'image_upload':
+      return 'Sube tu imagen';
+    default:
+      return 'Completa este paso';
+  }
+};
+
+const getFieldIcon = (fieldType: CustomizationField['fieldType']) => {
+  switch (fieldType) {
+    case 'color_selector':
+      return <Palette className="w-5 h-5" />;
+    case 'size_selector':
+      return <Ruler className="w-5 h-5" />;
+    case 'dropdown':
+      return <ClipboardList className="w-5 h-5" />;
+    case 'image_upload':
+      return <Upload className="w-5 h-5" />;
+    default:
+      return <Check className="w-5 h-5" />;
+  }
+};
+
+const detectTextileSide = (fieldId: string): 'front' | 'back' | null => {
+  const idLower = fieldId.toLowerCase();
+  if (
+    idLower.includes('front') ||
+    idLower.includes('frontal') ||
+    idLower.includes('frente')
+  ) {
+    return 'front';
+  }
+  if (idLower.includes('back') || idLower.includes('trasera') || idLower.includes('espalda')) {
+    return 'back';
+  }
+  return null;
+};
+
 // Tipos de pasos del wizard
-type StepType = 'options' | 'design' | 'position' | 'review';
+type StepType = 'field' | 'position' | 'review';
 
 interface WizardStep {
   id: StepType;
+  fieldId?: string;
+  fieldType?: CustomizationField['fieldType'];
   title: string;
   shortTitle: string;
   icon: React.ReactNode;
@@ -103,6 +152,9 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
   const [showDraftNotification, setShowDraftNotification] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [reviewConfirmed, setReviewConfirmed] = useState(false);
+  const [pendingAutoAdvance, setPendingAutoAdvance] = useState<string | null>(null);
+
+  const isFieldWizard = true;
 
   // Auto-save draft functionality
   const draftKey = `draft_${product.id}`;
@@ -199,26 +251,6 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     );
   }, [product]);
 
-  // Clasificar campos por tipo para los pasos
-  const fieldsByStep = useMemo(() => {
-    const optionFields: CustomizationField[] = [];
-    const designFields: CustomizationField[] = [];
-
-    schema.fields.forEach((field) => {
-      if (
-        field.fieldType === 'color_selector' ||
-        field.fieldType === 'size_selector' ||
-        field.fieldType === 'dropdown'
-      ) {
-        optionFields.push(field);
-      } else if (field.fieldType === 'image_upload') {
-        designFields.push(field);
-      }
-    });
-
-    return { optionFields, designFields };
-  }, [schema.fields]);
-
   const sortedFields = useMemo(
     () =>
       [...schema.fields].sort((a, b) => {
@@ -229,57 +261,90 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     [schema.fields]
   );
 
+  const isFieldVisible = useCallback(
+    (field: CustomizationField): boolean => {
+      if (!field.condition) return true;
+      const dependentValue = values[field.condition.dependsOn]?.value;
+      const showWhen = Array.isArray(field.condition.showWhen)
+        ? field.condition.showWhen
+        : [field.condition.showWhen];
+      return showWhen.includes(String(dependentValue));
+    },
+    [values]
+  );
+
+  const isSupportedField = useCallback(
+    (field: CustomizationField): boolean =>
+      field.fieldType === 'color_selector' ||
+      field.fieldType === 'size_selector' ||
+      field.fieldType === 'dropdown' ||
+      field.fieldType === 'image_upload',
+    []
+  );
+
+  const visibleFields = useMemo(
+    () => sortedFields.filter((field) => isSupportedField(field) && isFieldVisible(field)),
+    [sortedFields, isSupportedField, isFieldVisible]
+  );
+
+  const needsPositioning = useMemo(() => {
+    const hasImageUpload = visibleFields.some((field) => field.fieldType === 'image_upload');
+    return !isResinProduct() && hasImageUpload && (isTextileProduct() || isAccessoryProduct());
+  }, [visibleFields, isResinProduct, isTextileProduct, isAccessoryProduct]);
+
   // Determinar pasos dinámicamente
   const steps = useMemo((): WizardStep[] => {
     const stepList: WizardStep[] = [];
 
-    // Paso 1: Opciones (color, talla, etc.) - solo si hay campos de opciones
-    if (fieldsByStep.optionFields.length > 0) {
+    visibleFields.forEach((field) => {
       stepList.push({
-        id: 'options',
-        title: 'Elige tus opciones',
-        shortTitle: 'Opciones',
-        icon: <Palette className="w-5 h-5" />,
-        description: 'Selecciona color, talla y otras opciones',
+        id: 'field',
+        fieldId: field.id,
+        fieldType: field.fieldType,
+        title: field.label,
+        shortTitle: getShortTitle(field.label),
+        icon: getFieldIcon(field.fieldType),
+        description: field.helpText || getDefaultFieldDescription(field),
       });
-    }
+    });
 
-    // Paso 2: Diseño (subir imagen) - solo si hay campos de imagen
-    if (fieldsByStep.designFields.length > 0) {
-      stepList.push({
-        id: 'design',
-        title: 'Personaliza tu diseño',
-        shortTitle: 'Diseño',
-        icon: <Upload className="w-5 h-5" />,
-        description: 'Sube tu imagen o elige una plantilla',
-      });
-    }
-
-    // Paso 3: Posición - solo para productos que lo necesiten y tengan imagen
-    const hasImageUpload = fieldsByStep.designFields.length > 0;
-    const needsPositioning =
-      !isResinProduct() && hasImageUpload && (isTextileProduct() || isAccessoryProduct());
     if (needsPositioning) {
       stepList.push({
         id: 'position',
-        title: 'Ajusta la posición',
-        shortTitle: 'Posición',
+        title: 'Ajusta la posicion',
+        shortTitle: 'Posicion',
         icon: <Move className="w-5 h-5" />,
-        description: 'Mueve y escala tu diseño',
+        description: 'Mueve y escala tu diseno',
       });
     }
 
-    // Paso 4: Revisar - siempre presente
     stepList.push({
       id: 'review',
       title: 'Revisar y confirmar',
       shortTitle: 'Confirmar',
       icon: <Eye className="w-5 h-5" />,
-      description: 'Revisa tu personalización antes de añadir al carrito',
+      description: 'Revisa tu personalizacion antes de anadir al carrito',
     });
 
     return stepList;
-  }, [fieldsByStep, isResinProduct, isTextileProduct, isAccessoryProduct]);
+  }, [visibleFields, needsPositioning]);
+
+  useEffect(() => {
+    const step = steps[currentStep];
+    if (!step || step.id !== 'field' || step.fieldType !== 'image_upload') return;
+    if (!isTextileProduct() || !step.fieldId) return;
+
+    const side = detectTextileSide(step.fieldId);
+    if (side && side !== activeSide) {
+      setActiveSide(side);
+    }
+  }, [currentStep, steps, isTextileProduct, activeSide]);
+
+  useEffect(() => {
+    if (currentStep > steps.length - 1) {
+      setCurrentStep(Math.max(0, steps.length - 1));
+    }
+  }, [currentStep, steps.length]);
 
   // Check for reorder/shared design on mount
   useEffect(() => {
@@ -476,18 +541,6 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     getTieredUnitPrice,
   ]);
 
-  const isFieldVisibleForSummary = useCallback(
-    (field: CustomizationField): boolean => {
-      if (!field.condition) return true;
-      const dependentValue = values[field.condition.dependsOn]?.value;
-      const showWhen = Array.isArray(field.condition.showWhen)
-        ? field.condition.showWhen
-        : [field.condition.showWhen];
-      return showWhen.includes(String(dependentValue));
-    },
-    [values]
-  );
-
   const hasFieldValue = useCallback((field: CustomizationField, value?: CustomizationValue) => {
     if (!value) return false;
     if (field.fieldType === 'checkbox') return value.value === true;
@@ -516,7 +569,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
   const summaryItems = useMemo(
     () =>
       sortedFields
-        .filter((field) => isFieldVisibleForSummary(field))
+        .filter((field) => isFieldVisible(field))
         .map((field) => {
           const fieldValue = values[field.id];
           const displayValue = getFieldDisplayValue(field, fieldValue);
@@ -524,7 +577,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
           return { id: field.id, label: field.label, value: displayValue };
         })
         .filter(Boolean) as Array<{ id: string; label: string; value: string }>,
-    [sortedFields, values, isFieldVisibleForSummary, getFieldDisplayValue]
+    [sortedFields, values, isFieldVisible, getFieldDisplayValue]
   );
 
   const uploadedImages = useMemo(
@@ -544,8 +597,8 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
   );
 
   const requiredFields = useMemo(
-    () => sortedFields.filter((field) => field.required && isFieldVisibleForSummary(field)),
-    [sortedFields, isFieldVisibleForSummary]
+    () => sortedFields.filter((field) => field.required && isFieldVisible(field)),
+    [sortedFields, isFieldVisible]
   );
 
   const missingRequiredFields = useMemo(
@@ -554,6 +607,37 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
   );
 
   const isReadyToReview = missingRequiredFields.length === 0;
+
+  useEffect(() => {
+    if (!pendingAutoAdvance || !isFieldWizard) return;
+
+    const currentStepData = steps[currentStep];
+    if (
+      !currentStepData ||
+      currentStepData.id !== 'field' ||
+      currentStepData.fieldId !== pendingAutoAdvance
+    ) {
+      setPendingAutoAdvance(null);
+      return;
+    }
+
+    const field = schema.fields.find((f) => f.id === pendingAutoAdvance);
+    if (field && hasFieldValue(field, values[pendingAutoAdvance])) {
+      if (currentStep < steps.length - 1) {
+        setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+      }
+    }
+
+    setPendingAutoAdvance(null);
+  }, [
+    pendingAutoAdvance,
+    isFieldWizard,
+    steps,
+    currentStep,
+    values,
+    schema.fields,
+    hasFieldValue,
+  ]);
 
   const handleFieldChange = useCallback(
     (fieldId: string, value: CustomizationValue) => {
@@ -565,8 +649,13 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
         [fieldId]: { ...value, fieldLabel },
       }));
       setError(null);
+
+      const currentStepData = steps[currentStep];
+      if (isFieldWizard && currentStepData?.id === 'field' && currentStepData.fieldId === fieldId) {
+        setPendingAutoAdvance(fieldId);
+      }
     },
-    [schema.fields]
+    [schema.fields, steps, currentStep, isFieldWizard]
   );
 
   const handleTextileTransformChange = useCallback(
@@ -656,35 +745,20 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     const currentStepData = steps[currentStep];
     if (!currentStepData) return true;
 
-    const fieldsToValidate =
-      currentStepData.id === 'options'
-        ? fieldsByStep.optionFields
-        : currentStepData.id === 'design'
-          ? fieldsByStep.designFields
-          : [];
+    if (currentStepData.id !== 'field' || !currentStepData.fieldId) return true;
 
-    for (const field of fieldsToValidate) {
-      if (!field.required) continue;
+    const field = schema.fields.find((f) => f.id === currentStepData.fieldId);
+    if (!field || !field.required) return true;
+    if (!isFieldVisible(field)) return true;
 
-      // Check condition
-      if (field.condition) {
-        const dependentValue = values[field.condition.dependsOn]?.value;
-        const showWhen = Array.isArray(field.condition.showWhen)
-          ? field.condition.showWhen
-          : [field.condition.showWhen];
-
-        if (!showWhen.includes(String(dependentValue))) continue;
-      }
-
-      const value = values[field.id];
-      if (!value || !value.value || (typeof value.value === 'string' && !value.value.trim())) {
-        setError(`El campo "${field.label}" es obligatorio`);
-        return false;
-      }
+    const value = values[field.id];
+    if (!hasFieldValue(field, value)) {
+      setError(`El campo "${field.label}" es obligatorio`);
+      return false;
     }
 
     return true;
-  }, [currentStep, steps, fieldsByStep, values]);
+  }, [currentStep, steps, schema.fields, values, isFieldVisible, hasFieldValue]);
 
   const validateAllFields = useCallback((): boolean => {
     const requiredFields = schema.fields.filter((f) => f.required);
@@ -740,20 +814,6 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
       setCurrentStep((prev) => prev - 1);
     }
   }, [currentStep]);
-
-  const goToStep = useCallback(
-    (stepIndex: number) => {
-      // Solo permitir ir a pasos anteriores o al siguiente si el actual es valido
-      if (stepIndex < currentStep) {
-        setCurrentStep(stepIndex);
-        setError(null);
-      } else if (stepIndex === currentStep + 1 && validateCurrentStep()) {
-        setCurrentStep(stepIndex);
-        setError(null);
-      }
-    },
-    [currentStep, validateCurrentStep]
-  );
 
   const handleAddToCart = useCallback(async () => {
     setError(null);
@@ -1034,7 +1094,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
           );
 
         case 'image_upload':
-          if (isTextileProduct()) {
+          if (isTextileProduct() && !isFieldWizard) {
             const fieldIdLower = field.id.toLowerCase();
             const isFrontField =
               fieldIdLower.includes('front') ||
@@ -1068,7 +1128,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
           return null;
       }
     },
-    [values, handleFieldChange, isTextileProduct, activeSide, product.categoryId]
+    [values, handleFieldChange, isTextileProduct, activeSide, product.categoryId, isFieldWizard]
   );
 
   // Render step content
@@ -1077,66 +1137,51 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
     if (!currentStepData) return null;
 
     switch (currentStepData.id) {
-      case 'options':
+      case 'field': {
+        const field = currentStepData.fieldId
+          ? schema.fields.find((f) => f.id === currentStepData.fieldId)
+          : null;
+        if (!field) return null;
+
+        const isImageField = field.fieldType === 'image_upload';
+        const textileSide = isImageField && isTextileProduct() ? detectTextileSide(field.id) : null;
+
         return (
           <div className="space-y-6">
-            {fieldsByStep.optionFields.map((field) => renderField(field))}
-          </div>
-        );
+            {isImageField && (
+              <>
+                {/* Template & Clipart buttons */}
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setShowTemplates(true)}
+                    className="bg-gradient-to-r from-pink-500 to-purple-500 text-white py-3 px-4 rounded-xl font-bold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Plantillas</span>
+                  </button>
 
-      case 'design':
-        return (
-          <div className="space-y-6">
-            {/* Template & Clipart buttons */}
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setShowTemplates(true)}
-                className="bg-gradient-to-r from-pink-500 to-purple-500 text-white py-3 px-4 rounded-xl font-bold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>Plantillas</span>
-              </button>
+                  <button
+                    onClick={() => setShowCliparts(true)}
+                    className="bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 px-4 rounded-xl font-bold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                    <span>Cliparts</span>
+                  </button>
+                </div>
 
-              <button
-                onClick={() => setShowCliparts(true)}
-                className="bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 px-4 rounded-xl font-bold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2"
-              >
-                <ImageIcon className="w-4 h-4" />
-                <span>Cliparts</span>
-              </button>
-            </div>
-
-            {/* Textile side toggle */}
-            {isTextileProduct() && (
-              <div className="flex justify-center gap-2 p-1 bg-gray-100 rounded-lg">
-                <button
-                  onClick={() => setActiveSide('front')}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                    activeSide === 'front'
-                      ? 'bg-white shadow text-purple-600'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  Frontal
-                </button>
-                <button
-                  onClick={() => setActiveSide('back')}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                    activeSide === 'back'
-                      ? 'bg-white shadow text-purple-600'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  Trasera
-                </button>
-              </div>
+                {textileSide && (
+                  <div className="flex justify-center">
+                    <span className="text-xs font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                      Lado: {textileSide === 'front' ? 'Frontal' : 'Trasera'}
+                    </span>
+                  </div>
+                )}
+              </>
             )}
 
-            {/* Image upload fields */}
-            {fieldsByStep.designFields.map((field) => renderField(field))}
+            {renderField(field)}
 
-            {/* Cliparts info */}
-            {layers.length > 0 && (
+            {isImageField && layers.length > 0 && (
               <div className="p-3 bg-pink-50 border border-pink-200 rounded-lg">
                 <p className="text-sm text-pink-800 font-medium">
                   {layers.length} clipart{layers.length > 1 ? 's' : ''} anadido
@@ -1146,6 +1191,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
             )}
           </div>
         );
+      }
 
       case 'position':
         return (
@@ -1409,47 +1455,19 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
           </div>
         )}
 
-        {/* Step Indicator - horizontal en movil */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between max-w-md mx-auto px-2">
-            {steps.map((step, index) => (
-              <React.Fragment key={step.id}>
-                <button
-                  onClick={() => goToStep(index)}
-                  className={`flex flex-col items-center gap-1 transition-all ${
-                    index <= currentStep ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-                  }`}
-                  disabled={index > currentStep + 1}
-                >
-                  <div
-                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all ${
-                      index < currentStep
-                        ? 'bg-green-500 text-white'
-                        : index === currentStep
-                          ? 'bg-purple-600 text-white shadow-lg scale-110'
-                          : 'bg-gray-200 text-gray-400'
-                    }`}
-                  >
-                    {index < currentStep ? <Check className="w-5 h-5" /> : step.icon}
-                  </div>
-                  <span
-                    className={`text-[10px] sm:text-xs font-medium text-center leading-tight ${
-                      index === currentStep ? 'text-purple-600' : 'text-gray-500'
-                    }`}
-                  >
-                    {step.shortTitle}
-                  </span>
-                </button>
-
-                {index < steps.length - 1 && (
-                  <div
-                    className={`flex-1 h-0.5 mx-1 sm:mx-2 ${
-                      index < currentStep ? 'bg-green-500' : 'bg-gray-200'
-                    }`}
-                  />
-                )}
-              </React.Fragment>
-            ))}
+        {/* Step Indicator */}
+        <div className="mb-6 max-w-md mx-auto">
+          <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+            <span>
+              Paso {currentStep + 1} de {steps.length}
+            </span>
+            <span className="font-medium text-gray-700">{steps[currentStep]?.shortTitle}</span>
+          </div>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-purple-600 transition-all"
+              style={{ width: `${Math.round(((currentStep + 1) / steps.length) * 100)}%` }}
+            />
           </div>
         </div>
 

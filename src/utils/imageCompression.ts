@@ -64,8 +64,19 @@ export function validateImageFile(
   file: File,
   constraints: ValidationConstraints = {}
 ): ValidationResult {
-  const { maxSizeMB = 10, allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'] } =
-    constraints;
+  const {
+    maxSizeMB = 10,
+    allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/jpg',
+      'image/webp',
+      'image/heic',
+      'image/heif',
+      'image/heic-sequence',
+      'image/heif-sequence',
+    ],
+  } = constraints;
 
   if (!allowedTypes.includes(file.type)) {
     return {

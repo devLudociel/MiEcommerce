@@ -40,9 +40,21 @@ export default function ImageUploadField({
   categoryId,
 }: ImageUploadFieldProps) {
   // Ensure config has required properties with defaults
+  const baseAllowedFormats = (config.allowedFormats || ['jpg', 'jpeg', 'png', 'webp']).map((fmt) =>
+    fmt.toLowerCase()
+  );
+  const supportsRasterUploads = baseAllowedFormats.some((fmt) =>
+    ['jpg', 'jpeg', 'png', 'webp'].includes(fmt)
+  );
+  const allowedFormats = Array.from(
+    new Set(
+      supportsRasterUploads ? [...baseAllowedFormats, 'heic', 'heif'] : baseAllowedFormats
+    )
+  );
+
   const safeConfig = {
     maxSizeMB: config.maxSizeMB || 5,
-    allowedFormats: config.allowedFormats || ['jpg', 'jpeg', 'png'],
+    allowedFormats,
     showPreview: config.showPreview !== undefined ? config.showPreview : true,
     showPositionControls:
       config.showPositionControls !== undefined ? config.showPositionControls : true,
@@ -162,11 +174,19 @@ export default function ImageUploadField({
 
       // Check format
       const fileExt = file.name.split('.').pop()?.toLowerCase();
-      if (fileExt && !safeConfig.allowedFormats.includes(fileExt)) {
-        setError(
-          `Formato no permitido. Formatos aceptados: ${safeConfig.allowedFormats.join(', ')}`
-        );
-        return;
+      if (fileExt) {
+        const isJpegExt = fileExt === 'jpg' || fileExt === 'jpeg';
+        const allowsJpeg =
+          safeConfig.allowedFormats.includes('jpg') || safeConfig.allowedFormats.includes('jpeg');
+        const isAllowed =
+          safeConfig.allowedFormats.includes(fileExt) || (isJpegExt && allowsJpeg);
+
+        if (!isAllowed) {
+          setError(
+            `Formato no permitido. Formatos aceptados: ${safeConfig.allowedFormats.join(', ')}`
+          );
+          return;
+        }
       }
 
       // Create preview

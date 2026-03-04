@@ -119,7 +119,7 @@ export default function SchemaEditor({
       case 'image_upload':
         return {
           maxSizeMB: 5,
-          allowedFormats: ['jpg', 'jpeg', 'png'],
+          allowedFormats: ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'],
           showPreview: true,
           showPositionControls: true,
         } satisfies ImageUploadConfig;
