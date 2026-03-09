@@ -5,7 +5,6 @@ import { toasterConfig } from '../lib/notifications';
 import Analytics from '../components/analytics/Analytics.tsx';
 import CookieConsent from '../components/analytics/CookieConsent.tsx';
 import CompareBar from '../components/products/CompareBar';
-import ChatWidget from '../components/support/ChatWidget';
 import PromoPopupDisplay from '../components/promo/PromoPopupDisplay';
 import WelcomeBonusPopup from '../components/common/WelcomeBonusPopup';
 import LeadSignupPopup from '../components/common/LeadSignupPopup';
@@ -103,8 +102,6 @@ const nonce = Astro.locals?.cspNonce;
     <Toaster {...toasterConfig} client:load />
     <!-- Product Comparison Bar -->
     <CompareBar client:load />
-    <!-- Chat Support Widget -->
-    <ChatWidget client:idle />
     <!-- Promotional Popups -->
     <PromoPopupDisplay client:idle />
     <WelcomeBonusPopup client:load />

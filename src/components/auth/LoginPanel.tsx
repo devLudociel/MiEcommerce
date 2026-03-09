@@ -1,5 +1,5 @@
 import { logger } from '../../lib/logger';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import {
   GoogleAuthProvider,
   signInWithPopup,
@@ -14,6 +14,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
+import { validatePassword } from '../../lib/validation/validators';
 import AccessibleModal from '../common/AccessibleModal';
 
 type TabMode = 'login' | 'register';
@@ -47,8 +48,32 @@ export default function LoginPanel() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+  const [validationFeedbackTick, setValidationFeedbackTick] = useState(0);
+
+  const errorRef = useRef<HTMLDivElement>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
 
   const WELCOME_BONUS_STORAGE_KEY = 'welcome_bonus_popup';
+  const passwordValidation = validatePassword(password);
+  const passwordRequirements = [
+    { id: 'length', label: 'Mínimo 8 caracteres', isMet: password.length >= 8 },
+    { id: 'uppercase', label: 'Una mayúscula', isMet: /[A-Z]/.test(password) },
+    { id: 'lowercase', label: 'Una minúscula', isMet: /[a-z]/.test(password) },
+    { id: 'number', label: 'Un número', isMet: /[0-9]/.test(password) },
+  ];
+  const isEmailInvalid = hasAttemptedSubmit && !email.trim();
+  const isPasswordInvalid =
+    hasAttemptedSubmit &&
+    (!password || (tabMode === 'register' && !passwordValidation.valid));
+  const isConfirmPasswordInvalid =
+    tabMode === 'register' &&
+    hasAttemptedSubmit &&
+    (!confirmPassword || password !== confirmPassword);
+  const registerHasAllRequirements =
+    passwordValidation.valid && Boolean(confirmPassword) && password === confirmPassword;
 
   // Modal state
   const [modal, setModal] = useState<{
@@ -73,6 +98,24 @@ export default function LoginPanel() {
 
   const closeModal = () => {
     setModal({ ...modal, isOpen: false });
+  };
+
+  const focusField = (fieldRef: RefObject<HTMLInputElement | null>) => {
+    if (typeof window === 'undefined') return;
+
+    window.requestAnimationFrame(() => {
+      fieldRef.current?.focus({ preventScroll: true });
+      fieldRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  };
+
+  const showValidationError = (
+    message: string,
+    fieldRef: RefObject<HTMLInputElement | null>
+  ) => {
+    setError(message);
+    setValidationFeedbackTick((current) => current + 1);
+    focusField(fieldRef);
   };
 
   const persistWelcomeBonusPopup = (amount: number, minPurchase: number) => {
@@ -339,39 +382,30 @@ export default function LoginPanel() {
 
   async function handleEmailPasswordSubmit() {
     try {
+      setHasAttemptedSubmit(true);
       setError(null);
 
       if (!email.trim()) {
-        setError('Por favor ingresa tu email');
+        showValidationError('Por favor ingresa tu email', emailInputRef);
         return;
       }
 
       if (!password) {
-        setError('Por favor ingresa tu contraseña');
+        showValidationError('Por favor ingresa tu contraseña', passwordInputRef);
         return;
       }
 
       if (tabMode === 'register') {
+        if (!passwordValidation.valid) {
+          showValidationError(passwordValidation.message, passwordInputRef);
+          return;
+        }
+        if (!confirmPassword) {
+          showValidationError('Confirma tu contraseña', confirmPasswordInputRef);
+          return;
+        }
         if (password !== confirmPassword) {
-          setError('Las contraseñas no coinciden');
-          return;
-        }
-        // SECURITY FIX MED-005: Use centralized password validation
-        // Requires 8+ chars, uppercase, lowercase, and number
-        if (password.length < 8) {
-          setError('La contraseña debe tener al menos 8 caracteres');
-          return;
-        }
-        if (!/[A-Z]/.test(password)) {
-          setError('La contraseña debe contener al menos una mayúscula');
-          return;
-        }
-        if (!/[a-z]/.test(password)) {
-          setError('La contraseña debe contener al menos una minúscula');
-          return;
-        }
-        if (!/[0-9]/.test(password)) {
-          setError('La contraseña debe contener al menos un número');
+          showValidationError('Las contraseñas no coinciden', confirmPasswordInputRef);
           return;
         }
       }
@@ -534,7 +568,14 @@ export default function LoginPanel() {
             </div>
 
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 animate-shake">
+              <div
+                key={`error-${validationFeedbackTick}`}
+                ref={errorRef}
+                tabIndex={-1}
+                role="alert"
+                aria-live="assertive"
+                className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 animate-shake"
+              >
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">⚠️</span>
                   <div>
@@ -579,6 +620,7 @@ export default function LoginPanel() {
                     onClick={() => {
                       setTabMode('login');
                       setError(null);
+                      setHasAttemptedSubmit(false);
                       setPassword('');
                       setConfirmPassword('');
                     }}
@@ -594,6 +636,7 @@ export default function LoginPanel() {
                     onClick={() => {
                       setTabMode('register');
                       setError(null);
+                      setHasAttemptedSubmit(false);
                       setPassword('');
                       setConfirmPassword('');
                     }}
@@ -662,15 +705,29 @@ export default function LoginPanel() {
                       📧 Email
                     </label>
                     <input
+                      ref={emailInputRef}
                       id="email"
                       data-testid="login-email"
                       type="email"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:ring-4 focus:ring-purple-100 transition-all outline-none"
+                      aria-invalid={isEmailInvalid}
+                      className={`w-full px-4 py-3 border-2 rounded-xl transition-all outline-none ${
+                        isEmailInvalid
+                          ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-4 focus:ring-red-100'
+                          : 'border-gray-200 focus:border-purple-400 focus:ring-4 focus:ring-purple-100'
+                      }`}
                       placeholder="tu@email.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (error) setError(null);
+                      }}
                       autoComplete="email"
                     />
+                    {isEmailInvalid && (
+                      <p className="mt-2 text-sm font-medium text-red-600">
+                        Necesitamos tu email para crear la cuenta.
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -682,13 +739,22 @@ export default function LoginPanel() {
                     </label>
                     <div className="relative">
                       <input
+                        ref={passwordInputRef}
                         id="password"
                         data-testid="login-password"
                         type={showPassword ? 'text' : 'password'}
-                        className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:ring-4 focus:ring-purple-100 transition-all outline-none"
+                        aria-invalid={isPasswordInvalid}
+                        className={`w-full px-4 py-3 pr-12 border-2 rounded-xl transition-all outline-none ${
+                          isPasswordInvalid
+                            ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-4 focus:ring-red-100'
+                            : 'border-gray-200 focus:border-purple-400 focus:ring-4 focus:ring-purple-100'
+                        }`}
                         placeholder="••••••••"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (error) setError(null);
+                        }}
                         autoComplete={tabMode === 'register' ? 'new-password' : 'current-password'}
                       />
                       <button
@@ -700,6 +766,31 @@ export default function LoginPanel() {
                         {showPassword ? '🙈' : '👁️'}
                       </button>
                     </div>
+                    {tabMode === 'register' && (
+                      <div
+                        className={`mt-3 rounded-xl border px-4 py-3 ${
+                          hasAttemptedSubmit && !passwordValidation.valid
+                            ? 'border-red-200 bg-red-50'
+                            : 'border-gray-200 bg-gray-50'
+                        }`}
+                      >
+                        <p className="text-sm font-semibold text-gray-700">
+                          Tu contraseña debe incluir:
+                        </p>
+                        <div className="mt-2 grid gap-1 text-sm">
+                          {passwordRequirements.map((requirement) => (
+                            <div
+                              key={requirement.id}
+                              className={
+                                requirement.isMet ? 'text-green-700' : 'text-gray-500'
+                              }
+                            >
+                              {requirement.isMet ? '✓' : '•'} {requirement.label}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {tabMode === 'register' && (
@@ -712,13 +803,22 @@ export default function LoginPanel() {
                       </label>
                       <div className="relative">
                         <input
+                          ref={confirmPasswordInputRef}
                           id="confirmPassword"
                           data-testid="login-confirm-password"
                           type={showConfirmPassword ? 'text' : 'password'}
-                          className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-xl focus:border-pink-400 focus:ring-4 focus:ring-pink-100 transition-all outline-none"
+                          aria-invalid={isConfirmPasswordInvalid}
+                          className={`w-full px-4 py-3 pr-12 border-2 rounded-xl transition-all outline-none ${
+                            isConfirmPasswordInvalid
+                              ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-4 focus:ring-red-100'
+                              : 'border-gray-200 focus:border-pink-400 focus:ring-4 focus:ring-pink-100'
+                          }`}
                           placeholder="••••••••"
                           value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          onChange={(e) => {
+                            setConfirmPassword(e.target.value);
+                            if (error) setError(null);
+                          }}
                           autoComplete="new-password"
                         />
                         <button
@@ -732,6 +832,13 @@ export default function LoginPanel() {
                           {showConfirmPassword ? '🙈' : '👁️'}
                         </button>
                       </div>
+                      {isConfirmPasswordInvalid && (
+                        <p className="mt-2 text-sm font-medium text-red-600">
+                          {confirmPassword
+                            ? 'Las contraseñas deben coincidir para continuar.'
+                            : 'Confirma tu contraseña para terminar el registro.'}
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -745,6 +852,12 @@ export default function LoginPanel() {
                         : tabMode === 'login'
                           ? 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600'
                           : 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600'
+                    } ${
+                      !loading && validationFeedbackTick > 0
+                        ? validationFeedbackTick % 2 === 0
+                          ? 'animate-submit-nudge-even'
+                          : 'animate-submit-nudge-odd'
+                        : ''
                     }`}
                   >
                     {loading ? (
@@ -758,6 +871,20 @@ export default function LoginPanel() {
                       </span>
                     )}
                   </button>
+
+                  {tabMode === 'register' && (
+                    <p
+                      className={`text-sm text-center font-medium ${
+                        hasAttemptedSubmit && !registerHasAllRequirements
+                          ? 'text-red-600'
+                          : 'text-gray-500'
+                      }`}
+                    >
+                      {hasAttemptedSubmit && !registerHasAllRequirements
+                        ? 'Revisa los campos marcados antes de crear la cuenta.'
+                        : 'Usa una contraseña segura: 8+ caracteres, mayúscula, minúscula y número.'}
+                    </p>
+                  )}
 
                   {tabMode === 'login' && (
                     <button
@@ -836,6 +963,23 @@ export default function LoginPanel() {
 
           .animate-shake {
             animation: shake 0.5s ease-in-out;
+          }
+
+          @keyframes submit-nudge {
+            0%, 100% {
+              transform: translateX(0);
+            }
+            25% {
+              transform: translateX(-6px);
+            }
+            75% {
+              transform: translateX(6px);
+            }
+          }
+
+          .animate-submit-nudge-even,
+          .animate-submit-nudge-odd {
+            animation: submit-nudge 0.35s ease-in-out;
           }
         `}
       </style>
