@@ -344,6 +344,20 @@ service firebase.storage {
     }
 
     // ==========================================================================
+    // CATEGORIES: Category images for the homepage showcase
+    // ==========================================================================
+    match /categories/{fileName} {
+      // Only admins can upload/update/delete category images
+      allow create, update: if isAdmin() && isValidSize() && isImage();
+
+      // Anyone can read (public category images)
+      allow read: if true;
+
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================================================
     // DENY ALL OTHER PATHS
     // ==========================================================================
     match /{allPaths=**} {
