@@ -21,8 +21,8 @@ const ogImage = '/og-home.jpg';
   <HeroCarousel client:load />
 
   <!-- 2. Categories: Navegación rápida a lo que buscan -->
-  <!-- client:visible = Cargar solo cuando entra en viewport (PERFORMANCE: -44% TTI) -->
-  <CategoriesShowcase client:visible />
+  <!-- client:load = Necesario porque lee de Firebase (client:visible no funciona con return null) -->
+  <CategoriesShowcase client:load />
 
   <!-- 3. Best Sellers: Social proof + productos populares -->
   <!-- client:visible = Cargar cuando es visible (below the fold) -->

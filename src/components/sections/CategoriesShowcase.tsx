@@ -40,7 +40,23 @@ export default function CategoriesShowcase() {
     }
   };
 
-  if (categories.length === 0) return null;
+  if (categories.length === 0) {
+    return (
+      <section className="py-8 sm:py-12 bg-white">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="h-6 w-64 bg-gray-200 rounded animate-pulse mb-8" />
+          <div className="hidden sm:flex gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-3 flex-shrink-0" style={{ minWidth: '100px' }}>
+                <div className="w-24 h-24 rounded-full bg-gray-200 animate-pulse" />
+                <div className="h-3 w-16 bg-gray-200 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-8 sm:py-12 bg-white">
