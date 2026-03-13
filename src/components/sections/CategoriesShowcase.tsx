@@ -1,27 +1,34 @@
 // src/components/sections/CategoriesShowcase.tsx
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { db } from '../../lib/firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
 
-const categories = [
-  { id: 'tarjetas', name: 'Tarjetas de visita', icon: '🪪', href: '/productos?tag=tarjetas' },
-  { id: 'publicidad', name: 'Publicidad impresa y artículos de oficina', icon: '📄', href: '/productos?tag=publicidad' },
-  { id: 'carteles', name: 'Carteles y pósteres', icon: '🖼️', href: '/productos?tag=carteles' },
-  { id: 'etiquetas', name: 'Etiquetas y pegatinas', icon: '🏷️', href: '/productos?tag=etiquetas' },
-  { id: 'ropa', name: 'Ropa y bolsas', icon: '👕', href: '/productos?tag=ropa' },
-  { id: 'promocionales', name: 'Artículos promocionales', icon: '📓', href: '/productos?tag=promocionales' },
-  { id: 'packaging', name: 'Packaging', icon: '🛍️', href: '/productos?tag=packaging' },
-  { id: 'regalos', name: 'Regalos con foto', icon: '🖼️', href: '/productos?tag=regalos' },
-  { id: 'invitaciones', name: 'Invitaciones, papelería y bodas', icon: '💌', href: '/productos?tag=invitaciones' },
-  { id: 'diseno', name: 'Diseño', icon: '✏️', href: '/productos?tag=diseno' },
-];
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  image?: string;
+}
 
 const MOBILE_ITEMS_PER_PAGE = 3;
 
 export default function CategoriesShowcase() {
+  const [categories, setCategories] = useState<Category[]>([]);
   const [mobilePage, setMobilePage] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const totalMobilePages = Math.ceil(categories.length / MOBILE_ITEMS_PER_PAGE);
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'categories'), (snapshot) => {
+      const cats = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      })) as Category[];
+      setCategories(cats);
+    });
+    return () => unsub();
+  }, []);
 
+  const totalMobilePages = Math.ceil(categories.length / MOBILE_ITEMS_PER_PAGE);
   const mobilePageCategories = categories.slice(
     mobilePage * MOBILE_ITEMS_PER_PAGE,
     mobilePage * MOBILE_ITEMS_PER_PAGE + MOBILE_ITEMS_PER_PAGE
@@ -32,6 +39,24 @@ export default function CategoriesShowcase() {
       scrollRef.current.scrollBy({ left: 300, behavior: 'smooth' });
     }
   };
+
+  if (categories.length === 0) {
+    return (
+      <section className="py-8 sm:py-12 bg-white">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="h-6 w-64 bg-gray-200 rounded animate-pulse mb-8" />
+          <div className="hidden sm:flex gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-3 flex-shrink-0" style={{ minWidth: '100px' }}>
+                <div className="w-24 h-24 rounded-full bg-gray-200 animate-pulse" />
+                <div className="h-3 w-16 bg-gray-200 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-8 sm:py-12 bg-white">
@@ -44,18 +69,28 @@ export default function CategoriesShowcase() {
         <div className="hidden sm:flex items-center gap-2">
           <div
             ref={scrollRef}
-            className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth flex-1"
+            className="flex gap-6 overflow-x-auto scroll-smooth flex-1"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {categories.map((category) => (
               <a
                 key={category.id}
-                href={category.href}
+                href={`/productos?tag=${category.slug}`}
                 className="flex flex-col items-center gap-3 flex-shrink-0 group"
                 style={{ minWidth: '100px', maxWidth: '110px' }}
               >
-                <div className="w-24 h-24 rounded-full bg-[#f5f0e8] flex items-center justify-center text-4xl group-hover:shadow-md transition-shadow duration-200 overflow-hidden border border-[#ede8de]">
-                  {category.icon}
+                <div className="w-24 h-24 rounded-full bg-[#f5f0e8] border border-[#ede8de] flex items-center justify-center overflow-hidden group-hover:shadow-md transition-shadow duration-200">
+                  {category.image ? (
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl font-bold text-gray-400">
+                      {category.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <span className="text-xs text-center text-gray-700 font-medium leading-tight">
                   {category.name}
@@ -82,37 +117,48 @@ export default function CategoriesShowcase() {
             {mobilePageCategories.map((category) => (
               <a
                 key={category.id}
-                href={category.href}
+                href={`/productos?tag=${category.slug}`}
                 className="flex flex-col items-center gap-2 group flex-1"
               >
-                <div className="w-24 h-24 rounded-full bg-[#f5f0e8] flex items-center justify-center text-4xl group-active:shadow-md transition-shadow duration-200 border border-[#ede8de] mx-auto">
-                  {category.icon}
+                <div className="w-24 h-24 rounded-full bg-[#f5f0e8] border border-[#ede8de] flex items-center justify-center overflow-hidden mx-auto">
+                  {category.image ? (
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl font-bold text-gray-400">
+                      {category.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <span className="text-xs text-center text-gray-700 font-medium leading-tight px-1">
                   {category.name}
                 </span>
               </a>
             ))}
-            {/* Fill empty slots if last page has fewer than 3 items */}
             {mobilePageCategories.length < MOBILE_ITEMS_PER_PAGE &&
-              Array.from({ length: MOBILE_ITEMS_PER_PAGE - mobilePageCategories.length }).map((_, i) => (
-                <div key={`empty-${i}`} className="flex-1" />
-              ))}
+              Array.from({ length: MOBILE_ITEMS_PER_PAGE - mobilePageCategories.length }).map(
+                (_, i) => <div key={`empty-${i}`} className="flex-1" />
+              )}
           </div>
 
           {/* Pagination dots */}
-          <div className="flex justify-center gap-2 mt-5">
-            {Array.from({ length: totalMobilePages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setMobilePage(i)}
-                className={`rounded-full transition-all duration-200 ${
-                  i === mobilePage ? 'w-6 h-2.5 bg-blue-500' : 'w-2.5 h-2.5 bg-gray-300'
-                }`}
-                aria-label={`Página ${i + 1}`}
-              />
-            ))}
-          </div>
+          {totalMobilePages > 1 && (
+            <div className="flex justify-center gap-2 mt-5">
+              {Array.from({ length: totalMobilePages }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setMobilePage(i)}
+                  className={`rounded-full transition-all duration-200 ${
+                    i === mobilePage ? 'w-6 h-2.5 bg-blue-500' : 'w-2.5 h-2.5 bg-gray-300'
+                  }`}
+                  aria-label={`Página ${i + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>
