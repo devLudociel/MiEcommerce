@@ -113,6 +113,8 @@ const getFieldIcon = (fieldType: CustomizationField['fieldType']) => {
   }
 };
 
+const MEDIA_ENHANCEMENT_TOOLS_ENABLED = false;
+
 const detectTextileSide = (fieldId: string): 'front' | 'back' | null => {
   const idLower = fieldId.toLowerCase();
   if (
@@ -1148,7 +1150,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
 
         return (
           <div className="space-y-6">
-            {isImageField && (
+            {isImageField && MEDIA_ENHANCEMENT_TOOLS_ENABLED && (
               <>
                 {/* Template & Clipart buttons */}
                 <div className="grid grid-cols-2 gap-3">
@@ -1181,7 +1183,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
 
             {renderField(field)}
 
-            {isImageField && layers.length > 0 && (
+            {isImageField && MEDIA_ENHANCEMENT_TOOLS_ENABLED && layers.length > 0 && (
               <div className="p-3 bg-pink-50 border border-pink-200 rounded-lg">
                 <p className="text-sm text-pink-800 font-medium">
                   {layers.length} clipart{layers.length > 1 ? 's' : ''} anadido
@@ -1472,7 +1474,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
         </div>
 
         {/* Template Gallery Modal */}
-        {showTemplates && (
+        {MEDIA_ENHANCEMENT_TOOLS_ENABLED && showTemplates && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
             <div className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <TemplateGallery
@@ -1485,7 +1487,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
         )}
 
         {/* Clipart Gallery Modal */}
-        {showCliparts && (
+        {MEDIA_ENHANCEMENT_TOOLS_ENABLED && showCliparts && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
             <div className="max-w-4xl w-full">
               <ClipartGallery

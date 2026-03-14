@@ -75,6 +75,50 @@ const getEffectiveBasePrice = (product: FirebaseProduct): number => {
   return basePrice;
 };
 
+const TEMPORARILY_HIDDEN_CUSTOMIZER_KEYWORDS = [
+  'theme',
+  'tematica',
+  'template',
+  'plantilla',
+  'clipart',
+];
+
+const normalizeCustomizerKey = (value?: string): string =>
+  (value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+const matchesTemporarilyHiddenFeature = (value?: string): boolean => {
+  const normalized = normalizeCustomizerKey(value);
+  return TEMPORARILY_HIDDEN_CUSTOMIZER_KEYWORDS.some((keyword) =>
+    normalized.includes(keyword)
+  );
+};
+
+const getVisibleFieldOptions = (field: CustomizationField) => {
+  if (
+    field.fieldType !== 'card_selector' &&
+    field.fieldType !== 'dropdown' &&
+    field.fieldType !== 'radio_group'
+  ) {
+    return null;
+  }
+
+  const config = field.config as {
+    options?: Array<{ value: string; label: string; description?: string }>;
+  };
+
+  return (
+    config.options?.filter(
+      (option) =>
+        !matchesTemporarilyHiddenFeature(option.value) &&
+        !matchesTemporarilyHiddenFeature(option.label) &&
+        !matchesTemporarilyHiddenFeature(option.description)
+    ) ?? []
+  );
+};
+
 export default function DynamicCustomizer({ product, schema }: DynamicCustomizerProps) {
   const [values, setValues] = useState<Record<string, CustomizationValue>>({});
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -558,7 +602,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   };
 
   const validateFields = (): boolean => {
-    const requiredFields = schema.fields.filter((f) => f.required);
+    const requiredFields = visibleSchemaFields.filter((f) => f.required);
 
     for (const field of requiredFields) {
       const value = values[field.id];
@@ -730,7 +774,10 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
             fieldId={field.id}
             label={field.label}
             required={field.required}
-            config={field.config as any}
+            config={{
+              ...(field.config as DropdownConfig),
+              options: getVisibleFieldOptions(field) || [],
+            }}
             value={value}
             onChange={(val) => handleFieldChange(field.id, val)}
             helpText={field.helpText}
@@ -792,6 +839,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
       case 'card_selector': {
         const cardConfig = field.config as CardSelectorConfig;
+        const visibleOptions = getVisibleFieldOptions(field) || [];
         return (
           <div key={field.id} className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
@@ -808,7 +856,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
                     : 'grid-cols-1 sm:grid-cols-2'
               }`}
             >
-              {cardConfig.options.map((option) => {
+              {visibleOptions.map((option) => {
                 const isSelected = value?.value === option.value;
                 return (
                   <button
@@ -997,6 +1045,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
       case 'radio_group': {
         const radioConfig = field.config as any; // RadioGroupConfig
+        const visibleOptions = getVisibleFieldOptions(field) || [];
         return (
           <div key={field.id} className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
@@ -1007,7 +1056,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
             <div
               className={`space-y-2 ${radioConfig.layout === 'horizontal' ? 'flex flex-wrap gap-4' : ''}`}
             >
-              {radioConfig.options?.map((option: any) => {
+              {visibleOptions.map((option: any) => {
                 const isSelected = value?.value === option.value;
                 return (
                   <label
@@ -1069,7 +1118,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   // Check if there are themes available (centralized OR from card_selector)
   const hasCentralizedThemes = centralizedThemes.length > 0;
   const hasLegacyThemes = cardSelectorConfig?.options && cardSelectorConfig.options.length > 0;
-  const hasThemes = hasCentralizedThemes || hasLegacyThemes;
+  const hasThemes = false;
 
   // Get category image from centralized theme for current product category
   const getThemeCategoryImage = (theme: Theme): ThemeCategoryImage | null => {
@@ -1180,6 +1229,66 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     return orderA - orderB;
   });
 
+  const temporarilyHiddenFieldIds = new Set<string>();
+  let hiddenFieldIdsChanged = true;
+  while (hiddenFieldIdsChanged) {
+    hiddenFieldIdsChanged = false;
+
+    sortedFields.forEach((field) => {
+      if (temporarilyHiddenFieldIds.has(field.id)) return;
+
+      const shouldHideByName =
+        matchesTemporarilyHiddenFeature(field.id) ||
+        matchesTemporarilyHiddenFeature(field.label) ||
+        matchesTemporarilyHiddenFeature(field.helpText);
+      const visibleOptions = getVisibleFieldOptions(field);
+      const shouldHideByOptions = visibleOptions !== null && visibleOptions.length === 0;
+      const shouldHideByDependency = field.condition
+        ? temporarilyHiddenFieldIds.has(field.condition.dependsOn)
+        : false;
+
+      if (shouldHideByName || shouldHideByOptions || shouldHideByDependency) {
+        temporarilyHiddenFieldIds.add(field.id);
+        hiddenFieldIdsChanged = true;
+      }
+    });
+  }
+
+  const visibleSchemaFields = sortedFields.filter(
+    (field) => !temporarilyHiddenFieldIds.has(field.id)
+  );
+
+  useEffect(() => {
+    setValues((prev) => {
+      let hasChanges = false;
+      const nextValues: Record<string, CustomizationValue> = {};
+
+      Object.entries(prev).forEach(([fieldId, fieldValue]) => {
+        if (temporarilyHiddenFieldIds.has(fieldId)) {
+          hasChanges = true;
+          return;
+        }
+
+        const field = sortedFields.find((item) => item.id === fieldId);
+        const visibleOptions = field ? getVisibleFieldOptions(field) : null;
+
+        if (
+          visibleOptions &&
+          fieldValue.value !== undefined &&
+          fieldValue.value !== null &&
+          !visibleOptions.some((option) => option.value === fieldValue.value)
+        ) {
+          hasChanges = true;
+          return;
+        }
+
+        nextValues[fieldId] = fieldValue;
+      });
+
+      return hasChanges ? nextValues : prev;
+    });
+  }, [sortedFields]);
+
   const isFieldVisibleForSummary = (field: CustomizationField): boolean => {
     if (!field.condition) return true;
     const dependentValue = values[field.condition.dependsOn]?.value;
@@ -1214,7 +1323,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     return String(value.value);
   };
 
-  const summaryItems = sortedFields
+  const summaryItems = visibleSchemaFields
     .filter((field) => isFieldVisibleForSummary(field))
     .map((field) => {
       const fieldValue = values[field.id];
@@ -1228,7 +1337,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     })
     .filter(Boolean) as Array<{ id: string; label: string; value: string }>;
 
-  const uploadedImages = sortedFields
+  const uploadedImages = visibleSchemaFields
     .filter((field) => field.fieldType === 'image_upload')
     .map((field) => {
       const fieldValue = values[field.id];
@@ -1244,7 +1353,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
     })
     .filter(Boolean) as Array<{ id: string; label: string; imageUrl: string }>;
 
-  const requiredFields = sortedFields.filter(
+  const requiredFields = visibleSchemaFields.filter(
     (field) => field.required && isFieldVisibleForSummary(field)
   );
 
@@ -1253,7 +1362,7 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
   );
 
   const isReadyToReview = missingRequiredFields.length === 0;
-  const selectedThemeInfo = getSelectedTheme();
+  const selectedThemeInfo: ReturnType<typeof getSelectedTheme> = null;
 
   const handleOpenReview = () => {
     if (!isReadyToReview) return;
@@ -1852,19 +1961,6 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
               />
             )}
 
-            {/* Info about cliparts */}
-            {layers.length > 0 && (
-              <div className="mt-4 p-4 bg-pink-50 border-2 border-pink-200 rounded-lg">
-                <p className="text-sm text-pink-800 font-medium mb-2">
-                  🎨 {layers.length} clipart{layers.length > 1 ? 's' : ''} añadido
-                  {layers.length > 1 ? 's' : ''}
-                </p>
-                <p className="text-xs text-pink-600">
-                  Los cliparts se agregarán sobre tu diseño. Puedes añadir múltiples elementos.
-                </p>
-              </div>
-            )}
-
             {/* Summary Panel */}
             <div className="mt-6 space-y-4">
               <div className="bg-white rounded-2xl border-2 border-gray-200 p-5 shadow-sm">
@@ -1934,7 +2030,9 @@ export default function DynamicCustomizer({ product, schema }: DynamicCustomizer
 
           {/* Right Column: Fields */}
           <div className="order-1 lg:order-2">
-            <div className="space-y-6 mb-8">{sortedFields.map((field) => renderField(field))}</div>
+            <div className="space-y-6 mb-8">
+              {visibleSchemaFields.map((field) => renderField(field))}
+            </div>
 
             {/* Pricing Summary */}
             <div className="bg-gradient-to-r from-purple-50 to-cyan-50 rounded-xl p-6 mb-6">
