@@ -172,16 +172,17 @@ export default function LoginPanel() {
     }
   };
   const getAdminTargetUrl = async (user: User | null, desired?: string) => {
-    if (!user || typeof window === 'undefined') return '/account';
+    if (!user || typeof window === 'undefined') return '/';
+    const safeDesired = desired && !desired.startsWith('/admin') ? desired : undefined;
     try {
       const tokenResult = await getIdTokenResult(user, true);
       await syncSessionCookie(tokenResult.token);
       const isAdmin = Boolean(tokenResult.claims?.admin);
-      return isAdmin ? desired || '/admin/products' : '/account';
+      return isAdmin ? desired || '/admin/products' : safeDesired || '/';
     } catch (e) {
       logger.warn('[LoginPanel] Could not verify admin claims', e);
       await syncSessionCookie(null);
-      return '/account';
+      return safeDesired || '/';
     }
   };
 
@@ -227,7 +228,8 @@ export default function LoginPanel() {
           await new Promise((resolve) => setTimeout(resolve, 500));
 
           // Get redirect URL
-          const targetUrl = await getAdminTargetUrl(result.user);
+          const desired = new URL(window.location.href).searchParams.get('redirect') || undefined;
+          const targetUrl = await getAdminTargetUrl(result.user, desired);
 
           logger.info('[LoginPanel] Redirecting to:', targetUrl);
           window.location.href = targetUrl;
@@ -244,7 +246,8 @@ export default function LoginPanel() {
             // Check if user is already authenticated
             if (auth.currentUser) {
               logger.info('[LoginPanel] User already authenticated, redirecting...');
-              const targetUrl = await getAdminTargetUrl(auth.currentUser);
+              const desired = new URL(window.location.href).searchParams.get('redirect') || undefined;
+              const targetUrl = await getAdminTargetUrl(auth.currentUser, desired);
               window.location.href = targetUrl;
               return;
             }
@@ -494,8 +497,7 @@ export default function LoginPanel() {
     const u = auth.currentUser;
     if (!u || typeof window === 'undefined') return;
     const url = new URL(window.location.href);
-    const desired = url.searchParams.get('redirect') || '/admin/products';
-    // Si NO es admin, redirige al panel de cuenta
+    const desired = url.searchParams.get('redirect') || '/';
     const target = await getAdminTargetUrl(u, desired);
     logger.info('[LoginPanel] redirectAfterLogin', {
       email: u.email || null,
@@ -546,7 +548,7 @@ export default function LoginPanel() {
             <div className="bg-white rounded-2xl p-8 text-center max-w-sm mx-4">
               <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">¡Inicio de sesión exitoso!</h3>
-              <p className="text-gray-600">Redirigiendo a tu cuenta...</p>
+              <p className="text-gray-600">Redirigiendo...</p>
             </div>
           </div>
         )}

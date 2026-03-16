@@ -272,6 +272,7 @@ const Header: React.FC<HeaderProps> = () => {
             <a
               href="/"
               className="flex items-center gap-2 flex-shrink-0 hover:opacity-80 transition-opacity"
+              aria-label="Ir al inicio"
             >
               <img
                 src="/logoFac.png"
@@ -279,6 +280,9 @@ const Header: React.FC<HeaderProps> = () => {
                 className="w-10 h-10 md:w-12 md:h-12 object-contain rounded-xl shadow-md"
                 loading="eager"
               />
+              <div className="md:hidden">
+                <span className="text-sm font-semibold text-gray-800 leading-none">Inicio</span>
+              </div>
               <div className="hidden md:block">
                 <h1 className="text-lg md:text-xl font-bold text-gray-800 leading-tight">
                   ImprimeArte
@@ -866,13 +870,16 @@ const Header: React.FC<HeaderProps> = () => {
       </div>
 
       {/* Banner promocional */}
-      <div className="bg-black text-white text-center relative overflow-hidden z-30 py-3">
+      <div className="bg-black text-white text-center relative overflow-hidden z-30 py-2 sm:py-3">
         <div className="container">
           <div
-            className="flex flex-wrap items-center justify-center text-sm text-center"
+            className="flex items-center justify-center gap-2 text-center text-xs sm:text-sm leading-tight"
             style={{ gap: 'var(--spacing-3)' }}
           >
-            <button className="hover:text-white" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+            <button
+              className="hidden sm:inline-flex hover:text-white"
+              style={{ color: 'rgba(255, 255, 255, 0.7)' }}
+            >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -882,18 +889,21 @@ const Header: React.FC<HeaderProps> = () => {
                 />
               </svg>
             </button>
-            <span>Hasta -30 € con el código PROMO</span>
-            <span style={{ color: '#f87171' }}>⏰</span>
+            <span className="font-medium sm:hidden">-30€ con PROMO</span>
+            <span className="hidden font-medium sm:inline">Hasta -30 € con el código PROMO</span>
+            <span className="hidden sm:inline" style={{ color: '#f87171' }}>
+              ⏰
+            </span>
             <span className="sm:inline hidden">Hasta el 31 de diciembre de 2025</span>
             <a
               href="/ofertas"
               className="underline hover:no-underline"
-              style={{ marginLeft: 'var(--spacing-2)' }}
+              style={{ marginLeft: 'var(--spacing-1)' }}
             >
               Comprar ahora
             </a>
             <button
-              className="hover:text-white"
+              className="hidden sm:inline-flex hover:text-white"
               style={{ color: 'rgba(255, 255, 255, 0.7)', marginLeft: 'var(--spacing-2)' }}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
