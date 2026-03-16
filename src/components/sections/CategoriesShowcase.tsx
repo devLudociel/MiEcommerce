@@ -123,17 +123,17 @@ export default function CategoriesShowcase() {
 
           <div
             ref={scrollRef}
-            className="flex gap-6 overflow-x-auto scroll-smooth px-14 pb-2"
+            className="flex gap-8 overflow-x-auto scroll-smooth px-16 pb-3"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {categories.map((category) => (
               <a
                 key={category.id}
                 href={`/productos?tag=${category.slug}`}
-                className="flex flex-col items-center gap-3 flex-shrink-0 group"
-                style={{ minWidth: '112px', maxWidth: '128px' }}
+                className="flex flex-col items-center gap-4 flex-shrink-0 group"
+                style={{ minWidth: '160px', maxWidth: '192px' }}
               >
-                <div className="w-24 h-24 rounded-full bg-[#f5f0e8] border border-[#ede8de] flex items-center justify-center overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg">
+                <div className="w-36 h-36 lg:w-40 lg:h-40 rounded-full bg-[#f5f0e8] border border-[#ede8de] flex items-center justify-center overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-all duration-200 group-hover:-translate-y-1.5 group-hover:shadow-xl">
                   {category.image ? (
                     <img
                       src={category.image}
@@ -146,7 +146,7 @@ export default function CategoriesShowcase() {
                     </span>
                   )}
                 </div>
-                <span className="text-sm text-center text-gray-800 font-semibold leading-tight">
+                <span className="text-base text-center text-gray-800 font-semibold leading-tight">
                   {category.name}
                 </span>
               </a>
@@ -183,14 +183,14 @@ export default function CategoriesShowcase() {
               </button>
             )}
 
-            <div className="grid grid-cols-3 gap-x-3 gap-y-2 xs:gap-x-4 xs:gap-y-3">
+            <div className="grid grid-cols-3 gap-x-3 gap-y-3 xs:gap-x-4 xs:gap-y-4">
               {mobilePageCategories.map((category) => (
                 <a
                   key={category.id}
                   href={`/productos?tag=${category.slug}`}
                   className="flex min-w-0 flex-col items-center gap-2 group"
                 >
-                  <div className="w-16 h-16 xs:w-20 xs:h-20 rounded-full bg-[#f5f0e8] border border-[#ede8de] flex items-center justify-center overflow-hidden mx-auto shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-all duration-200 group-active:scale-[0.98]">
+                  <div className="w-20 h-20 xs:w-24 xs:h-24 rounded-full bg-[#f5f0e8] border border-[#ede8de] flex items-center justify-center overflow-hidden mx-auto shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-all duration-200 group-active:scale-[0.98]">
                     {category.image ? (
                       <img
                         src={category.image}
@@ -203,7 +203,7 @@ export default function CategoriesShowcase() {
                       </span>
                     )}
                   </div>
-                  <span className="max-w-full text-[10px] xs:text-xs text-center text-gray-800 font-semibold leading-tight px-1 break-words">
+                  <span className="max-w-full text-[11px] xs:text-sm text-center text-gray-800 font-semibold leading-tight px-1 break-words">
                     {category.name}
                   </span>
                 </a>
