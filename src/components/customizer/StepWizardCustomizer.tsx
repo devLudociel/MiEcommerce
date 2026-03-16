@@ -9,7 +9,6 @@ import {
   Check,
   CheckCircle2,
   ClipboardList,
-  Save,
   Palette,
   Ruler,
   Upload,
@@ -151,7 +150,6 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
   const [showCliparts, setShowCliparts] = useState(false);
   const [layers, setLayers] = useState<DesignLayer[]>([]);
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
-  const [showDraftNotification, setShowDraftNotification] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [reviewConfirmed, setReviewConfirmed] = useState(false);
   const [pendingAutoAdvance, setPendingAutoAdvance] = useState<string | null>(null);
@@ -160,7 +158,7 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
 
   // Auto-save draft functionality
   const draftKey = `draft_${product.id}`;
-  const { loadDraft, clearDraft, getLastSavedTime, hasDraft } = useAutoSaveDraft(
+  const { loadDraft, clearDraft, hasDraft } = useAutoSaveDraft(
     draftKey,
     { values, layers },
     true,
@@ -409,9 +407,8 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
 
     const draft = loadDraft();
     if (draft && hasDraft()) {
-      setShowDraftNotification(true);
-      const timer = setTimeout(() => setShowDraftNotification(false), 15000);
-      return () => clearTimeout(timer);
+      setValues(draft.values || {});
+      setLayers(draft.layers || []);
     }
   }, [product.id, loadDraft, hasDraft]);
 
@@ -784,22 +781,6 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
 
     return true;
   }, [schema.fields, values]);
-
-  const handleLoadDraft = useCallback(() => {
-    const draft = loadDraft();
-    if (draft) {
-      setValues(draft.values || {});
-      setLayers(draft.layers || []);
-      setShowDraftNotification(false);
-      notify.success('Borrador restaurado');
-    }
-  }, [loadDraft]);
-
-  const handleDismissDraft = useCallback(() => {
-    setShowDraftNotification(false);
-    clearDraft();
-    notify.info('Borrador descartado');
-  }, [clearDraft]);
 
   const handleNextStep = useCallback(() => {
     if (!validateCurrentStep()) return;
@@ -1425,37 +1406,6 @@ export default function StepWizardCustomizer({ product, schema }: StepWizardCust
           </h2>
           <p className="text-sm text-gray-600 hidden sm:block">{product.description}</p>
         </div>
-
-        {/* Draft Notification */}
-        {showDraftNotification && (
-          <div className="mb-4 max-w-xl mx-auto">
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 sm:p-4">
-              <div className="flex items-start gap-3">
-                <Save className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-blue-800 font-medium">Borrador encontrado</p>
-                  <p className="text-xs text-blue-600 mt-1">
-                    Tienes un diseno guardado automaticamente.
-                  </p>
-                  <div className="flex gap-2 mt-2">
-                    <button
-                      onClick={handleLoadDraft}
-                      className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700"
-                    >
-                      Restaurar
-                    </button>
-                    <button
-                      onClick={handleDismissDraft}
-                      className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-300"
-                    >
-                      Descartar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Step Indicator */}
         <div className="mb-6 max-w-md mx-auto">
