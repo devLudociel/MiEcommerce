@@ -237,7 +237,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySl
 
   if (error) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center', marginTop: '200px' }}>
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
         <h2>Error</h2>
         <p>{error}</p>
         <a href="/" style={{ color: 'var(--color-cyan-600)' }}>
@@ -248,7 +248,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySl
   }
 
   return (
-    <div style={{ marginTop: '200px', minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh' }}>
       <div className="container" style={{ padding: '2rem 1rem' }}>
         {/* Breadcrumbs */}
         <Breadcrumbs category={currentCategory} subcategory={currentSubcategory} />
@@ -288,7 +288,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySl
           </aside>
 
           {/* Grid de productos */}
-          <main className="lg:col-span-3">
+          <section className="lg:col-span-3">
             {loading ? (
               <div style={{ textAlign: 'center', padding: '3rem' }}>
                 <div>Cargando productos...</div>
@@ -296,7 +296,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categorySlug, subcategorySl
             ) : (
               <ProductGrid products={filteredProducts} />
             )}
-          </main>
+          </section>
         </div>
 
         {/* Panel de filtros - Mobile */}

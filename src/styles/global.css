@@ -82,7 +82,7 @@ button {
   outline: 3px solid #0ea5e9;
 }
 
-main {
+body > main {
   padding-top: var(--header-height);
   min-height: calc(100vh - var(--header-height));
 }

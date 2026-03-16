@@ -14,9 +14,11 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ category, subcategory, produc
       <ol
         style={{
           display: 'flex',
+          flexWrap: 'wrap',
           alignItems: 'center',
           gap: '0.5rem',
           fontSize: '0.875rem',
+          lineHeight: 1.4,
           color: 'var(--color-gray-600)',
         }}
       >

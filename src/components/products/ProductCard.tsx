@@ -46,7 +46,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
   }, []);
 
   return (
-    <article className="relative bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-200 hover:border-gray-300 transition-all duration-300 cursor-pointer hover:-translate-y-1 active:scale-[0.98]">
+    <article className="relative w-full min-w-0 bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-200 hover:border-gray-300 transition-all duration-300 cursor-pointer hover:-translate-y-1 active:scale-[0.98]">
       <a
         href={cardHref}
         onClick={handleCardLinkClick}
@@ -94,7 +94,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
         </div>
 
         {/* Compare button */}
-        <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-20">
+        <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-20 max-w-[calc(100%-1rem)] sm:max-w-none">
           <CompareButton
             product={{
               id: product.id,
@@ -168,9 +168,9 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
         )}
 
         {/* Precio y botón - Layout responsive */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1">
-            <span className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">
+        <div className="flex items-end justify-between gap-2">
+          <div className="flex min-w-0 flex-col sm:flex-row sm:items-baseline sm:gap-1">
+            <span className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 leading-none">
               €{product.basePrice.toFixed(2)}
             </span>
             <span className="text-[10px] sm:text-xs text-gray-500">desde</span>
@@ -178,7 +178,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
 
           <a
             href={cardHref}
-            className="bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap active:scale-95"
+            className="shrink-0 bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap active:scale-95"
             style={{ position: 'relative', zIndex: 20 }}
           >
             <span className="hidden sm:inline">Ver detalles</span>

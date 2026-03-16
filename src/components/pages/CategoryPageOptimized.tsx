@@ -270,10 +270,11 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
   };
 
   const activeFiltersCount = filters.tags.length + (filters.onSale ? 1 : 0);
+  const stickyOffset = 'calc(var(--header-height) + 2rem)';
 
   if (error) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center', marginTop: '200px' }}>
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
         <h2>Error</h2>
         <p>{error}</p>
         <a href="/" style={{ color: 'var(--color-cyan-600)' }}>
@@ -284,31 +285,40 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
   }
 
   return (
-    <div style={{ marginTop: '200px', minHeight: '100vh', background: '#f9fafb' }}>
-      <div className="container" style={{ padding: '2rem 1rem' }}>
+    <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
+      <div
+        className="container"
+        style={{
+          paddingTop: '1.25rem',
+          paddingBottom: '1.5rem',
+          paddingLeft: '0.75rem',
+          paddingRight: '0.75rem',
+        }}
+      >
         {/* Breadcrumbs */}
         <Breadcrumbs category={currentCategory} subcategory={currentSubcategory} />
 
         {/* Encabezado */}
         <div
           style={{
-            marginBottom: '2rem',
+            marginBottom: '1.5rem',
             background: 'white',
-            padding: '2rem',
+            padding: '1.25rem',
             borderRadius: '12px',
           }}
         >
           <h1
             style={{
-              fontSize: '2.5rem',
+              fontSize: 'clamp(2rem, 7vw, 2.5rem)',
               fontWeight: 'bold',
               marginBottom: '0.5rem',
               color: 'var(--color-gray-800)',
+              lineHeight: 1.1,
             }}
           >
             {currentSubcategory ? currentSubcategory.name : currentCategory?.name}
           </h1>
-          <p style={{ color: 'var(--color-gray-600)', fontSize: '1.1rem' }}>
+          <p style={{ color: 'var(--color-gray-600)', fontSize: 'clamp(0.95rem, 3.5vw, 1.1rem)' }}>
             {filteredProducts.length} producto{filteredProducts.length !== 1 ? 's' : ''} encontrado
             {filteredProducts.length !== 1 ? 's' : ''}
           </p>
@@ -368,7 +378,7 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
                 padding: '1.5rem',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 position: 'sticky',
-                top: '220px',
+                top: stickyOffset,
               }}
             >
               {/* Header de filtros */}
@@ -545,7 +555,7 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
           </aside>
 
           {/* Grid de productos */}
-          <main className="lg:col-span-3">
+          <section className="lg:col-span-3">
             {loading ? (
               <div
                 style={{
@@ -588,7 +598,7 @@ const CategoryPageOptimized: React.FC<CategoryPageProps> = ({ categorySlug, subc
             ) : (
               <ProductGrid products={filteredProducts} />
             )}
-          </main>
+          </section>
         </div>
       </div>
     </div>
