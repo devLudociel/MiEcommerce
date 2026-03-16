@@ -241,13 +241,6 @@ export const categories: MenuCategory[] = [
         icon: '🎉',
       },
       {
-        id: '39',
-        name: 'Photocalls',
-        slug: 'photocalls',
-        description: 'Photocalls personalizados para bodas, cumpleaños',
-        icon: '📸',
-      },
-      {
         id: '40',
         name: 'Invitaciones',
         slug: 'invitaciones',

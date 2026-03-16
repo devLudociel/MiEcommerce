@@ -28,6 +28,23 @@ interface Category {
   updatedAt?: Timestamp | Date;
 }
 
+const MAIN_CATEGORY_DEFINITIONS = navbarCategories.map(({ id, name, slug }) => ({
+  id,
+  name,
+  slug,
+}));
+const MAIN_CATEGORY_SLUGS = new Set(MAIN_CATEGORY_DEFINITIONS.map((category) => category.slug));
+const MAIN_CATEGORY_ORDER = new Map(
+  MAIN_CATEGORY_DEFINITIONS.map((category, index) => [category.slug, index])
+);
+
+const sortByMainCategoryOrder = (items: Category[]) =>
+  [...items].sort(
+    (a, b) =>
+      (MAIN_CATEGORY_ORDER.get(a.slug) ?? Number.MAX_SAFE_INTEGER) -
+      (MAIN_CATEGORY_ORDER.get(b.slug) ?? Number.MAX_SAFE_INTEGER)
+  );
+
 export default function AdminCategoriesPanel() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,11 +65,13 @@ export default function AdminCategoriesPanel() {
     const unsubCategories = onSnapshot(
       collection(db, 'categories'),
       (snapshot) => {
-        const cats = snapshot.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        })) as Category[];
-        setCategories(cats);
+        const cats = snapshot.docs
+          .map((d) => ({
+            id: d.id,
+            ...d.data(),
+          }))
+          .filter((category) => MAIN_CATEGORY_SLUGS.has(category.slug)) as Category[];
+        setCategories(sortByMainCategoryOrder(cats));
         setLoading(false);
       },
       (error) => {
@@ -174,7 +193,7 @@ export default function AdminCategoriesPanel() {
     const confirmed = await confirm({
       title: '¿Importar categorías?',
       message:
-        '¿Importar todas las categorías del navbar? Esto creará las categorías que no existan.',
+        '¿Importar las 9 categorías principales del navbar? Esto creará las que no existan.',
       type: 'info',
       confirmText: 'Importar',
       cancelText: 'Cancelar',
@@ -189,7 +208,7 @@ export default function AdminCategoriesPanel() {
       const existingCategoriesSnapshot = await getDocs(collection(db, 'categories'));
       const existingSlugs = new Set(existingCategoriesSnapshot.docs.map((d) => d.data().slug));
 
-      for (const mainCategory of navbarCategories) {
+      for (const mainCategory of MAIN_CATEGORY_DEFINITIONS) {
         if (!existingSlugs.has(mainCategory.slug)) {
           const mainCatRef = doc(collection(db, 'categories'));
           batch.set(mainCatRef, {
@@ -205,29 +224,11 @@ export default function AdminCategoriesPanel() {
         } else {
           skipped++;
         }
-
-        for (const subCategory of mainCategory.subcategories) {
-          if (!existingSlugs.has(subCategory.slug)) {
-            const subCatRef = doc(collection(db, 'categories'));
-            batch.set(subCatRef, {
-              name: subCategory.name,
-              slug: subCategory.slug,
-              description: subCategory.description,
-              image: '',
-              createdAt: Timestamp.now(),
-              updatedAt: Timestamp.now(),
-            });
-            imported++;
-            existingSlugs.add(subCategory.slug);
-          } else {
-            skipped++;
-          }
-        }
       }
 
       await batch.commit();
       notify.success(
-        `Importación completa: ${imported} categorías agregadas, ${skipped} ya existían`
+        `Importación completa: ${imported} categorías principales agregadas, ${skipped} ya existían`
       );
       logger.info('[AdminCategories] Navbar categories imported', { imported, skipped });
     } catch (error) {

@@ -1,7 +1,8 @@
 // src/components/sections/CategoriesShowcase.tsx
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
+import { categories as navbarCategories } from '../../data/categories';
 
 interface Category {
   id: string;
@@ -11,21 +12,39 @@ interface Category {
 }
 
 const MOBILE_ITEMS_PER_PAGE = 3;
+const MAIN_CATEGORIES: Category[] = navbarCategories.map(({ id, name, slug }) => ({
+  id,
+  name,
+  slug,
+}));
+const MAIN_CATEGORY_SLUGS = new Set(MAIN_CATEGORIES.map((category) => category.slug));
 
 export default function CategoriesShowcase() {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryImages, setCategoryImages] = useState<Record<string, string>>({});
   const [mobilePage, setMobilePage] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const categories = useMemo(
+    () =>
+      MAIN_CATEGORIES.map((category) => ({
+        ...category,
+        image: categoryImages[category.slug],
+      })),
+    [categoryImages]
+  );
+
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'categories'), (snapshot) => {
-      const cats = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })) as Category[];
-      setCategories(cats);
+      const imagesBySlug = snapshot.docs.reduce<Record<string, string>>((acc, doc) => {
+        const data = doc.data() as Category;
+        if (MAIN_CATEGORY_SLUGS.has(data.slug) && data.image) {
+          acc[data.slug] = data.image;
+        }
+        return acc;
+      }, {});
+      setCategoryImages(imagesBySlug);
     });
     return () => unsub();
   }, []);
@@ -77,24 +96,6 @@ export default function CategoriesShowcase() {
     const nextPage = Math.min(Math.max(page, 0), totalMobilePages - 1);
     setMobilePage(nextPage);
   };
-
-  if (categories.length === 0) {
-    return (
-      <section className="py-8 sm:py-12 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="h-6 w-64 bg-gray-200 rounded animate-pulse mb-8" />
-          <div className="hidden sm:flex gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="flex flex-col items-center gap-3 flex-shrink-0" style={{ minWidth: '100px' }}>
-                <div className="w-24 h-24 rounded-full bg-gray-200 animate-pulse" />
-                <div className="h-3 w-16 bg-gray-200 rounded animate-pulse" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section className="py-8 sm:py-12 bg-white">
