@@ -167,29 +167,29 @@ export default function CategoriesShowcase() {
 
         {/* Mobile: 3-item carousel with dots */}
         <div className="overflow-hidden sm:hidden">
-          <div className="relative px-7 xs:px-10">
+          <div className="relative px-6 xs:px-10">
             {totalMobilePages > 1 && (
               <button
                 type="button"
                 onClick={() => goToMobilePage(mobilePage - 1)}
                 disabled={mobilePage === 0}
-                className="absolute left-0 top-7 z-10 flex h-9 w-9 xs:h-11 xs:w-11 items-center justify-center rounded-xl xs:rounded-2xl border border-cyan-100 bg-white/95 text-cyan-700 shadow-[0_14px_30px_-24px_rgba(0,172,232,0.8)] transition-all duration-200 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300 disabled:shadow-none"
+                className="absolute left-0 top-6 z-10 flex h-8 w-8 xs:h-10 xs:w-10 items-center justify-center rounded-xl border border-cyan-100 bg-white/95 text-cyan-700 shadow-[0_14px_30px_-24px_rgba(0,172,232,0.8)] transition-all duration-200 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300 disabled:shadow-none"
                 aria-label="Categorías anteriores"
               >
-                <svg className="h-4 w-4 xs:h-5 xs:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-3.5 w-3.5 xs:h-4.5 xs:w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M15 6l-6 6 6 6" />
                 </svg>
               </button>
             )}
 
-            <div className="grid grid-cols-3 gap-1.5 xs:gap-2">
+            <div className="grid grid-cols-3 gap-x-3 gap-y-2 xs:gap-x-4 xs:gap-y-3">
               {mobilePageCategories.map((category) => (
                 <a
                   key={category.id}
                   href={`/productos?tag=${category.slug}`}
                   className="flex min-w-0 flex-col items-center gap-2 group"
                 >
-                  <div className="w-20 h-20 xs:w-24 xs:h-24 rounded-full bg-[#f5f0e8] border border-[#ede8de] flex items-center justify-center overflow-hidden mx-auto shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-all duration-200 group-active:scale-[0.98]">
+                  <div className="w-16 h-16 xs:w-20 xs:h-20 rounded-full bg-[#f5f0e8] border border-[#ede8de] flex items-center justify-center overflow-hidden mx-auto shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-all duration-200 group-active:scale-[0.98]">
                     {category.image ? (
                       <img
                         src={category.image}
@@ -202,7 +202,7 @@ export default function CategoriesShowcase() {
                       </span>
                     )}
                   </div>
-                  <span className="max-w-full text-[11px] xs:text-xs text-center text-gray-800 font-semibold leading-tight px-1 break-words">
+                  <span className="max-w-full text-[10px] xs:text-xs text-center text-gray-800 font-semibold leading-tight px-1 break-words">
                     {category.name}
                   </span>
                 </a>
@@ -218,10 +218,10 @@ export default function CategoriesShowcase() {
                 type="button"
                 onClick={() => goToMobilePage(mobilePage + 1)}
                 disabled={mobilePage === totalMobilePages - 1}
-                className="absolute right-0 top-7 z-10 flex h-9 w-9 xs:h-11 xs:w-11 items-center justify-center rounded-xl xs:rounded-2xl border border-cyan-100 bg-white/95 text-cyan-700 shadow-[0_14px_30px_-24px_rgba(0,172,232,0.8)] transition-all duration-200 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300 disabled:shadow-none"
+                className="absolute right-0 top-6 z-10 flex h-8 w-8 xs:h-10 xs:w-10 items-center justify-center rounded-xl border border-cyan-100 bg-white/95 text-cyan-700 shadow-[0_14px_30px_-24px_rgba(0,172,232,0.8)] transition-all duration-200 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300 disabled:shadow-none"
                 aria-label="Ver más categorías"
               >
-                <svg className="h-4 w-4 xs:h-5 xs:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-3.5 w-3.5 xs:h-4.5 xs:w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 6l6 6-6 6" />
                 </svg>
               </button>
@@ -230,7 +230,7 @@ export default function CategoriesShowcase() {
 
           {/* Pagination dots */}
           {totalMobilePages > 1 && (
-            <div className="flex justify-center gap-2.5 mt-5">
+            <div className="mt-4 flex justify-center gap-2">
               {Array.from({ length: totalMobilePages }).map((_, i) => (
                 <button
                   key={i}
@@ -238,8 +238,8 @@ export default function CategoriesShowcase() {
                   onClick={() => goToMobilePage(i)}
                   className={`rounded-full transition-all duration-200 ${
                     i === mobilePage
-                      ? 'h-2.5 w-7 bg-cyan-500 shadow-[0_6px_16px_-10px_rgba(0,172,232,0.9)]'
-                      : 'h-2.5 w-2.5 bg-gray-300 hover:bg-cyan-200'
+                      ? 'h-2 w-5 bg-cyan-500 shadow-[0_6px_16px_-10px_rgba(0,172,232,0.9)]'
+                      : 'h-2 w-2 bg-gray-300 hover:bg-cyan-200'
                   }`}
                   aria-label={`Página ${i + 1}`}
                 />
