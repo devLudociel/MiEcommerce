@@ -166,30 +166,30 @@ export default function CategoriesShowcase() {
         </div>
 
         {/* Mobile: 3-item carousel with dots */}
-        <div className="sm:hidden">
-          <div className="relative px-10">
+        <div className="overflow-hidden sm:hidden">
+          <div className="relative px-7 xs:px-10">
             {totalMobilePages > 1 && (
               <button
                 type="button"
                 onClick={() => goToMobilePage(mobilePage - 1)}
                 disabled={mobilePage === 0}
-                className="absolute left-0 top-9 z-10 flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-100 bg-white/95 text-cyan-700 shadow-[0_14px_30px_-24px_rgba(0,172,232,0.8)] transition-all duration-200 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300 disabled:shadow-none"
+                className="absolute left-0 top-7 z-10 flex h-9 w-9 xs:h-11 xs:w-11 items-center justify-center rounded-xl xs:rounded-2xl border border-cyan-100 bg-white/95 text-cyan-700 shadow-[0_14px_30px_-24px_rgba(0,172,232,0.8)] transition-all duration-200 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300 disabled:shadow-none"
                 aria-label="Categorías anteriores"
               >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 xs:h-5 xs:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M15 6l-6 6 6 6" />
                 </svg>
               </button>
             )}
 
-            <div className="flex justify-around gap-2">
+            <div className="grid grid-cols-3 gap-1.5 xs:gap-2">
               {mobilePageCategories.map((category) => (
                 <a
                   key={category.id}
                   href={`/productos?tag=${category.slug}`}
-                  className="flex flex-col items-center gap-2 group flex-1"
+                  className="flex min-w-0 flex-col items-center gap-2 group"
                 >
-                  <div className="w-24 h-24 rounded-full bg-[#f5f0e8] border border-[#ede8de] flex items-center justify-center overflow-hidden mx-auto shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-all duration-200 group-active:scale-[0.98]">
+                  <div className="w-20 h-20 xs:w-24 xs:h-24 rounded-full bg-[#f5f0e8] border border-[#ede8de] flex items-center justify-center overflow-hidden mx-auto shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-all duration-200 group-active:scale-[0.98]">
                     {category.image ? (
                       <img
                         src={category.image}
@@ -202,14 +202,14 @@ export default function CategoriesShowcase() {
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-center text-gray-800 font-semibold leading-tight px-1">
+                  <span className="max-w-full text-[11px] xs:text-xs text-center text-gray-800 font-semibold leading-tight px-1 break-words">
                     {category.name}
                   </span>
                 </a>
               ))}
               {mobilePageCategories.length < MOBILE_ITEMS_PER_PAGE &&
                 Array.from({ length: MOBILE_ITEMS_PER_PAGE - mobilePageCategories.length }).map(
-                  (_, i) => <div key={`empty-${i}`} className="flex-1" />
+                  (_, i) => <div key={`empty-${i}`} />
                 )}
             </div>
 
@@ -218,10 +218,10 @@ export default function CategoriesShowcase() {
                 type="button"
                 onClick={() => goToMobilePage(mobilePage + 1)}
                 disabled={mobilePage === totalMobilePages - 1}
-                className="absolute right-0 top-9 z-10 flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-100 bg-white/95 text-cyan-700 shadow-[0_14px_30px_-24px_rgba(0,172,232,0.8)] transition-all duration-200 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300 disabled:shadow-none"
+                className="absolute right-0 top-7 z-10 flex h-9 w-9 xs:h-11 xs:w-11 items-center justify-center rounded-xl xs:rounded-2xl border border-cyan-100 bg-white/95 text-cyan-700 shadow-[0_14px_30px_-24px_rgba(0,172,232,0.8)] transition-all duration-200 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300 disabled:shadow-none"
                 aria-label="Ver más categorías"
               >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 xs:h-5 xs:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 6l6 6-6 6" />
                 </svg>
               </button>
