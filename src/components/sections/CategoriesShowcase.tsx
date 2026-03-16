@@ -129,7 +129,7 @@ export default function CategoriesShowcase() {
             {categories.map((category) => (
               <a
                 key={category.id}
-                href={`/productos?tag=${category.slug}`}
+                href={`/categoria/${category.slug}`}
                 className="flex flex-col items-center gap-4 flex-shrink-0 group"
                 style={{ minWidth: '160px', maxWidth: '192px' }}
               >
@@ -187,7 +187,7 @@ export default function CategoriesShowcase() {
               {mobilePageCategories.map((category) => (
                 <a
                   key={category.id}
-                  href={`/productos?tag=${category.slug}`}
+                  href={`/categoria/${category.slug}`}
                   className="flex min-w-0 flex-col items-center gap-2 group"
                 >
                   <div className="w-20 h-20 xs:w-24 xs:h-24 rounded-full bg-[#f5f0e8] border border-[#ede8de] flex items-center justify-center overflow-hidden mx-auto shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-all duration-200 group-active:scale-[0.98]">

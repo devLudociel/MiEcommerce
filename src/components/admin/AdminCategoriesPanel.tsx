@@ -466,7 +466,7 @@ export default function AdminCategoriesPanel() {
                   placeholder="Ej: tazas"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  URL: /productos?tag={formData.slug || 'slug'}
+                  URL: /categoria/{formData.slug || 'slug'}
                 </p>
               </div>
 
