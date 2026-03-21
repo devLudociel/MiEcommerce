@@ -1,0 +1,1071 @@
+---
+const nonce = Astro.locals?.cspNonce;
+---
+
+<div id="ia-chat-root"></div>
+
+<style is:global>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap');
+
+  :root {
+    --ia-chat-pink: #ec008c;
+    --ia-chat-pink-dark: #c60075;
+    --ia-chat-cyan: #00aeef;
+    --ia-chat-ink: #18212f;
+    --ia-chat-muted: #667085;
+    --ia-chat-line: rgba(148, 163, 184, 0.22);
+    --ia-chat-surface: rgba(255, 255, 255, 0.92);
+    --ia-chat-shadow:
+      0 26px 70px rgba(15, 23, 42, 0.18),
+      0 12px 30px rgba(236, 0, 140, 0.1);
+  }
+
+  #ia-chat-root,
+  #ia-chat-root * {
+    box-sizing: border-box;
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+
+  .ia-bubble {
+    position: fixed;
+    right: 24px;
+    bottom: 104px;
+    width: 64px;
+    height: 64px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 22px;
+    background:
+      radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.35), transparent 32%),
+      linear-gradient(135deg, var(--ia-chat-pink) 0%, #ff4aa6 52%, var(--ia-chat-cyan) 100%);
+    color: white;
+    cursor: grab;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--ia-chat-shadow);
+    transition:
+      transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 0.22s ease,
+      border-radius 0.22s ease;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .ia-bubble::before {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: 21px;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    pointer-events: none;
+  }
+
+  .ia-bubble:hover {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow:
+      0 30px 75px rgba(15, 23, 42, 0.22),
+      0 14px 34px rgba(236, 0, 140, 0.16);
+  }
+
+  .ia-bubble:active,
+  .ia-bubble.dragging {
+    cursor: grabbing;
+  }
+
+  .ia-bubble.dragging {
+    transition: none;
+    transform: scale(1.08);
+  }
+
+  .ia-bubble svg {
+    width: 28px;
+    height: 28px;
+    fill: currentColor;
+    pointer-events: none;
+    transition:
+      opacity 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  .ia-icon-close {
+    position: absolute;
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+  }
+
+  .ia-bubble.open {
+    border-radius: 18px;
+  }
+
+  .ia-bubble.open .ia-icon-chat {
+    opacity: 0;
+    transform: rotate(80deg) scale(0.45);
+  }
+
+  .ia-bubble.open .ia-icon-close {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+
+  .ia-bubble-badge {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: var(--ia-chat-cyan);
+    border: 3px solid white;
+    display: none;
+    box-shadow: 0 0 0 6px rgba(0, 174, 239, 0.12);
+    animation: ia-pulse 2s infinite;
+  }
+
+  .ia-bubble-badge.visible {
+    display: block;
+  }
+
+  @keyframes ia-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.18);
+    }
+  }
+
+  .ia-window {
+    position: fixed;
+    right: 24px;
+    bottom: 180px;
+    width: min(420px, calc(100vw - 24px));
+    height: min(640px, calc(100vh - 140px));
+    display: flex;
+    flex-direction: column;
+    border-radius: 30px;
+    overflow: hidden;
+    z-index: 99998;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.92)),
+      linear-gradient(135deg, rgba(236, 0, 140, 0.06), rgba(0, 174, 239, 0.08));
+    box-shadow: var(--ia-chat-shadow);
+    backdrop-filter: blur(18px);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px) scale(0.95);
+    transition:
+      opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .ia-window.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+  }
+
+  .ia-header {
+    position: relative;
+    padding: 22px 22px 18px;
+    background:
+      radial-gradient(circle at top right, rgba(255, 255, 255, 0.26), transparent 28%),
+      linear-gradient(135deg, #ec008c 0%, #f53ea8 42%, #00aeef 100%);
+    color: white;
+    overflow: hidden;
+  }
+
+  .ia-header::before {
+    content: '';
+    position: absolute;
+    inset: auto -20% -45% auto;
+    width: 180px;
+    height: 180px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    filter: blur(6px);
+  }
+
+  .ia-header-top {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .ia-header-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  .ia-header-copy {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .ia-header-title {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .ia-header-subtitle {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.9);
+    max-width: 30ch;
+  }
+
+  .ia-header-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 12px;
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .ia-header-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #5af18d;
+    box-shadow: 0 0 0 6px rgba(90, 241, 141, 0.18);
+  }
+
+  .ia-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px 18px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background:
+      radial-gradient(circle at top right, rgba(0, 174, 239, 0.08), transparent 24%),
+      radial-gradient(circle at top left, rgba(236, 0, 140, 0.08), transparent 20%),
+      linear-gradient(180deg, #fff9fc 0%, #f8fbff 100%);
+    scroll-behavior: smooth;
+  }
+
+  .ia-messages::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .ia-messages::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .ia-messages::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.35);
+    border-radius: 999px;
+  }
+
+  .ia-welcome-card {
+    padding: 16px;
+    border-radius: 24px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.9)),
+      linear-gradient(135deg, rgba(236, 0, 140, 0.06), rgba(0, 174, 239, 0.06));
+    border: 1px solid rgba(236, 0, 140, 0.09);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+  }
+
+  .ia-welcome-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(236, 0, 140, 0.08);
+    color: var(--ia-chat-pink-dark);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .ia-welcome-title {
+    margin-top: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ia-chat-ink);
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+  }
+
+  .ia-welcome-text {
+    margin-top: 8px;
+    color: #4b5565;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .ia-chip-list {
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .ia-chip {
+    border: 0;
+    border-radius: 999px;
+    padding: 8px 12px;
+    background: white;
+    color: var(--ia-chat-ink);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.2;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    cursor: pointer;
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      border-color 0.18s ease;
+  }
+
+  .ia-chip:hover {
+    transform: translateY(-1px);
+    border-color: rgba(236, 0, 140, 0.28);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  }
+
+  .ia-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    max-width: 100%;
+    animation: ia-fade-in 0.26s ease;
+  }
+
+  .ia-row.bot {
+    justify-content: flex-start;
+  }
+
+  .ia-row.user {
+    justify-content: flex-end;
+  }
+
+  .ia-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 12px;
+    background:
+      linear-gradient(135deg, rgba(236, 0, 140, 0.12), rgba(0, 174, 239, 0.16)),
+      white;
+    color: var(--ia-chat-pink-dark);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid rgba(236, 0, 140, 0.08);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+  }
+
+  .ia-row.user .ia-avatar {
+    display: none;
+  }
+
+  .ia-stack {
+    max-width: min(84%, 290px);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .ia-msg {
+    padding: 13px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    line-height: 1.55;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+  }
+
+  .ia-msg.bot {
+    background: var(--ia-chat-surface);
+    color: var(--ia-chat-ink);
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    border-bottom-left-radius: 9px;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.05);
+  }
+
+  .ia-msg.user {
+    background: linear-gradient(135deg, #ec008c 0%, #ff53ad 55%, #ff7ec4 100%);
+    color: white;
+    border-bottom-right-radius: 9px;
+    box-shadow: 0 14px 28px rgba(236, 0, 140, 0.2);
+  }
+
+  .ia-meta {
+    padding: 0 4px;
+    color: var(--ia-chat-muted);
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .ia-row.user .ia-meta {
+    text-align: right;
+  }
+
+  .ia-msg.typing {
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.05);
+    border-bottom-left-radius: 9px;
+  }
+
+  .ia-typing-dots {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .ia-typing-dots span {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: rgba(102, 112, 133, 0.62);
+    animation: ia-dot-bounce 1.3s infinite ease-in-out;
+  }
+
+  .ia-typing-dots span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .ia-typing-dots span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  @keyframes ia-dot-bounce {
+    0%,
+    80%,
+    100% {
+      transform: translateY(0) scale(0.8);
+      opacity: 0.45;
+    }
+    40% {
+      transform: translateY(-1px) scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes ia-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .ia-input-area {
+    padding: 14px 16px 12px;
+    background: rgba(255, 255, 255, 0.92);
+    border-top: 1px solid var(--ia-chat-line);
+    backdrop-filter: blur(12px);
+  }
+
+  .ia-composer {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    padding: 9px;
+    border-radius: 24px;
+    background: white;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+  }
+
+  .ia-input-wrap {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .ia-input-label {
+    padding: 0 10px 5px;
+    color: #98a2b3;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .ia-input {
+    width: 100%;
+    margin: 0;
+    padding: 8px 10px 10px;
+    border: 0;
+    background: transparent;
+    color: var(--ia-chat-ink);
+    font-size: 14px;
+    line-height: 1.4;
+    outline: none;
+  }
+
+  .ia-input::placeholder {
+    color: #9aa4b2;
+  }
+
+  .ia-send {
+    width: 48px;
+    height: 48px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.25), transparent 35%),
+      linear-gradient(135deg, #ec008c 0%, #00aeef 100%);
+    color: white;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      0 12px 24px rgba(236, 0, 140, 0.22);
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      opacity 0.18s ease;
+  }
+
+  .ia-send:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      0 16px 28px rgba(236, 0, 140, 0.26);
+  }
+
+  .ia-send:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .ia-send svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+  }
+
+  .ia-footer {
+    padding: 0 18px 16px;
+    color: #94a3b8;
+    font-size: 11px;
+    line-height: 1.45;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.92);
+  }
+
+  @media (max-width: 480px) {
+    .ia-bubble {
+      right: 16px;
+      bottom: 88px;
+      width: 58px;
+      height: 58px;
+      border-radius: 20px;
+    }
+
+    .ia-bubble::before {
+      border-radius: 19px;
+    }
+
+    .ia-bubble svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .ia-window {
+      right: 8px;
+      left: 8px;
+      bottom: 152px;
+      width: auto;
+      height: calc(100vh - 168px);
+      max-height: calc(100vh - 168px);
+      border-radius: 24px;
+    }
+
+    .ia-header {
+      padding: 20px 18px 16px;
+    }
+
+    .ia-messages {
+      padding: 14px 14px 8px;
+    }
+
+    .ia-stack {
+      max-width: min(88%, 276px);
+    }
+
+    .ia-footer {
+      padding: 0 14px 14px;
+    }
+  }
+</style>
+
+<script is:inline nonce={nonce}>
+  (() => {
+    const WEBHOOK_URL =
+      'https://vps22689.cubepath.net/webhook/b2d50ee0-0b85-46a0-a50e-33bd58b9de7a/chat';
+    const POSITION_KEY = 'ia-chat-bubble-position';
+    const DESKTOP_EDGE_MARGIN = 24;
+    const MOBILE_EDGE_MARGIN = 16;
+    const SESSION_ID =
+      'ia-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
+
+    const root = document.getElementById('ia-chat-root');
+    if (!root) return;
+
+    root.innerHTML = `
+      <button class="ia-bubble" id="iaBubble" aria-label="Abrir chat">
+        <svg class="ia-icon-chat" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"></path>
+          <circle cx="8" cy="10" r="1.2"></circle>
+          <circle cx="12" cy="10" r="1.2"></circle>
+          <circle cx="16" cy="10" r="1.2"></circle>
+        </svg>
+        <svg class="ia-icon-close" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18.3 5.7a1 1 0 0 0-1.4 0L12 10.6 7.1 5.7a1 1 0 0 0-1.4 1.4L10.6 12l-4.9 4.9a1 1 0 1 0 1.4 1.4L12 13.4l4.9 4.9a1 1 0 0 0 1.4-1.4L13.4 12l4.9-4.9a1 1 0 0 0 0-1.4z"></path>
+        </svg>
+        <div class="ia-bubble-badge visible" id="iaBadge"></div>
+      </button>
+
+      <div class="ia-window" id="iaWindow">
+        <div class="ia-header">
+          <div class="ia-header-top">
+            <div class="ia-header-avatar">🎨</div>
+            <div class="ia-header-copy">
+              <div class="ia-header-title">Imprime Arte</div>
+              <div class="ia-header-subtitle">
+                Te ayudamos con pedidos, presupuestos y dudas sobre personalización.
+              </div>
+              <div class="ia-header-status">
+                <span class="ia-header-status-dot"></span>
+                En línea
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ia-messages" id="iaMessages"></div>
+
+        <div class="ia-input-area">
+          <div class="ia-composer">
+            <div class="ia-input-wrap">
+              <div class="ia-input-label">Escríbenos</div>
+              <input
+                class="ia-input"
+                id="iaInput"
+                type="text"
+                placeholder="Cuéntanos qué necesitas..."
+                autocomplete="off"
+              />
+            </div>
+
+            <button class="ia-send" id="iaSend" aria-label="Enviar">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="ia-footer">Imprime Arte · Los Llanos de Aridane, La Palma</div>
+      </div>
+    `;
+
+    const bubble = document.getElementById('iaBubble');
+    const badge = document.getElementById('iaBadge');
+    const windowEl = document.getElementById('iaWindow');
+    const messages = document.getElementById('iaMessages');
+    const input = document.getElementById('iaInput');
+    const sendBtn = document.getElementById('iaSend');
+
+    if (!bubble || !badge || !windowEl || !messages || !input || !sendBtn) return;
+
+    let isOpen = false;
+    let isLoading = false;
+    let isDragging = false;
+    let wasDragged = false;
+    let startX = 0;
+    let startY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+    const DRAG_THRESHOLD = 8;
+
+    function getBubblePos() {
+      const rect = bubble.getBoundingClientRect();
+      return { left: rect.left, top: rect.top };
+    }
+
+    function clampPosition(left, top) {
+      const bw = bubble.offsetWidth;
+      const bh = bubble.offsetHeight;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const margin = vw <= 480 ? 8 : 12;
+      const bottomOffset = vw <= 480 ? 88 : 104;
+
+      return {
+        left: Math.max(margin, Math.min(left, vw - bw - margin)),
+        top: Math.max(margin, Math.min(top, vh - bh - bottomOffset)),
+      };
+    }
+
+    function getDefaultPosition() {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const horizontalMargin = vw <= 480 ? MOBILE_EDGE_MARGIN : DESKTOP_EDGE_MARGIN;
+      const bottomOffset = vw <= 480 ? 88 : 104;
+
+      return clampPosition(
+        vw - bubble.offsetWidth - horizontalMargin,
+        vh - bubble.offsetHeight - bottomOffset,
+      );
+    }
+
+    function savePosition(left, top) {
+      sessionStorage.setItem(POSITION_KEY, JSON.stringify({ left, top }));
+    }
+
+    function applyBubblePosition(left, top) {
+      bubble.style.left = left + 'px';
+      bubble.style.top = top + 'px';
+      bubble.style.right = 'auto';
+      bubble.style.bottom = 'auto';
+    }
+
+    function restorePosition() {
+      const saved = sessionStorage.getItem(POSITION_KEY);
+      if (!saved) return false;
+
+      try {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.left !== 'number' || typeof parsed.top !== 'number') return false;
+        const clamped = clampPosition(parsed.left, parsed.top);
+        applyBubblePosition(clamped.left, clamped.top);
+        savePosition(clamped.left, clamped.top);
+        return true;
+      } catch {
+        sessionStorage.removeItem(POSITION_KEY);
+        return false;
+      }
+    }
+
+    function positionWindow(bubbleLeft, bubbleTop) {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const ww = windowEl.offsetWidth;
+      const wh = windowEl.offsetHeight;
+      const horizontalMargin = 12;
+      const verticalMargin = 12;
+      const gap = 12;
+      const bubbleCenter = bubbleLeft + bubble.offsetWidth / 2;
+
+      if (vw <= 480) {
+        windowEl.style.left = '8px';
+        windowEl.style.right = '8px';
+        windowEl.style.width = 'auto';
+        windowEl.style.top = 'auto';
+        windowEl.style.bottom = Math.max(16, vh - bubbleTop + gap) + 'px';
+        return;
+      }
+
+      let left;
+      if (bubbleCenter > vw / 2) {
+        left = Math.max(horizontalMargin, bubbleLeft + bubble.offsetWidth - ww);
+      } else {
+        left = Math.min(bubbleLeft, vw - ww - horizontalMargin);
+      }
+
+      const preferredTop = bubbleTop - wh - gap;
+      const top = Math.max(verticalMargin, Math.min(preferredTop, vh - wh - verticalMargin));
+
+      windowEl.style.left = left + 'px';
+      windowEl.style.right = 'auto';
+      windowEl.style.top = top + 'px';
+      windowEl.style.bottom = 'auto';
+      windowEl.style.width = '';
+    }
+
+    function formatTime() {
+      return new Date().toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+
+    function createMessageRow(role, contentNode) {
+      const row = document.createElement('div');
+      row.className = `ia-row ${role}`;
+
+      if (role === 'bot') {
+        const avatar = document.createElement('div');
+        avatar.className = 'ia-avatar';
+        avatar.textContent = '🎨';
+        row.appendChild(avatar);
+      }
+
+      const stack = document.createElement('div');
+      stack.className = 'ia-stack';
+      stack.appendChild(contentNode);
+
+      const meta = document.createElement('div');
+      meta.className = 'ia-meta';
+      meta.textContent = role === 'bot' ? `Imprime Arte · ${formatTime()}` : `Tú · ${formatTime()}`;
+      stack.appendChild(meta);
+
+      row.appendChild(stack);
+      return row;
+    }
+
+    function addBotMessage(text) {
+      const div = document.createElement('div');
+      div.className = 'ia-msg bot';
+      div.textContent = text;
+      messages.appendChild(createMessageRow('bot', div));
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function addUserMessage(text) {
+      const div = document.createElement('div');
+      div.className = 'ia-msg user';
+      div.textContent = text;
+      messages.appendChild(createMessageRow('user', div));
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function addWelcomeCard() {
+      const card = document.createElement('div');
+      card.className = 'ia-welcome-card';
+      card.innerHTML = `
+        <div class="ia-welcome-label">Asistente online</div>
+        <div class="ia-welcome-title">Respuestas claras para que no pierdas tiempo</div>
+        <div class="ia-welcome-text">
+          Puedo ayudarte con servicios, precios, tiempos de producción y detalles para hacer tu pedido.
+        </div>
+        <div class="ia-chip-list">
+          <button class="ia-chip" type="button" data-prompt="Quiero pedir un presupuesto">Presupuesto</button>
+          <button class="ia-chip" type="button" data-prompt="¿Qué servicios ofrecen?">Servicios</button>
+          <button class="ia-chip" type="button" data-prompt="¿Cuánto tarda un pedido?">Tiempos</button>
+        </div>
+      `;
+      messages.appendChild(card);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function showTyping() {
+      const bubbleNode = document.createElement('div');
+      bubbleNode.className = 'ia-msg typing';
+      bubbleNode.id = 'iaTyping';
+      bubbleNode.innerHTML =
+        '<div class="ia-typing-dots"><span></span><span></span><span></span></div>';
+      messages.appendChild(createMessageRow('bot', bubbleNode));
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function hideTyping() {
+      const el = document.getElementById('iaTyping');
+      if (!el) return;
+      const row = el.closest('.ia-row');
+      if (row) {
+        row.remove();
+      } else {
+        el.remove();
+      }
+    }
+
+    function toggleChat() {
+      isOpen = !isOpen;
+      bubble.classList.toggle('open', isOpen);
+      windowEl.classList.toggle('open', isOpen);
+      badge.classList.remove('visible');
+
+      if (!isOpen) return;
+
+      const pos = getBubblePos();
+      positionWindow(pos.left, pos.top);
+
+      if (messages.children.length === 0) {
+        addWelcomeCard();
+        addBotMessage('¡Hola! Soy el asistente de Imprime Arte.');
+        window.setTimeout(() => {
+          addBotMessage('Cuéntame qué necesitas y te ayudo a orientarte en un momento.');
+        }, 420);
+      }
+
+      window.setTimeout(() => input.focus(), 250);
+    }
+
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text || isLoading) return;
+
+      addUserMessage(text);
+      input.value = '';
+      isLoading = true;
+      sendBtn.disabled = true;
+      showTyping();
+
+      try {
+        const res = await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'sendMessage',
+            chatInput: text,
+            sessionId: SESSION_ID,
+          }),
+        });
+
+        const data = await res.json();
+        hideTyping();
+        const reply =
+          data.output ||
+          data.text ||
+          'Perdona, no he podido procesar tu mensaje. ¿Puedes repetirlo?';
+        addBotMessage(reply);
+      } catch {
+        hideTyping();
+        addBotMessage(
+          'Ahora mismo tengo un problema técnico. Si quieres, escríbenos por WhatsApp y te atendemos al momento.',
+        );
+      } finally {
+        isLoading = false;
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    }
+
+    function onPointerDown(e) {
+      const touch = e.touches ? e.touches[0] : e;
+      const pos = getBubblePos();
+      startX = touch.clientX;
+      startY = touch.clientY;
+      startLeft = pos.left;
+      startTop = pos.top;
+      isDragging = true;
+      wasDragged = false;
+      bubble.classList.add('dragging');
+      e.preventDefault();
+    }
+
+    function onPointerMove(e) {
+      if (!isDragging) return;
+      const touch = e.touches ? e.touches[0] : e;
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+
+      if (!wasDragged && Math.sqrt(dx * dx + dy * dy) < DRAG_THRESHOLD) return;
+      wasDragged = true;
+
+      const clamped = clampPosition(startLeft + dx, startTop + dy);
+      applyBubblePosition(clamped.left, clamped.top);
+      positionWindow(clamped.left, clamped.top);
+      e.preventDefault();
+    }
+
+    function onPointerUp() {
+      if (!isDragging) return;
+      isDragging = false;
+      bubble.classList.remove('dragging');
+
+      if (!wasDragged) {
+        toggleChat();
+        return;
+      }
+
+      const pos = getBubblePos();
+      const vw = window.innerWidth;
+      const snapRight = pos.left > vw / 2;
+      const margin = vw <= 480 ? MOBILE_EDGE_MARGIN : DESKTOP_EDGE_MARGIN;
+      const finalLeft = snapRight ? vw - bubble.offsetWidth - margin : margin;
+
+      bubble.style.transition =
+        'left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.3s ease';
+      bubble.style.left = finalLeft + 'px';
+
+      window.setTimeout(() => {
+        bubble.style.transition = '';
+        const newPos = getBubblePos();
+        const clamped = clampPosition(newPos.left, newPos.top);
+        applyBubblePosition(clamped.left, clamped.top);
+        savePosition(clamped.left, clamped.top);
+        if (isOpen) {
+          positionWindow(clamped.left, clamped.top);
+        }
+      }, 320);
+    }
+
+    if (!restorePosition()) {
+      const defaultPos = getDefaultPosition();
+      applyBubblePosition(defaultPos.left, defaultPos.top);
+      savePosition(defaultPos.left, defaultPos.top);
+    }
+
+    bubble.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('mousemove', onPointerMove);
+    document.addEventListener('mouseup', onPointerUp);
+
+    bubble.addEventListener('touchstart', onPointerDown, { passive: false });
+    document.addEventListener('touchmove', onPointerMove, { passive: false });
+    document.addEventListener('touchend', onPointerUp);
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    sendBtn.addEventListener('click', sendMessage);
+
+    root.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      const chip = target.closest('[data-prompt]');
+      if (!chip) return;
+      input.value = chip.getAttribute('data-prompt') || '';
+      input.focus();
+    });
+
+    window.addEventListener('resize', () => {
+      const pos = getBubblePos();
+      const clamped = clampPosition(pos.left, pos.top);
+      applyBubblePosition(clamped.left, clamped.top);
+      savePosition(clamped.left, clamped.top);
+      if (isOpen) {
+        positionWindow(clamped.left, clamped.top);
+      }
+    });
+  })();
+</script>

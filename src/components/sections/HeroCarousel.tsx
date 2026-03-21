@@ -111,24 +111,18 @@ const HeroCarousel = memo(() => {
     setIsAutoPlaying(true);
   }, []);
 
-  const getGradientClass = useCallback((color: string) => {
-    const gradients = {
-      cyan: 'bg-gradient-primary',
-      magenta: 'bg-gradient-secondary',
-      yellow: 'bg-gradient-accent',
-      rainbow: 'bg-gradient-rainbow',
+  const getAccentGlowStyle = useCallback((color: string) => {
+    const accentColors = {
+      cyan: 'rgba(0, 172, 232, 0.18)',
+      magenta: 'rgba(240, 0, 240, 0.16)',
+      yellow: 'rgba(255, 240, 0, 0.14)',
+      rainbow: 'rgba(99, 102, 241, 0.16)',
     };
-    return gradients[color as keyof typeof gradients] || gradients.cyan;
-  }, []);
+    const accent = accentColors[color as keyof typeof accentColors] || accentColors.cyan;
 
-  const getTextClass = useCallback((color: string) => {
-    const textColors = {
-      cyan: 'text-cyan',
-      magenta: 'text-magenta',
-      yellow: 'text-yellow',
-      rainbow: 'text-gradient',
+    return {
+      background: `radial-gradient(circle at 20% 32%, ${accent} 0%, rgba(15, 23, 42, 0) 48%)`,
     };
-    return textColors[color as keyof typeof textColors] || textColors.cyan;
   }, []);
 
   // Handle CTA click with URL navigation
@@ -150,8 +144,7 @@ const HeroCarousel = memo(() => {
           <div className="relative h-full">
             {slides.map((slide, index) => {
               const isActive = index === currentSlide;
-              const gradientClass = getGradientClass(slide.accentColor);
-              const textClass = getTextClass(slide.accentColor);
+              const accentGlowStyle = getAccentGlowStyle(slide.accentColor);
 
               return (
                 <div
@@ -164,96 +157,50 @@ const HeroCarousel = memo(() => {
                   }}
                 >
                   {/* Background Image */}
+                  <div className="absolute inset-0 bg-slate-950" />
                   <div
-                    className="absolute inset-0 bg-cover bg-center"
+                    className="absolute inset-0 bg-center bg-no-repeat"
                     style={{
                       backgroundImage: `url(${slide.backgroundImage})`,
-                      transform: isActive ? 'scale(1)' : 'scale(1.1)',
+                      backgroundSize: 'contain',
+                      transform: isActive ? 'scale(1)' : 'scale(1.03)',
                       transition: 'transform 1000ms ease-out',
                     }}
                   />
 
-                  {/* Overlay - más oscuro en móvil para mejor legibilidad */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 sm:from-black/70 via-black/50 sm:via-black/40 to-black/30 sm:to-transparent" />
+                  <div
+                    className="absolute inset-0 opacity-70 transition-opacity duration-1000"
+                    style={accentGlowStyle}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-transparent to-slate-950/8" />
 
-                  {/* Content - Padding responsive */}
-                  <div className="relative z-10 h-full flex items-center py-4 sm:py-6 md:py-8">
-                    <div className="container mx-auto px-4 sm:px-6">
-                      <div className="max-w-xs sm:max-w-md md:max-w-xl lg:max-w-2xl">
-                        {/* Subtitle - Responsive */}
-                        <div
-                          className="transform transition-all duration-1000"
-                          style={{
-                            opacity: isActive ? 1 : 0,
-                            transform: isActive ? 'translateY(0)' : 'translateY(2rem)',
-                            transitionDelay: '200ms',
-                          }}
-                        >
-                          <span className="inline-block px-2 py-0.5 sm:px-3 sm:py-1.5 rounded-full text-[9px] sm:text-xs font-bold uppercase tracking-wider bg-white/20 backdrop-blur-sm border border-white/30 text-white mb-2 sm:mb-4">
-                            {slide.subtitle}
-                          </span>
-                        </div>
-
-                        {/* Title - Responsive font size */}
-                        <h1
-                          className="font-black mb-1 sm:mb-2 md:mb-3 leading-tight text-white drop-shadow-2xl transform transition-all duration-1000 text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl"
-                          style={{
-                            opacity: isActive ? 1 : 0,
-                            transform: isActive ? 'translateY(0)' : 'translateY(3rem)',
-                            transitionDelay: '400ms',
-                          }}
-                        >
-                          {slide.title.split(' ').map((word, i) => {
-                            const isLastWord = i === slide.title.split(' ').length - 1;
-                            return (
-                              <span
-                                key={i}
-                                className={`inline-block mr-1.5 sm:mr-2 md:mr-3 ${isLastWord ? textClass : ''}`}
-                              >
-                                {word}
-                              </span>
-                            );
-                          })}
-                        </h1>
-
-                        {/* Description - Ocultar en móviles muy pequeños */}
-                        <p
-                          className="text-white/90 mb-2 sm:mb-3 md:mb-4 leading-relaxed transform transition-all duration-1000 text-[11px] sm:text-sm md:text-sm lg:text-base max-w-[240px] sm:max-w-md md:max-w-lg line-clamp-2 md:line-clamp-2"
-                          style={{
-                            opacity: isActive ? 1 : 0,
-                            transform: isActive ? 'translateY(0)' : 'translateY(2rem)',
-                            transitionDelay: '600ms',
-                          }}
-                        >
-                          {slide.description}
-                        </p>
-
-                        {/* Call to Actions - Responsive */}
-                        <div
-                          className="flex flex-row gap-2 sm:gap-3 transform transition-all duration-1000"
-                          style={{
-                            opacity: isActive ? 1 : 0,
-                            transform: isActive ? 'translateY(0)' : 'translateY(2rem)',
-                            transitionDelay: '800ms',
-                          }}
-                        >
-                          {slide.ctaPrimary && (
-                            <button
-                              onClick={() => handleCtaClick(slide.ctaPrimaryUrl)}
-                              className={`px-2.5 py-1 sm:px-4 sm:py-2 md:px-5 md:py-2.5 text-white text-[11px] sm:text-sm font-bold rounded-lg ${gradientClass} hover:scale-105 active:scale-95 transform transition-all shadow-lg hover:shadow-2xl touch-manipulation`}
-                            >
-                              {slide.ctaPrimary}
-                            </button>
-                          )}
-                          {slide.ctaSecondary && (
-                            <button
-                              onClick={() => handleCtaClick(slide.ctaSecondaryUrl)}
-                              className="px-2.5 py-1 sm:px-4 sm:py-2 md:px-5 md:py-2.5 text-white text-[11px] sm:text-sm font-bold rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white hover:text-gray-800 transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
-                            >
-                              {slide.ctaSecondary}
-                            </button>
-                          )}
-                        </div>
+                  {/* CTA Only */}
+                  <div className="absolute inset-x-0 bottom-10 sm:bottom-14 md:bottom-16 z-10 px-4 sm:px-6">
+                    <div className="mx-auto flex max-w-7xl justify-center sm:justify-start">
+                      <div
+                        className="flex flex-row flex-wrap items-center justify-center gap-2 rounded-2xl bg-slate-950/40 px-3 py-2 shadow-[0_24px_50px_-32px_rgba(15,23,42,0.95)] transition-all duration-1000 sm:justify-start sm:gap-3 sm:px-4 sm:py-3"
+                        style={{
+                          opacity: isActive ? 1 : 0,
+                          transform: isActive ? 'translateY(0)' : 'translateY(1.5rem)',
+                          transitionDelay: '350ms',
+                        }}
+                      >
+                        {slide.ctaPrimary && (
+                          <button
+                            onClick={() => handleCtaClick(slide.ctaPrimaryUrl)}
+                            className="rounded-xl bg-white px-3 py-2 text-[11px] font-bold text-slate-950 shadow-[0_20px_35px_-18px_rgba(255,255,255,0.7)] transition-all hover:-translate-y-0.5 hover:bg-slate-100 hover:shadow-[0_28px_45px_-20px_rgba(255,255,255,0.8)] active:scale-95 sm:px-4 sm:py-2.5 sm:text-sm md:px-5 touch-manipulation"
+                          >
+                            {slide.ctaPrimary}
+                          </button>
+                        )}
+                        {slide.ctaSecondary && (
+                          <button
+                            onClick={() => handleCtaClick(slide.ctaSecondaryUrl)}
+                            className="rounded-xl bg-cyan-500 px-3 py-2 text-[11px] font-bold text-white shadow-[0_20px_35px_-18px_rgba(6,182,212,0.8)] transition-all hover:-translate-y-0.5 hover:bg-cyan-400 hover:shadow-[0_28px_45px_-20px_rgba(34,211,238,0.9)] active:scale-95 sm:px-4 sm:py-2.5 sm:text-sm md:px-5 touch-manipulation"
+                          >
+                            {slide.ctaSecondary}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

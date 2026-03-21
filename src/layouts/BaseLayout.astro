@@ -8,6 +8,7 @@ import CompareBar from '../components/products/CompareBar';
 import PromoPopupDisplay from '../components/promo/PromoPopupDisplay';
 import WelcomeBonusPopup from '../components/common/WelcomeBonusPopup';
 import LeadSignupPopup from '../components/common/LeadSignupPopup';
+import N8nChatWidget from '../components/support/N8nChatWidget.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -22,6 +23,14 @@ const {
   ogImage = '/og-image.jpg',
 } = Astro.props;
 const nonce = Astro.locals?.cspNonce;
+const pathname = Astro.url.pathname;
+const showChatWidget =
+  !pathname.startsWith('/admin') &&
+  !pathname.startsWith('/account') &&
+  !pathname.startsWith('/cuenta') &&
+  pathname !== '/checkout' &&
+  pathname !== '/confirmacion' &&
+  pathname !== '/login';
 ---
 
 <!doctype html>
@@ -106,6 +115,7 @@ const nonce = Astro.locals?.cspNonce;
     <PromoPopupDisplay client:idle />
     <WelcomeBonusPopup client:load />
     <LeadSignupPopup client:load />
+    {showChatWidget && <N8nChatWidget />}
     <!-- Cookie Consent Banner -->
     <CookieConsent client:load />
     <!-- Analytics Tracking -->
