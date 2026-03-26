@@ -27,15 +27,16 @@ export const POST: APIRoute = async ({ request }) => {
 
     let cookieValue = idToken;
 
-    try {
-      cookieValue = await adminAuth.createSessionCookie(idToken, {
-        expiresIn: SESSION_MAX_AGE_MS,
-      });
-    } catch (sessionCookieError) {
-      console.warn(
-        '[session/create] Falling back to raw ID token cookie because session cookie creation failed',
-        sessionCookieError
-      );
+    // En desarrollo, createSessionCookie requiere llamadas autenticadas a la API de Google
+    // que fallan por restricciones del service account en local. El ID token es suficiente.
+    if (import.meta.env.PROD) {
+      try {
+        cookieValue = await adminAuth.createSessionCookie(idToken, {
+          expiresIn: SESSION_MAX_AGE_MS,
+        });
+      } catch {
+        // Fallback silencioso: usar el ID token directamente
+      }
     }
 
     const response = new Response(JSON.stringify({ success: true }), {

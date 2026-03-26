@@ -6,6 +6,7 @@ import { useAuth } from '../../components/hooks/useAuth';
 import { useStore } from '@nanostores/react';
 import { cartStore, updateCartItemQuantity, removeFromCart } from '../../store/cartStore';
 import { categories } from '../../data/categories';
+import { occasions } from '../../data/occasions';
 import CustomizationDetails from '../cart/CustomizationDetails';
 import { useBundleDiscounts } from '../../lib/bundleDiscounts';
 
@@ -819,6 +820,75 @@ const Header: React.FC<HeaderProps> = () => {
                 </div>
               ))}
 
+              {/* Ocasiones especiales */}
+              <div
+                className="flex-shrink-0"
+                style={{ position: 'relative' }}
+                onMouseEnter={() => setActiveMenu('__ocasiones')}
+                onMouseLeave={() => setActiveMenu(null)}
+              >
+                <button
+                  className="cursor-pointer px-1.5 xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all whitespace-nowrap flex items-center gap-0.5"
+                  onClick={() => (window.location.href = '/ocasiones')}
+                >
+                  🎁 Ocasiones
+                  <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {activeMenu === '__ocasiones' && (
+                  <div
+                    className="absolute bg-white border border-gray-200 shadow-2xl rounded-xl"
+                    style={{ zIndex: 9999, top: '100%', left: '50%', transform: 'translateX(-50%)', width: '680px', maxWidth: '90vw', marginTop: '4px' }}
+                  >
+                    {/* Zona de seguridad superior sin gap */}
+                    <div style={{ height: '8px' }} />
+                    <div className="px-4 pb-4 md:px-6 md:pb-6">
+                      <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+                        <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                          🎉 Ocasiones y Días Especiales
+                        </h3>
+                        <a href="/ocasiones" className="text-xs text-purple-600 hover:text-purple-700 font-medium inline-flex items-center gap-1">
+                          Ver todas
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </a>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {occasions.map((occasion) => (
+                          <a
+                            key={occasion.slug}
+                            href={`/ocasion/${occasion.slug}`}
+                            className="block p-3 border border-gray-200 rounded-lg hover:border-purple-400 hover:bg-purple-50/50 hover:shadow-md transition-all duration-200 group"
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-2xl flex-shrink-0">{occasion.icon}</span>
+                              <span className="text-xs font-semibold text-gray-800 group-hover:text-purple-700 leading-tight">{occasion.name}</span>
+                            </div>
+                            {occasion.date && (
+                              <p className="text-[10px] text-gray-400 pl-8">{occasion.date}</p>
+                            )}
+                          </a>
+                        ))}
+                      </div>
+                      <div className="mt-4 pt-3 border-t border-gray-100 text-center">
+                        <a
+                          href="/ocasiones"
+                          className="inline-flex items-center gap-2 text-purple-600 font-medium hover:text-purple-700 hover:gap-3 transition-all text-sm"
+                        >
+                          Ver todas las ocasiones especiales
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Enlaces adicionales - TAILWIND PURO */}
               <div className="flex items-center gap-1 xl:gap-2 flex-shrink-0">
                 <a
@@ -1043,6 +1113,61 @@ const Header: React.FC<HeaderProps> = () => {
                   )}
                 </div>
               ))}
+
+              {/* Ocasiones especiales - móvil */}
+              <div style={{ borderBottom: '1px solid var(--color-gray-100)' }}>
+                <button
+                  onClick={() => setActiveMenu(activeMenu === '__ocasiones' ? null : '__ocasiones')}
+                  className="w-full flex items-center justify-between text-left"
+                  style={{ padding: 'var(--spacing-3) 0' }}
+                >
+                  <span className="text-sm font-medium flex items-center gap-2" style={{ color: '#7c3aed' }}>
+                    🎁 Ocasiones Especiales
+                  </span>
+                  <svg
+                    className="w-4 h-4 transition-all"
+                    style={{
+                      transform: activeMenu === '__ocasiones' ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.3s ease',
+                      color: '#7c3aed',
+                    }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {activeMenu === '__ocasiones' && (
+                  <div style={{ paddingBottom: 'var(--spacing-3)', paddingLeft: 'var(--spacing-2)' }}>
+                    <div className="grid grid-cols-2 gap-2">
+                      {occasions.map((occasion) => (
+                        <a
+                          key={occasion.slug}
+                          href={`/ocasion/${occasion.slug}`}
+                          className="flex items-center gap-2 p-2 rounded-lg hover:bg-purple-50"
+                          style={{ textDecoration: 'none' }}
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          <span className="text-xl">{occasion.icon}</span>
+                          <div>
+                            <div className="text-sm font-medium text-gray-800">{occasion.name}</div>
+                            {occasion.date && <div className="text-xs text-gray-400">{occasion.date}</div>}
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                    <a
+                      href="/ocasiones"
+                      className="mt-2 block text-center text-sm font-medium text-purple-600 hover:underline"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Ver todas las ocasiones →
+                    </a>
+                  </div>
+                )}
+              </div>
 
               {/* Enlaces especiales */}
               <div

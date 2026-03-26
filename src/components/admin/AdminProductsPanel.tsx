@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { db, storage } from '../../lib/firebase';
+import { occasions } from '../../data/occasions';
 import {
   collection,
   addDoc,
@@ -74,6 +75,9 @@ interface Product {
   stock: number; // Cantidad disponible
   lowStockThreshold: number; // Umbral para alerta de bajo stock (default: 5)
   allowBackorder: boolean; // Si true, permite comprar sin stock (bajo pedido)
+
+  // Ocasiones especiales
+  occasions?: string[]; // Slugs de ocasiones: ['navidad', 'dia-del-padre']
 
   // SEO
   metaTitle: string; // Título para buscadores (máx 60 caracteres)
@@ -249,6 +253,8 @@ export default function AdminProductsPanelV2() {
       stock: 0,
       lowStockThreshold: 5,
       allowBackorder: false,
+      // Ocasiones
+      occasions: [],
       // SEO - valores por defecto
       metaTitle: '',
       metaDescription: '',
@@ -497,6 +503,7 @@ export default function AdminProductsPanelV2() {
         }),
         ...(formData.onSale && formData.salePrice && { salePrice: Number(formData.salePrice) }),
         ...(formData.readyMade && { variants: formData.variants || [] }),
+        occasions: formData.occasions || [],
       };
       if (!formData.readyMade && editingProduct?.variants?.length) {
         data.variants = [];
@@ -1927,6 +1934,56 @@ export default function AdminProductsPanelV2() {
                     </ul>
                   </div>
                 </div>
+              </div>
+
+              {/* Ocasiones Especiales */}
+              <div className="bg-purple-50 rounded-xl p-4 space-y-4">
+                <h4 className="font-semibold text-gray-800 flex items-center gap-2">
+                  <span className="text-lg">🎁</span>
+                  Ocasiones Especiales
+                </h4>
+                <p className="text-xs text-gray-500">
+                  Selecciona en qué ocasiones aparecerá este producto. Será visible en{' '}
+                  <code className="text-purple-600">/ocasion/[nombre]</code>
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {occasions.map((occasion) => {
+                    const isSelected = (formData.occasions || []).includes(occasion.slug);
+                    return (
+                      <label
+                        key={occasion.slug}
+                        className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all ${
+                          isSelected
+                            ? 'bg-purple-100 border-purple-400 text-purple-800'
+                            : 'bg-white border-gray-200 hover:border-purple-300 text-gray-700'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            const current = formData.occasions || [];
+                            const updated = e.target.checked
+                              ? [...current, occasion.slug]
+                              : current.filter((s) => s !== occasion.slug);
+                            setFormData({ ...formData, occasions: updated });
+                          }}
+                          className="w-3.5 h-3.5 text-purple-600 rounded"
+                        />
+                        <span className="text-base">{occasion.icon}</span>
+                        <span className="text-xs font-medium leading-tight">{occasion.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {(formData.occasions || []).length > 0 && (
+                  <p className="text-xs text-purple-700 font-medium">
+                    ✅ Aparecerá en:{' '}
+                    {(formData.occasions || []).map((slug) => (
+                      <code key={slug} className="bg-purple-100 px-1 rounded ml-1">/ocasion/{slug}</code>
+                    ))}
+                  </p>
+                )}
               </div>
 
               {/* Opciones */}

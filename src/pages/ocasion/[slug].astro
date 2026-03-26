@@ -1,0 +1,18 @@
+---
+import Layout from '../../layouts/BaseLayout.astro';
+import OccasionPage from '../../components/pages/OccasionPage';
+import { occasions } from '../../data/occasions';
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+const occasion = occasions.find((o) => o.slug === slug);
+
+if (!occasion) {
+  return Astro.redirect('/404');
+}
+---
+
+<Layout title={`${occasion.name} | ImprimeArte`}>
+  <OccasionPage slug={slug!} client:load />
+</Layout>

@@ -1,0 +1,196 @@
+// Ocasiones especiales / Días señalados en España
+
+export interface Occasion {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  icon: string;
+  color: string; // Tailwind color class (bg, text, border)
+  date?: string; // Fecha aproximada o descripción
+  month?: number; // Mes principal (1-12) para ordenar por proximidad
+}
+
+export const occasions: Occasion[] = [
+  {
+    id: 'reyes-magos',
+    name: 'Reyes Magos',
+    slug: 'reyes-magos',
+    description: 'Regalos originales para la noche más mágica del año',
+    icon: '👑',
+    color: 'purple',
+    date: '6 de enero',
+    month: 1,
+  },
+  {
+    id: 'san-valentin',
+    name: 'San Valentín',
+    slug: 'san-valentin',
+    description: 'Detalles únicos para la persona especial',
+    icon: '❤️',
+    color: 'red',
+    date: '14 de febrero',
+    month: 2,
+  },
+  {
+    id: 'dia-del-padre',
+    name: 'Día del Padre',
+    slug: 'dia-del-padre',
+    description: 'Sorprende a papá con un regalo personalizado',
+    icon: '👨‍👧',
+    color: 'blue',
+    date: '19 de marzo',
+    month: 3,
+  },
+  {
+    id: 'semana-santa',
+    name: 'Semana Santa',
+    slug: 'semana-santa',
+    description: 'Detalles y recuerdos para la Semana Santa',
+    icon: '✝️',
+    color: 'amber',
+    date: 'Marzo - Abril',
+    month: 4,
+  },
+  {
+    id: 'dia-del-libro',
+    name: 'Día del Libro',
+    slug: 'dia-del-libro',
+    description: 'Marcapáginas, libretas y detalles para amantes de la lectura',
+    icon: '📚',
+    color: 'emerald',
+    date: '23 de abril',
+    month: 4,
+  },
+  {
+    id: 'dia-de-la-madre',
+    name: 'Día de la Madre',
+    slug: 'dia-de-la-madre',
+    description: 'Regala algo especial y único a mamá',
+    icon: '💐',
+    color: 'pink',
+    date: 'Primer domingo de mayo',
+    month: 5,
+  },
+  {
+    id: 'comuniones',
+    name: 'Comuniones',
+    slug: 'comuniones',
+    description: 'Recuerdos y regalos personalizados para el gran día',
+    icon: '🕊️',
+    color: 'sky',
+    date: 'Mayo - Junio',
+    month: 5,
+  },
+  {
+    id: 'graduacion',
+    name: 'Graduación',
+    slug: 'graduacion',
+    description: 'Celebra el logro con un recuerdo permanente',
+    icon: '🎓',
+    color: 'indigo',
+    date: 'Junio',
+    month: 6,
+  },
+  {
+    id: 'dia-del-maestro',
+    name: 'Día del Maestro',
+    slug: 'dia-del-maestro',
+    description: 'Regalos personalizados para profesores y maestros',
+    icon: '🍎',
+    color: 'green',
+    date: '27 de enero',
+    month: 1,
+  },
+  {
+    id: 'bodas',
+    name: 'Bodas',
+    slug: 'bodas',
+    description: 'Detalles originales para novios e invitados',
+    icon: '💍',
+    color: 'rose',
+    date: 'Todo el año',
+    month: 6,
+  },
+  {
+    id: 'bautizos',
+    name: 'Bautizos y Baby Shower',
+    slug: 'bautizos',
+    description: 'Recuerdos especiales para dar la bienvenida al bebé',
+    icon: '🍼',
+    color: 'cyan',
+    date: 'Todo el año',
+    month: 6,
+  },
+  {
+    id: 'cumpleanos',
+    name: 'Cumpleaños',
+    slug: 'cumpleanos',
+    description: 'Regalos únicos para hacer el cumpleaños inolvidable',
+    icon: '🎂',
+    color: 'yellow',
+    date: 'Todo el año',
+    month: 6,
+  },
+  {
+    id: 'dia-de-los-abuelos',
+    name: 'Día de los Abuelos',
+    slug: 'dia-de-los-abuelos',
+    description: 'Sorprende a los abuelos con un detalle lleno de cariño',
+    icon: '👴👵',
+    color: 'orange',
+    date: '26 de julio',
+    month: 7,
+  },
+  {
+    id: 'vuelta-al-cole',
+    name: 'Vuelta al Cole',
+    slug: 'vuelta-al-cole',
+    description: 'Material escolar y mochilas personalizadas',
+    icon: '🎒',
+    color: 'lime',
+    date: 'Septiembre',
+    month: 9,
+  },
+  {
+    id: 'halloween',
+    name: 'Halloween',
+    slug: 'halloween',
+    description: 'Disfraces, decoración y regalos terroríficos',
+    icon: '🎃',
+    color: 'orange',
+    date: '31 de octubre',
+    month: 10,
+  },
+  {
+    id: 'navidad',
+    name: 'Navidad',
+    slug: 'navidad',
+    description: 'Regalos personalizados para toda la familia',
+    icon: '🎄',
+    color: 'green',
+    date: '25 de diciembre',
+    month: 12,
+  },
+];
+
+// Mapa para búsqueda rápida por slug
+export const occasionsBySlug = new Map(occasions.map((o) => [o.slug, o]));
+
+// Color classes por nombre de color
+export const occasionColorClasses: Record<string, { bg: string; text: string; border: string; hover: string }> = {
+  purple: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', hover: 'hover:bg-purple-100' },
+  red: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', hover: 'hover:bg-red-100' },
+  blue: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', hover: 'hover:bg-blue-100' },
+  amber: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', hover: 'hover:bg-amber-100' },
+  emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', hover: 'hover:bg-emerald-100' },
+  pink: { bg: 'bg-pink-50', text: 'text-pink-700', border: 'border-pink-200', hover: 'hover:bg-pink-100' },
+  sky: { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200', hover: 'hover:bg-sky-100' },
+  indigo: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', hover: 'hover:bg-indigo-100' },
+  green: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', hover: 'hover:bg-green-100' },
+  rose: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', hover: 'hover:bg-rose-100' },
+  cyan: { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200', hover: 'hover:bg-cyan-100' },
+  yellow: { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', hover: 'hover:bg-yellow-100' },
+  orange: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', hover: 'hover:bg-orange-100' },
+  lime: { bg: 'bg-lime-50', text: 'text-lime-700', border: 'border-lime-200', hover: 'hover:bg-lime-100' },
+};

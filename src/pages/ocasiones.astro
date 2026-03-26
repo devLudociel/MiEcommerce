@@ -1,0 +1,41 @@
+---
+import Layout from '../layouts/BaseLayout.astro';
+import { occasions, occasionColorClasses } from '../data/occasions';
+---
+
+<Layout title="Ocasiones Especiales | ImprimeArte">
+  <div class="min-h-screen bg-gray-50">
+    <!-- Hero -->
+    <div class="bg-gradient-to-r from-cyan-600 to-indigo-600 text-white">
+      <div class="container mx-auto px-4 py-12 text-center">
+        <h1 class="text-4xl font-bold mb-3">🎉 Ocasiones Especiales</h1>
+        <p class="text-lg text-cyan-100">
+          Encuentra el regalo perfecto para cada momento del año
+        </p>
+      </div>
+    </div>
+
+    <!-- Grid de ocasiones -->
+    <div class="container mx-auto px-4 py-12">
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        {occasions.map((occasion) => {
+          const colors = occasionColorClasses[occasion.color] ?? occasionColorClasses['cyan'];
+          return (
+            <a
+              href={`/ocasion/${occasion.slug}`}
+              class={`flex flex-col items-center text-center p-5 rounded-2xl border-2 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${colors.bg} ${colors.border} ${colors.hover}`}
+            >
+              <span class="text-4xl mb-3">{occasion.icon}</span>
+              <h2 class={`font-semibold text-sm leading-tight mb-1 ${colors.text}`}>
+                {occasion.name}
+              </h2>
+              {occasion.date && (
+                <p class="text-xs text-gray-500">{occasion.date}</p>
+              )}
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  </div>
+</Layout>
