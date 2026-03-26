@@ -5,7 +5,6 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
-  getIdTokenResult,
   onAuthStateChanged,
   signOut,
   createUserWithEmailAndPassword,
@@ -15,6 +14,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import { validatePassword } from '../../lib/validation/validators';
+import { resolveAdminAccess } from '../../lib/auth/adminAccessClient';
 import AccessibleModal from '../common/AccessibleModal';
 
 type TabMode = 'login' | 'register';
@@ -175,9 +175,8 @@ export default function LoginPanel() {
     if (!user || typeof window === 'undefined') return '/';
     const safeDesired = desired && !desired.startsWith('/admin') ? desired : undefined;
     try {
-      const tokenResult = await getIdTokenResult(user, true);
-      await syncSessionCookie(tokenResult.token);
-      const isAdmin = Boolean(tokenResult.claims?.admin);
+      const { isAdmin, token } = await resolveAdminAccess(user);
+      await syncSessionCookie(token);
       return isAdmin ? desired || '/admin/products' : safeDesired || '/';
     } catch (e) {
       logger.warn('[LoginPanel] Could not verify admin claims', e);

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged, getIdTokenResult } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
+import { resolveAdminAccess } from '../../lib/auth/adminAccessClient';
 
 interface Props {
   children: React.ReactNode;
@@ -21,18 +22,12 @@ export default function RequireAdmin({ children, redirectTo = '/account' }: Prop
         return;
       }
       try {
-        let allowedByClaim = false;
-        try {
-          const token = await getIdTokenResult(user, true);
-          allowedByClaim = !!token.claims?.admin;
-          console.log('[RequireAdmin] claims', token.claims);
-        } catch (e) {
-          // Token claim check failed
-          console.warn('[RequireAdmin] Could not get token claims:', e);
-        }
-        if (allowedByClaim) {
+        const { isAdmin } = await resolveAdminAccess(user);
+
+        if (isAdmin) {
           setAllowed(true);
         } else {
+          setAllowed(false);
           if (typeof window !== 'undefined') {
             console.warn('[RequireAdmin] Acceso denegado. Claims insuficientes.');
             window.location.replace(redirectTo);

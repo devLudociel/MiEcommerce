@@ -12,6 +12,10 @@ import { getAdminAuth } from './lib/firebase-admin';
 
 const ADMIN_PATH_PREFIX = '/admin';
 const AUTH_COOKIE_NAME = 'auth_token';
+const ADMIN_EMAILS = (import.meta.env.ADMIN_EMAILS || '')
+  .split(',')
+  .map((value: string) => value.trim().toLowerCase())
+  .filter(Boolean);
 
 function getCookieValue(cookieHeader: string | null, name: string): string | null {
   if (!cookieHeader) return null;
@@ -32,7 +36,7 @@ function getBearerToken(request: Request): string | null {
   return authHeader.replace('Bearer ', '').trim();
 }
 
-async function verifyAdminToken(token: string): Promise<{ admin?: boolean } | null> {
+async function verifyAdminToken(token: string): Promise<{ admin?: boolean; email?: string } | null> {
   const adminAuth = getAdminAuth();
   try {
     return await adminAuth.verifySessionCookie(token, true);
@@ -45,10 +49,32 @@ async function verifyAdminToken(token: string): Promise<{ admin?: boolean } | nu
   }
 }
 
+function hasAdminAccess(decodedToken: { admin?: boolean; email?: string } | null): boolean {
+  if (!decodedToken) return false;
+  if (decodedToken.admin) return true;
+
+  const email = decodedToken.email?.toLowerCase();
+  return !!email && ADMIN_EMAILS.includes(email);
+}
+
+function withSecurityHeaders(
+  response: Response,
+  securityHeaders: Record<string, string>
+): Response {
+  const mutableResponse = new Response(response.body, response);
+
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    mutableResponse.headers.set(key, value);
+  });
+
+  return mutableResponse;
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname, search } = context.url;
   const nonce = randomBytes(16).toString('base64');
   context.locals.cspNonce = nonce;
+  const securityHeaders = getSecurityHeaders(nonce);
 
   if (pathname === ADMIN_PATH_PREFIX || pathname.startsWith(`${ADMIN_PATH_PREFIX}/`)) {
     const headerToken = getBearerToken(context.request);
@@ -59,47 +85,27 @@ export const onRequest = defineMiddleware(async (context, next) => {
       const redirectUrl = new URL('/login', context.url.origin);
       redirectUrl.searchParams.set('redirect', `${pathname}${search}`);
       const response = Response.redirect(redirectUrl, 302);
-      const securityHeaders = getSecurityHeaders(nonce);
-      Object.entries(securityHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
+      return withSecurityHeaders(response, securityHeaders);
     }
 
     try {
       const decodedToken = await verifyAdminToken(token);
-      if (!decodedToken?.admin) {
+      if (!hasAdminAccess(decodedToken)) {
         const redirectUrl = new URL('/account', context.url.origin);
         const response = Response.redirect(redirectUrl, 302);
-        const securityHeaders = getSecurityHeaders(nonce);
-        Object.entries(securityHeaders).forEach(([key, value]) => {
-          response.headers.set(key, value);
-        });
-        return response;
+        return withSecurityHeaders(response, securityHeaders);
       }
     } catch (error) {
       const redirectUrl = new URL('/login', context.url.origin);
       redirectUrl.searchParams.set('redirect', `${pathname}${search}`);
       const response = Response.redirect(redirectUrl, 302);
-      const securityHeaders = getSecurityHeaders(nonce);
-      Object.entries(securityHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
+      return withSecurityHeaders(response, securityHeaders);
     }
   }
 
   // Ejecutar el request
   const response = await next();
-
-  // Agregar headers de seguridad a la respuesta
-  const securityHeaders = getSecurityHeaders(nonce);
-
-  Object.entries(securityHeaders).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
-
-  return response;
+  return withSecurityHeaders(response, securityHeaders);
 });
 
 /**

@@ -1,5 +1,14 @@
 {
   "mcpServers": {
+    "firebase": {
+      "command": "firebase",
+      "args": ["mcp", "--dir", "C:\\Users\\Usuario\\Desktop\\ecommerce-personalizado-nuevo"],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:\\Users\\Usuario\\Downloads\\claveMCP\\ecommerce-ia-2ecf4-firebase-adminsdk-fbsvc-b6e6b8051d.json",
+        "FIREBASE_PROJECT": "ecommerce-ia-2ecf4",
+        "GCLOUD_PROJECT": "ecommerce-ia-2ecf4"
+      }
+    },
     "typescript-sdk": {
       "name": "TypeScript SDK",
       "description": "Official Anthropic SDK for building MCP servers and clients in JS/TS",

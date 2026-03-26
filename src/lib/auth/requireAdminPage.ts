@@ -1,6 +1,10 @@
 import { getAdminAuth } from '../firebase-admin';
 
 const AUTH_COOKIE_NAME = 'auth_token';
+const ADMIN_EMAILS = (import.meta.env.ADMIN_EMAILS || '')
+  .split(',')
+  .map((value: string) => value.trim().toLowerCase())
+  .filter(Boolean);
 
 function getBearerToken(request: Request): string | null {
   const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
@@ -17,7 +21,7 @@ function getCookieToken(cookieValue?: string | null): string | null {
   }
 }
 
-async function verifyAdminToken(token: string): Promise<{ admin?: boolean } | null> {
+async function verifyAdminToken(token: string): Promise<{ admin?: boolean; email?: string } | null> {
   const adminAuth = getAdminAuth();
   try {
     return await adminAuth.verifySessionCookie(token, true);
@@ -28,6 +32,14 @@ async function verifyAdminToken(token: string): Promise<{ admin?: boolean } | nu
       return null;
     }
   }
+}
+
+function hasAdminAccess(decodedToken: { admin?: boolean; email?: string } | null): boolean {
+  if (!decodedToken) return false;
+  if (decodedToken.admin) return true;
+
+  const email = decodedToken.email?.toLowerCase();
+  return !!email && ADMIN_EMAILS.includes(email);
 }
 
 function redirectToLogin(url: URL): Response {
@@ -52,7 +64,7 @@ export async function requireAdminPage(
 
   try {
     const decodedToken = await verifyAdminToken(token);
-    if (!decodedToken?.admin) {
+    if (!hasAdminAccess(decodedToken)) {
       return redirectToAccount(url);
     }
     return null;
