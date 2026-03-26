@@ -164,7 +164,7 @@ export default function LoginPanel() {
   const syncSessionCookie = async (token: string | null) => {
     if (typeof window === 'undefined') return;
     try {
-      const endpoint = token ? '/api/auth/session' : '/api/auth/logout';
+      const endpoint = token ? '/api/session/create' : '/api/session/logout';
       const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
       await fetch(endpoint, { method: 'POST', headers });
     } catch (e) {

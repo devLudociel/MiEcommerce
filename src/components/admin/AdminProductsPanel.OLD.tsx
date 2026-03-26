@@ -1179,7 +1179,7 @@ export default function AdminProductsPanel() {
               className="btn btn-ghost"
               onClick={async () => {
                 await signOut(auth);
-                await fetch('/api/auth/logout', { method: 'POST' });
+                await fetch('/api/session/logout', { method: 'POST' });
               }}
             >
               Cerrar sesión
