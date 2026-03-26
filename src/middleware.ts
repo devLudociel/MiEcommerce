@@ -70,6 +70,15 @@ function withSecurityHeaders(
   return mutableResponse;
 }
 
+function redirectRelative(pathname: string, search = ''): Response {
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: `${pathname}${search}`,
+    },
+  });
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname, search } = context.url;
   const nonce = randomBytes(16).toString('base64');
@@ -82,23 +91,22 @@ export const onRequest = defineMiddleware(async (context, next) => {
     const token = headerToken || cookieToken;
 
     if (!token) {
-      const redirectUrl = new URL('/login', context.url.origin);
-      redirectUrl.searchParams.set('redirect', `${pathname}${search}`);
-      const response = Response.redirect(redirectUrl, 302);
+      const redirectParams = new URLSearchParams();
+      redirectParams.set('redirect', `${pathname}${search}`);
+      const response = redirectRelative('/login', `?${redirectParams.toString()}`);
       return withSecurityHeaders(response, securityHeaders);
     }
 
     try {
       const decodedToken = await verifyAdminToken(token);
       if (!hasAdminAccess(decodedToken)) {
-        const redirectUrl = new URL('/account', context.url.origin);
-        const response = Response.redirect(redirectUrl, 302);
+        const response = redirectRelative('/account');
         return withSecurityHeaders(response, securityHeaders);
       }
     } catch (error) {
-      const redirectUrl = new URL('/login', context.url.origin);
-      redirectUrl.searchParams.set('redirect', `${pathname}${search}`);
-      const response = Response.redirect(redirectUrl, 302);
+      const redirectParams = new URLSearchParams();
+      redirectParams.set('redirect', `${pathname}${search}`);
+      const response = redirectRelative('/login', `?${redirectParams.toString()}`);
       return withSecurityHeaders(response, securityHeaders);
     }
   }

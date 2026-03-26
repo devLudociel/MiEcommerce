@@ -43,13 +43,24 @@ function hasAdminAccess(decodedToken: { admin?: boolean; email?: string } | null
 }
 
 function redirectToLogin(url: URL): Response {
-  const redirectUrl = new URL('/login', url.origin);
-  redirectUrl.searchParams.set('redirect', `${url.pathname}${url.search}`);
-  return Response.redirect(redirectUrl, 302);
+  const redirectParams = new URLSearchParams();
+  redirectParams.set('redirect', `${url.pathname}${url.search}`);
+
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: `/login?${redirectParams.toString()}`,
+    },
+  });
 }
 
-function redirectToAccount(url: URL): Response {
-  return Response.redirect(new URL('/account', url.origin), 302);
+function redirectToAccount(_url: URL): Response {
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: '/account',
+    },
+  });
 }
 
 export async function requireAdminPage(
