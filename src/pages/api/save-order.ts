@@ -110,6 +110,7 @@ const orderDataSchema = z.object({
   // status: removed - always set to 'pending' server-side
   // paymentStatus: removed - always set to 'pending' server-side
   notes: z.string().max(1000).optional(),
+  cartId: z.string().max(255).optional(),
 });
 
 const UNSAFE_OBJECT_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
@@ -448,6 +449,19 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     logger.info('API save-order: Pedido guardado con ID:', orderId);
+
+    // Mark cart as converted to order (for abandoned cart detection in n8n)
+    const cartId = orderData.cartId;
+    if (cartId && txResult.kind === 'created' && adminDb) {
+      try {
+        await adminDb.collection('carts').doc(cartId).set(
+          { convertedToOrder: true, orderId, updatedAt: new Date() },
+          { merge: true }
+        );
+      } catch {
+        // Non-critical: don't fail the order if cart update fails
+      }
+    }
 
     // SECURITY FIX CRÍTICO: NUNCA ejecutar finalizeOrder desde save-order
     // finalizeOrder SOLO debe ejecutarse desde:

@@ -5,6 +5,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { verifyAdminAuth } from '../../lib/auth-helpers';
 import { z } from 'zod';
+import { triggerN8nWebhook } from '../../lib/n8n';
 
 // Simple console logger for API routes (avoids import issues)
 const logger = {
@@ -101,6 +102,22 @@ export const POST: APIRoute = async ({ request }) => {
     await orderRef.update(updateData);
 
     logger.info('[update-order-tracking] Order tracking updated successfully', { orderId });
+
+    // Trigger n8n: WhatsApp tracking notification
+    const n8nWebhookUrl = import.meta.env.N8N_ORDER_NOTIFICATION_WEBHOOK_URL as string | undefined;
+    if (n8nWebhookUrl && trackingNumber && carrier) {
+      const orderData = orderSnap.data() || {};
+      await triggerN8nWebhook(n8nWebhookUrl, {
+        event: 'order.tracking.updated',
+        orderId,
+        trackingNumber,
+        carrier,
+        trackingUrl,
+        customerPhone: orderData.customerPhone as string | undefined,
+        customerName: orderData.customerName as string | undefined,
+        customerEmail: orderData.customerEmail as string | undefined,
+      });
+    }
 
     // Optionally send tracking update email to customer
     if (trackingNumber && carrier) {

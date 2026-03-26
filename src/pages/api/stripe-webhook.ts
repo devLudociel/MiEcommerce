@@ -8,6 +8,7 @@ import { releaseWalletReservation } from '../../lib/orders/walletReservations';
 import { expireReservedOrder, releaseReservedStock } from '../../lib/orders/stock';
 import type { OrderData } from '../../types/firebase';
 import { sendMetaPurchaseEvent } from '../../lib/analytics/metaConversions';
+import { triggerN8nWebhook } from '../../lib/n8n';
 
 const logger = createScopedLogger('stripe-webhook');
 
@@ -254,6 +255,22 @@ export const POST: APIRoute = async ({ request }) => {
         },
         { merge: true }
       );
+
+      // Trigger n8n: WhatsApp order confirmation
+      const n8nWebhookUrl = import.meta.env.N8N_ORDER_NOTIFICATION_WEBHOOK_URL as string | undefined;
+      if (n8nWebhookUrl) {
+        const orderForN8n = (freshOrderData || orderData) as Record<string, unknown>;
+        await triggerN8nWebhook(n8nWebhookUrl, {
+          event: 'order.paid',
+          orderId,
+          customerPhone: orderForN8n.customerPhone as string | undefined,
+          customerName: orderForN8n.customerName as string | undefined,
+          customerEmail: orderForN8n.customerEmail as string | undefined,
+          total: orderForN8n.total,
+          currency: orderForN8n.paymentCurrency || orderForN8n.currency || 'eur',
+          items: orderForN8n.items,
+        });
+      }
     } else if (
       type === 'payment_intent.payment_failed' ||
       type === 'payment_intent.canceled' ||

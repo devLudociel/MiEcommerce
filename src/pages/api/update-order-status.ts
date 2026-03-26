@@ -5,6 +5,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { validateCSRF, createCSRFErrorResponse } from '../../lib/csrf';
 import { verifyAdminAuth } from '../../lib/auth-helpers';
 import { z } from 'zod';
+import { triggerN8nWebhook } from '../../lib/n8n';
 
 // Simple console logger for API routes (avoids import issues)
 const logger = {
@@ -119,6 +120,22 @@ export const POST: APIRoute = async ({ request }) => {
       previousStatus,
       newStatus: status,
     });
+
+    // Trigger n8n: WhatsApp notification on relevant status changes
+    const n8nWebhookUrl = import.meta.env.N8N_ORDER_NOTIFICATION_WEBHOOK_URL as string | undefined;
+    const notifyStatuses = new Set(['processing', 'shipped', 'delivered', 'cancelled']);
+    if (n8nWebhookUrl && notifyStatuses.has(status)) {
+      await triggerN8nWebhook(n8nWebhookUrl, {
+        event: `order.status.${status}`,
+        orderId,
+        previousStatus,
+        newStatus: status,
+        customerPhone: currentData.customerPhone as string | undefined,
+        customerName: currentData.customerName as string | undefined,
+        customerEmail: currentData.customerEmail as string | undefined,
+        trackingNumber: currentData.trackingNumber as string | undefined,
+      });
+    }
 
     return new Response(
       JSON.stringify({
