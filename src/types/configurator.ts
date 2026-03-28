@@ -1,8 +1,6 @@
 // src/types/configurator.ts
 /**
  * Product Configurator — schema y tipos para el configurador paso a paso.
- * Cada producto puede tener un campo `configurator` en Firestore que
- * define qué pasos aplican y cómo se calculan los precios.
  */
 
 // ============================================================================
@@ -13,6 +11,7 @@ export type ConfiguratorStepId =
   | 'variant'
   | 'size'
   | 'design'
+  | 'placement'
   | 'quantity'
   | 'summary';
 
@@ -27,12 +26,11 @@ export interface VariantOption {
   label: string;
   /** hex si type="color", url si type="image", texto descriptivo si type="text" */
   value: string;
-  /** Imagen de preview del producto en esta variante (opcional) */
+  /** Imagen de preview del producto en esta variante */
   previewImage?: string;
 }
 
 export interface VariantConfig {
-  /** Label visible: "Color", "Tipo de taza", "Modelo de caja" */
   label: string;
   type: VariantDisplayType;
   options: VariantOption[];
@@ -43,7 +41,6 @@ export interface VariantConfig {
 // ============================================================================
 
 export interface SizeConfig {
-  /** Label visible: "Talla", "Tamaño" */
   label: string;
   options: string[];
 }
@@ -53,16 +50,30 @@ export interface SizeConfig {
 // ============================================================================
 
 export interface DesignConfig {
-  /** Formatos aceptados para subida de archivo */
   formats: string[];
-  /** DPI mínimo recomendado */
   minDpi: number;
-  /** Si el diseño necesita fondo transparente */
   requireTransparentBg: boolean;
-  /** Precio del servicio de diseño (0 si no aplica) */
   designServicePrice: number;
-  /** Label del servicio, p.ej. "Servicio de diseño" */
   designServiceLabel?: string;
+}
+
+// ============================================================================
+// PLACEMENT CONFIG (posición del diseño en textiles)
+// ============================================================================
+
+export interface PlacementOption {
+  id: string;
+  label: string;
+  /** Emoji o icono corto que representa la posición */
+  icon?: string;
+}
+
+export interface PlacementConfig {
+  label: string;
+  options: PlacementOption[];
+  /** Si true, el cliente también elige tamaño del estampado */
+  allowSize: boolean;
+  sizeOptions: string[];
 }
 
 // ============================================================================
@@ -70,29 +81,25 @@ export interface DesignConfig {
 // ============================================================================
 
 export interface PricingTier {
-  /** Cantidad mínima para este tramo */
   from: number;
-  /** Precio unitario en este tramo */
   price: number;
 }
 
 export interface QuantityConfig {
-  /** Cantidad mínima de pedido */
   min: number;
-  /** Tramos de precio */
   tiers: PricingTier[];
 }
 
 // ============================================================================
-// CONFIGURATOR SCHEMA (campo `configurator` en Firestore por producto)
+// CONFIGURATOR SCHEMA
 // ============================================================================
 
 export interface ProductConfigurator {
-  /** Steps activos para este producto, en orden */
   steps: ConfiguratorStepId[];
   variant?: VariantConfig;
   size?: SizeConfig;
   design: DesignConfig;
+  placement?: PlacementConfig;
   quantity: QuantityConfig;
 }
 
@@ -109,6 +116,8 @@ export interface ConfiguratorSelections {
   designFile?: File;
   referenceFiles?: File[];
   designNotes?: string;
+  placement?: string;
+  placementSize?: string;
   quantity: number;
 }
 
@@ -127,7 +136,7 @@ export interface ConfiguratorState {
 }
 
 // ============================================================================
-// PRODUCTO CON CONFIGURADOR (lo que viene de Firebase)
+// PRODUCTO CON CONFIGURADOR
 // ============================================================================
 
 export interface ConfigurableProduct {

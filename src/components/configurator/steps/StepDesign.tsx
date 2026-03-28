@@ -1,5 +1,5 @@
-import React from 'react';
-import { Paintbrush, Upload } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Paintbrush, Upload, FileText, X } from 'lucide-react';
 import type { DesignConfig, DesignMode } from '../../../types/configurator';
 import FileUploader from '../ui/FileUploader';
 
@@ -13,6 +13,58 @@ interface StepDesignProps {
   onDesignFileChange: (file: File | undefined) => void;
   onReferenceFilesChange: (files: File[]) => void;
   onDesignNotesChange: (notes: string) => void;
+}
+
+function FilePreview({ file, onRemove }: { file: File; onRemove: () => void }) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const isImage = file.type.startsWith('image/');
+
+  useEffect(() => {
+    if (!isImage) return;
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file, isImage]);
+
+  return (
+    <div className="mt-3 flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+      {isImage && previewUrl ? (
+        <img
+          src={previewUrl}
+          alt={file.name}
+          className="w-16 h-16 rounded-lg object-cover shrink-0 border border-gray-200"
+        />
+      ) : (
+        <div className="w-16 h-16 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
+          <FileText className="w-7 h-7 text-indigo-400" />
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-gray-800 truncate">{file.name}</p>
+        <p className="text-xs text-gray-400 mt-0.5">
+          {(file.size / 1024 / 1024).toFixed(2)} MB
+        </p>
+        {!isImage && (
+          <a
+            href={URL.createObjectURL(file)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-indigo-500 hover:underline"
+          >
+            Ver archivo
+          </a>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+        title="Eliminar archivo"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
 }
 
 export default function StepDesign({
@@ -94,6 +146,9 @@ export default function StepDesign({
                 : undefined
             }
           />
+          {designFile && (
+            <FilePreview file={designFile} onRemove={() => onDesignFileChange(undefined)} />
+          )}
         </div>
       )}
 

@@ -21,6 +21,7 @@ import PriceDisplay from './ui/PriceDisplay';
 import StepVariant from './steps/StepVariant';
 import StepSize from './steps/StepSize';
 import StepDesign from './steps/StepDesign';
+import StepPlacement from './steps/StepPlacement';
 import StepQuantity from './steps/StepQuantity';
 import StepSummary from './steps/StepSummary';
 
@@ -74,6 +75,14 @@ function isStepValid(
       if (selections.designMode === 'ready') return !!selections.designFile;
       if (selections.designMode === 'need-design') return true;
       return false;
+    case 'placement': {
+      if (!selections.placement) return false;
+      const placementCfg = product.configurator.placement;
+      if (placementCfg?.allowSize && placementCfg.sizeOptions.length > 0) {
+        return !!selections.placementSize;
+      }
+      return true;
+    }
     case 'quantity':
       return selections.quantity >= product.configurator.quantity.min;
     case 'summary':
@@ -222,6 +231,14 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
     setSelections((prev: ConfiguratorSelections) => ({ ...prev, designNotes: notes }));
   }, []);
 
+  const setPlacement = useCallback((placement: string) => {
+    setSelections((prev: ConfiguratorSelections) => ({ ...prev, placement, placementSize: undefined }));
+  }, []);
+
+  const setPlacementSize = useCallback((placementSize: string) => {
+    setSelections((prev: ConfiguratorSelections) => ({ ...prev, placementSize }));
+  }, []);
+
   const setQuantity = useCallback((quantity: number) => {
     setSelections((prev: ConfiguratorSelections) => ({ ...prev, quantity }));
   }, []);
@@ -270,6 +287,16 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
         customization.designMode = 'need-design';
         customization.designNotes = selections.designNotes || '';
         customization.designServicePrice = pricing.designPrice;
+      }
+      if (selections.placement) {
+        const placementOpt = product.configurator.placement?.options.find(
+          (o) => o.id === selections.placement
+        );
+        customization.placement = selections.placement;
+        customization.placementLabel = placementOpt?.label;
+        if (selections.placementSize) {
+          customization.placementSize = selections.placementSize;
+        }
       }
 
       addToCart({
@@ -407,6 +434,16 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
                 onDesignFileChange={setDesignFile}
                 onReferenceFilesChange={setReferenceFiles}
                 onDesignNotesChange={setDesignNotes}
+              />
+            )}
+
+            {currentStepId === 'placement' && product.configurator.placement && (
+              <StepPlacement
+                config={product.configurator.placement}
+                selected={selections.placement}
+                selectedSize={selections.placementSize}
+                onSelect={setPlacement}
+                onSizeSelect={setPlacementSize}
               />
             )}
 

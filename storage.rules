@@ -358,6 +358,20 @@ service firebase.storage {
     }
 
     // ==========================================================================
+    // CONFIGURATOR VARIANT IMAGES: Preview images per variant option (uploaded by admin)
+    // ==========================================================================
+    match /configurator-variants/{fileName} {
+      // Only admins can upload variant preview images
+      allow create, update: if isAdmin() && isValidSize() && isImage();
+
+      // Anyone can read (used in the storefront configurator)
+      allow read: if true;
+
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================================================
     // CONFIGURATOR UPLOADS: Design files from the step-by-step configurator
     // Authenticated users upload to personalizaciones/{uid}/... (existing rule).
     // Guests (not logged in) upload here as a temporary public folder.

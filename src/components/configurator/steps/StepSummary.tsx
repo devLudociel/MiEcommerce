@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingCart, CheckCircle2, Palette, Ruler, Upload, Hash } from 'lucide-react';
+import { ShoppingCart, Palette, Ruler, Upload, Hash, MapPin } from 'lucide-react';
 import type {
   ConfigurableProduct,
   ConfiguratorSelections,
@@ -41,6 +41,24 @@ export default function StepSummary({
       icon: <Ruler className="w-4 h-4" />,
       label: product.configurator.size?.label || 'Tamaño',
       value: selections.size,
+    });
+  }
+
+  if (selections.placement) {
+    const placementOpt = product.configurator.placement?.options.find(
+      (o) => o.id === selections.placement
+    );
+    const placementValue = [
+      placementOpt?.icon,
+      placementOpt?.label || selections.placement,
+      selections.placementSize,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+    lines.push({
+      icon: <MapPin className="w-4 h-4" />,
+      label: product.configurator.placement?.label || 'Posición',
+      value: placementValue,
     });
   }
 
