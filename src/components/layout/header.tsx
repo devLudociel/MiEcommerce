@@ -465,6 +465,13 @@ const Header: React.FC<HeaderProps> = () => {
                                 🏷️ Productos
                               </a>
                               <a
+                                href="/admin/configurador"
+                                className="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                🛠️ Configuradores
+                              </a>
+                              <a
                                 href="/admin/content-manager"
                                 className="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
                                 onClick={() => setIsUserMenuOpen(false)}

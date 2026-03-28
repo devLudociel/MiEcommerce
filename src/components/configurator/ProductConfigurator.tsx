@@ -114,7 +114,17 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
         }
 
         const data = snap.data();
-        if (!data.configurator) {
+
+        // Load configurator: either inline (legacy) or from product_configurators collection
+        let configurator = data.configurator;
+        if (!configurator && data.configuratorId) {
+          const cfgSnap = await getDoc(doc(db, 'product_configurators', data.configuratorId));
+          if (cfgSnap.exists()) {
+            configurator = cfgSnap.data().configurator;
+          }
+        }
+
+        if (!configurator) {
           if (!cancelled) setError('Este producto no tiene configurador');
           return;
         }
@@ -127,13 +137,12 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
             images: data.images || [],
             slug: data.slug || '',
             basePrice: data.basePrice || 0,
-            configurator: data.configurator,
+            configurator,
           };
           setProduct(p);
-          // Set initial quantity to configurator minimum
           setSelections((prev: ConfiguratorSelections) => ({
             ...prev,
-            quantity: data.configurator.quantity.min,
+            quantity: configurator.quantity.min,
           }));
         }
       } catch (err) {

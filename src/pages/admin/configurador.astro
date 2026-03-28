@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdminConfiguratorPanel from '../../components/admin/AdminConfiguratorPanel';
+import RequireAdmin from '../../components/auth/RequireAdmin.tsx';
+---
+
+<BaseLayout title="Admin | Configuradores">
+  <RequireAdmin client:load />
+  <AdminConfiguratorPanel client:idle />
+</BaseLayout>

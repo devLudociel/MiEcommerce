@@ -40,8 +40,7 @@ import {
   validateUniqueSlugs,
   type CsvProduct,
 } from '../../lib/productsCsv';
-import ConfiguratorEditor from './ConfiguratorEditor';
-import type { ProductConfigurator } from '../../types/configurator';
+import { loadAllConfigurators, type StoredConfigurator } from '../../lib/configurators';
 
 // ============================================================================
 // TIPOS
@@ -82,7 +81,8 @@ interface Product {
   occasions?: string[]; // Slugs de ocasiones: ['navidad', 'dia-del-padre']
 
   // Configurador paso a paso
-  configurator?: ProductConfigurator;
+  configuratorId?: string;
+  configuratorName?: string;
 
   // SEO
   metaTitle: string; // Título para buscadores (máx 60 caracteres)
@@ -160,6 +160,7 @@ export default function AdminProductsPanelV2() {
   // ✅ USAMOS CATEGORÍAS HARDCODEADAS DEL NAVBAR - NO de Firebase
   const categories = navbarCategories;
   const [schemas, setSchemas] = useState<CustomizationSchema[]>([]);
+  const [availableConfigurators, setAvailableConfigurators] = useState<StoredConfigurator[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [showModal, setShowModal] = useState(false);
@@ -205,6 +206,11 @@ export default function AdminProductsPanelV2() {
 
     // Cargar schemas de personalización
     loadSchemas();
+
+    // Cargar configuradores de producto
+    loadAllConfigurators()
+      .then((list) => setAvailableConfigurators(list.sort((a, b) => a.name.localeCompare(b.name))))
+      .catch((err) => logger.error('[AdminProducts] Error loading configurators', err));
 
     return () => unsubProducts();
   }, []);
@@ -508,7 +514,10 @@ export default function AdminProductsPanelV2() {
         }),
         ...(formData.onSale && formData.salePrice && { salePrice: Number(formData.salePrice) }),
         ...(formData.readyMade && { variants: formData.variants || [] }),
-        ...(formData.configurator ? { configurator: formData.configurator } : {}),
+        ...(formData.configuratorId ? {
+          configuratorId: formData.configuratorId,
+          configuratorName: formData.configuratorName || '',
+        } : {}),
         occasions: formData.occasions || [],
       };
       if (!formData.readyMade && editingProduct?.variants?.length) {
@@ -1812,10 +1821,49 @@ export default function AdminProductsPanelV2() {
               </div>
 
               {/* Configurador paso a paso */}
-              <ConfiguratorEditor
-                value={formData.configurator}
-                onChange={(configurator) => setFormData({ ...formData, configurator })}
-              />
+              <div className="bg-indigo-50 rounded-xl p-4 space-y-3">
+                <h4 className="font-semibold text-gray-800 flex items-center gap-2">
+                  <span className="text-lg">🛠️</span>
+                  Configurador paso a paso
+                </h4>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Plantilla de configurador
+                  </label>
+                  <select
+                    value={formData.configuratorId || ''}
+                    onChange={(e) => {
+                      const selected = availableConfigurators.find((c) => c.id === e.target.value);
+                      setFormData({
+                        ...formData,
+                        configuratorId: e.target.value || undefined,
+                        configuratorName: selected?.name || undefined,
+                      });
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="">Sin configurador</option>
+                    {availableConfigurators.map((cfg) => (
+                      <option key={cfg.id} value={cfg.id}>
+                        {cfg.name}
+                        {cfg.description ? ` — ${cfg.description}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs text-gray-500">
+                    El cliente accederá al configurador en{' '}
+                    <code className="bg-white px-1 rounded text-indigo-600">/configurar/[id]</code>.
+                    Gestiona las plantillas en{' '}
+                    <a href="/admin/configurador" className="text-indigo-600 underline">Admin › Configuradores</a>.
+                  </p>
+                </div>
+                {formData.configuratorId && (
+                  <div className="flex items-center gap-2 text-sm text-indigo-700 bg-indigo-100 rounded-lg px-3 py-2">
+                    <span>✅</span>
+                    <span>Configurador asignado: <strong>{formData.configuratorName}</strong></span>
+                  </div>
+                )}
+              </div>
 
               {/* Imágenes */}
               <div className="bg-gray-50 rounded-xl p-4 space-y-4">
