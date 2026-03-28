@@ -124,11 +124,11 @@ service firebase.storage {
     // PERSONALIZACIONES: User customization images organized by user and product type
     // ==========================================================================
     match /personalizaciones/{userId}/{productType}/{fileName} {
-      // Users can upload to their own folder
+      // Users can upload to their own folder (images and design files: PDF, AI, etc.)
       allow create, update: if isAuthenticated() &&
                               request.auth.uid == userId &&
                               isValidSize() &&
-                              isImage();
+                              isAllowedFileType();
 
       // Only file owner or admin can read
       allow read: if isAuthenticated() &&
@@ -352,6 +352,22 @@ service firebase.storage {
 
       // Anyone can read (public category images)
       allow read: if true;
+
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================================================
+    // CONFIGURATOR UPLOADS: Design files from the step-by-step configurator
+    // Authenticated users upload to personalizaciones/{uid}/... (existing rule).
+    // Guests (not logged in) upload here as a temporary public folder.
+    // ==========================================================================
+    match /configurator-uploads/{productId}/{fileName} {
+      // Anyone can upload (guests included) within size and file type limits
+      allow create, update: if isValidSize() && isAllowedFileType();
+
+      // Only admins can read (order processing team sees files via admin)
+      allow read: if isAdmin();
 
       // Only admins can delete
       allow delete: if isAdmin();

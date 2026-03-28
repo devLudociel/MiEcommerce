@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, Loader, AlertTriangle } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
-import { getDownloadURL, ref as storageRef } from 'firebase/storage';
-import { db, storage, uploadCustomImage } from '../../lib/firebase';
+import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
+import { getAuth } from 'firebase/auth';
+import { db, storage } from '../../lib/firebase';
 import { addToCart } from '../../store/cartStore';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
@@ -234,12 +235,18 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
       // Upload design file if present
       let uploadedDesignUrl: string | undefined;
       if (selections.designMode === 'ready' && selections.designFile) {
-        const result = await uploadCustomImage(
-          selections.designFile,
-          'guest', // Will be replaced with actual userId if authenticated
-          product.slug || product.id
-        );
-        uploadedDesignUrl = await getDownloadURL(storageRef(storage, result.path));
+        const uid = getAuth().currentUser?.uid;
+        const timestamp = Date.now();
+        const fileName = `${timestamp}_${selections.designFile.name}`;
+
+        // Authenticated users → their private folder; guests → public temp folder
+        const path = uid
+          ? `personalizaciones/${uid}/${product.slug || product.id}/${fileName}`
+          : `configurator-uploads/${product.id}/${fileName}`;
+
+        const fileRef = storageRef(storage, path);
+        await uploadBytes(fileRef, selections.designFile);
+        uploadedDesignUrl = await getDownloadURL(fileRef);
       }
 
       // Build customization data for the cart
