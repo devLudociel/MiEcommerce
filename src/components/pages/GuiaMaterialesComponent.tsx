@@ -650,7 +650,7 @@ export default function GuiaMaterialesComponent() {
               📧 Contactar Ahora
             </a>
             <a
-              href="/como-personalizar"
+              href="/como-funciona"
               className="px-8 py-4 bg-white text-gray-700 font-bold rounded-xl border-2 border-gray-300 hover:border-cyan-500 transform hover:scale-105 transition-all duration-300"
             >
               🎨 Cómo Personalizar
@@ -661,7 +661,7 @@ export default function GuiaMaterialesComponent() {
         {/* Quick Links */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <a
-            href="/como-personalizar"
+            href="/como-funciona"
             className="bg-white rounded-2xl p-6 border-2 border-gray-200 hover:border-cyan-500 transition-all duration-300 group"
           >
             <div className="text-4xl mb-3">🎨</div>

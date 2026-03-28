@@ -218,7 +218,7 @@ export default function FAQComponent() {
           </a>
 
           <a
-            href="/como-personalizar"
+            href="/como-funciona"
             className="bg-white rounded-2xl p-6 border-2 border-gray-200 hover:border-cyan-500 transition-all duration-300 group"
           >
             <div className="text-4xl mb-3">🎨</div>

@@ -8,48 +8,12 @@
  */
 
 import React, { useState } from 'react';
-import {
-  FRONT_POSITIONS,
-  BACK_POSITIONS,
-  getContainerTransform,
-  type PresetPosition,
-} from '../../constants/textilePositions';
 
 interface ImageTransform {
   x: number;
   y: number;
   scale: number;
   rotation: number;
-}
-
-/**
- * Detecta si las coordenadas coinciden con alguna posición preset
- * @param transform - Transformación actual de la imagen
- * @param side - Lado activo (front o back)
- * @returns PresetPosition si se detecta coincidencia, null si no
- */
-function detectPresetPosition(
-  transform: ImageTransform,
-  side: 'front' | 'back'
-): PresetPosition | null {
-  const positions = side === 'front' ? FRONT_POSITIONS : BACK_POSITIONS;
-  const tolerance = 3; // Margen de error en porcentaje
-  const scaleTolerance = 0.05; // Margen de error en escala
-
-  for (const preset of positions) {
-    const containerTransform = getContainerTransform(preset);
-
-    // Comparar coordenadas con tolerancia
-    const xMatch = Math.abs(transform.x - containerTransform.x) <= tolerance;
-    const yMatch = Math.abs(transform.y - containerTransform.y) <= tolerance;
-    const scaleMatch = Math.abs(transform.scale - containerTransform.scale) <= scaleTolerance;
-
-    if (xMatch && yMatch && scaleMatch) {
-      return preset;
-    }
-  }
-
-  return null;
 }
 
 interface CustomizationValue {
@@ -169,11 +133,6 @@ export default function OrderItemPreview({ item, signedUrls }: OrderItemPreviewP
   const activeImage = activeSide === 'front' ? userFrontImage : userBackImage;
   const activeTransform = activeSide === 'front' ? frontTransform : backTransform;
   const activeBaseImage = activeSide === 'front' ? frontBaseImage : backBaseImage;
-
-  // Detectar posiciones preset
-  const detectedFrontPreset = userFrontImage ? detectPresetPosition(frontTransform, 'front') : null;
-  const detectedBackPreset = userBackImage ? detectPresetPosition(backTransform, 'back') : null;
-  const activePreset = activeSide === 'front' ? detectedFrontPreset : detectedBackPreset;
 
   return (
     <div className="mt-4 p-4 bg-white border-2 border-purple-300 rounded-lg">
@@ -295,39 +254,6 @@ export default function OrderItemPreview({ item, signedUrls }: OrderItemPreviewP
 
       {/* Información técnica para producción - Mejorada */}
       <div className="mt-4 space-y-2">
-        {/* Posición detectada */}
-        {activePreset ? (
-          <div className="p-3 bg-green-50 border-2 border-green-300 rounded-lg">
-            <div className="flex items-start gap-2">
-              <span className="text-lg">📍</span>
-              <div className="flex-1">
-                <p className="font-bold text-green-900 text-sm mb-0.5">
-                  Posición: {activePreset.label}
-                </p>
-                <p className="text-green-700 text-xs">{activePreset.description}</p>
-                <p className="text-green-600 text-[10px] mt-1 font-medium">
-                  ✓ Coincide con posición estándar (más fácil de producir)
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="p-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
-            <div className="flex items-start gap-2">
-              <span className="text-lg">⚠️</span>
-              <div className="flex-1">
-                <p className="font-bold text-yellow-900 text-sm mb-0.5">Posición Personalizada</p>
-                <p className="text-yellow-700 text-xs">
-                  Esta posición NO coincide con ningún preset estándar.
-                </p>
-                <p className="text-yellow-600 text-[10px] mt-1 font-medium">
-                  ⚡ Requiere ajuste manual según coordenadas exactas
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Datos técnicos de impresión */}
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="font-bold text-blue-900 text-xs mb-2 flex items-center gap-1">

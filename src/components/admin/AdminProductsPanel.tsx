@@ -64,7 +64,6 @@ interface Product {
   variants?: ProductVariant[];
 
   // Personalización
-  customizationSchemaId?: string; // ID del schema (cat_tazas, cat_camisetas, etc.)
   customizationExamples?: { id: string; image: string; description: string; order?: number }[];
 
   // Ofertas
@@ -110,13 +109,6 @@ interface ProductVariant {
   sku: string;
 }
 
-interface CustomizationSchema {
-  id: string;
-  name: string;
-  categoryId: string;
-  fieldsCount: number;
-}
-
 interface Subcategory {
   id: string;
   categoryId: string;
@@ -159,7 +151,6 @@ export default function AdminProductsPanelV2() {
   const [products, setProducts] = useState<Product[]>([]);
   // ✅ USAMOS CATEGORÍAS HARDCODEADAS DEL NAVBAR - NO de Firebase
   const categories = navbarCategories;
-  const [schemas, setSchemas] = useState<CustomizationSchema[]>([]);
   const [availableConfigurators, setAvailableConfigurators] = useState<StoredConfigurator[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -204,9 +195,6 @@ export default function AdminProductsPanelV2() {
       setLoading(false);
     });
 
-    // Cargar schemas de personalización
-    loadSchemas();
-
     // Cargar configuradores de producto
     loadAllConfigurators()
       .then((list) => setAvailableConfigurators(list.sort((a, b) => a.name.localeCompare(b.name))))
@@ -216,25 +204,6 @@ export default function AdminProductsPanelV2() {
   }, []);
 
   // ✅ YA NO NECESITAMOS loadCategories - usamos las hardcodeadas del navbar
-
-  const loadSchemas = async () => {
-    try {
-      const snapshot = await getDocs(collection(db, 'customization_schemas'));
-      const schemasList = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          name: data.categoryName || doc.id,
-          categoryId: data.categoryId || doc.id,
-          fieldsCount: data.schema?.fields?.length || 0,
-        };
-      }) as CustomizationSchema[];
-      setSchemas(schemasList);
-      logger.info('[AdminProducts] Loaded schemas', { count: schemasList.length });
-    } catch (error) {
-      logger.error('[AdminProducts] Error loading schemas', error);
-    }
-  };
 
   // ============================================================================
   // HANDLERS
@@ -256,7 +225,6 @@ export default function AdminProductsPanelV2() {
       active: true,
       readyMade: false,
       variants: [],
-      customizationSchemaId: '',
       customizationExamples: [],
       onSale: false,
       // Control de Stock - valores por defecto
@@ -347,7 +315,6 @@ export default function AdminProductsPanelV2() {
         featured: false, // Don't copy featured status
         slug: newSlug,
         active: false, // Start as inactive
-        customizationSchemaId: product.customizationSchemaId,
         onSale: false, // Don't copy sale status
         salePrice: undefined,
         // Stock - reset to defaults
@@ -506,9 +473,6 @@ export default function AdminProductsPanelV2() {
         readyMade: !!formData.readyMade,
         updatedAt: Timestamp.now(),
         // Optional fields - only include if they have values
-        ...(!formData.readyMade && formData.customizationSchemaId && {
-          customizationSchemaId: formData.customizationSchemaId,
-        }),
         ...(!formData.readyMade && formData.customizationExamples?.length && {
           customizationExamples: formData.customizationExamples,
         }),
@@ -726,13 +690,6 @@ export default function AdminProductsPanelV2() {
             product.subcategory || subcategoryById?.slug || resolvedSubcategory?.slug || '';
 
           const readyMade = !!product.readyMade;
-          let schemaId = product.customizationSchemaId || '';
-          if (!readyMade && !schemaId && product.customizable) {
-            const schemaMatch = schemas.find(
-              (s) => s.categoryId === categoryId || s.id === categoryId || s.id === categorySlug
-            );
-            schemaId = schemaMatch?.id || '';
-          }
 
           const productData = {
             name: product.name,
@@ -750,7 +707,6 @@ export default function AdminProductsPanelV2() {
             onSale: product.onSale ?? false,
             ...(product.onSale && product.salePrice && { salePrice: product.salePrice }),
             readyMade,
-            ...(!readyMade && schemaId && { customizationSchemaId: schemaId }),
             trackInventory: product.trackInventory ?? false,
             stock: product.stock ?? 0,
             lowStockThreshold: product.lowStockThreshold ?? 5,
@@ -819,7 +775,7 @@ export default function AdminProductsPanelV2() {
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Productos</h2>
           <p className="text-gray-600 mt-1">
-            {products.length} producto(s) • {schemas.length} schema(s) de personalización
+            {products.length} producto(s)
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -881,7 +837,6 @@ export default function AdminProductsPanelV2() {
           <tbody className="divide-y divide-gray-200">
             {products.map((product) => {
               const category = categories.find((c) => c.id === product.categoryId);
-              const schema = schemas.find((s) => s.id === product.customizationSchemaId);
 
               return (
                 <tr key={product.id} className="hover:bg-gray-50">
@@ -921,10 +876,6 @@ export default function AdminProductsPanelV2() {
                     {product.readyMade ? (
                       <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium">
                         Listo para comprar
-                      </span>
-                    ) : schema ? (
-                      <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-lg text-xs font-medium">
-                        {schema.name}
                       </span>
                     ) : (
                       <span className="text-gray-400">Sin personalización</span>
@@ -1717,107 +1668,81 @@ export default function AdminProductsPanelV2() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Schema de personalización
+                    💡 Ejemplos de personalización (inspiración para clientes)
                   </label>
-                  <select
-                    value={formData.customizationSchemaId || ''}
-                    onChange={(e) =>
-                      setFormData({ ...formData, customizationSchemaId: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  >
-                    <option value="">Sin personalización</option>
-                    {schemas.map((schema) => (
-                      <option key={schema.id} value={schema.id}>
-                        {schema.name} ({schema.fieldsCount} campos)
-                      </option>
-                    ))}
-                  </select>
+
+                  {/* Lista de ejemplos existentes */}
+                  {(formData.customizationExamples || []).length > 0 && (
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      {(formData.customizationExamples || []).map((example, index) => (
+                        <div key={example.id} className="relative group bg-white rounded-lg border p-2">
+                          <img
+                            src={example.image}
+                            alt={example.description}
+                            className="w-full h-24 object-cover rounded"
+                          />
+                          <p className="text-xs text-gray-600 mt-1 truncate">{example.description}</p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...(formData.customizationExamples || [])];
+                              updated.splice(index, 1);
+                              setFormData({ ...formData, customizationExamples: updated });
+                            }}
+                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Añadir nuevo ejemplo */}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      id="newExampleUrl"
+                      placeholder="URL de imagen"
+                      className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                    />
+                    <input
+                      type="text"
+                      id="newExampleDesc"
+                      placeholder="Descripción"
+                      className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const urlInput = document.getElementById('newExampleUrl') as HTMLInputElement;
+                        const descInput = document.getElementById('newExampleDesc') as HTMLInputElement;
+                        const url = urlInput?.value?.trim();
+                        const desc = descInput?.value?.trim();
+                        if (url && desc) {
+                          const newExample = {
+                            id: `ex_${Date.now()}`,
+                            image: url,
+                            description: desc,
+                            order: (formData.customizationExamples || []).length
+                          };
+                          setFormData({
+                            ...formData,
+                            customizationExamples: [...(formData.customizationExamples || []), newExample]
+                          });
+                          urlInput.value = '';
+                          descInput.value = '';
+                        }
+                      }}
+                      className="px-3 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600"
+                    >
+                      +
+                    </button>
+                  </div>
                   <p className="mt-2 text-xs text-gray-500">
-                    Selecciona un schema para habilitar personalización en este producto
+                    Añade imágenes de ejemplo para inspirar a los clientes. Se muestran en la página del producto.
                   </p>
                 </div>
-
-                {/* Ejemplos de personalización - Solo si tiene schema */}
-                {formData.customizationSchemaId && (
-                  <div className="mt-4 pt-4 border-t border-purple-200">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      💡 Ejemplos de personalización (inspiración para clientes)
-                    </label>
-
-                    {/* Lista de ejemplos existentes */}
-                    {(formData.customizationExamples || []).length > 0 && (
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        {(formData.customizationExamples || []).map((example, index) => (
-                          <div key={example.id} className="relative group bg-white rounded-lg border p-2">
-                            <img
-                              src={example.image}
-                              alt={example.description}
-                              className="w-full h-24 object-cover rounded"
-                            />
-                            <p className="text-xs text-gray-600 mt-1 truncate">{example.description}</p>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const updated = [...(formData.customizationExamples || [])];
-                                updated.splice(index, 1);
-                                setFormData({ ...formData, customizationExamples: updated });
-                              }}
-                              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Añadir nuevo ejemplo */}
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        id="newExampleUrl"
-                        placeholder="URL de imagen"
-                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg"
-                      />
-                      <input
-                        type="text"
-                        id="newExampleDesc"
-                        placeholder="Descripción"
-                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const urlInput = document.getElementById('newExampleUrl') as HTMLInputElement;
-                          const descInput = document.getElementById('newExampleDesc') as HTMLInputElement;
-                          const url = urlInput?.value?.trim();
-                          const desc = descInput?.value?.trim();
-                          if (url && desc) {
-                            const newExample = {
-                              id: `ex_${Date.now()}`,
-                              image: url,
-                              description: desc,
-                              order: (formData.customizationExamples || []).length
-                            };
-                            setFormData({
-                              ...formData,
-                              customizationExamples: [...(formData.customizationExamples || []), newExample]
-                            });
-                            urlInput.value = '';
-                            descInput.value = '';
-                          }
-                        }}
-                        className="px-3 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600"
-                      >
-                        +
-                      </button>
-                    </div>
-                    <p className="mt-2 text-xs text-gray-500">
-                      Añade imágenes de ejemplo para inspirar a los clientes. Se muestran en la página del producto.
-                    </p>
-                  </div>
-                )}
               </div>
 
               {/* Configurador paso a paso */}

@@ -464,11 +464,11 @@ export default function AdminDashboard() {
           <div className="text-sm font-semibold text-white">Popups</div>
         </a>
         <a
-          href="/admin/customization"
+          href="/admin/configurador"
           className="p-4 bg-gradient-to-br from-purple-500 to-cyan-500 border-2 border-purple-400 rounded-xl hover:shadow-xl transition-all text-center group relative overflow-hidden"
         >
           <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🎨</div>
-          <div className="text-sm font-semibold text-white">Personalización</div>
+          <div className="text-sm font-semibold text-white">Configuradores</div>
         </a>
         <a
           href="/admin/tematicas"

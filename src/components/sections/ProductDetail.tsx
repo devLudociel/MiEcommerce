@@ -79,9 +79,8 @@ function toUIProduct(data: FirebaseProduct & { id: string }): UIProduct {
   const active = (data as any).active ?? true;
   const readyMade = (data as any).readyMade === true;
   const explicitCustomizable = (data as any).customizable;
-  const hasSchema = Boolean((data as any).customizationSchemaId);
   const customizable =
-    readyMade ? false : typeof explicitCustomizable === 'boolean' ? explicitCustomizable : hasSchema;
+    readyMade ? false : typeof explicitCustomizable === 'boolean' ? explicitCustomizable : Boolean((data as any).configuratorId);
   const images: ProductImage[] = Array.isArray(data.images)
     ? data.images.map((url, i) => ({
         id: i + 1,

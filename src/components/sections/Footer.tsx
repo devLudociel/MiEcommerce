@@ -53,7 +53,7 @@ const Footer: React.FC = () => {
       title: 'Información',
       links: [
         { name: 'Sobre Nosotros', href: '/sobre-nosotros' },
-        { name: 'Cómo Personalizar', href: '/como-personalizar' },
+        { name: 'Cómo Funciona', href: '/como-funciona' },
         { name: 'Guía de Materiales', href: '/guia-materiales' },
         { name: 'Tiempos de Producción', href: '/tiempos-produccion' },
         { name: 'Galería de Trabajos', href: '/galeria' },

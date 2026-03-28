@@ -19,7 +19,6 @@ export interface CsvProduct {
   basePrice: number;
   images: string[]; // URLs separadas por |
   customizable?: boolean; // Legacy
-  customizationSchemaId?: string;
   readyMade?: boolean;
   tags: string[];
   featured: boolean;
@@ -57,7 +56,6 @@ const CSV_HEADERS = [
   'basePrice',
   'images',
   'customizable',
-  'customizationSchemaId',
   'readyMade',
   'tags',
   'featured',
@@ -110,8 +108,7 @@ export function exportProductsToCsv(products: CsvProduct[]): string {
 
   // Añadir cada producto
   for (const product of products) {
-    const customizable =
-      product.customizable ?? (!!product.customizationSchemaId && !product.readyMade);
+    const customizable = product.customizable ?? !product.readyMade;
     const row = [
       escapeCSV(product.id || ''),
       escapeCSV(product.name),
@@ -123,7 +120,6 @@ export function exportProductsToCsv(products: CsvProduct[]): string {
       product.basePrice?.toString() || '0',
       escapeCSV((product.images || []).join('|')), // Separar imágenes con |
       customizable ? 'true' : 'false',
-      escapeCSV(product.customizationSchemaId || ''),
       product.readyMade ? 'true' : 'false',
       escapeCSV((product.tags || []).join('|')), // Separar tags con |
       product.featured ? 'true' : 'false',
@@ -329,7 +325,6 @@ function parseProductRow(
     basePrice,
     images,
     customizable: getValue('customizable') ? getBoolValue('customizable') : undefined,
-    customizationSchemaId: getValue('customizationschemaid') || undefined,
     readyMade: getValue('readymade') ? getBoolValue('readymade') : undefined,
     tags,
     featured: getBoolValue('featured'),

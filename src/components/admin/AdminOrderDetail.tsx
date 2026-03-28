@@ -6,12 +6,6 @@ import { useAuth } from '../hooks/useAuth';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import OrderItemPreview from './OrderItemPreview';
-import {
-  FRONT_POSITIONS,
-  BACK_POSITIONS,
-  getContainerTransform,
-  type PresetPosition,
-} from '../../constants/textilePositions';
 import JSZip from 'jszip';
 
 // Interfaces for order items and customization
@@ -58,46 +52,6 @@ const statusLabels: Record<string, string> = {
 };
 
 const eur = (v: number | string | null | undefined) => '€' + Number(v ?? 0).toFixed(2);
-
-/**
- * Detecta si las coordenadas coinciden con alguna posición preset
- */
-function detectPresetPosition(
-  transform: { x: number; y: number; scale: number; rotation: number },
-  fieldLabel: string
-): PresetPosition | null {
-  // Determinar si es front o back basándose en el label del campo
-  const labelLower = fieldLabel.toLowerCase();
-  const isFront =
-    labelLower.includes('front') ||
-    labelLower.includes('frontal') ||
-    labelLower.includes('frente') ||
-    labelLower.includes('delantera');
-  const isBack =
-    labelLower.includes('back') || labelLower.includes('trasera') || labelLower.includes('espalda');
-
-  // Si no podemos determinar el lado, no detectamos preset
-  if (!isFront && !isBack) return null;
-
-  const positions = isFront ? FRONT_POSITIONS : BACK_POSITIONS;
-  const tolerance = 3; // Margen de error en porcentaje
-  const scaleTolerance = 0.05; // Margen de error en escala
-
-  for (const preset of positions) {
-    const containerTransform = getContainerTransform(preset);
-
-    // Comparar coordenadas con tolerancia
-    const xMatch = Math.abs(transform.x - containerTransform.x) <= tolerance;
-    const yMatch = Math.abs(transform.y - containerTransform.y) <= tolerance;
-    const scaleMatch = Math.abs(transform.scale - containerTransform.scale) <= scaleTolerance;
-
-    if (xMatch && yMatch && scaleMatch) {
-      return preset;
-    }
-  }
-
-  return null;
-}
 
 function extractStoragePath(url: string): string | null {
   if (!url) return null;
@@ -869,54 +823,15 @@ export default function AdminOrderDetail() {
                                             </div>
 
                                             {/* Mostrar transformaciones si existen */}
-                                            {field.imageTransform &&
-                                              (() => {
-                                                const detectedPreset = detectPresetPosition(
-                                                  field.imageTransform,
-                                                  field.fieldLabel
-                                                );
-                                                return (
-                                                  <div className="mt-2 text-xs space-y-1">
-                                                    {/* Mostrar preset detectado */}
-                                                    {detectedPreset ? (
-                                                      <div className="p-2 bg-green-100 border border-green-300 rounded">
-                                                        <p className="font-bold text-green-800 flex items-center gap-1">
-                                                          📍 {detectedPreset.label}
-                                                        </p>
-                                                        <p className="text-green-700 italic">
-                                                          {detectedPreset.description}
-                                                        </p>
-                                                      </div>
-                                                    ) : (
-                                                      <div className="p-2 bg-yellow-100 border border-yellow-300 rounded">
-                                                        <p className="font-bold text-yellow-800">
-                                                          ⚠️ Posición personalizada
-                                                        </p>
-                                                      </div>
-                                                    )}
-
-                                                    {/* Coordenadas técnicas */}
-                                                    <div className="text-gray-600 space-y-0.5">
-                                                      <p>
-                                                        • X={field.imageTransform.x.toFixed(1)}%, Y=
-                                                        {field.imageTransform.y.toFixed(1)}%
-                                                      </p>
-                                                      <p>
-                                                        • Escala:{' '}
-                                                        {(field.imageTransform.scale * 100).toFixed(
-                                                          0
-                                                        )}
-                                                        %
-                                                      </p>
-                                                      {field.imageTransform.rotation !== 0 && (
-                                                        <p>
-                                                          • Rotación: {field.imageTransform.rotation}°
-                                                        </p>
-                                                      )}
-                                                    </div>
-                                                  </div>
-                                                );
-                                              })()}
+                                            {field.imageTransform && (
+                                              <div className="mt-2 text-xs text-gray-600 space-y-0.5">
+                                                <p>• X={field.imageTransform.x.toFixed(1)}%, Y={field.imageTransform.y.toFixed(1)}%</p>
+                                                <p>• Escala: {(field.imageTransform.scale * 100).toFixed(0)}%</p>
+                                                {field.imageTransform.rotation !== 0 && (
+                                                  <p>• Rotación: {field.imageTransform.rotation}°</p>
+                                                )}
+                                              </div>
+                                            )}
                                           </div>
                                         ) : (
                                           /* Si es un valor simple (color, talla, etc.) */
