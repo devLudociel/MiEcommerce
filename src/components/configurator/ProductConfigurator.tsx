@@ -511,26 +511,39 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
             "
           >
             {currentStepId === 'summary' ? (
-              /* Summary step: price + full-width add to cart */
-              <div className="flex-1 flex items-center gap-3">
-                {pricing && (
-                  <div className="shrink-0">
-                    <p className="text-base font-bold text-gray-900 leading-tight">
-                      {pricing.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
-                    </p>
-                    <p className="text-xs text-gray-400 leading-tight">total</p>
-                  </div>
-                )}
+              /* Summary step: same layout as other steps — price left, button right */
+              <>
+                <div className="flex-1 min-w-0">
+                  {pricing && (
+                    <>
+                      <p className="text-base font-bold text-gray-900 leading-tight">
+                        {pricing.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                      </p>
+                      <p className="text-xs text-gray-400 leading-tight">total</p>
+                    </>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="
+                    flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium
+                    text-gray-600 bg-white border border-gray-200 hover:bg-gray-50
+                    transition-all shrink-0
+                  "
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Anterior
+                </button>
                 <button
                   type="button"
                   onClick={handleAddToCart}
                   disabled={isAddingToCart}
                   className="
-                    flex-1 flex items-center justify-center gap-2
-                    px-5 py-3 rounded-xl text-sm font-semibold
+                    flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold
                     bg-indigo-600 text-white hover:bg-indigo-700
                     disabled:opacity-40 disabled:cursor-not-allowed
-                    transition-colors shadow-sm
+                    transition-colors shadow-sm shrink-0
                   "
                 >
                   {isAddingToCart ? (
@@ -538,9 +551,9 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
                   ) : (
                     <ShoppingCart className="w-4 h-4" />
                   )}
-                  Añadir al carrito
+                  Añadir
                 </button>
-              </div>
+              </>
             ) : (
               <>
                 {/* Left: total price */}
