@@ -42,11 +42,19 @@ function getTierPrice(tiers: PricingTier[], qty: number): number {
   return match.price;
 }
 
+function getActiveTiers(product: ConfigurableProduct, selections: ConfiguratorSelections) {
+  const { variantPricing, tiers } = product.configurator.quantity;
+  if (selections.variant && variantPricing?.[selections.variant]?.length) {
+    return variantPricing[selections.variant];
+  }
+  return tiers;
+}
+
 function calculatePricing(
   product: ConfigurableProduct,
   selections: ConfiguratorSelections
 ): ConfiguratorPricing {
-  const unitPrice = getTierPrice(product.configurator.quantity.tiers, selections.quantity);
+  const unitPrice = getTierPrice(getActiveTiers(product, selections), selections.quantity);
   const designPrice =
     selections.designMode === 'need-design'
       ? product.configurator.design.designServicePrice
@@ -454,6 +462,7 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
               <StepQuantity
                 config={product.configurator.quantity}
                 quantity={selections.quantity}
+                selectedVariant={selections.variant}
                 onQuantityChange={setQuantity}
               />
             )}

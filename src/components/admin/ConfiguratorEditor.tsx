@@ -241,7 +241,11 @@ export default function ConfiguratorEditor({ value, onChange }: ConfiguratorEdit
 
       {/* Quantity */}
       <SectionCollapsible title="Cantidad y precios" icon="🔢" isOpen={expandedSection === 'quantity'} onToggle={() => toggle('quantity')}>
-        <QuantityEditor config={config.quantity} onChange={(quantity) => update({ quantity })} />
+        <QuantityEditor
+          config={config.quantity}
+          onChange={(quantity) => update({ quantity })}
+          variantOptions={config.variant?.options.map((o) => ({ id: o.id, label: o.label }))}
+        />
       </SectionCollapsible>
     </div>
   );
@@ -766,49 +770,138 @@ function SizeOptionInput({ onAdd }: { onAdd: (s: string) => void }) {
 // QUANTITY EDITOR
 // ============================================================================
 
-function QuantityEditor({ config, onChange }: { config: QuantityConfig; onChange: (c: QuantityConfig) => void }) {
-  const addTier = () => {
-    const last = config.tiers[config.tiers.length - 1];
-    onChange({ ...config, tiers: [...config.tiers, { from: last ? last.from * 2 : 1, price: last ? Math.max(0, last.price - 0.5) : 1 }] });
-  };
-
+function TierList({
+  tiers,
+  onChange,
+}: {
+  tiers: PricingTier[];
+  onChange: (tiers: PricingTier[]) => void;
+}) {
   const updateTier = (i: number, p: Partial<PricingTier>) => {
-    const tiers = [...config.tiers];
-    tiers[i] = { ...tiers[i], ...p };
-    onChange({ ...config, tiers });
+    const next = [...tiers];
+    next[i] = { ...next[i], ...p };
+    onChange(next);
   };
-
   const removeTier = (i: number) => {
-    if (config.tiers.length <= 1) return;
-    onChange({ ...config, tiers: config.tiers.filter((_, j) => j !== i) });
+    if (tiers.length <= 1) return;
+    onChange(tiers.filter((_, j) => j !== i));
+  };
+  const addTier = () => {
+    const last = tiers[tiers.length - 1];
+    onChange([...tiers, { from: last ? last.from * 2 : 1, price: last ? Math.max(0, last.price - 0.5) : 1 }]);
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
+      {tiers.map((tier, i) => (
+        <div key={i} className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
+          <div className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Desde (uds.)</label>
+              <input type="number" min={1} value={tier.from} onChange={(e) => updateTier(i, { from: parseInt(e.target.value) || 1 })} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Precio/ud. (€)</label>
+              <input type="number" min={0} step="0.01" value={tier.price} onChange={(e) => updateTier(i, { price: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" />
+            </div>
+            <button type="button" onClick={() => removeTier(i)} disabled={tiers.length <= 1} className="mt-5 p-2 text-red-500 hover:bg-red-50 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Etiqueta (opcional)</label>
+              <input type="text" placeholder="ej: Popular, Mayorista…" value={tier.label ?? ''} onChange={(e) => updateTier(i, { label: e.target.value || undefined })} className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg" />
+            </div>
+            <div className="flex items-center gap-2 mt-4">
+              <input type="checkbox" id={`rec-${i}`} checked={!!tier.recommended} onChange={(e) => updateTier(i, { recommended: e.target.checked || undefined })} className="w-4 h-4 accent-amber-500" />
+              <label htmlFor={`rec-${i}`} className="text-sm text-gray-700 cursor-pointer">⭐ Recomendado</label>
+            </div>
+          </div>
+        </div>
+      ))}
+      <button type="button" onClick={addTier} className="flex items-center gap-1 text-sm text-indigo-600 font-medium hover:text-indigo-700">
+        <Plus className="w-4 h-4" />Añadir tramo
+      </button>
+    </div>
+  );
+}
+
+function QuantityEditor({ config, onChange, variantOptions }: {
+  config: QuantityConfig;
+  onChange: (c: QuantityConfig) => void;
+  variantOptions?: { id: string; label: string }[];
+}) {
+  const [showVariantPricing, setShowVariantPricing] = useState(false);
+
+  const updateDefaultTiers = (tiers: PricingTier[]) => onChange({ ...config, tiers });
+
+  const updateVariantTiers = (variantId: string, tiers: PricingTier[]) => {
+    const variantPricing = { ...(config.variantPricing ?? {}), [variantId]: tiers };
+    onChange({ ...config, variantPricing });
+  };
+
+  const removeVariantPricing = (variantId: string) => {
+    const variantPricing = { ...(config.variantPricing ?? {}) };
+    delete variantPricing[variantId];
+    onChange({ ...config, variantPricing: Object.keys(variantPricing).length ? variantPricing : undefined });
+  };
+
+  return (
+    <div className="space-y-5">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Pedido mínimo</label>
         <input type="number" min={1} value={config.min} onChange={(e) => onChange({ ...config, min: parseInt(e.target.value) || 1 })} className="w-32 px-3 py-2 text-sm border border-gray-300 rounded-lg" />
       </div>
+
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Tramos de precio</label>
-        <div className="space-y-2">
-          <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs font-medium text-gray-500 px-2">
-            <span>Desde (uds.)</span><span>Precio/ud. (€)</span><span className="w-8" />
-          </div>
-          {config.tiers.map((tier, i) => (
-            <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
-              <input type="number" min={1} value={tier.from} onChange={(e) => updateTier(i, { from: parseInt(e.target.value) || 1 })} className="px-3 py-2 text-sm border border-gray-300 rounded-lg" />
-              <input type="number" min={0} step="0.01" value={tier.price} onChange={(e) => updateTier(i, { price: parseFloat(e.target.value) || 0 })} className="px-3 py-2 text-sm border border-gray-300 rounded-lg" />
-              <button type="button" onClick={() => removeTier(i)} disabled={config.tiers.length <= 1} className="p-2 text-red-500 hover:bg-red-50 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed">
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-        <button type="button" onClick={addTier} className="mt-2 flex items-center gap-1 text-sm text-indigo-600 font-medium hover:text-indigo-700">
-          <Plus className="w-4 h-4" />Añadir tramo
-        </button>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Tramos de precio (por defecto)</label>
+        <TierList tiers={config.tiers} onChange={updateDefaultTiers} />
       </div>
+
+      {/* Per-variant pricing */}
+      {variantOptions && variantOptions.length > 0 && (
+        <div className="border-t border-gray-200 pt-4">
+          <button type="button" onClick={() => setShowVariantPricing(v => !v)} className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-indigo-600">
+            {showVariantPricing ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            Precios distintos por variante
+            {config.variantPricing && Object.keys(config.variantPricing).length > 0 && (
+              <span className="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
+                {Object.keys(config.variantPricing).length} configurado{Object.keys(config.variantPricing).length > 1 ? 's' : ''}
+              </span>
+            )}
+          </button>
+          {showVariantPricing && (
+            <div className="mt-3 space-y-4">
+              <p className="text-xs text-gray-500">Si una variante tiene sus propios tramos, se usarán en lugar de los por defecto.</p>
+              {variantOptions.map((opt) => {
+                const variantTiers = config.variantPricing?.[opt.id];
+                return (
+                  <div key={opt.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50">
+                      <span className="text-sm font-semibold text-gray-800">{opt.label}</span>
+                      {variantTiers ? (
+                        <button type="button" onClick={() => removeVariantPricing(opt.id)} className="text-xs text-red-500 hover:text-red-700">
+                          Quitar precios propios
+                        </button>
+                      ) : (
+                        <button type="button" onClick={() => updateVariantTiers(opt.id, [...config.tiers])} className="text-xs text-indigo-600 font-medium hover:text-indigo-700">
+                          + Añadir precios propios
+                        </button>
+                      )}
+                    </div>
+                    {variantTiers && (
+                      <div className="p-3">
+                        <TierList tiers={variantTiers} onChange={(t) => updateVariantTiers(opt.id, t)} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
