@@ -6,6 +6,7 @@ const STEP_LABELS: Record<ConfiguratorStepId, string> = {
   variant: 'Variante',
   size: 'Tamaño',
   design: 'Diseño',
+  placement: 'Posición',
   quantity: 'Cantidad',
   summary: 'Resumen',
 };
@@ -19,14 +20,19 @@ interface StepProgressProps {
 export default function StepProgress({ steps, currentStep, onStepClick }: StepProgressProps) {
   return (
     <nav aria-label="Progreso de configuración" className="w-full">
-      {/* Mobile: compact */}
-      <div className="sm:hidden flex items-center justify-between px-2 py-3">
-        <span className="text-sm font-medium text-gray-700">
-          Paso {currentStep + 1} de {steps.length}
-        </span>
-        <span className="text-sm font-semibold text-indigo-600">
-          {STEP_LABELS[steps[currentStep]]}
-        </span>
+      {/* Mobile: slim progress bar + step info */}
+      <div className="sm:hidden">
+        {/* slim progress bar */}
+        <div className="h-1 bg-gray-100 rounded-full mb-2">
+          <div
+            className="h-1 bg-indigo-500 rounded-full transition-all duration-300"
+            style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between px-0.5">
+          <span className="text-xs text-gray-400">Paso {currentStep + 1} de {steps.length}</span>
+          <span className="text-xs font-semibold text-indigo-600">{STEP_LABELS[steps[currentStep]]}</span>
+        </div>
       </div>
 
       {/* Desktop: full bar */}

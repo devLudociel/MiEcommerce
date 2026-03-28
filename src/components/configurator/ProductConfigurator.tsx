@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Loader, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader, AlertTriangle, ShoppingCart } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
@@ -384,9 +384,9 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
   const previewImage = variantOption?.previewImage || product.images[0];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 sm:py-10">
+    <div className="max-w-5xl mx-auto px-4 py-2 sm:py-8">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-3">
         <a
           href={product.slug ? `/producto/${product.slug}` : '/'}
           className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-3"
@@ -398,15 +398,15 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
       </div>
 
       {/* Step progress */}
-      <div className="mb-8">
+      <div className="mb-3">
         <StepProgress steps={steps} currentStep={currentStep} onStepClick={goToStep} />
       </div>
 
       {/* Content area */}
       <div className="grid lg:grid-cols-5 gap-8">
         {/* Left: step content */}
-        <div className="lg:col-span-3">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 min-h-[400px]">
+        <div className="lg:col-span-3 pb-[80px] sm:pb-0">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-7">
             {currentStepId === 'variant' && product.configurator.variant && (
               <StepVariant
                 config={product.configurator.variant}
@@ -466,9 +466,9 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
             )}
           </div>
 
-          {/* Navigation buttons */}
+          {/* Desktop navigation buttons — hidden on mobile, shown from sm up */}
           {currentStepId !== 'summary' && (
-            <div className="flex justify-between mt-6">
+            <div className="hidden sm:flex justify-between mt-6">
               <button
                 type="button"
                 onClick={goBack}
@@ -500,10 +500,93 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
               </button>
             </div>
           )}
+
+          {/* Mobile sticky bottom bar — visible only on mobile */}
+          <div
+            className="
+              sm:hidden
+              fixed bottom-0 left-0 right-0 z-30
+              bg-white border-t border-gray-200 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]
+              px-4 py-3 flex items-center gap-3
+            "
+          >
+            {currentStepId === 'summary' ? (
+              /* Summary step: full-width add to cart */
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={isAddingToCart}
+                className="
+                  flex-1 flex items-center justify-center gap-2
+                  px-5 py-3 rounded-xl text-sm font-semibold
+                  bg-indigo-600 text-white hover:bg-indigo-700
+                  disabled:opacity-40 disabled:cursor-not-allowed
+                  transition-colors shadow-sm
+                "
+              >
+                {isAddingToCart ? (
+                  <Loader className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ShoppingCart className="w-4 h-4" />
+                )}
+                Añadir al carrito
+              </button>
+            ) : (
+              <>
+                {/* Left: total price */}
+                <div className="flex-1 min-w-0">
+                  {pricing ? (
+                    <>
+                      <p className="text-base font-bold text-gray-900 leading-tight">
+                        {pricing.total.toLocaleString('es-ES', {
+                          style: 'currency',
+                          currency: 'EUR',
+                        })}
+                      </p>
+                      <p className="text-xs text-gray-400 leading-tight">total</p>
+                    </>
+                  ) : (
+                    <p className="text-xs text-gray-400">Calculando…</p>
+                  )}
+                </div>
+
+                {/* Right: back + next buttons */}
+                <button
+                  type="button"
+                  onClick={goBack}
+                  disabled={currentStep === 0}
+                  className="
+                    flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium
+                    text-gray-600 bg-white border border-gray-200 hover:bg-gray-50
+                    disabled:opacity-0 disabled:pointer-events-none
+                    transition-all shrink-0
+                  "
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Anterior
+                </button>
+
+                <button
+                  type="button"
+                  onClick={goNext}
+                  disabled={!canGoNext}
+                  className="
+                    flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold
+                    bg-indigo-600 text-white hover:bg-indigo-700
+                    disabled:opacity-40 disabled:cursor-not-allowed
+                    transition-colors shadow-sm shrink-0
+                  "
+                >
+                  Siguiente
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Right: sidebar — preview + live pricing */}
-        <div className="lg:col-span-2 space-y-6">
+        {/* Right: sidebar — preview + live pricing (hidden on mobile, shown from lg up) */}
+        <div className="hidden lg:block lg:col-span-2 space-y-6">
           {/* Product preview */}
           {previewImage && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
