@@ -94,6 +94,8 @@ export interface QuantityConfig {
   tiers: PricingTier[];
   /** Precios distintos por opción de variante: clave = VariantOption.id */
   variantPricing?: Record<string, PricingTier[]>;
+  /** Precios distintos por tamaño: clave = size string */
+  sizePricing?: Record<string, PricingTier[]>;
 }
 
 // ============================================================================

@@ -245,6 +245,7 @@ export default function ConfiguratorEditor({ value, onChange }: ConfiguratorEdit
           config={config.quantity}
           onChange={(quantity) => update({ quantity })}
           variantOptions={config.variant?.options.map((o) => ({ id: o.id, label: o.label }))}
+          sizeOptions={config.size?.options}
         />
       </SectionCollapsible>
     </div>
@@ -827,12 +828,14 @@ function TierList({
   );
 }
 
-function QuantityEditor({ config, onChange, variantOptions }: {
+function QuantityEditor({ config, onChange, variantOptions, sizeOptions }: {
   config: QuantityConfig;
   onChange: (c: QuantityConfig) => void;
   variantOptions?: { id: string; label: string }[];
+  sizeOptions?: string[];
 }) {
   const [showVariantPricing, setShowVariantPricing] = useState(false);
+  const [showSizePricing, setShowSizePricing] = useState(false);
 
   const updateDefaultTiers = (tiers: PricingTier[]) => onChange({ ...config, tiers });
 
@@ -847,6 +850,17 @@ function QuantityEditor({ config, onChange, variantOptions }: {
     onChange({ ...config, variantPricing: Object.keys(variantPricing).length ? variantPricing : undefined });
   };
 
+  const updateSizeTiers = (size: string, tiers: PricingTier[]) => {
+    const sizePricing = { ...(config.sizePricing ?? {}), [size]: tiers };
+    onChange({ ...config, sizePricing });
+  };
+
+  const removeSizePricing = (size: string) => {
+    const sizePricing = { ...(config.sizePricing ?? {}) };
+    delete sizePricing[size];
+    onChange({ ...config, sizePricing: Object.keys(sizePricing).length ? sizePricing : undefined });
+  };
+
   return (
     <div className="space-y-5">
       <div>
@@ -858,6 +872,50 @@ function QuantityEditor({ config, onChange, variantOptions }: {
         <label className="block text-sm font-medium text-gray-700 mb-2">Tramos de precio (por defecto)</label>
         <TierList tiers={config.tiers} onChange={updateDefaultTiers} />
       </div>
+
+      {/* Per-size pricing */}
+      {sizeOptions && sizeOptions.length > 0 && (
+        <div className="border-t border-gray-200 pt-4">
+          <button type="button" onClick={() => setShowSizePricing(v => !v)} className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-indigo-600">
+            {showSizePricing ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            Precios distintos por tamaño
+            {config.sizePricing && Object.keys(config.sizePricing).length > 0 && (
+              <span className="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
+                {Object.keys(config.sizePricing).length} configurado{Object.keys(config.sizePricing).length > 1 ? 's' : ''}
+              </span>
+            )}
+          </button>
+          {showSizePricing && (
+            <div className="mt-3 space-y-4">
+              <p className="text-xs text-gray-500">Si un tamaño tiene sus propios tramos, se usarán en lugar de los por defecto.</p>
+              {sizeOptions.map((size) => {
+                const sizeTiers = config.sizePricing?.[size];
+                return (
+                  <div key={size} className="border border-gray-200 rounded-xl overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50">
+                      <span className="text-sm font-semibold text-gray-800">{size}</span>
+                      {sizeTiers ? (
+                        <button type="button" onClick={() => removeSizePricing(size)} className="text-xs text-red-500 hover:text-red-700">
+                          Quitar precios propios
+                        </button>
+                      ) : (
+                        <button type="button" onClick={() => updateSizeTiers(size, [...config.tiers])} className="text-xs text-indigo-600 font-medium hover:text-indigo-700">
+                          + Añadir precios propios
+                        </button>
+                      )}
+                    </div>
+                    {sizeTiers && (
+                      <div className="p-3">
+                        <TierList tiers={sizeTiers} onChange={(t) => updateSizeTiers(size, t)} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Per-variant pricing */}
       {variantOptions && variantOptions.length > 0 && (

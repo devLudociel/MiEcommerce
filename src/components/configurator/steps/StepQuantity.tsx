@@ -6,12 +6,16 @@ interface StepQuantityProps {
   config: QuantityConfig;
   quantity: number;
   selectedVariant?: string;
+  selectedSize?: string;
   onQuantityChange: (qty: number) => void;
 }
 
-function getActiveTiers(config: QuantityConfig, selectedVariant?: string): PricingTier[] {
+function getActiveTiers(config: QuantityConfig, selectedVariant?: string, selectedSize?: string): PricingTier[] {
   if (selectedVariant && config.variantPricing?.[selectedVariant]?.length) {
     return config.variantPricing[selectedVariant];
+  }
+  if (selectedSize && config.sizePricing?.[selectedSize]?.length) {
+    return config.sizePricing[selectedSize];
   }
   return config.tiers;
 }
@@ -38,7 +42,7 @@ export default function StepQuantity({
   selectedVariant,
   onQuantityChange,
 }: StepQuantityProps) {
-  const tiers = getActiveTiers(config, selectedVariant);
+  const tiers = getActiveTiers(config, selectedVariant, selectedSize);
   const currentTier = getTierForQuantity(tiers, quantity);
   const basePrice = tiers[0]?.price ?? 0;
 
