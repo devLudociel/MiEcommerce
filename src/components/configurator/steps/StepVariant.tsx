@@ -25,8 +25,8 @@ export default function StepVariant({ config, selected, onSelect }: StepVariantP
               className={`
                 group flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all
                 ${selected === opt.id
-                  ? 'border-indigo-500 bg-indigo-50 shadow-md'
-                  : 'border-gray-200 hover:border-gray-300 bg-white'
+                  ? 'border-indigo-500 bg-indigo-50 shadow-md ring-2 ring-indigo-200'
+                  : 'border-gray-200 bg-white shadow-sm hover:border-indigo-300 hover:shadow-md hover:bg-indigo-50/40'
                 }
               `}
               aria-pressed={selected === opt.id}
@@ -56,7 +56,7 @@ export default function StepVariant({ config, selected, onSelect }: StepVariantP
                 relative rounded-xl overflow-hidden border-2 transition-all aspect-square
                 ${selected === opt.id
                   ? 'border-indigo-500 shadow-lg ring-2 ring-indigo-300'
-                  : 'border-gray-200 hover:border-gray-300'
+                  : 'border-gray-200 shadow-sm hover:border-indigo-300 hover:shadow-md'
                 }
               `}
               aria-pressed={selected === opt.id}
@@ -92,8 +92,8 @@ export default function StepVariant({ config, selected, onSelect }: StepVariantP
               className={`
                 flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left
                 ${selected === opt.id
-                  ? 'border-indigo-500 bg-indigo-50 shadow-md'
-                  : 'border-gray-200 hover:border-gray-300 bg-white'
+                  ? 'border-indigo-500 bg-indigo-50 shadow-md ring-2 ring-indigo-200'
+                  : 'border-gray-200 bg-white shadow-sm hover:border-indigo-300 hover:shadow-md hover:bg-indigo-50/40'
                 }
               `}
               aria-pressed={selected === opt.id}
