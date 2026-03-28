@@ -83,11 +83,19 @@ export interface PlacementConfig {
 export interface PricingTier {
   from: number;
   price: number;
+  /** Etiqueta visible (ej: "Inicio", "Popular", "Mayorista") */
+  label?: string;
+  /** Marca este tramo como recomendado */
+  recommended?: boolean;
 }
 
 export interface QuantityConfig {
   min: number;
   tiers: PricingTier[];
+  /** Precios distintos por opción de variante: clave = VariantOption.id */
+  variantPricing?: Record<string, PricingTier[]>;
+  /** Precios distintos por tamaño: clave = size string */
+  sizePricing?: Record<string, PricingTier[]>;
 }
 
 // ============================================================================
