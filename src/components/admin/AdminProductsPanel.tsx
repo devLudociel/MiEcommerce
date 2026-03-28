@@ -40,6 +40,8 @@ import {
   validateUniqueSlugs,
   type CsvProduct,
 } from '../../lib/productsCsv';
+import ConfiguratorEditor from './ConfiguratorEditor';
+import type { ProductConfigurator } from '../../types/configurator';
 
 // ============================================================================
 // TIPOS
@@ -78,6 +80,9 @@ interface Product {
 
   // Ocasiones especiales
   occasions?: string[]; // Slugs de ocasiones: ['navidad', 'dia-del-padre']
+
+  // Configurador paso a paso
+  configurator?: ProductConfigurator;
 
   // SEO
   metaTitle: string; // Título para buscadores (máx 60 caracteres)
@@ -503,6 +508,7 @@ export default function AdminProductsPanelV2() {
         }),
         ...(formData.onSale && formData.salePrice && { salePrice: Number(formData.salePrice) }),
         ...(formData.readyMade && { variants: formData.variants || [] }),
+        ...(formData.configurator ? { configurator: formData.configurator } : {}),
         occasions: formData.occasions || [],
       };
       if (!formData.readyMade && editingProduct?.variants?.length) {
@@ -1804,6 +1810,12 @@ export default function AdminProductsPanelV2() {
                   </div>
                 )}
               </div>
+
+              {/* Configurador paso a paso */}
+              <ConfiguratorEditor
+                value={formData.configurator}
+                onChange={(configurator) => setFormData({ ...formData, configurator })}
+              />
 
               {/* Imágenes */}
               <div className="bg-gray-50 rounded-xl p-4 space-y-4">
