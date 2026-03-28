@@ -384,7 +384,7 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
   const previewImage = variantOption?.previewImage || product.images[0];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-2 sm:py-8">
+    <div className="max-w-5xl mx-auto px-4 py-2 sm:py-8 overflow-x-hidden">
       {/* Header */}
       <div className="mb-3">
         <a

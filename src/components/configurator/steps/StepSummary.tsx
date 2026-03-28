@@ -105,12 +105,12 @@ export default function StepSummary({
       </div>
 
       {/* Selection details */}
-      <div className="bg-white rounded-xl border border-gray-200 divide-y">
+      <div className="bg-white rounded-xl border border-gray-200 divide-y overflow-hidden">
         {lines.map((line, i) => (
-          <div key={i} className="flex items-center gap-3 px-3 py-2.5">
+          <div key={i} className="flex items-center gap-2 px-3 py-2.5 min-w-0">
             <span className="text-gray-400 shrink-0">{line.icon}</span>
             <span className="text-sm text-gray-500 shrink-0">{line.label}</span>
-            <span className="ml-auto text-sm font-medium text-gray-900 text-right break-words min-w-0">{line.value}</span>
+            <span className="ml-auto text-sm font-medium text-gray-900 text-right truncate max-w-[55%]">{line.value}</span>
           </div>
         ))}
       </div>
@@ -119,7 +119,7 @@ export default function StepSummary({
       {selections.designMode === 'need-design' && selections.designNotes && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
           <p className="text-sm font-semibold text-amber-800 mb-1">Notas del diseño</p>
-          <p className="text-sm text-amber-700 whitespace-pre-wrap">{selections.designNotes}</p>
+          <p className="text-sm text-amber-700 break-words">{selections.designNotes}</p>
         </div>
       )}
 
@@ -131,7 +131,7 @@ export default function StepSummary({
           </p>
           <ul className="space-y-0.5">
             {selections.referenceFiles.map((f, i) => (
-              <li key={i} className="text-sm text-gray-600">{f.name}</li>
+              <li key={i} className="text-sm text-gray-600 truncate">{f.name}</li>
             ))}
           </ul>
         </div>
