@@ -30,6 +30,7 @@ import {
   FileUp,
   AlertCircle,
   CheckCircle,
+  Search,
 } from 'lucide-react';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { categories as navbarCategoriesData } from '../../data/categories';
@@ -157,6 +158,7 @@ export default function AdminProductsPanelV2() {
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<Partial<Product>>({});
+  const [productSearch, setProductSearch] = useState('');
   const [uploadingImages, setUploadingImages] = useState(false);
   const [slugError, setSlugError] = useState<string | null>(null);
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
@@ -179,6 +181,27 @@ export default function AdminProductsPanelV2() {
     selectedCategoryPreview?.slug || formData.category || 'otros';
   const previewSubcategorySlug =
     selectedSubcategoryPreview?.slug || formData.subcategory || 'subcategoria';
+  const normalizedProductSearch = productSearch.trim().toLowerCase();
+  const filteredProducts = products.filter((product) => {
+    if (!normalizedProductSearch) return true;
+
+    const categoryName =
+      categories.find((category) => category.id === product.categoryId)?.name || '';
+    const searchableContent = [
+      product.name,
+      product.slug,
+      product.description,
+      product.category,
+      product.subcategory,
+      categoryName,
+      ...(product.tags || []),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    return searchableContent.includes(normalizedProductSearch);
+  });
 
   // ============================================================================
   // CARGAR DATOS
@@ -775,7 +798,9 @@ export default function AdminProductsPanelV2() {
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Productos</h2>
           <p className="text-gray-600 mt-1">
-            {products.length} producto(s)
+            {normalizedProductSearch
+              ? `${filteredProducts.length} de ${products.length} producto(s)`
+              : `${products.length} producto(s)`}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -811,6 +836,29 @@ export default function AdminProductsPanelV2() {
 
       {/* Tabla de productos */}
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/70">
+          <div className="relative max-w-md">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={productSearch}
+              onChange={(e) => setProductSearch(e.target.value)}
+              className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              placeholder="Buscar por nombre, slug, categoría o tag..."
+            />
+            {productSearch && (
+              <button
+                type="button"
+                onClick={() => setProductSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                title="Limpiar búsqueda"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -835,7 +883,7 @@ export default function AdminProductsPanelV2() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {products.map((product) => {
+            {filteredProducts.map((product) => {
               const category = categories.find((c) => c.id === product.categoryId);
 
               return (
@@ -956,6 +1004,12 @@ export default function AdminProductsPanelV2() {
         {products.length === 0 && (
           <div className="text-center py-12 text-gray-500">
             No hay productos. Crea uno para empezar.
+          </div>
+        )}
+
+        {products.length > 0 && filteredProducts.length === 0 && (
+          <div className="text-center py-12 text-gray-500">
+            No se encontraron productos para &quot;{productSearch}&quot;.
           </div>
         )}
       </div>
