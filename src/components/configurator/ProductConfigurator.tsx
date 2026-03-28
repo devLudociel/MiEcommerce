@@ -511,26 +511,36 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
             "
           >
             {currentStepId === 'summary' ? (
-              /* Summary step: full-width add to cart */
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={isAddingToCart}
-                className="
-                  flex-1 flex items-center justify-center gap-2
-                  px-5 py-3 rounded-xl text-sm font-semibold
-                  bg-indigo-600 text-white hover:bg-indigo-700
-                  disabled:opacity-40 disabled:cursor-not-allowed
-                  transition-colors shadow-sm
-                "
-              >
-                {isAddingToCart ? (
-                  <Loader className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ShoppingCart className="w-4 h-4" />
+              /* Summary step: price + full-width add to cart */
+              <div className="flex-1 flex items-center gap-3">
+                {pricing && (
+                  <div className="shrink-0">
+                    <p className="text-base font-bold text-gray-900 leading-tight">
+                      {pricing.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                    </p>
+                    <p className="text-xs text-gray-400 leading-tight">total</p>
+                  </div>
                 )}
-                Añadir al carrito
-              </button>
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={isAddingToCart}
+                  className="
+                    flex-1 flex items-center justify-center gap-2
+                    px-5 py-3 rounded-xl text-sm font-semibold
+                    bg-indigo-600 text-white hover:bg-indigo-700
+                    disabled:opacity-40 disabled:cursor-not-allowed
+                    transition-colors shadow-sm
+                  "
+                >
+                  {isAddingToCart ? (
+                    <Loader className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ShoppingCart className="w-4 h-4" />
+                  )}
+                  Añadir al carrito
+                </button>
+              </div>
             ) : (
               <>
                 {/* Left: total price */}
