@@ -386,18 +386,9 @@ export default function ProductDetail({ id, slug }: Props) {
   }, [handleAddToCart]);
 
   const handleCustomize = useCallback(() => {
-    if (!uiProduct) return;
-
-    // Track customization start in analytics
+    if (!uiProduct?.configuratorId) return;
     trackCustomizeProduct(uiProduct.name);
-
-    // If product has step-by-step configurator, use the new flow
-    if (uiProduct.configuratorId) {
-      window.location.href = `/configurar/${uiProduct.id}`;
-      return;
-    }
-
-    window.location.href = `/personalizar/${uiProduct.slug || uiProduct.id}`;
+    window.location.href = `/configurar/${uiProduct.id}`;
   }, [uiProduct]);
 
   const handleShare = useCallback(async () => {

@@ -1,10 +1,4 @@
 ---
-import Layout from '../../layouts/BaseLayout.astro';
-import ProductCustomizer from '../../components/customizer/ProductCustomizer';
-
-const { slug } = Astro.params;
+// Old customization system — disabled. Redirect to 404 to prevent access.
+return Astro.redirect('/404');
 ---
-
-<Layout title={`Personalizar Producto - ${slug}`}>
-  <ProductCustomizer client:load slug={slug} />
-</Layout>
