@@ -402,10 +402,10 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
         <StepProgress steps={steps} currentStep={currentStep} onStepClick={goToStep} />
       </div>
 
-      {/* Content area */}
-      <div className="grid lg:grid-cols-5 gap-8">
+      {/* Content area — block on mobile, grid on desktop */}
+      <div className="lg:grid lg:grid-cols-5 lg:gap-8">
         {/* Left: step content */}
-        <div className="lg:col-span-3 pb-[80px] sm:pb-0">
+        <div className="lg:col-span-3 pb-[80px] sm:pb-0 min-w-0">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-7">
             {currentStepId === 'variant' && product.configurator.variant && (
               <StepVariant
