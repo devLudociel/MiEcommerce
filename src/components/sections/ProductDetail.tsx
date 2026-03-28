@@ -65,6 +65,7 @@ interface UIProduct {
   salePrice?: number;
   basePrice: number;
   readyMade?: boolean;
+  configuratorId?: string;
 }
 
 interface Props {
@@ -171,6 +172,7 @@ function toUIProduct(data: FirebaseProduct & { id: string }): UIProduct {
     salePrice,
     basePrice,
     readyMade,
+    configuratorId: (data as any).configuratorId,
   };
 }
 
@@ -388,6 +390,12 @@ export default function ProductDetail({ id, slug }: Props) {
 
     // Track customization start in analytics
     trackCustomizeProduct(uiProduct.name);
+
+    // If product has step-by-step configurator, use the new flow
+    if (uiProduct.configuratorId) {
+      window.location.href = `/configurar/${uiProduct.id}`;
+      return;
+    }
 
     window.location.href = `/personalizar/${uiProduct.slug || uiProduct.id}`;
   }, [uiProduct]);
