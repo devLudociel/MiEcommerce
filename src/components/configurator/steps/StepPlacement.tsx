@@ -38,7 +38,7 @@ export default function StepPlacement({
                 flex flex-col items-center gap-2 p-4 rounded-xl border-2 text-center transition-all
                 ${isSelected
                   ? 'border-indigo-500 bg-indigo-50 shadow-md ring-2 ring-indigo-200'
-                  : 'border-gray-200 bg-white shadow-sm hover:border-indigo-300 hover:shadow-md hover:bg-indigo-50/40'
+                  : 'border-gray-200 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] hover:border-indigo-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.18)] hover:bg-indigo-50/40'
                 }
               `}
             >
