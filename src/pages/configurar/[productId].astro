@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProductConfigurator from '../../components/configurator/ProductConfigurator';
+
+const { productId } = Astro.params;
+
+if (!productId) {
+  return Astro.redirect('/404');
+}
+---
+
+<BaseLayout title="Configurar producto" description="Personaliza tu producto paso a paso">
+  <div class="min-h-screen bg-gray-50">
+    <ProductConfigurator productId={productId} client:load />
+  </div>
+</BaseLayout>
