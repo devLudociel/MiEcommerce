@@ -133,6 +133,12 @@ service cloud.firestore {
       allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
     }
 
+    // Product configurators (plantillas del configurador paso a paso)
+    match /product_configurators/{configuratorId} {
+      allow read: if true; // Cualquiera puede leer para cargar el configurador en /configurar/[id]
+      allow write: if isAdmin(); // Solo admins pueden crear/editar/eliminar
+    }
+
     // Themes (temáticas centralizadas para personalización)
     match /themes/{themeId} {
       allow read: if true; // Cualquiera puede leer para ver temáticas en el customizer
