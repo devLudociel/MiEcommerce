@@ -32,10 +32,13 @@ export async function saveConfigurator(
   const existing = await getDoc(ref);
   const createdAt = existing.exists() ? existing.data().createdAt : Timestamp.now();
 
+  // Strip undefined values — Firestore rejects them
+  const cleanConfigurator = JSON.parse(JSON.stringify(configurator));
+
   await setDoc(ref, {
     name,
     description: description || '',
-    configurator,
+    configurator: cleanConfigurator,
     updatedAt: Timestamp.now(),
     createdAt,
   });

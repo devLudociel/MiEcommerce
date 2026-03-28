@@ -40,6 +40,7 @@ export default function StepQuantity({
   config,
   quantity,
   selectedVariant,
+  selectedSize,
   onQuantityChange,
 }: StepQuantityProps) {
   const tiers = getActiveTiers(config, selectedVariant, selectedSize);
