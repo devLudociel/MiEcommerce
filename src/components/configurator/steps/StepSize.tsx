@@ -24,8 +24,8 @@ export default function StepSize({ config, selected, onSelect }: StepSizeProps) 
             className={`
               min-w-[4rem] px-5 py-3 rounded-xl border-2 text-sm font-semibold transition-all
               ${selected === size
-                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-md ring-1 ring-indigo-300'
-                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-md ring-2 ring-indigo-200'
+                : 'border-gray-200 bg-white text-gray-700 shadow-[0_2px_8px_rgba(0,0,0,0.12)] hover:border-indigo-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.18)] hover:bg-indigo-50/40'
               }
             `}
             aria-pressed={selected === size}

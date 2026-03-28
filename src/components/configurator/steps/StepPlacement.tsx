@@ -37,8 +37,8 @@ export default function StepPlacement({
               className={`
                 flex flex-col items-center gap-2 p-4 rounded-xl border-2 text-center transition-all
                 ${isSelected
-                  ? 'border-indigo-500 bg-indigo-50 shadow-md'
-                  : 'border-gray-200 hover:border-gray-300 bg-white'
+                  ? 'border-indigo-500 bg-indigo-50 shadow-md ring-2 ring-indigo-200'
+                  : 'border-gray-200 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] hover:border-indigo-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.18)] hover:bg-indigo-50/40'
                 }
               `}
             >
@@ -68,8 +68,8 @@ export default function StepPlacement({
                   className={`
                     px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all
                     ${isSelected
-                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                      : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
+                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-200'
+                      : 'border-gray-200 bg-white text-gray-700 shadow-sm hover:border-indigo-300 hover:shadow-md hover:bg-indigo-50/40'
                     }
                   `}
                 >

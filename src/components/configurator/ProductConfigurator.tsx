@@ -381,7 +381,10 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
   const variantOption = selections.variant
     ? product.configurator.variant?.options.find((o) => o.id === selections.variant)
     : undefined;
-  const previewImage = variantOption?.previewImage || product.images[0];
+  const previewImage =
+    variantOption?.previewImage ||
+    (product.configurator.variant?.type === 'image' ? variantOption?.value : undefined) ||
+    product.images[0];
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-2 sm:py-8 overflow-x-hidden">
