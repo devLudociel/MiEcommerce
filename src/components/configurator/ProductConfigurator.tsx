@@ -57,15 +57,31 @@ function calculatePricing(
   product: ConfigurableProduct,
   selections: ConfiguratorSelections
 ): ConfiguratorPricing {
-  const unitPrice = getTierPrice(getActiveTiers(product, selections), selections.quantity);
+  const tiers = getActiveTiers(product, selections);
   const designPrice =
     selections.designMode === 'need-design'
       ? product.configurator.design.designServicePrice
       : 0;
-  const subtotal = unitPrice * selections.quantity;
-  const total = subtotal + designPrice;
 
-  return { unitPrice, designPrice, subtotal, total };
+  if (product.configurator.quantity.sheetBased) {
+    // tier.price = total price for tier.from sheets
+    const tier = (() => {
+      let match = tiers[0];
+      for (const t of tiers) { if (selections.quantity >= t.from) match = t; }
+      return match;
+    })();
+    const subtotal = tier?.price ?? 0;
+    return {
+      unitPrice: tier ? tier.price / Math.max(tier.from, 1) : 0,
+      designPrice,
+      subtotal,
+      total: subtotal + designPrice,
+    };
+  }
+
+  const unitPrice = getTierPrice(tiers, selections.quantity);
+  const subtotal = unitPrice * selections.quantity;
+  return { unitPrice, designPrice, subtotal, total: subtotal + designPrice };
 }
 
 // ============================================================================
@@ -310,11 +326,19 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
         }
       }
 
+      const isSheetBased = product.configurator.quantity.sheetBased;
+      const unitsPerSheetForSize = product.configurator.size?.unitsPerSheet?.[selections.size ?? ''];
+      const cartQuantity =
+        isSheetBased && unitsPerSheetForSize
+          ? selections.quantity * unitsPerSheetForSize
+          : selections.quantity;
+      if (isSheetBased) customization.sheets = selections.quantity;
+
       addToCart({
         id: product.id,
         name: product.name,
-        price: pricing.total / selections.quantity, // price per unit including design amortization
-        quantity: selections.quantity,
+        price: pricing.total / Math.max(cartQuantity, 1),
+        quantity: cartQuantity,
         image: product.images[0] || '',
         customization: customization as any,
       });
@@ -368,7 +392,15 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Producto añadido al carrito</h2>
         <p className="text-gray-500 mb-8">
-          {product.name} &times; {selections.quantity}
+          {product.name} &times; {(() => {
+            const isSheetBased = product.configurator.quantity.sheetBased;
+            const uph = product.configurator.size?.unitsPerSheet?.[selections.size ?? ''];
+            if (isSheetBased) {
+              const totalUnits = uph ? selections.quantity * uph : undefined;
+              return `${selections.quantity} ${selections.quantity === 1 ? 'hoja' : 'hojas'}${totalUnits ? ` (${totalUnits} uds.)` : ''}`;
+            }
+            return selections.quantity;
+          })()}
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <a
@@ -467,6 +499,7 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
                 quantity={selections.quantity}
                 selectedVariant={selections.variant}
                 selectedSize={selections.size}
+                unitsPerSheet={product.configurator.size?.unitsPerSheet?.[selections.size ?? '']}
                 onQuantityChange={setQuantity}
               />
             )}
@@ -639,7 +672,7 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
 
           {/* Live pricing (hidden on summary as it's shown inline) */}
           {pricing && currentStepId !== 'summary' && (
-            <PriceDisplay pricing={pricing} quantity={selections.quantity} />
+            <PriceDisplay pricing={pricing} quantity={selections.quantity} sheetBased={product.configurator.quantity.sheetBased} />
           )}
         </div>
       </div>

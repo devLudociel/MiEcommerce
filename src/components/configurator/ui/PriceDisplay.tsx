@@ -4,21 +4,22 @@ import type { ConfiguratorPricing } from '../../../types/configurator';
 interface PriceDisplayProps {
   pricing: ConfiguratorPricing;
   quantity: number;
+  sheetBased?: boolean;
 }
 
-export default function PriceDisplay({ pricing, quantity }: PriceDisplayProps) {
+export default function PriceDisplay({ pricing, quantity, sheetBased }: PriceDisplayProps) {
   const fmt = (n: number) =>
     n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2 shadow-sm">
       <div className="flex justify-between text-sm text-gray-600">
-        <span>Precio unitario</span>
+        <span>{sheetBased ? 'Precio/hoja' : 'Precio unitario'}</span>
         <span>{fmt(pricing.unitPrice)}</span>
       </div>
 
       <div className="flex justify-between text-sm text-gray-600">
-        <span>Cantidad</span>
+        <span>{sheetBased ? 'Hojas' : 'Cantidad'}</span>
         <span>&times; {quantity}</span>
       </div>
 

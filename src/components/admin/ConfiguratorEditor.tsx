@@ -542,6 +542,42 @@ function SizeEditor({ config, onChange }: { config: SizeConfig; onChange: (c: Si
           <button type="button" onClick={addSize} className="px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">Añadir</button>
         </div>
       </div>
+      {/* Units per sheet */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Unidades por hoja (u/h)
+          <span className="ml-1 text-xs text-gray-400 font-normal">— sólo para productos con precios por hojas</span>
+        </label>
+        {config.options.length === 0 ? (
+          <p className="text-xs text-gray-400">Añade opciones primero.</p>
+        ) : (
+          <div className="space-y-2">
+            {config.options.map((size) => (
+              <div key={size} className="flex items-center gap-3">
+                <span className="text-sm text-gray-600 w-36 truncate">{size}</span>
+                <input
+                  type="number"
+                  min={1}
+                  placeholder="u/h"
+                  value={config.unitsPerSheet?.[size] ?? ''}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    const uph = { ...(config.unitsPerSheet ?? {}) };
+                    if (val > 0) {
+                      uph[size] = val;
+                    } else {
+                      delete uph[size];
+                    }
+                    onChange({ ...config, unitsPerSheet: Object.keys(uph).length ? uph : undefined });
+                  }}
+                  className="w-24 px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div>
         <p className="text-xs text-gray-500 mb-2">Presets:</p>
         <div className="flex flex-wrap gap-2">
@@ -774,9 +810,11 @@ function SizeOptionInput({ onAdd }: { onAdd: (s: string) => void }) {
 function TierList({
   tiers,
   onChange,
+  sheetBased,
 }: {
   tiers: PricingTier[];
   onChange: (tiers: PricingTier[]) => void;
+  sheetBased?: boolean;
 }) {
   const updateTier = (i: number, p: Partial<PricingTier>) => {
     const next = [...tiers];
@@ -798,11 +836,15 @@ function TierList({
         <div key={i} className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
           <div className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">Desde (uds.)</label>
+              <label className="text-xs text-gray-500 mb-1 block">
+                {sheetBased ? 'Hojas' : 'Desde (uds.)'}
+              </label>
               <input type="number" min={1} value={tier.from} onChange={(e) => updateTier(i, { from: parseInt(e.target.value) || 1 })} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" />
             </div>
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">Precio/ud. (€)</label>
+              <label className="text-xs text-gray-500 mb-1 block">
+                {sheetBased ? 'Total (€)' : 'Precio/ud. (€)'}
+              </label>
               <input type="number" min={0} step="0.01" value={tier.price} onChange={(e) => updateTier(i, { price: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" />
             </div>
             <button type="button" onClick={() => removeTier(i)} disabled={tiers.length <= 1} className="mt-5 p-2 text-red-500 hover:bg-red-50 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed">
@@ -863,14 +905,36 @@ function QuantityEditor({ config, onChange, variantOptions, sizeOptions }: {
 
   return (
     <div className="space-y-5">
+      {/* Sheet-based toggle */}
+      <label className="flex items-start gap-3 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={!!config.sheetBased}
+          onChange={(e) => onChange({ ...config, sheetBased: e.target.checked || undefined })}
+          className="mt-0.5 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+        />
+        <div>
+          <span className="text-sm font-medium text-gray-700">Precio por hojas</span>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Actívalo para productos como pegatinas: el cliente elige cuántas hojas quiere
+            y el precio de cada tramo es el total (no por unidad).
+            Configura las u/h en el paso "Tamaño".
+          </p>
+        </div>
+      </label>
+
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Pedido mínimo</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {config.sheetBased ? 'Hojas mínimas' : 'Pedido mínimo'}
+        </label>
         <input type="number" min={1} value={config.min} onChange={(e) => onChange({ ...config, min: parseInt(e.target.value) || 1 })} className="w-32 px-3 py-2 text-sm border border-gray-300 rounded-lg" />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Tramos de precio (por defecto)</label>
-        <TierList tiers={config.tiers} onChange={updateDefaultTiers} />
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {config.sheetBased ? 'Tramos de precio (hojas → total €, por defecto)' : 'Tramos de precio (por defecto)'}
+        </label>
+        <TierList tiers={config.tiers} onChange={updateDefaultTiers} sheetBased={config.sheetBased} />
       </div>
 
       {/* Per-size pricing */}
@@ -906,7 +970,7 @@ function QuantityEditor({ config, onChange, variantOptions, sizeOptions }: {
                     </div>
                     {sizeTiers && (
                       <div className="p-3">
-                        <TierList tiers={sizeTiers} onChange={(t) => updateSizeTiers(size, t)} />
+                        <TierList tiers={sizeTiers} onChange={(t) => updateSizeTiers(size, t)} sheetBased={config.sheetBased} />
                       </div>
                     )}
                   </div>
@@ -950,7 +1014,7 @@ function QuantityEditor({ config, onChange, variantOptions, sizeOptions }: {
                     </div>
                     {variantTiers && (
                       <div className="p-3">
-                        <TierList tiers={variantTiers} onChange={(t) => updateVariantTiers(opt.id, t)} />
+                        <TierList tiers={variantTiers} onChange={(t) => updateVariantTiers(opt.id, t)} sheetBased={config.sheetBased} />
                       </div>
                     )}
                   </div>

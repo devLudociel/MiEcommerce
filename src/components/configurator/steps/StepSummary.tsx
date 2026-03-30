@@ -76,10 +76,15 @@ export default function StepSummary({
     });
   }
 
+  const isSheetBased = product.configurator.quantity.sheetBased;
+  const unitsPerSheetForSize = product.configurator.size?.unitsPerSheet?.[selections.size ?? ''];
+  const totalUnits = isSheetBased && unitsPerSheetForSize ? selections.quantity * unitsPerSheetForSize : undefined;
   lines.push({
     icon: <Hash className="w-4 h-4" />,
     label: 'Cantidad',
-    value: `${selections.quantity} ${selections.quantity === 1 ? 'unidad' : 'unidades'}`,
+    value: isSheetBased
+      ? `${selections.quantity} ${selections.quantity === 1 ? 'hoja' : 'hojas'}${totalUnits ? ` (${totalUnits} uds.)` : ''}`
+      : `${selections.quantity} ${selections.quantity === 1 ? 'unidad' : 'unidades'}`,
   });
 
   return (
@@ -139,7 +144,7 @@ export default function StepSummary({
 
       {/* Pricing — hidden on mobile (shown in sticky bar) */}
       <div className="hidden sm:block">
-        <PriceDisplay pricing={pricing} quantity={selections.quantity} />
+        <PriceDisplay pricing={pricing} quantity={selections.quantity} sheetBased={product.configurator.quantity.sheetBased} />
       </div>
 
       {/* Add to cart — hidden on mobile (sticky bar handles it) */}

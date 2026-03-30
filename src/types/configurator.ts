@@ -43,6 +43,8 @@ export interface VariantConfig {
 export interface SizeConfig {
   label: string;
   options: string[];
+  /** Unidades por hoja para cada opción — para productos con precios por hojas */
+  unitsPerSheet?: Record<string, number>;
 }
 
 // ============================================================================
@@ -92,6 +94,11 @@ export interface PricingTier {
 export interface QuantityConfig {
   min: number;
   tiers: PricingTier[];
+  /**
+   * Si true, los tramos se miden en HOJAS (from = hojas, price = precio total por esas hojas).
+   * El cliente elige cuántas hojas quiere; las unidades se calculan según unitsPerSheet del tamaño.
+   */
+  sheetBased?: boolean;
   /** Precios distintos por opción de variante: clave = VariantOption.id */
   variantPricing?: Record<string, PricingTier[]>;
   /** Precios distintos por tamaño: clave = size string */
