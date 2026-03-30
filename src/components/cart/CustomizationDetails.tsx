@@ -10,16 +10,32 @@ export default function CustomizationDetails({ customization }: Props) {
 
   const lines: { label: string; value: string }[] = [];
 
-  if (customization.variantLabel) {
-    lines.push({ label: customization.variantLabel || 'Variante', value: customization.variantLabel });
-  } else if (customization.variant) {
-    lines.push({ label: 'Variante', value: String(customization.variant) });
+  // New format: option_<groupId>_label fields
+  const optionKeys = Object.keys(customization).filter((k) => k.startsWith('option_') && k.endsWith('_label'));
+  for (const key of optionKeys) {
+    const groupId = key.slice('option_'.length, -'_label'.length);
+    const label = groupId.charAt(0).toUpperCase() + groupId.slice(1);
+    const val = customization[key];
+    if (val) lines.push({ label, value: String(val) });
   }
 
-  if (customization.size) {
-    lines.push({ label: 'Tamaño', value: String(customization.size) });
+  // Legacy: variantLabel / variant / size
+  if (optionKeys.length === 0) {
+    if (customization.selectedVariantLabel || customization.variantLabel) {
+      lines.push({ label: 'Variante', value: String(customization.selectedVariantLabel || customization.variantLabel) });
+    }
+    if (customization.selectedSize || customization.size) {
+      lines.push({ label: 'Tamaño', value: String(customization.selectedSize || customization.size) });
+    }
   }
 
+  // Sheets info
+  if (customization.sheets) {
+    const sheetsNum = Number(customization.sheets);
+    lines.push({ label: 'Hojas', value: `${sheetsNum} ${sheetsNum === 1 ? 'hoja' : 'hojas'}` });
+  }
+
+  // Placement
   if (customization.placementLabel || customization.placement) {
     const val = [customization.placementLabel || customization.placement, customization.placementSize]
       .filter(Boolean)
@@ -27,6 +43,7 @@ export default function CustomizationDetails({ customization }: Props) {
     lines.push({ label: 'Posición', value: val as string });
   }
 
+  // Design
   if (customization.designMode === 'ready' && customization.designFileName) {
     lines.push({ label: 'Diseño', value: String(customization.designFileName) });
   } else if (customization.designMode === 'need-design') {
@@ -37,8 +54,7 @@ export default function CustomizationDetails({ customization }: Props) {
     lines.push({ label: 'Notas', value: String(customization.designNotes) });
   }
 
-  const designFileUrl: string | undefined =
-    customization.designFileUrl as string | undefined;
+  const designFileUrl: string | undefined = customization.designFileUrl as string | undefined;
 
   if (lines.length === 0 && !designFileUrl) return null;
 
