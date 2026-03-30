@@ -1,50 +1,46 @@
 // src/types/configurator.ts
 /**
  * Product Configurator — schema y tipos para el configurador paso a paso.
+ * Arquitectura Shopify-style: N grupos de opciones con pricing matricial.
  */
 
 // ============================================================================
 // STEPS
 // ============================================================================
 
+/**
+ * IDs de paso. Los pasos de opciones son dinámicos: 'option:<groupId>'
+ * Ej: 'option:material', 'option:color', 'option:shape'
+ */
 export type ConfiguratorStepId =
-  | 'variant'
-  | 'size'
+  | `option:${string}`
   | 'design'
   | 'placement'
   | 'quantity'
   | 'summary';
 
 // ============================================================================
-// VARIANT CONFIG
+// OPTION GROUPS (reemplaza VariantConfig + SizeConfig)
 // ============================================================================
 
-export type VariantDisplayType = 'color' | 'image' | 'text';
+export type OptionDisplayType = 'color' | 'image' | 'text';
 
-export interface VariantOption {
+export interface OptionValue {
   id: string;
   label: string;
-  /** hex si type="color", url si type="image", texto descriptivo si type="text" */
+  /** hex si type="color" | URL si type="image" | texto descriptivo si type="text" */
   value: string;
-  /** Imagen de preview del producto en esta variante */
+  /** Imagen del producto cuando esta opción está seleccionada */
   previewImage?: string;
+  /** Unidades por hoja — sólo para products sheetBased */
+  unitsPerSheet?: number;
 }
 
-export interface VariantConfig {
-  label: string;
-  type: VariantDisplayType;
-  options: VariantOption[];
-}
-
-// ============================================================================
-// SIZE CONFIG
-// ============================================================================
-
-export interface SizeConfig {
-  label: string;
-  options: string[];
-  /** Unidades por hoja para cada opción — para productos con precios por hojas */
-  unitsPerSheet?: Record<string, number>;
+export interface OptionGroup {
+  id: string;           // ej: 'material', 'color', 'shape', 'size'
+  label: string;        // ej: 'Material', 'Color', 'Forma', 'Talla'
+  type: OptionDisplayType;
+  values: OptionValue[];
 }
 
 // ============================================================================
@@ -60,20 +56,18 @@ export interface DesignConfig {
 }
 
 // ============================================================================
-// PLACEMENT CONFIG (posición del diseño en textiles)
+// PLACEMENT CONFIG
 // ============================================================================
 
 export interface PlacementOption {
   id: string;
   label: string;
-  /** Emoji o icono corto que representa la posición */
   icon?: string;
 }
 
 export interface PlacementConfig {
   label: string;
   options: PlacementOption[];
-  /** Si true, el cliente también elige tamaño del estampado */
   allowSize: boolean;
   sizeOptions: string[];
 }
@@ -85,9 +79,7 @@ export interface PlacementConfig {
 export interface PricingTier {
   from: number;
   price: number;
-  /** Etiqueta visible (ej: "Inicio", "Popular", "Mayorista") */
   label?: string;
-  /** Marca este tramo como recomendado */
   recommended?: boolean;
 }
 
@@ -95,14 +87,25 @@ export interface QuantityConfig {
   min: number;
   tiers: PricingTier[];
   /**
-   * Si true, los tramos se miden en HOJAS (from = hojas, price = precio total por esas hojas).
-   * El cliente elige cuántas hojas quiere; las unidades se calculan según unitsPerSheet del tamaño.
+   * Si true, los tramos se miden en HOJAS (from = hojas, price = precio total
+   * por esas hojas). Las unidades se calculan con OptionValue.unitsPerSheet
+   * del valor seleccionado en el grupo de opciones correspondiente.
    */
   sheetBased?: boolean;
-  /** Precios distintos por opción de variante: clave = VariantOption.id */
-  variantPricing?: Record<string, PricingTier[]>;
-  /** Precios distintos por tamaño: clave = size string */
-  sizePricing?: Record<string, PricingTier[]>;
+  /**
+   * Pricing por combinación de valores seleccionados.
+   * Clave = IDs de valores unidos con "+" en el orden de los OptionGroups.
+   *
+   * Ejemplos de claves:
+   *   "vinilo-mate"                   → sólo por material (independiente de forma)
+   *   "vinilo-mate+circular-3-8cm"    → combinación exacta material + forma
+   *
+   * Prioridad de búsqueda:
+   *   1. Combinación completa (todos los grupos seleccionados)
+   *   2. Cada valor individual, en orden de grupos (primero tiene prioridad)
+   *   3. Tramos por defecto (tiers)
+   */
+  combinationPricing?: Record<string, PricingTier[]>;
 }
 
 // ============================================================================
@@ -111,8 +114,8 @@ export interface QuantityConfig {
 
 export interface ProductConfigurator {
   steps: ConfiguratorStepId[];
-  variant?: VariantConfig;
-  size?: SizeConfig;
+  /** Grupos de opciones — cada uno genera un paso 'option:<id>' */
+  options?: OptionGroup[];
   design: DesignConfig;
   placement?: PlacementConfig;
   quantity: QuantityConfig;
@@ -125,8 +128,8 @@ export interface ProductConfigurator {
 export type DesignMode = 'ready' | 'need-design' | null;
 
 export interface ConfiguratorSelections {
-  variant?: string;
-  size?: string;
+  /** Valor seleccionado por grupo: { groupId: valueId } */
+  options: Record<string, string>;
   designMode: DesignMode;
   designFile?: File;
   referenceFiles?: File[];

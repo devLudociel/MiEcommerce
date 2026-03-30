@@ -1,25 +1,41 @@
 import React, { useCallback } from 'react';
 import { Star } from 'lucide-react';
-import type { QuantityConfig, PricingTier } from '../../../types/configurator';
+import type { QuantityConfig, PricingTier, OptionGroup } from '../../../types/configurator';
 
 interface StepQuantityProps {
   config: QuantityConfig;
   quantity: number;
-  selectedVariant?: string;
-  selectedSize?: string;
-  /** Unidades por hoja para el tamaño seleccionado (sólo cuando config.sheetBased) */
+  optionGroups?: OptionGroup[];
+  selectedOptions?: Record<string, string>;
+  /** Unidades por hoja resueltas del valor de opción seleccionado */
   unitsPerSheet?: number;
   onQuantityChange: (qty: number) => void;
 }
 
-function getActiveTiers(config: QuantityConfig, selectedVariant?: string, selectedSize?: string): PricingTier[] {
-  if (selectedVariant && config.variantPricing?.[selectedVariant]?.length) {
-    return config.variantPricing[selectedVariant];
+function getActiveTiers(
+  config: QuantityConfig,
+  optionGroups: OptionGroup[] = [],
+  selectedOptions: Record<string, string> = {}
+): PricingTier[] {
+  const { combinationPricing, tiers } = config;
+  if (!combinationPricing) return tiers;
+
+  // 1. Full combination key (all selected values in group order)
+  const valueIds = optionGroups
+    .map((g) => selectedOptions[g.id])
+    .filter((id): id is string => !!id);
+
+  if (valueIds.length > 1) {
+    const fullKey = valueIds.join('+');
+    if (combinationPricing[fullKey]?.length) return combinationPricing[fullKey];
   }
-  if (selectedSize && config.sizePricing?.[selectedSize]?.length) {
-    return config.sizePricing[selectedSize];
+
+  // 2. Each individual value (first group has priority)
+  for (const id of valueIds) {
+    if (combinationPricing[id]?.length) return combinationPricing[id];
   }
-  return config.tiers;
+
+  return tiers;
 }
 
 function getTierForQuantity(tiers: PricingTier[], qty: number): PricingTier {
@@ -190,12 +206,12 @@ function TierCardSheet({
 export default function StepQuantity({
   config,
   quantity,
-  selectedVariant,
-  selectedSize,
+  optionGroups,
+  selectedOptions,
   unitsPerSheet,
   onQuantityChange,
 }: StepQuantityProps) {
-  const tiers = getActiveTiers(config, selectedVariant, selectedSize);
+  const tiers = getActiveTiers(config, optionGroups, selectedOptions);
   const currentTier = getTierForQuantity(tiers, quantity);
   const basePrice = tiers[0]?.price ?? 0;
   const isSheetBased = !!config.sheetBased;

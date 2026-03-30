@@ -12,14 +12,16 @@ import type {
   ConfiguratorStepId,
   ConfiguratorSelections,
   ConfiguratorPricing,
+  OptionGroup,
+  OptionValue,
   PricingTier,
   DesignMode,
+  ProductConfigurator,
 } from '../../types/configurator';
 
 import StepProgress from './ui/StepProgress';
 import PriceDisplay from './ui/PriceDisplay';
-import StepVariant from './steps/StepVariant';
-import StepSize from './steps/StepSize';
+import StepOption from './steps/StepOption';
 import StepDesign from './steps/StepDesign';
 import StepPlacement from './steps/StepPlacement';
 import StepQuantity from './steps/StepQuantity';
@@ -30,56 +32,161 @@ interface ProductConfiguratorProps {
 }
 
 // ============================================================================
+// MIGRATION — converts old variant/size format to new options format
+// ============================================================================
+
+function migrateConfigurator(cfg: any): ProductConfigurator {
+  if (Array.isArray(cfg.options)) return cfg as ProductConfigurator;
+
+  const options: OptionGroup[] = [];
+  const newSteps: ConfiguratorStepId[] = [];
+
+  for (const step of (cfg.steps as string[])) {
+    if (step === 'variant' && cfg.variant) {
+      options.push({
+        id: 'variant',
+        label: cfg.variant.label,
+        type: cfg.variant.type,
+        values: cfg.variant.options.map((o: any) => ({
+          id: o.id,
+          label: o.label,
+          value: o.value,
+          previewImage: o.previewImage || undefined,
+        })),
+      });
+      newSteps.push('option:variant');
+    } else if (step === 'size' && cfg.size) {
+      options.push({
+        id: 'size',
+        label: cfg.size.label,
+        type: 'text',
+        values: cfg.size.options.map((s: string) => ({
+          id: s,
+          label: s,
+          value: s,
+          unitsPerSheet: cfg.size.unitsPerSheet?.[s],
+        })),
+      });
+      newSteps.push('option:size');
+    } else {
+      newSteps.push(step as ConfiguratorStepId);
+    }
+  }
+
+  // Migrate variantPricing + sizePricing → combinationPricing
+  const combinationPricing: Record<string, PricingTier[]> = {};
+  if (cfg.quantity?.variantPricing) {
+    for (const [key, tiers] of Object.entries(cfg.quantity.variantPricing)) {
+      combinationPricing[key] = tiers as PricingTier[];
+    }
+  }
+  if (cfg.quantity?.sizePricing) {
+    for (const [key, tiers] of Object.entries(cfg.quantity.sizePricing)) {
+      combinationPricing[key] = tiers as PricingTier[];
+    }
+  }
+
+  return {
+    steps: newSteps,
+    options: options.length ? options : undefined,
+    design: cfg.design,
+    placement: cfg.placement,
+    quantity: {
+      min: cfg.quantity.min,
+      tiers: cfg.quantity.tiers,
+      sheetBased: cfg.quantity.sheetBased,
+      combinationPricing: Object.keys(combinationPricing).length ? combinationPricing : undefined,
+    },
+  };
+}
+
+// ============================================================================
 // PRICING HELPERS
 // ============================================================================
 
-function getTierPrice(tiers: PricingTier[], qty: number): number {
-  if (tiers.length === 0) return 0;
-  let match: PricingTier = tiers[0];
-  for (const tier of tiers) {
-    if (qty >= tier.from) match = tier;
+function getActiveTiers(
+  product: ConfigurableProduct,
+  selections: ConfiguratorSelections
+): PricingTier[] {
+  const { combinationPricing, tiers } = product.configurator.quantity;
+  const optionGroups = product.configurator.options ?? [];
+  if (!combinationPricing) return tiers;
+
+  const valueIds = optionGroups
+    .map((g) => selections.options[g.id])
+    .filter((id): id is string => !!id);
+
+  if (valueIds.length > 1) {
+    const fullKey = valueIds.join('+');
+    if (combinationPricing[fullKey]?.length) return combinationPricing[fullKey];
   }
-  return match.price;
+
+  for (const id of valueIds) {
+    if (combinationPricing[id]?.length) return combinationPricing[id];
+  }
+
+  return tiers;
 }
 
-function getActiveTiers(product: ConfigurableProduct, selections: ConfiguratorSelections) {
-  const { variantPricing, sizePricing, tiers } = product.configurator.quantity;
-  if (selections.variant && variantPricing?.[selections.variant]?.length) {
-    return variantPricing[selections.variant];
+function getUnitsPerSheet(
+  optionGroups: OptionGroup[],
+  selectedOptions: Record<string, string>
+): number | undefined {
+  for (const group of optionGroups) {
+    const valueId = selectedOptions[group.id];
+    if (valueId) {
+      const val = group.values.find((v) => v.id === valueId);
+      if (val?.unitsPerSheet) return val.unitsPerSheet;
+    }
   }
-  if (selections.size && sizePricing?.[selections.size]?.length) {
-    return sizePricing[selections.size];
+  return undefined;
+}
+
+function getPreviewImage(
+  optionGroups: OptionGroup[],
+  selectedOptions: Record<string, string>,
+  fallback: string | undefined
+): string | undefined {
+  for (const group of optionGroups) {
+    const valueId = selectedOptions[group.id];
+    if (valueId) {
+      const val = group.values.find((v) => v.id === valueId);
+      if (val?.previewImage) return val.previewImage;
+      if (group.type === 'image' && val?.value) return val.value;
+    }
   }
-  return tiers;
+  return fallback;
 }
 
 function calculatePricing(
   product: ConfigurableProduct,
   selections: ConfiguratorSelections
 ): ConfiguratorPricing {
-  const tiers = getActiveTiers(product, selections);
+  const activeTiers = getActiveTiers(product, selections);
+  const { sheetBased } = product.configurator.quantity;
   const designPrice =
     selections.designMode === 'need-design'
       ? product.configurator.design.designServicePrice
       : 0;
 
-  if (product.configurator.quantity.sheetBased) {
-    // tier.price = total price for tier.from sheets
-    const tier = (() => {
-      let match = tiers[0];
-      for (const t of tiers) { if (selections.quantity >= t.from) match = t; }
-      return match;
-    })();
-    const subtotal = tier?.price ?? 0;
+  if (sheetBased) {
+    let match = activeTiers[0];
+    for (const t of activeTiers) {
+      if (selections.quantity >= t.from) match = t;
+    }
+    const subtotal = match?.price ?? 0;
     return {
-      unitPrice: tier ? tier.price / Math.max(tier.from, 1) : 0,
+      unitPrice: match ? match.price / Math.max(match.from, 1) : 0,
       designPrice,
       subtotal,
       total: subtotal + designPrice,
     };
   }
 
-  const unitPrice = getTierPrice(tiers, selections.quantity);
+  let unitPrice = activeTiers[0]?.price ?? 0;
+  for (const t of activeTiers) {
+    if (selections.quantity >= t.from) unitPrice = t.price;
+  }
   const subtotal = unitPrice * selections.quantity;
   return { unitPrice, designPrice, subtotal, total: subtotal + designPrice };
 }
@@ -93,21 +200,19 @@ function isStepValid(
   product: ConfigurableProduct,
   selections: ConfiguratorSelections
 ): boolean {
+  if (stepId.startsWith('option:')) {
+    const groupId = stepId.slice(7);
+    return !!selections.options[groupId];
+  }
   switch (stepId) {
-    case 'variant':
-      return !!selections.variant;
-    case 'size':
-      return !!selections.size;
     case 'design':
       if (selections.designMode === 'ready') return !!selections.designFile;
       if (selections.designMode === 'need-design') return true;
       return false;
     case 'placement': {
       if (!selections.placement) return false;
-      const placementCfg = product.configurator.placement;
-      if (placementCfg?.allowSize && placementCfg.sizeOptions.length > 0) {
-        return !!selections.placementSize;
-      }
+      const cfg = product.configurator.placement;
+      if (cfg?.allowSize && cfg.sizeOptions.length > 0) return !!selections.placementSize;
       return true;
     }
     case 'quantity':
@@ -132,11 +237,11 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
   const [addedToCart, setAddedToCart] = useState(false);
 
   const [selections, setSelections] = useState<ConfiguratorSelections>({
+    options: {},
     designMode: null,
     quantity: 1,
   });
 
-  // Fetch product from Firebase
   useEffect(() => {
     let cancelled = false;
 
@@ -152,19 +257,18 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
 
         const data = snap.data();
 
-        // Load configurator: either inline (legacy) or from product_configurators collection
-        let configurator = data.configurator;
-        if (!configurator && data.configuratorId) {
+        let configuratorRaw = data.configurator;
+        if (!configuratorRaw && data.configuratorId) {
           const cfgSnap = await getDoc(doc(db, 'product_configurators', data.configuratorId));
-          if (cfgSnap.exists()) {
-            configurator = cfgSnap.data().configurator;
-          }
+          if (cfgSnap.exists()) configuratorRaw = cfgSnap.data().configurator;
         }
 
-        if (!configurator) {
+        if (!configuratorRaw) {
           if (!cancelled) setError('Este producto no tiene configurador');
           return;
         }
+
+        const configurator = migrateConfigurator(configuratorRaw);
 
         if (!cancelled) {
           const p: ConfigurableProduct = {
@@ -177,7 +281,7 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
             configurator,
           };
           setProduct(p);
-          setSelections((prev: ConfiguratorSelections) => ({
+          setSelections((prev) => ({
             ...prev,
             quantity: configurator.quantity.min,
           }));
@@ -191,14 +295,13 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
     }
 
     fetchProduct();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [productId]);
 
-  // Derived state
   const steps = product?.configurator.steps ?? [];
   const currentStepId = steps[currentStep] as ConfiguratorStepId | undefined;
+  const optionGroups = product?.configurator.options ?? [];
+
   const pricing = useMemo(
     () => (product ? calculatePricing(product, selections) : null),
     [product, selections]
@@ -207,39 +310,30 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
   const canGoNext = currentStepId
     ? isStepValid(currentStepId, product!, selections)
     : false;
-
   const isLastStep = currentStep === steps.length - 1;
 
-  // Navigation
   const goNext = useCallback(() => {
-    if (canGoNext && !isLastStep) setCurrentStep((s: number) => s + 1);
+    if (canGoNext && !isLastStep) setCurrentStep((s) => s + 1);
   }, [canGoNext, isLastStep]);
 
   const goBack = useCallback(() => {
-    if (currentStep > 0) setCurrentStep((s: number) => s - 1);
+    if (currentStep > 0) setCurrentStep((s) => s - 1);
   }, [currentStep]);
 
   const goToStep = useCallback(
-    (index: number) => {
-      if (index < currentStep) setCurrentStep(index);
-    },
+    (index: number) => { if (index < currentStep) setCurrentStep(index); },
     [currentStep]
   );
 
   // Selection handlers
-  const setVariant = useCallback((id: string) => {
-    setSelections((prev: ConfiguratorSelections) => ({ ...prev, variant: id }));
-  }, []);
-
-  const setSize = useCallback((size: string) => {
-    setSelections((prev: ConfiguratorSelections) => ({ ...prev, size }));
+  const setOption = useCallback((groupId: string, valueId: string) => {
+    setSelections((prev) => ({ ...prev, options: { ...prev.options, [groupId]: valueId } }));
   }, []);
 
   const setDesignMode = useCallback((mode: DesignMode) => {
-    setSelections((prev: ConfiguratorSelections) => ({
+    setSelections((prev) => ({
       ...prev,
       designMode: mode,
-      // Clear file when switching modes
       designFile: mode === 'ready' ? prev.designFile : undefined,
       referenceFiles: mode === 'need-design' ? prev.referenceFiles : undefined,
       designNotes: mode === 'need-design' ? prev.designNotes : undefined,
@@ -247,27 +341,27 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
   }, []);
 
   const setDesignFile = useCallback((file: File | undefined) => {
-    setSelections((prev: ConfiguratorSelections) => ({ ...prev, designFile: file }));
+    setSelections((prev) => ({ ...prev, designFile: file }));
   }, []);
 
   const setReferenceFiles = useCallback((files: File[]) => {
-    setSelections((prev: ConfiguratorSelections) => ({ ...prev, referenceFiles: files }));
+    setSelections((prev) => ({ ...prev, referenceFiles: files }));
   }, []);
 
   const setDesignNotes = useCallback((notes: string) => {
-    setSelections((prev: ConfiguratorSelections) => ({ ...prev, designNotes: notes }));
+    setSelections((prev) => ({ ...prev, designNotes: notes }));
   }, []);
 
   const setPlacement = useCallback((placement: string) => {
-    setSelections((prev: ConfiguratorSelections) => ({ ...prev, placement, placementSize: undefined }));
+    setSelections((prev) => ({ ...prev, placement, placementSize: undefined }));
   }, []);
 
   const setPlacementSize = useCallback((placementSize: string) => {
-    setSelections((prev: ConfiguratorSelections) => ({ ...prev, placementSize }));
+    setSelections((prev) => ({ ...prev, placementSize }));
   }, []);
 
   const setQuantity = useCallback((quantity: number) => {
-    setSelections((prev: ConfiguratorSelections) => ({ ...prev, quantity }));
+    setSelections((prev) => ({ ...prev, quantity }));
   }, []);
 
   // Add to cart
@@ -276,36 +370,33 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
     setIsAddingToCart(true);
 
     try {
-      // Upload design file if present
       let uploadedDesignUrl: string | undefined;
       if (selections.designMode === 'ready' && selections.designFile) {
         const uid = getAuth().currentUser?.uid;
         const timestamp = Date.now();
         const fileName = `${timestamp}_${selections.designFile.name}`;
-
-        // Authenticated users → their private folder; guests → public temp folder
         const path = uid
           ? `personalizaciones/${uid}/${product.slug || product.id}/${fileName}`
           : `configurator-uploads/${product.id}/${fileName}`;
-
         const fileRef = storageRef(storage, path);
         await uploadBytes(fileRef, selections.designFile);
         uploadedDesignUrl = await getDownloadURL(fileRef);
       }
 
-      // Build customization data for the cart
       const customization: Record<string, unknown> = {
         configuratorId: product.id,
       };
 
-      if (selections.variant) {
-        const opt = product.configurator.variant?.options.find((o) => o.id === selections.variant);
-        customization.selectedVariant = selections.variant;
-        customization.selectedVariantLabel = opt?.label;
+      // All selected options
+      for (const group of optionGroups) {
+        const valueId = selections.options[group.id];
+        if (valueId) {
+          const val = group.values.find((v) => v.id === valueId);
+          customization[`option_${group.id}`] = valueId;
+          customization[`option_${group.id}_label`] = val?.label;
+        }
       }
-      if (selections.size) {
-        customization.selectedSize = selections.size;
-      }
+
       if (selections.designMode === 'ready') {
         customization.designMode = 'ready';
         customization.uploadedImage = uploadedDesignUrl || null;
@@ -321,17 +412,14 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
         );
         customization.placement = selections.placement;
         customization.placementLabel = placementOpt?.label;
-        if (selections.placementSize) {
-          customization.placementSize = selections.placementSize;
-        }
+        if (selections.placementSize) customization.placementSize = selections.placementSize;
       }
 
+      // Quantity: for sheetBased, store sheets and convert to units for cart
       const isSheetBased = product.configurator.quantity.sheetBased;
-      const unitsPerSheetForSize = product.configurator.size?.unitsPerSheet?.[selections.size ?? ''];
+      const unitsPerSheet = getUnitsPerSheet(optionGroups, selections.options);
       const cartQuantity =
-        isSheetBased && unitsPerSheetForSize
-          ? selections.quantity * unitsPerSheetForSize
-          : selections.quantity;
+        isSheetBased && unitsPerSheet ? selections.quantity * unitsPerSheet : selections.quantity;
       if (isSheetBased) customization.sheets = selections.quantity;
 
       addToCart({
@@ -346,7 +434,7 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
       setAddedToCart(true);
       logger.info('[Configurator] Added to cart', {
         productId: product.id,
-        quantity: selections.quantity,
+        quantity: cartQuantity,
         total: pricing.total,
       });
     } catch (err) {
@@ -355,7 +443,7 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
     } finally {
       setIsAddingToCart(false);
     }
-  }, [product, pricing, selections]);
+  }, [product, pricing, selections, optionGroups]);
 
   // ============================================================================
   // RENDER
@@ -374,15 +462,19 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
         <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
         <h2 className="text-xl font-bold text-gray-900 mb-2">{error || 'Producto no disponible'}</h2>
-        <p className="text-gray-500 mb-6">No pudimos cargar este producto. Comprueba el enlace o vuelve a intentarlo.</p>
-        <a href="/" className="text-indigo-600 font-medium hover:underline">
-          Volver al inicio
-        </a>
+        <p className="text-gray-500 mb-6">No pudimos cargar este producto.</p>
+        <a href="/" className="text-indigo-600 font-medium hover:underline">Volver al inicio</a>
       </div>
     );
   }
 
   if (addedToCart) {
+    const isSheetBased = product.configurator.quantity.sheetBased;
+    const uph = getUnitsPerSheet(optionGroups, selections.options);
+    const qtyLabel = isSheetBased
+      ? `${selections.quantity} ${selections.quantity === 1 ? 'hoja' : 'hojas'}${uph ? ` (${selections.quantity * uph} uds.)` : ''}`
+      : String(selections.quantity);
+
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -391,28 +483,12 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
           </svg>
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Producto añadido al carrito</h2>
-        <p className="text-gray-500 mb-8">
-          {product.name} &times; {(() => {
-            const isSheetBased = product.configurator.quantity.sheetBased;
-            const uph = product.configurator.size?.unitsPerSheet?.[selections.size ?? ''];
-            if (isSheetBased) {
-              const totalUnits = uph ? selections.quantity * uph : undefined;
-              return `${selections.quantity} ${selections.quantity === 1 ? 'hoja' : 'hojas'}${totalUnits ? ` (${totalUnits} uds.)` : ''}`;
-            }
-            return selections.quantity;
-          })()}
-        </p>
+        <p className="text-gray-500 mb-8">{product.name} &times; {qtyLabel}</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <a
-            href="/cart"
-            className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
-          >
+          <a href="/cart" className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors">
             Ver carrito
           </a>
-          <a
-            href="/"
-            className="px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
-          >
+          <a href="/" className="px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors">
             Seguir comprando
           </a>
         </div>
@@ -420,14 +496,9 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
     );
   }
 
-  // Get preview image — variant-specific if available
-  const variantOption = selections.variant
-    ? product.configurator.variant?.options.find((o) => o.id === selections.variant)
-    : undefined;
-  const previewImage =
-    variantOption?.previewImage ||
-    (product.configurator.variant?.type === 'image' ? variantOption?.value : undefined) ||
-    product.images[0];
+  const previewImage = getPreviewImage(optionGroups, selections.options, product.images[0]);
+  const unitsPerSheet = getUnitsPerSheet(optionGroups, selections.options);
+  const isSheetBased = product.configurator.quantity.sheetBased;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-2 sm:py-8 overflow-x-hidden">
@@ -445,29 +516,32 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
 
       {/* Step progress */}
       <div className="mb-3">
-        <StepProgress steps={steps} currentStep={currentStep} onStepClick={goToStep} />
+        <StepProgress
+          steps={steps}
+          currentStep={currentStep}
+          optionGroups={optionGroups}
+          onStepClick={goToStep}
+        />
       </div>
 
-      {/* Content area — block on mobile, grid on desktop */}
+      {/* Content: block on mobile, grid on desktop */}
       <div className="lg:grid lg:grid-cols-5 lg:gap-8">
-        {/* Left: step content */}
+        {/* Step content */}
         <div className="lg:col-span-3 pb-[80px] sm:pb-0 min-w-0">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-7">
-            {currentStepId === 'variant' && product.configurator.variant && (
-              <StepVariant
-                config={product.configurator.variant}
-                selected={selections.variant}
-                onSelect={setVariant}
-              />
-            )}
 
-            {currentStepId === 'size' && product.configurator.size && (
-              <StepSize
-                config={product.configurator.size}
-                selected={selections.size}
-                onSelect={setSize}
-              />
-            )}
+            {/* Option group steps */}
+            {currentStepId?.startsWith('option:') && (() => {
+              const groupId = currentStepId.slice(7);
+              const group = optionGroups.find((g) => g.id === groupId);
+              return group ? (
+                <StepOption
+                  group={group}
+                  selected={selections.options[groupId]}
+                  onSelect={(valueId) => setOption(groupId, valueId)}
+                />
+              ) : null;
+            })()}
 
             {currentStepId === 'design' && (
               <StepDesign
@@ -497,9 +571,9 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
               <StepQuantity
                 config={product.configurator.quantity}
                 quantity={selections.quantity}
-                selectedVariant={selections.variant}
-                selectedSize={selections.size}
-                unitsPerSheet={product.configurator.size?.unitsPerSheet?.[selections.size ?? '']}
+                optionGroups={optionGroups}
+                selectedOptions={selections.options}
+                unitsPerSheet={unitsPerSheet}
                 onQuantityChange={setQuantity}
               />
             )}
@@ -515,34 +589,23 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
             )}
           </div>
 
-          {/* Desktop navigation buttons — hidden on mobile, shown from sm up */}
+          {/* Desktop nav buttons */}
           {currentStepId !== 'summary' && (
             <div className="hidden sm:flex justify-between mt-6">
               <button
                 type="button"
                 onClick={goBack}
                 disabled={currentStep === 0}
-                className="
-                  flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium
-                  text-gray-600 bg-white border border-gray-200 hover:bg-gray-50
-                  disabled:opacity-0 disabled:pointer-events-none
-                  transition-all
-                "
+                className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-0 disabled:pointer-events-none transition-all"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Anterior
               </button>
-
               <button
                 type="button"
                 onClick={goNext}
                 disabled={!canGoNext}
-                className="
-                  flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold
-                  bg-indigo-600 text-white hover:bg-indigo-700
-                  disabled:opacity-40 disabled:cursor-not-allowed
-                  transition-colors shadow-sm
-                "
+                className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
               >
                 Siguiente
                 <ArrowRight className="w-4 h-4" />
@@ -550,17 +613,9 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
             </div>
           )}
 
-          {/* Mobile sticky bottom bar — visible only on mobile */}
-          <div
-            className="
-              sm:hidden
-              fixed bottom-0 left-0 right-0 z-30
-              bg-white border-t border-gray-200 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]
-              px-4 py-3 flex items-center gap-3
-            "
-          >
+          {/* Mobile sticky bottom bar */}
+          <div className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] px-4 py-3 flex items-center gap-3">
             {currentStepId === 'summary' ? (
-              /* Summary step: same layout as other steps — price left, button right */
               <>
                 <div className="flex-1 min-w-0">
                   {pricing && (
@@ -572,15 +627,7 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
                     </>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={goBack}
-                  className="
-                    flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium
-                    text-gray-600 bg-white border border-gray-200 hover:bg-gray-50
-                    transition-all shrink-0
-                  "
-                >
+                <button type="button" onClick={goBack} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-all shrink-0">
                   <ArrowLeft className="w-4 h-4" />
                   Anterior
                 </button>
@@ -588,32 +635,19 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
                   type="button"
                   onClick={handleAddToCart}
                   disabled={isAddingToCart}
-                  className="
-                    flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold
-                    bg-indigo-600 text-white hover:bg-indigo-700
-                    disabled:opacity-40 disabled:cursor-not-allowed
-                    transition-colors shadow-sm shrink-0
-                  "
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 transition-colors shadow-sm shrink-0"
                 >
-                  {isAddingToCart ? (
-                    <Loader className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <ShoppingCart className="w-4 h-4" />
-                  )}
+                  {isAddingToCart ? <Loader className="w-4 h-4 animate-spin" /> : <ShoppingCart className="w-4 h-4" />}
                   Añadir
                 </button>
               </>
             ) : (
               <>
-                {/* Left: total price */}
                 <div className="flex-1 min-w-0">
                   {pricing ? (
                     <>
                       <p className="text-base font-bold text-gray-900 leading-tight">
-                        {pricing.total.toLocaleString('es-ES', {
-                          style: 'currency',
-                          currency: 'EUR',
-                        })}
+                        {pricing.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
                       </p>
                       <p className="text-xs text-gray-400 leading-tight">total</p>
                     </>
@@ -621,33 +655,20 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
                     <p className="text-xs text-gray-400">Calculando…</p>
                   )}
                 </div>
-
-                {/* Right: back + next buttons */}
                 <button
                   type="button"
                   onClick={goBack}
                   disabled={currentStep === 0}
-                  className="
-                    flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium
-                    text-gray-600 bg-white border border-gray-200 hover:bg-gray-50
-                    disabled:opacity-0 disabled:pointer-events-none
-                    transition-all shrink-0
-                  "
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-0 disabled:pointer-events-none transition-all shrink-0"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Anterior
                 </button>
-
                 <button
                   type="button"
                   onClick={goNext}
                   disabled={!canGoNext}
-                  className="
-                    flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold
-                    bg-indigo-600 text-white hover:bg-indigo-700
-                    disabled:opacity-40 disabled:cursor-not-allowed
-                    transition-colors shadow-sm shrink-0
-                  "
+                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 transition-colors shadow-sm shrink-0"
                 >
                   Siguiente
                   <ArrowRight className="w-4 h-4" />
@@ -657,9 +678,8 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
           </div>
         </div>
 
-        {/* Right: sidebar — preview + live pricing (hidden on mobile, shown from lg up) */}
+        {/* Sidebar — desktop only */}
         <div className="hidden lg:block lg:col-span-2 space-y-6">
-          {/* Product preview */}
           {previewImage && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
               <img
@@ -669,10 +689,8 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
               />
             </div>
           )}
-
-          {/* Live pricing (hidden on summary as it's shown inline) */}
           {pricing && currentStepId !== 'summary' && (
-            <PriceDisplay pricing={pricing} quantity={selections.quantity} sheetBased={product.configurator.quantity.sheetBased} />
+            <PriceDisplay pricing={pricing} quantity={selections.quantity} sheetBased={isSheetBased} />
           )}
         </div>
       </div>

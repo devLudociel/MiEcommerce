@@ -1,28 +1,39 @@
 import React from 'react';
 import { Check } from 'lucide-react';
-import type { ConfiguratorStepId } from '../../../types/configurator';
+import type { ConfiguratorStepId, OptionGroup } from '../../../types/configurator';
 
-const STEP_LABELS: Record<ConfiguratorStepId, string> = {
-  variant: 'Variante',
-  size: 'Tamaño',
+const FIXED_STEP_LABELS: Partial<Record<string, string>> = {
   design: 'Diseño',
   placement: 'Posición',
   quantity: 'Cantidad',
   summary: 'Resumen',
 };
 
+function getStepLabel(step: ConfiguratorStepId, optionGroups?: OptionGroup[]): string {
+  if (step.startsWith('option:')) {
+    const groupId = step.slice(7);
+    return optionGroups?.find((g) => g.id === groupId)?.label ?? groupId;
+  }
+  return FIXED_STEP_LABELS[step] ?? step;
+}
+
 interface StepProgressProps {
   steps: ConfiguratorStepId[];
   currentStep: number;
+  optionGroups?: OptionGroup[];
   onStepClick: (index: number) => void;
 }
 
-export default function StepProgress({ steps, currentStep, onStepClick }: StepProgressProps) {
+export default function StepProgress({
+  steps,
+  currentStep,
+  optionGroups,
+  onStepClick,
+}: StepProgressProps) {
   return (
     <nav aria-label="Progreso de configuración" className="w-full">
       {/* Mobile: slim progress bar + step info */}
       <div className="sm:hidden">
-        {/* slim progress bar */}
         <div className="h-1 bg-gray-100 rounded-full mb-2">
           <div
             className="h-1 bg-indigo-500 rounded-full transition-all duration-300"
@@ -31,11 +42,13 @@ export default function StepProgress({ steps, currentStep, onStepClick }: StepPr
         </div>
         <div className="flex items-center justify-between px-0.5">
           <span className="text-xs text-gray-400">Paso {currentStep + 1} de {steps.length}</span>
-          <span className="text-xs font-semibold text-indigo-600">{STEP_LABELS[steps[currentStep]]}</span>
+          <span className="text-xs font-semibold text-indigo-600">
+            {getStepLabel(steps[currentStep], optionGroups)}
+          </span>
         </div>
       </div>
 
-      {/* Desktop: full bar */}
+      {/* Desktop: full step bar */}
       <ol className="hidden sm:flex items-center w-full">
         {steps.map((step, index) => {
           const isCompleted = index < currentStep;
@@ -75,7 +88,9 @@ export default function StepProgress({ steps, currentStep, onStepClick }: StepPr
                 >
                   {isCompleted ? <Check className="w-4 h-4" /> : index + 1}
                 </span>
-                <span className="hidden lg:inline">{STEP_LABELS[step]}</span>
+                <span className="hidden lg:inline">
+                  {getStepLabel(step, optionGroups)}
+                </span>
               </button>
 
               {index < steps.length - 1 && (

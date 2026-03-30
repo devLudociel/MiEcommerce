@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingCart, Palette, Ruler, Upload, Hash, MapPin } from 'lucide-react';
+import { ShoppingCart, Upload, Hash, MapPin, Tag } from 'lucide-react';
 import type {
   ConfigurableProduct,
   ConfiguratorSelections,
@@ -22,28 +22,26 @@ export default function StepSummary({
   isAddingToCart,
   onAddToCart,
 }: StepSummaryProps) {
-  const variantOption = selections.variant
-    ? product.configurator.variant?.options.find((o) => o.id === selections.variant)
-    : undefined;
+  const optionGroups = product.configurator.options ?? [];
 
   const lines: { icon: React.ReactNode; label: string; value: string }[] = [];
 
-  if (variantOption) {
-    lines.push({
-      icon: <Palette className="w-4 h-4" />,
-      label: product.configurator.variant?.label || 'Variante',
-      value: variantOption.label,
-    });
+  // All selected option groups
+  for (const group of optionGroups) {
+    const valueId = selections.options[group.id];
+    if (valueId) {
+      const val = group.values.find((v) => v.id === valueId);
+      if (val) {
+        lines.push({
+          icon: <Tag className="w-4 h-4" />,
+          label: group.label,
+          value: val.label,
+        });
+      }
+    }
   }
 
-  if (selections.size) {
-    lines.push({
-      icon: <Ruler className="w-4 h-4" />,
-      label: product.configurator.size?.label || 'Tamaño',
-      value: selections.size,
-    });
-  }
-
+  // Placement
   if (selections.placement) {
     const placementOpt = product.configurator.placement?.options.find(
       (o) => o.id === selections.placement
@@ -62,6 +60,7 @@ export default function StepSummary({
     });
   }
 
+  // Design
   if (selections.designMode === 'ready' && selections.designFile) {
     lines.push({
       icon: <Upload className="w-4 h-4" />,
@@ -76,9 +75,20 @@ export default function StepSummary({
     });
   }
 
+  // Quantity
   const isSheetBased = product.configurator.quantity.sheetBased;
-  const unitsPerSheetForSize = product.configurator.size?.unitsPerSheet?.[selections.size ?? ''];
-  const totalUnits = isSheetBased && unitsPerSheetForSize ? selections.quantity * unitsPerSheetForSize : undefined;
+  const unitsPerSheet = (() => {
+    for (const group of optionGroups) {
+      const valueId = selections.options[group.id];
+      if (valueId) {
+        const val = group.values.find((v) => v.id === valueId);
+        if (val?.unitsPerSheet) return val.unitsPerSheet;
+      }
+    }
+    return undefined;
+  })();
+  const totalUnits = isSheetBased && unitsPerSheet ? selections.quantity * unitsPerSheet : undefined;
+
   lines.push({
     icon: <Hash className="w-4 h-4" />,
     label: 'Cantidad',
@@ -115,7 +125,9 @@ export default function StepSummary({
           <div key={i} className="flex items-center gap-2 px-3 py-2.5 min-w-0">
             <span className="text-gray-400 shrink-0">{line.icon}</span>
             <span className="text-sm text-gray-500 shrink-0">{line.label}</span>
-            <span className="ml-auto text-sm font-medium text-gray-900 text-right truncate max-w-[55%]">{line.value}</span>
+            <span className="ml-auto text-sm font-medium text-gray-900 text-right truncate max-w-[55%]">
+              {line.value}
+            </span>
           </div>
         ))}
       </div>
@@ -129,25 +141,29 @@ export default function StepSummary({
       )}
 
       {/* Reference files */}
-      {selections.designMode === 'need-design' && selections.referenceFiles && selections.referenceFiles.length > 0 && (
-        <div className="bg-gray-50 rounded-xl p-3">
-          <p className="text-sm font-semibold text-gray-700 mb-1">
-            Archivos de referencia ({selections.referenceFiles.length})
-          </p>
-          <ul className="space-y-0.5">
-            {selections.referenceFiles.map((f, i) => (
-              <li key={i} className="text-sm text-gray-600 truncate">{f.name}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {selections.designMode === 'need-design' &&
+        selections.referenceFiles &&
+        selections.referenceFiles.length > 0 && (
+          <div className="bg-gray-50 rounded-xl p-3">
+            <p className="text-sm font-semibold text-gray-700 mb-1">
+              Archivos de referencia ({selections.referenceFiles.length})
+            </p>
+            <ul className="space-y-0.5">
+              {selections.referenceFiles.map((f, i) => (
+                <li key={i} className="text-sm text-gray-600 truncate">
+                  {f.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-      {/* Pricing — hidden on mobile (shown in sticky bar) */}
+      {/* Pricing — hidden on mobile */}
       <div className="hidden sm:block">
-        <PriceDisplay pricing={pricing} quantity={selections.quantity} sheetBased={product.configurator.quantity.sheetBased} />
+        <PriceDisplay pricing={pricing} quantity={selections.quantity} sheetBased={isSheetBased} />
       </div>
 
-      {/* Add to cart — hidden on mobile (sticky bar handles it) */}
+      {/* Add to cart — hidden on mobile */}
       <button
         type="button"
         onClick={onAddToCart}
