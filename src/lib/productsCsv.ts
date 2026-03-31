@@ -33,6 +33,8 @@ export interface CsvProduct {
   allowBackorder?: boolean;
   metaTitle?: string;
   metaDescription?: string;
+  occasions?: string[];
+  configuratorTemplate?: string;
 }
 
 export interface ImportResult {
@@ -70,6 +72,8 @@ const CSV_HEADERS = [
   'allowBackorder',
   'metaTitle',
   'metaDescription',
+  'occasions',
+  'configuratorTemplate',
 ];
 
 const LEGACY_CATEGORIES = [
@@ -134,6 +138,8 @@ export function exportProductsToCsv(products: CsvProduct[]): string {
       product.allowBackorder ? 'true' : 'false',
       escapeCSV(product.metaTitle || ''),
       escapeCSV(product.metaDescription || ''),
+      escapeCSV((product.occasions || []).join('|')),
+      escapeCSV(product.configuratorTemplate || ''),
     ];
     rows.push(row.join(','));
   }
@@ -360,6 +366,16 @@ function parseProductRow(
   const metaDescription = getValue('metadescription');
   if (metaDescription) product.metaDescription = metaDescription;
 
+  // Ocasiones especiales (separadas por |)
+  const occasionsStr = getValue('occasions');
+  product.occasions = occasionsStr
+    ? occasionsStr.split('|').map((o) => o.trim()).filter(Boolean)
+    : [];
+
+  // Plantilla del configurador
+  const configuratorTemplate = getValue('configuratortemplate');
+  product.configuratorTemplate = configuratorTemplate || 'sin-configurador';
+
   // Validar subcategorías si vienen
   const subcategory = product.subcategory;
   const subcategoryId = product.subcategoryId;
@@ -492,6 +508,8 @@ export function generateCsvTemplate(options?: {
     'false',
     'Camiseta Personalizada - Tu Tienda',
     'Compra camisetas personalizadas de alta calidad. Diseño único con tu imagen.',
+    'navidad|cumpleanos',
+    'camiseta',
   ];
   rows.push(exampleRow.join(','));
 
