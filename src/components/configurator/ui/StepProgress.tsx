@@ -1,6 +1,10 @@
 import React from 'react';
 import { Check } from 'lucide-react';
-import type { ConfiguratorStepId, OptionGroup } from '../../../types/configurator';
+import type {
+  ConfiguratorStepId,
+  OptionGroup,
+  ProductConfiguratorAttribute,
+} from '../../../types/configurator';
 
 const FIXED_STEP_LABELS: Partial<Record<string, string>> = {
   design: 'Diseño',
@@ -9,10 +13,22 @@ const FIXED_STEP_LABELS: Partial<Record<string, string>> = {
   summary: 'Resumen',
 };
 
-function getStepLabel(step: ConfiguratorStepId, optionGroups?: OptionGroup[]): string {
+function getStepLabel(
+  step: ConfiguratorStepId,
+  optionGroups?: OptionGroup[],
+  attributes?: ProductConfiguratorAttribute[],
+): string {
   if (step.startsWith('option:')) {
     const groupId = step.slice(7);
     return optionGroups?.find((g) => g.id === groupId)?.label ?? groupId;
+  }
+  if (step.startsWith('attribute:')) {
+    const attrId = step.slice(10);
+    return (
+      optionGroups?.find((g) => g.id === attrId)?.label ??
+      attributes?.find((a) => a.id === attrId)?.label ??
+      attrId
+    );
   }
   return FIXED_STEP_LABELS[step] ?? step;
 }
@@ -21,6 +37,7 @@ interface StepProgressProps {
   steps: ConfiguratorStepId[];
   currentStep: number;
   optionGroups?: OptionGroup[];
+  attributes?: ProductConfiguratorAttribute[];
   onStepClick: (index: number) => void;
 }
 
@@ -28,6 +45,7 @@ export default function StepProgress({
   steps,
   currentStep,
   optionGroups,
+  attributes,
   onStepClick,
 }: StepProgressProps) {
   return (
@@ -43,7 +61,7 @@ export default function StepProgress({
         <div className="flex items-center justify-between px-0.5">
           <span className="text-xs text-gray-400">Paso {currentStep + 1} de {steps.length}</span>
           <span className="text-xs font-semibold text-indigo-600">
-            {getStepLabel(steps[currentStep], optionGroups)}
+            {steps[currentStep] ? getStepLabel(steps[currentStep], optionGroups, attributes) : ''}
           </span>
         </div>
       </div>
@@ -89,7 +107,7 @@ export default function StepProgress({
                   {isCompleted ? <Check className="w-4 h-4" /> : index + 1}
                 </span>
                 <span className="hidden lg:inline">
-                  {getStepLabel(step, optionGroups)}
+                  {getStepLabel(step, optionGroups, attributes)}
                 </span>
               </button>
 

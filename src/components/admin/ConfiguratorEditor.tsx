@@ -26,6 +26,12 @@ import type {
   PlacementOption,
   QuantityConfig,
   PricingTier,
+  ProductConfiguratorAttribute,
+  ProductConfiguratorAttributeOption,
+  ProductConfiguratorAttributeType,
+  ProductConfiguratorPricing,
+  ProductConfiguratorPricingRule,
+  ProductConfiguratorSheetPricingRule,
 } from '../../types/configurator';
 
 interface ConfiguratorEditorProps {
@@ -76,11 +82,49 @@ const DEFAULT_QUANTITY = {
   tiers: [{ from: 1, price: 0 }],
 };
 
+// ============================================================================
+// MODE DETECTION
+// ============================================================================
+
+type EditorMode = 'legacy' | 'advanced';
+
+function detectEditorMode(config: ProductConfigurator): EditorMode {
+  if (config.attributes && config.attributes.length > 0) return 'advanced';
+  if (config.pricing?.mode === 'sheet-matrix' || config.pricing?.mode === 'matrix') return 'advanced';
+  return 'legacy';
+}
+
+function normalizeId(label: string): string {
+  return label
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '') || `attr_${Date.now()}`;
+}
+
+const ATTRIBUTE_TYPES: { value: ProductConfiguratorAttributeType; label: string; icon: typeof Palette }[] = [
+  { value: 'select', label: 'Selector', icon: Type },
+  { value: 'color', label: 'Colores', icon: Palette },
+  { value: 'image', label: 'Imágenes', icon: ImageIcon },
+  { value: 'text', label: 'Texto', icon: Type },
+];
+
 function createDefault(): ProductConfigurator {
   return {
     steps: ['design', 'quantity', 'summary'],
     design: { ...DEFAULT_DESIGN },
     quantity: { ...DEFAULT_QUANTITY },
+  };
+}
+
+function createDefaultAdvanced(): ProductConfigurator {
+  return {
+    steps: ['design', 'quantity', 'summary'],
+    design: { ...DEFAULT_DESIGN },
+    quantity: { min: 1, tiers: [{ from: 1, price: 0 }] },
+    attributes: [],
+    pricing: { mode: 'sheet-matrix', quantityInput: { min: 1, step: 1 }, rules: [] },
   };
 }
 
@@ -104,10 +148,33 @@ export default function ConfiguratorEditor({ value, onChange }: ConfiguratorEdit
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const isEnabled = !!value;
   const config = value || createDefault();
+  const mode: EditorMode = isEnabled ? detectEditorMode(config) : 'legacy';
 
   const toggleEnabled = () => onChange(isEnabled ? undefined : createDefault());
 
   const update = (partial: Partial<ProductConfigurator>) => onChange({ ...config, ...partial });
+
+  const switchToAdvanced = () => {
+    const advanced = createDefaultAdvanced();
+    advanced.design = { ...config.design };
+    if (config.placement) advanced.placement = { ...config.placement };
+    advanced.steps = [...config.steps.filter((s) => s === 'design' || s === 'placement' || s === 'quantity' || s === 'summary')] as ConfiguratorStepId[];
+    if (!advanced.steps.includes('design')) advanced.steps.unshift('design');
+    if (!advanced.steps.includes('quantity')) advanced.steps.push('quantity');
+    if (!advanced.steps.includes('summary')) advanced.steps.push('summary');
+    onChange(advanced);
+  };
+
+  const switchToLegacy = () => {
+    if (!confirm('Al cambiar a modo simple se perderán los atributos y reglas de precio avanzadas. ¿Continuar?')) return;
+    const legacy = createDefault();
+    legacy.design = { ...config.design };
+    if (config.placement) {
+      legacy.placement = { ...config.placement };
+      legacy.steps = ['design', 'placement', 'quantity', 'summary'];
+    }
+    onChange(legacy);
+  };
 
   const toggleStep = (stepId: ConfiguratorStepId) => {
     if (FIXED_STEPS.includes(stepId)) return;
@@ -182,72 +249,173 @@ export default function ConfiguratorEditor({ value, onChange }: ConfiguratorEdit
         </button>
       </div>
 
-      {/* Steps */}
+      {/* Mode switcher */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Pasos activos</label>
-        <div className="flex flex-wrap gap-2">
-          {ALL_STEPS.map((step) => {
-            const isActive = config.steps.includes(step.id);
-            const isFixed = FIXED_STEPS.includes(step.id);
-            return (
-              <button
-                key={step.id}
-                type="button"
-                onClick={() => toggleStep(step.id)}
-                disabled={isFixed}
-                className={`
-                  flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all
-                  ${isActive ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-300 hover:border-indigo-400'}
-                  ${isFixed ? 'opacity-80 cursor-default' : ''}
-                `}
-              >
-                <span>{step.icon}</span>
-                {step.label}
-                {isFixed && <span className="text-xs opacity-70">(fijo)</span>}
-              </button>
-            );
-          })}
+        <label className="block text-sm font-medium text-gray-700 mb-2">Modo de edicion</label>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => mode === 'advanced' && switchToLegacy()}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              mode === 'legacy'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'bg-white text-gray-600 border border-gray-300 hover:border-indigo-400'
+            }`}
+          >
+            Modo simple
+          </button>
+          <button
+            type="button"
+            onClick={() => mode === 'legacy' && switchToAdvanced()}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              mode === 'advanced'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'bg-white text-gray-600 border border-gray-300 hover:border-indigo-400'
+            }`}
+          >
+            Modo avanzado
+          </button>
         </div>
-        <p className="mt-2 text-xs text-gray-500">
-          Diseño, Cantidad y Resumen son obligatorios. El resto son opcionales.
+        <p className="mt-1.5 text-xs text-gray-500">
+          {mode === 'legacy'
+            ? 'Variante + Talla con precios por tramo. Ideal para productos sencillos.'
+            : 'Multiples atributos con precios por combinacion (matrix/sheet-matrix).'}
         </p>
       </div>
 
-      {/* Variant */}
-      {config.steps.includes('variant') && config.variant && (
-        <SectionCollapsible title="Variante" icon="🎨" isOpen={expandedSection === 'variant'} onToggle={() => toggle('variant')}>
-          <VariantEditor config={config.variant} onChange={(variant) => update({ variant })} />
-        </SectionCollapsible>
+      {mode === 'legacy' ? (
+        <>
+          {/* Steps */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Pasos activos</label>
+            <div className="flex flex-wrap gap-2">
+              {ALL_STEPS.map((step) => {
+                const isActive = config.steps.includes(step.id);
+                const isFixed = FIXED_STEPS.includes(step.id);
+                return (
+                  <button
+                    key={step.id}
+                    type="button"
+                    onClick={() => toggleStep(step.id)}
+                    disabled={isFixed}
+                    className={`
+                      flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all
+                      ${isActive ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-300 hover:border-indigo-400'}
+                      ${isFixed ? 'opacity-80 cursor-default' : ''}
+                    `}
+                  >
+                    <span>{step.icon}</span>
+                    {step.label}
+                    {isFixed && <span className="text-xs opacity-70">(fijo)</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Diseño, Cantidad y Resumen son obligatorios. El resto son opcionales.
+            </p>
+          </div>
+
+          {/* Variant */}
+          {config.steps.includes('variant') && config.variant && (
+            <SectionCollapsible title="Variante" icon="🎨" isOpen={expandedSection === 'variant'} onToggle={() => toggle('variant')}>
+              <VariantEditor config={config.variant} onChange={(variant) => update({ variant })} />
+            </SectionCollapsible>
+          )}
+
+          {/* Size */}
+          {config.steps.includes('size') && config.size && (
+            <SectionCollapsible title="Tamaño / Talla" icon="📏" isOpen={expandedSection === 'size'} onToggle={() => toggle('size')}>
+              <SizeEditor config={config.size} onChange={(size) => update({ size })} />
+            </SectionCollapsible>
+          )}
+
+          {/* Design */}
+          <SectionCollapsible title="Diseño" icon="🖼️" isOpen={expandedSection === 'design'} onToggle={() => toggle('design')}>
+            <DesignEditor config={config.design} onChange={(design) => update({ design })} />
+          </SectionCollapsible>
+
+          {/* Placement */}
+          {config.steps.includes('placement') && config.placement && (
+            <SectionCollapsible title="Posición del diseño" icon="📍" isOpen={expandedSection === 'placement'} onToggle={() => toggle('placement')}>
+              <PlacementEditor config={config.placement} onChange={(placement) => update({ placement })} />
+            </SectionCollapsible>
+          )}
+
+          {/* Quantity */}
+          <SectionCollapsible title="Cantidad y precios" icon="🔢" isOpen={expandedSection === 'quantity'} onToggle={() => toggle('quantity')}>
+            <QuantityEditor
+              config={config.quantity}
+              onChange={(quantity) => update({ quantity })}
+              variantOptions={config.variant?.options.map((o) => ({ id: o.id, label: o.label }))}
+              sizeOptions={config.size?.options}
+            />
+          </SectionCollapsible>
+        </>
+      ) : (
+        <>
+          {/* Advanced mode: Attributes */}
+          <SectionCollapsible title="Atributos" icon="🏷️" isOpen={expandedSection === 'attributes'} onToggle={() => toggle('attributes')}>
+            <AttributesEditor
+              attributes={config.attributes || []}
+              onChange={(attributes) => {
+                const attrSteps: ConfiguratorStepId[] = attributes.map((a) => `attribute:${a.id}` as ConfiguratorStepId);
+                const fixedSteps: ConfiguratorStepId[] = ['design'];
+                if (config.placement) fixedSteps.push('placement');
+                fixedSteps.push('quantity', 'summary');
+                update({ attributes, steps: [...attrSteps, ...fixedSteps] });
+              }}
+            />
+          </SectionCollapsible>
+
+          {/* Design */}
+          <SectionCollapsible title="Diseño" icon="🖼️" isOpen={expandedSection === 'design'} onToggle={() => toggle('design')}>
+            <DesignEditor config={config.design} onChange={(design) => update({ design })} />
+          </SectionCollapsible>
+
+          {/* Placement (optional) */}
+          <SectionCollapsible title="Posición del diseño" icon="📍" isOpen={expandedSection === 'placement'} onToggle={() => toggle('placement')}>
+            {config.placement ? (
+              <div>
+                <PlacementEditor config={config.placement} onChange={(placement) => update({ placement })} />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const steps = config.steps.filter((s) => s !== 'placement');
+                    update({ placement: undefined, steps });
+                  }}
+                  className="mt-3 text-xs text-red-500 hover:underline"
+                >
+                  Quitar paso de posicion
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  const steps = [...config.steps];
+                  const qIdx = steps.indexOf('quantity');
+                  if (qIdx >= 0) steps.splice(qIdx, 0, 'placement');
+                  else steps.push('placement');
+                  update({ placement: { ...DEFAULT_PLACEMENT }, steps });
+                }}
+                className="text-sm text-indigo-600 font-medium hover:text-indigo-700"
+              >
+                + Activar paso de posicion del diseño
+              </button>
+            )}
+          </SectionCollapsible>
+
+          {/* Pricing */}
+          <SectionCollapsible title="Precios por combinacion" icon="💰" isOpen={expandedSection === 'pricing'} onToggle={() => toggle('pricing')}>
+            <AdvancedPricingEditor
+              pricing={config.pricing || { mode: 'sheet-matrix', quantityInput: { min: 1, step: 1 }, rules: [] }}
+              attributes={config.attributes || []}
+              onChange={(pricing) => update({ pricing })}
+            />
+          </SectionCollapsible>
+        </>
       )}
-
-      {/* Size */}
-      {config.steps.includes('size') && config.size && (
-        <SectionCollapsible title="Tamaño / Talla" icon="📏" isOpen={expandedSection === 'size'} onToggle={() => toggle('size')}>
-          <SizeEditor config={config.size} onChange={(size) => update({ size })} />
-        </SectionCollapsible>
-      )}
-
-      {/* Design */}
-      <SectionCollapsible title="Diseño" icon="🖼️" isOpen={expandedSection === 'design'} onToggle={() => toggle('design')}>
-        <DesignEditor config={config.design} onChange={(design) => update({ design })} />
-      </SectionCollapsible>
-
-      {/* Placement */}
-      {config.steps.includes('placement') && config.placement && (
-        <SectionCollapsible title="Posición del diseño" icon="📍" isOpen={expandedSection === 'placement'} onToggle={() => toggle('placement')}>
-          <PlacementEditor config={config.placement} onChange={(placement) => update({ placement })} />
-        </SectionCollapsible>
-      )}
-
-      {/* Quantity */}
-      <SectionCollapsible title="Cantidad y precios" icon="🔢" isOpen={expandedSection === 'quantity'} onToggle={() => toggle('quantity')}>
-        <QuantityEditor
-          config={config.quantity}
-          onChange={(quantity) => update({ quantity })}
-          variantOptions={config.variant?.options.map((o) => ({ id: o.id, label: o.label }))}
-          sizeOptions={config.size?.options}
-        />
-      </SectionCollapsible>
     </div>
   );
 }
@@ -363,7 +531,7 @@ function VariantEditor({ config, onChange }: { config: VariantConfig; onChange: 
 
   const updateOption = (index: number, partial: Partial<VariantOption>) => {
     const opts = [...config.options];
-    opts[index] = { ...opts[index], ...partial };
+    opts[index] = { ...opts[index], ...partial } as VariantOption;
     update({ options: opts });
   };
 
@@ -818,7 +986,7 @@ function TierList({
 }) {
   const updateTier = (i: number, p: Partial<PricingTier>) => {
     const next = [...tiers];
-    next[i] = { ...next[i], ...p };
+    next[i] = { ...next[i], ...p } as PricingTier;
     onChange(next);
   };
   const removeTier = (i: number) => {
@@ -1024,6 +1192,591 @@ function QuantityEditor({ config, onChange, variantOptions, sizeOptions }: {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ============================================================================
+// ATTRIBUTES EDITOR (V2)
+// ============================================================================
+
+function AttributesEditor({
+  attributes,
+  onChange,
+}: {
+  attributes: ProductConfiguratorAttribute[];
+  onChange: (attrs: ProductConfiguratorAttribute[]) => void;
+}) {
+  const [expandedAttr, setExpandedAttr] = useState<string | null>(null);
+
+  const addAttribute = () => {
+    const newAttr: ProductConfiguratorAttribute = {
+      id: `attr_${Date.now()}`,
+      label: '',
+      type: 'select',
+      required: true,
+      options: [],
+    };
+    onChange([...attributes, newAttr]);
+    setExpandedAttr(newAttr.id);
+  };
+
+  const updateAttr = (index: number, partial: Partial<ProductConfiguratorAttribute>) => {
+    const next = [...attributes];
+    next[index] = { ...next[index], ...partial } as ProductConfiguratorAttribute;
+    onChange(next);
+  };
+
+  const removeAttr = (index: number) => {
+    onChange(attributes.filter((_, i) => i !== index));
+  };
+
+  const updateAttrLabel = (index: number, label: string) => {
+    const id = normalizeId(label);
+    updateAttr(index, { label, id });
+  };
+
+  const addOption = (attrIndex: number) => {
+    const attr = attributes[attrIndex]!;
+    const newOpt: ProductConfiguratorAttributeOption = {
+      id: `opt_${Date.now()}`,
+      label: '',
+      value: attr.type === 'color' ? '#000000' : undefined,
+    };
+    updateAttr(attrIndex, { options: [...attr.options, newOpt] });
+  };
+
+  const updateOption = (attrIndex: number, optIndex: number, partial: Partial<ProductConfiguratorAttributeOption>) => {
+    const attr = attributes[attrIndex]!;
+    const opts = [...attr.options];
+    opts[optIndex] = { ...opts[optIndex], ...partial } as ProductConfiguratorAttributeOption;
+    updateAttr(attrIndex, { options: opts });
+  };
+
+  const removeOption = (attrIndex: number, optIndex: number) => {
+    const attr = attributes[attrIndex]!;
+    updateAttr(attrIndex, { options: attr.options.filter((_, i) => i !== optIndex) });
+  };
+
+  return (
+    <div className="space-y-4">
+      {attributes.length === 0 && (
+        <p className="text-sm text-gray-400">Sin atributos. Añade al menos uno para definir las variantes del producto.</p>
+      )}
+
+      {attributes.map((attr, ai) => (
+        <div key={attr.id} className="border border-gray-200 rounded-xl overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setExpandedAttr(expandedAttr === attr.id ? null : attr.id)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            <span className="text-sm font-semibold text-gray-800">
+              {attr.label || '(sin nombre)'} <span className="text-xs text-gray-400 font-normal ml-1">id: {attr.id}</span>
+              <span className="ml-2 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">{attr.options.length} opciones</span>
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); removeAttr(ai); }}
+                className="p-1 text-red-500 hover:bg-red-50 rounded"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              {expandedAttr === attr.id ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+            </div>
+          </button>
+
+          {expandedAttr === attr.id && (
+            <div className="px-4 pb-4 pt-3 space-y-4 border-t border-gray-100">
+              {/* Label */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Nombre del atributo</label>
+                <input
+                  type="text"
+                  value={attr.label}
+                  onChange={(e) => updateAttrLabel(ai, e.target.value)}
+                  placeholder='Ej: "Acabado", "Material", "Tamaño"'
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Type */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-2">Tipo de selector</label>
+                <div className="flex gap-2">
+                  {ATTRIBUTE_TYPES.map((at) => (
+                    <button
+                      key={at.value}
+                      type="button"
+                      onClick={() => updateAttr(ai, { type: at.value })}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                        attr.type === at.value
+                          ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-400'
+                          : 'bg-gray-100 text-gray-600 border-2 border-transparent hover:border-gray-300'
+                      }`}
+                    >
+                      <at.icon className="w-4 h-4" />
+                      {at.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Required */}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={attr.required !== false}
+                  onChange={(e) => updateAttr(ai, { required: e.target.checked })}
+                  className="w-4 h-4 text-indigo-600 rounded"
+                />
+                <span className="text-sm text-gray-700">Obligatorio</span>
+              </label>
+
+              {/* Options */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-2">Opciones ({attr.options.length})</label>
+                <div className="space-y-2">
+                  {attr.options.map((opt, oi) => (
+                    <div key={opt.id} className="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
+                      {attr.type === 'color' && (
+                        <input
+                          type="color"
+                          value={opt.value || '#000000'}
+                          onChange={(e) => updateOption(ai, oi, { value: e.target.value })}
+                          className="w-8 h-8 rounded border-0 cursor-pointer shrink-0"
+                        />
+                      )}
+                      <input
+                        type="text"
+                        value={opt.label}
+                        onChange={(e) => updateOption(ai, oi, { label: e.target.value, id: normalizeId(e.target.value) || opt.id })}
+                        placeholder="Nombre de la opcion"
+                        className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-gray-300 rounded-lg"
+                      />
+                      {attr.type === 'image' && (
+                        <OptionImageUpload
+                          currentUrl={opt.value}
+                          onUploaded={(url) => updateOption(ai, oi, { value: url })}
+                          placeholder="Subir imagen"
+                        />
+                      )}
+                      {(attr.type === 'color' || attr.type === 'select' || attr.type === 'text') && (
+                        <OptionImageUpload
+                          currentUrl={opt.previewImage}
+                          onUploaded={(url) => updateOption(ai, oi, { previewImage: url || undefined })}
+                          placeholder="+ Preview"
+                        />
+                      )}
+                      <div className="flex items-center gap-1">
+                        <label className="text-xs text-gray-400 whitespace-nowrap">u/h</label>
+                        <input
+                          type="number"
+                          min={0}
+                          placeholder="-"
+                          value={opt.unitsPerSheet ?? ''}
+                          onChange={(e) => {
+                            const v = parseInt(e.target.value, 10);
+                            updateOption(ai, oi, { unitsPerSheet: v > 0 ? v : undefined });
+                          }}
+                          className="w-16 px-1.5 py-1 text-xs border border-gray-300 rounded"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeOption(ai, oi)}
+                        className="p-1 text-red-500 hover:bg-red-50 rounded shrink-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => addOption(ai)}
+                  className="mt-2 flex items-center gap-1 text-sm text-indigo-600 font-medium hover:text-indigo-700"
+                >
+                  <Plus className="w-4 h-4" />Añadir opcion
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={addAttribute}
+        className="flex items-center gap-1.5 text-sm text-indigo-600 font-medium hover:text-indigo-700"
+      >
+        <Plus className="w-4 h-4" />Añadir atributo
+      </button>
+    </div>
+  );
+}
+
+// ============================================================================
+// ADVANCED PRICING EDITOR (V2)
+// ============================================================================
+
+function AdvancedPricingEditor({
+  pricing,
+  attributes,
+  onChange,
+}: {
+  pricing: ProductConfiguratorPricing;
+  attributes: ProductConfiguratorAttribute[];
+  onChange: (p: ProductConfiguratorPricing) => void;
+}) {
+  const isSheetMatrix = pricing.mode === 'sheet-matrix';
+
+  const switchMode = (mode: 'sheet-matrix' | 'matrix') => {
+    if (mode === pricing.mode) return;
+    if (mode === 'sheet-matrix') {
+      onChange({
+        mode: 'sheet-matrix',
+        quantityInput: { ...pricing.quantityInput },
+        rules: [],
+      });
+    } else {
+      onChange({
+        mode: 'matrix',
+        quantityInput: { ...pricing.quantityInput },
+        rules: [],
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Mode selector */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de pricing</label>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => switchMode('sheet-matrix')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              isSheetMatrix
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'bg-white text-gray-600 border border-gray-300 hover:border-indigo-400'
+            }`}
+          >
+            Por hojas (sheet-matrix)
+          </button>
+          <button
+            type="button"
+            onClick={() => switchMode('matrix')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              !isSheetMatrix
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'bg-white text-gray-600 border border-gray-300 hover:border-indigo-400'
+            }`}
+          >
+            Por unidades (matrix)
+          </button>
+        </div>
+      </div>
+
+      {/* Quantity input settings */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs text-gray-600 mb-1">
+            {isSheetMatrix ? 'Hojas minimas' : 'Cantidad minima'}
+          </label>
+          <input
+            type="number"
+            min={1}
+            value={pricing.quantityInput.min}
+            onChange={(e) => onChange({ ...pricing, quantityInput: { ...pricing.quantityInput, min: parseInt(e.target.value) || 1 } })}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-600 mb-1">Incremento (step)</label>
+          <input
+            type="number"
+            min={1}
+            value={pricing.quantityInput.step}
+            onChange={(e) => onChange({ ...pricing, quantityInput: { ...pricing.quantityInput, step: parseInt(e.target.value) || 1 } })}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
+          />
+        </div>
+      </div>
+
+      {/* Rules */}
+      {isSheetMatrix ? (
+        <SheetMatrixRulesEditor
+          rules={(pricing as { rules: ProductConfiguratorSheetPricingRule[] }).rules}
+          attributes={attributes}
+          onChange={(rules) => onChange({ ...pricing, rules } as ProductConfiguratorPricing)}
+        />
+      ) : (
+        <MatrixRulesEditor
+          rules={(pricing as { rules: ProductConfiguratorPricingRule[] }).rules}
+          attributes={attributes}
+          onChange={(rules) => onChange({ ...pricing, rules } as ProductConfiguratorPricing)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// SHEET-MATRIX RULES EDITOR
+// ============================================================================
+
+function SheetMatrixRulesEditor({
+  rules,
+  attributes,
+  onChange,
+}: {
+  rules: ProductConfiguratorSheetPricingRule[];
+  attributes: ProductConfiguratorAttribute[];
+  onChange: (rules: ProductConfiguratorSheetPricingRule[]) => void;
+}) {
+  const [expandedRule, setExpandedRule] = useState<number | null>(null);
+
+  const addRule = () => {
+    const match: Record<string, string> = {};
+    for (const attr of attributes) {
+      if (attr.options.length > 0) match[attr.id] = attr.options[0]!.id;
+    }
+    onChange([...rules, { match, unitsPerSheet: 1, sheetPricingTiers: [{ from: 1, price: 0 }] }]);
+    setExpandedRule(rules.length);
+  };
+
+  const updateRule = (index: number, partial: Partial<ProductConfiguratorSheetPricingRule>) => {
+    const next = [...rules];
+    next[index] = { ...next[index], ...partial } as ProductConfiguratorSheetPricingRule;
+    onChange(next);
+  };
+
+  const removeRule = (index: number) => {
+    onChange(rules.filter((_, i) => i !== index));
+  };
+
+  const ruleLabel = (rule: ProductConfiguratorSheetPricingRule): string => {
+    return Object.entries(rule.match)
+      .map(([attrId, optId]) => {
+        const attr = attributes.find((a) => a.id === attrId);
+        const opt = attr?.options.find((o) => o.id === optId);
+        return opt?.label || optId;
+      })
+      .join(' + ') || '(sin match)';
+  };
+
+  return (
+    <div className="space-y-3">
+      <label className="block text-sm font-medium text-gray-700">
+        Combinaciones de precio ({rules.length})
+      </label>
+
+      {rules.length === 0 && (
+        <p className="text-xs text-gray-400">Sin combinaciones. Añade al menos una para definir precios.</p>
+      )}
+
+      {rules.map((rule, ri) => (
+        <div key={ri} className="border border-gray-200 rounded-xl overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setExpandedRule(expandedRule === ri ? null : ri)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            <span className="text-sm font-medium text-gray-800 truncate">
+              {ruleLabel(rule)}
+              <span className="ml-2 text-xs text-gray-400">{rule.unitsPerSheet} u/h · {rule.sheetPricingTiers.length} tramos</span>
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); removeRule(ri); }}
+                className="p-1 text-red-500 hover:bg-red-50 rounded"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              {expandedRule === ri ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+            </div>
+          </button>
+
+          {expandedRule === ri && (
+            <div className="px-4 pb-4 pt-3 space-y-4 border-t border-gray-100">
+              {/* Match selectors */}
+              <div className="grid grid-cols-2 gap-3">
+                {attributes.map((attr) => (
+                  <div key={attr.id}>
+                    <label className="block text-xs text-gray-600 mb-1">{attr.label || attr.id}</label>
+                    <select
+                      value={rule.match[attr.id] || ''}
+                      onChange={(e) => updateRule(ri, { match: { ...rule.match, [attr.id]: e.target.value } })}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white"
+                    >
+                      <option value="">-- Seleccionar --</option>
+                      {attr.options.map((opt) => (
+                        <option key={opt.id} value={opt.id}>{opt.label || opt.id}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+
+              {/* Units per sheet */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Unidades por hoja (u/h)</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={rule.unitsPerSheet}
+                  onChange={(e) => updateRule(ri, { unitsPerSheet: parseInt(e.target.value) || 1 })}
+                  className="w-32 px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                />
+              </div>
+
+              {/* Tiers */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-2">Tramos de precio (hojas → total)</label>
+                <TierList
+                  tiers={rule.sheetPricingTiers}
+                  onChange={(tiers) => updateRule(ri, { sheetPricingTiers: tiers })}
+                  sheetBased
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={addRule}
+        className="flex items-center gap-1.5 text-sm text-indigo-600 font-medium hover:text-indigo-700"
+      >
+        <Plus className="w-4 h-4" />Añadir combinacion
+      </button>
+    </div>
+  );
+}
+
+// ============================================================================
+// MATRIX RULES EDITOR
+// ============================================================================
+
+function MatrixRulesEditor({
+  rules,
+  attributes,
+  onChange,
+}: {
+  rules: ProductConfiguratorPricingRule[];
+  attributes: ProductConfiguratorAttribute[];
+  onChange: (rules: ProductConfiguratorPricingRule[]) => void;
+}) {
+  const [expandedRule, setExpandedRule] = useState<number | null>(null);
+
+  const addRule = () => {
+    const match: Record<string, string> = {};
+    for (const attr of attributes) {
+      if (attr.options.length > 0) match[attr.id] = attr.options[0]!.id;
+    }
+    onChange([...rules, { match, tiers: [{ from: 1, price: 0 }] }]);
+    setExpandedRule(rules.length);
+  };
+
+  const updateRule = (index: number, partial: Partial<ProductConfiguratorPricingRule>) => {
+    const next = [...rules];
+    next[index] = { ...next[index], ...partial } as ProductConfiguratorPricingRule;
+    onChange(next);
+  };
+
+  const removeRule = (index: number) => {
+    onChange(rules.filter((_, i) => i !== index));
+  };
+
+  const ruleLabel = (rule: ProductConfiguratorPricingRule): string => {
+    return Object.entries(rule.match)
+      .map(([attrId, optId]) => {
+        const attr = attributes.find((a) => a.id === attrId);
+        const opt = attr?.options.find((o) => o.id === optId);
+        return opt?.label || optId;
+      })
+      .join(' + ') || '(sin match)';
+  };
+
+  return (
+    <div className="space-y-3">
+      <label className="block text-sm font-medium text-gray-700">
+        Combinaciones de precio ({rules.length})
+      </label>
+
+      {rules.length === 0 && (
+        <p className="text-xs text-gray-400">Sin combinaciones. Añade al menos una para definir precios.</p>
+      )}
+
+      {rules.map((rule, ri) => (
+        <div key={ri} className="border border-gray-200 rounded-xl overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setExpandedRule(expandedRule === ri ? null : ri)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            <span className="text-sm font-medium text-gray-800 truncate">
+              {ruleLabel(rule)}
+              <span className="ml-2 text-xs text-gray-400">{rule.tiers.length} tramos</span>
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); removeRule(ri); }}
+                className="p-1 text-red-500 hover:bg-red-50 rounded"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              {expandedRule === ri ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+            </div>
+          </button>
+
+          {expandedRule === ri && (
+            <div className="px-4 pb-4 pt-3 space-y-4 border-t border-gray-100">
+              {/* Match selectors */}
+              <div className="grid grid-cols-2 gap-3">
+                {attributes.map((attr) => (
+                  <div key={attr.id}>
+                    <label className="block text-xs text-gray-600 mb-1">{attr.label || attr.id}</label>
+                    <select
+                      value={rule.match[attr.id] || ''}
+                      onChange={(e) => updateRule(ri, { match: { ...rule.match, [attr.id]: e.target.value } })}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white"
+                    >
+                      <option value="">-- Seleccionar --</option>
+                      {attr.options.map((opt) => (
+                        <option key={opt.id} value={opt.id}>{opt.label || opt.id}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+
+              {/* Tiers */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-2">Tramos de precio (uds. → precio/ud.)</label>
+                <TierList
+                  tiers={rule.tiers}
+                  onChange={(tiers) => updateRule(ri, { tiers })}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={addRule}
+        className="flex items-center gap-1.5 text-sm text-indigo-600 font-medium hover:text-indigo-700"
+      >
+        <Plus className="w-4 h-4" />Añadir combinacion
+      </button>
     </div>
   );
 }

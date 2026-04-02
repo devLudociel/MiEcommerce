@@ -7,16 +7,15 @@ import { db, storage } from '../../lib/firebase';
 import { addToCart } from '../../store/cartStore';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
+import { normalizeConfigurator, getUnitPrice } from '../../lib/configurator';
 import type {
   ConfigurableProduct,
   ConfiguratorStepId,
   ConfiguratorSelections,
   ConfiguratorPricing,
   OptionGroup,
-  OptionValue,
-  PricingTier,
   DesignMode,
-  ProductConfigurator,
+  ProductConfiguratorAttribute,
 } from '../../types/configurator';
 
 import StepProgress from './ui/StepProgress';
@@ -32,101 +31,8 @@ interface ProductConfiguratorProps {
 }
 
 // ============================================================================
-// MIGRATION — converts old variant/size format to new options format
-// ============================================================================
-
-function migrateConfigurator(cfg: any): ProductConfigurator {
-  if (Array.isArray(cfg.options)) return cfg as ProductConfigurator;
-
-  const options: OptionGroup[] = [];
-  const newSteps: ConfiguratorStepId[] = [];
-
-  for (const step of (cfg.steps as string[])) {
-    if (step === 'variant' && cfg.variant) {
-      options.push({
-        id: 'variant',
-        label: cfg.variant.label,
-        type: cfg.variant.type,
-        values: cfg.variant.options.map((o: any) => ({
-          id: o.id,
-          label: o.label,
-          value: o.value,
-          previewImage: o.previewImage || undefined,
-        })),
-      });
-      newSteps.push('option:variant');
-    } else if (step === 'size' && cfg.size) {
-      options.push({
-        id: 'size',
-        label: cfg.size.label,
-        type: 'text',
-        values: cfg.size.options.map((s: string) => ({
-          id: s,
-          label: s,
-          value: s,
-          unitsPerSheet: cfg.size.unitsPerSheet?.[s],
-        })),
-      });
-      newSteps.push('option:size');
-    } else {
-      newSteps.push(step as ConfiguratorStepId);
-    }
-  }
-
-  // Migrate variantPricing + sizePricing → combinationPricing
-  const combinationPricing: Record<string, PricingTier[]> = {};
-  if (cfg.quantity?.variantPricing) {
-    for (const [key, tiers] of Object.entries(cfg.quantity.variantPricing)) {
-      combinationPricing[key] = tiers as PricingTier[];
-    }
-  }
-  if (cfg.quantity?.sizePricing) {
-    for (const [key, tiers] of Object.entries(cfg.quantity.sizePricing)) {
-      combinationPricing[key] = tiers as PricingTier[];
-    }
-  }
-
-  return {
-    steps: newSteps,
-    options: options.length ? options : undefined,
-    design: cfg.design,
-    placement: cfg.placement,
-    quantity: {
-      min: cfg.quantity.min,
-      tiers: cfg.quantity.tiers,
-      sheetBased: cfg.quantity.sheetBased,
-      combinationPricing: Object.keys(combinationPricing).length ? combinationPricing : undefined,
-    },
-  };
-}
-
-// ============================================================================
 // PRICING HELPERS
 // ============================================================================
-
-function getActiveTiers(
-  product: ConfigurableProduct,
-  selections: ConfiguratorSelections
-): PricingTier[] {
-  const { combinationPricing, tiers } = product.configurator.quantity;
-  const optionGroups = product.configurator.options ?? [];
-  if (!combinationPricing) return tiers;
-
-  const valueIds = optionGroups
-    .map((g) => selections.options[g.id])
-    .filter((id): id is string => !!id);
-
-  if (valueIds.length > 1) {
-    const fullKey = valueIds.join('+');
-    if (combinationPricing[fullKey]?.length) return combinationPricing[fullKey];
-  }
-
-  for (const id of valueIds) {
-    if (combinationPricing[id]?.length) return combinationPricing[id];
-  }
-
-  return tiers;
-}
 
 function getUnitsPerSheet(
   optionGroups: OptionGroup[],
@@ -162,31 +68,37 @@ function calculatePricing(
   product: ConfigurableProduct,
   selections: ConfiguratorSelections
 ): ConfiguratorPricing {
-  const activeTiers = getActiveTiers(product, selections);
+  const priceResult = getUnitPrice(
+    product.configurator,
+    selections.options,
+    selections.quantity
+  );
   const { sheetBased } = product.configurator.quantity;
   const designPrice =
     selections.designMode === 'need-design'
       ? product.configurator.design.designServicePrice
       : 0;
 
+  if (priceResult.ok && priceResult.pricingMode === 'sheet-matrix') {
+    const subtotal = priceResult.totalPrice ?? 0;
+    const unitPrice = priceResult.effectiveUnitPrice ?? 0;
+    return { unitPrice, designPrice, subtotal, total: subtotal + designPrice };
+  }
+
   if (sheetBased) {
-    let match = activeTiers[0];
-    for (const t of activeTiers) {
-      if (selections.quantity >= t.from) match = t;
-    }
-    const subtotal = match?.price ?? 0;
+    const matchedTier = priceResult.appliedTier;
+    const subtotal = matchedTier?.price ?? 0;
+    const tierFrom = Math.max(matchedTier?.from ?? 1, 1);
+
     return {
-      unitPrice: match ? match.price / Math.max(match.from, 1) : 0,
+      unitPrice: subtotal / tierFrom,
       designPrice,
       subtotal,
       total: subtotal + designPrice,
     };
   }
 
-  let unitPrice = activeTiers[0]?.price ?? 0;
-  for (const t of activeTiers) {
-    if (selections.quantity >= t.from) unitPrice = t.price;
-  }
+  const unitPrice = priceResult.ok ? priceResult.unitPrice : 0;
   const subtotal = unitPrice * selections.quantity;
   return { unitPrice, designPrice, subtotal, total: subtotal + designPrice };
 }
@@ -194,6 +106,46 @@ function calculatePricing(
 // ============================================================================
 // STEP VALIDATION
 // ============================================================================
+
+function attributeToOptionGroup(attr: ProductConfiguratorAttribute): OptionGroup {
+  return {
+    id: attr.id,
+    label: attr.label,
+    type: attr.type === 'select' ? 'text' : attr.type,
+    values: attr.options.map((o) => ({
+      id: o.id,
+      label: o.label,
+      value: o.value ?? o.label,
+      previewImage: o.previewImage,
+      unitsPerSheet: o.unitsPerSheet,
+    })),
+  };
+}
+
+function getVisibleSteps(
+  steps: ConfiguratorStepId[],
+  attributes: ProductConfiguratorAttribute[] | undefined,
+  selectedOptions: Record<string, string>
+): ConfiguratorStepId[] {
+  if (!attributes || attributes.length === 0) return steps;
+  return steps.filter((stepId) => {
+    // Manejar tanto 'attribute:' como 'option:' (normalizeConfigurator convierte attribute: -> option:)
+    const attrId = stepId.startsWith('attribute:')
+      ? stepId.slice(10)
+      : stepId.startsWith('option:')
+        ? stepId.slice(7)
+        : null;
+
+    if (!attrId) return true;
+
+    const attr = attributes.find((a) => a.id === attrId);
+    if (!attr?.visibleWhen) return true;
+
+    return Object.entries(attr.visibleWhen).every(
+      ([key, values]) => selectedOptions[key] != null && values.includes(selectedOptions[key])
+    );
+  });
+}
 
 function isStepValid(
   stepId: ConfiguratorStepId,
@@ -203,6 +155,13 @@ function isStepValid(
   if (stepId.startsWith('option:')) {
     const groupId = stepId.slice(7);
     return !!selections.options[groupId];
+  }
+  if (stepId.startsWith('attribute:')) {
+    const attrId = stepId.slice(10);
+    const attr = product.configurator.attributes?.find((a) => a.id === attrId);
+    if (!attr) return true;
+    if (attr.required === false) return true;
+    return !!selections.options[attrId];
   }
   switch (stepId) {
     case 'design':
@@ -268,7 +227,7 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
           return;
         }
 
-        const configurator = migrateConfigurator(configuratorRaw);
+        const configurator = normalizeConfigurator(configuratorRaw);
 
         if (!cancelled) {
           const p: ConfigurableProduct = {
@@ -298,9 +257,23 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
     return () => { cancelled = true; };
   }, [productId]);
 
-  const steps = product?.configurator.steps ?? [];
-  const currentStepId = steps[currentStep] as ConfiguratorStepId | undefined;
+  const allSteps = product?.configurator.steps ?? [];
+  const attributes = product?.configurator.attributes;
   const optionGroups = product?.configurator.options ?? [];
+
+  const steps = useMemo(
+    () => getVisibleSteps(allSteps, attributes, selections.options),
+    [allSteps, attributes, selections.options]
+  );
+
+  // Clamp currentStep if visible steps shrink
+  useEffect(() => {
+    if (steps.length > 0 && currentStep >= steps.length) {
+      setCurrentStep(steps.length - 1);
+    }
+  }, [steps.length, currentStep]);
+
+  const currentStepId = steps[currentStep] as ConfiguratorStepId | undefined;
 
   const pricing = useMemo(
     () => (product ? calculatePricing(product, selections) : null),
@@ -327,8 +300,18 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
 
   // Selection handlers
   const setOption = useCallback((groupId: string, valueId: string) => {
-    setSelections((prev) => ({ ...prev, options: { ...prev.options, [groupId]: valueId } }));
-  }, []);
+    setSelections((prev) => {
+      const newOptions = { ...prev.options, [groupId]: valueId };
+      // Limpiar selecciones de atributos que dependen de este
+      const dependents = attributes?.filter(
+        (a) => a.visibleWhen && groupId in a.visibleWhen,
+      ) ?? [];
+      for (const dep of dependents) {
+        delete newOptions[dep.id];
+      }
+      return { ...prev, options: newOptions };
+    });
+  }, [attributes]);
 
   const setDesignMode = useCallback((mode: DesignMode) => {
     setSelections((prev) => ({
@@ -367,6 +350,17 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
   // Add to cart
   const handleAddToCart = useCallback(async () => {
     if (!product || !pricing) return;
+
+    const priceValidation = getUnitPrice(
+      product.configurator,
+      selections.options,
+      selections.quantity
+    );
+    if (!priceValidation.ok) {
+      notify.error(priceValidation.error?.message || 'No se pudo resolver el precio para esta configuración');
+      return;
+    }
+
     setIsAddingToCart(true);
 
     try {
@@ -386,6 +380,11 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
       const customization: Record<string, unknown> = {
         configuratorId: product.id,
       };
+
+      if (priceValidation.pricingMode === 'sheet-matrix') {
+        if (priceValidation.unitsPerSheet) customization.unitsPerSheet = priceValidation.unitsPerSheet;
+        if (priceValidation.sheetsNeeded) customization.sheetsNeeded = priceValidation.sheetsNeeded;
+      }
 
       // All selected options
       for (const group of optionGroups) {
@@ -520,6 +519,7 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
           steps={steps}
           currentStep={currentStep}
           optionGroups={optionGroups}
+          attributes={attributes}
           onStepClick={goToStep}
         />
       </div>
@@ -541,6 +541,21 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
                   onSelect={(valueId) => setOption(groupId, valueId)}
                 />
               ) : null;
+            })()}
+
+            {/* Attribute steps (V2) */}
+            {currentStepId?.startsWith('attribute:') && (() => {
+              const attrId = currentStepId.slice(10);
+              const attr = attributes?.find((a) => a.id === attrId);
+              if (!attr) return null;
+              const group = attributeToOptionGroup(attr);
+              return (
+                <StepOption
+                  group={group}
+                  selected={selections.options[attrId]}
+                  onSelect={(valueId) => setOption(attrId, valueId)}
+                />
+              );
             })()}
 
             {currentStepId === 'design' && (

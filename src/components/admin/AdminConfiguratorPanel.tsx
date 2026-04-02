@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, X, Save, ChevronRight } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Plus, Edit2, Trash2, X, Save, Download, FileUp } from 'lucide-react';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
+import { normalizeConfigurator, toConfiguratorV2 } from '../../lib/configurator';
 import {
   loadAllConfigurators,
   saveConfigurator,
@@ -9,7 +10,21 @@ import {
   type StoredConfigurator,
 } from '../../lib/configurators';
 import ConfiguratorEditor from './ConfiguratorEditor';
-import type { ProductConfigurator } from '../../types/configurator';
+import type { ConfiguratorStepId, ConfiguratorV2, ProductConfigurator } from '../../types/configurator';
+
+interface ConfiguratorExportPayload {
+  id: string;
+  name: string;
+  description?: string;
+  configurator: ConfiguratorV2 | ProductConfigurator;
+}
+
+interface NormalizedImportPayload {
+  id: string;
+  name: string;
+  description?: string;
+  configurator: ProductConfigurator;
+}
 
 const DEFAULT_CONFIGURATOR: ProductConfigurator = {
   steps: ['design', 'quantity', 'summary'],
@@ -41,10 +56,122 @@ function generateId(name: string): string {
   );
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function toEditorCompatibleConfigurator(configurator: ProductConfigurator): ProductConfigurator {
+  const nextSteps: ConfiguratorStepId[] = [];
+  const sourceSteps = Array.isArray(configurator.steps) ? configurator.steps : [];
+
+  for (const step of sourceSteps) {
+    if (step === 'option:variant' && configurator.variant) {
+      nextSteps.push('variant');
+      continue;
+    }
+
+    if (step === 'option:size' && configurator.size) {
+      nextSteps.push('size');
+      continue;
+    }
+
+    if (
+      step === 'variant' ||
+      step === 'size' ||
+      step === 'design' ||
+      step === 'placement' ||
+      step === 'quantity' ||
+      step === 'summary'
+    ) {
+      nextSteps.push(step);
+    }
+  }
+
+  if (!nextSteps.includes('design')) nextSteps.push('design');
+  if (!nextSteps.includes('quantity')) nextSteps.push('quantity');
+  if (!nextSteps.includes('summary')) nextSteps.push('summary');
+
+  return {
+    ...configurator,
+    steps: nextSteps,
+  };
+}
+
+function normalizeImportItem(rawItem: unknown, index: number): NormalizedImportPayload {
+  if (!isRecord(rawItem)) {
+    throw new Error('Formato inválido (se esperaba un objeto JSON)');
+  }
+
+  const candidate = isRecord(rawItem.configurator) ? rawItem.configurator : rawItem;
+
+  if (!isRecord(candidate)) {
+    throw new Error('Falta el objeto "configurator"');
+  }
+
+  const rawName = typeof rawItem.name === 'string' ? rawItem.name.trim() : '';
+  const rawId = typeof rawItem.id === 'string' ? rawItem.id.trim() : '';
+  const description = typeof rawItem.description === 'string' ? rawItem.description.trim() : '';
+
+  if (rawId.includes('/')) {
+    throw new Error('El "id" no puede contener "/"');
+  }
+
+  const normalizedConfigurator = normalizeConfigurator(candidate);
+
+  const fallbackName = `Configurador importado ${index + 1}`;
+  const name = rawName || rawId || fallbackName;
+  const id = rawId || generateId(name);
+
+  return {
+    id,
+    name,
+    description,
+    configurator: normalizedConfigurator,
+  };
+}
+
+function downloadJsonFile(fileName: string, data: unknown): void {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', fileName);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function getStepLabel(step: string): string {
+  const stepLabels: Record<string, string> = {
+    variant: 'Variante',
+    size: 'Tamaño',
+    design: 'Diseño',
+    placement: 'Posición',
+    quantity: 'Cantidad',
+    summary: 'Resumen',
+  };
+
+  if (step.startsWith('option:')) {
+    const rawId = step.slice('option:'.length).replace(/[_-]+/g, ' ').trim();
+    const label = rawId ? rawId[0].toUpperCase() + rawId.slice(1) : 'Opción';
+    return `Opción: ${label}`;
+  }
+
+  if (step.startsWith('attribute:')) {
+    const rawId = step.slice('attribute:'.length).replace(/[_-]+/g, ' ').trim();
+    const label = rawId ? rawId[0].toUpperCase() + rawId.slice(1) : 'Atributo';
+    return `Atributo: ${label}`;
+  }
+
+  return stepLabels[step] || step;
+}
+
 export default function AdminConfiguratorPanel() {
   const [configurators, setConfigurators] = useState<StoredConfigurator[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editing, setEditing] = useState<StoredConfigurator | null>(null);
 
   // Form state
@@ -54,6 +181,13 @@ export default function AdminConfiguratorPanel() {
     undefined
   );
   const [saving, setSaving] = useState(false);
+
+  // Import state
+  const [importJsonText, setImportJsonText] = useState('');
+  const [importFileName, setImportFileName] = useState('');
+  const [jsonEditTargetId, setJsonEditTargetId] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const importFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     load();
@@ -84,7 +218,7 @@ export default function AdminConfiguratorPanel() {
     setEditing(cfg);
     setName(cfg.name);
     setDescription(cfg.description || '');
-    setConfiguratorValue(cfg.configurator);
+    setConfiguratorValue(toEditorCompatibleConfigurator(cfg.configurator));
     setShowModal(true);
   };
 
@@ -125,32 +259,184 @@ export default function AdminConfiguratorPanel() {
     }
   };
 
-  const stepLabels: Record<string, string> = {
-    variant: 'Variante',
-    size: 'Tamaño',
-    design: 'Diseño',
-    quantity: 'Cantidad',
-    summary: 'Resumen',
+  function exportPayload(cfg: StoredConfigurator): ConfiguratorExportPayload {
+    let canonical: ConfiguratorV2 | ProductConfigurator = cfg.configurator;
+    try {
+      canonical = toConfiguratorV2(cfg.configurator);
+    } catch {
+      canonical = cfg.configurator;
+    }
+
+    return {
+      id: cfg.id,
+      name: cfg.name,
+      description: cfg.description || '',
+      configurator: canonical,
+    };
+  }
+
+  const handleExportOne = (cfg: StoredConfigurator) => {
+    const fileName = `${cfg.id || 'configurador'}.json`;
+    downloadJsonFile(fileName, exportPayload(cfg));
+    notify.success(`Configurador exportado: ${fileName}`);
+  };
+
+  const handleExportAll = () => {
+    if (!configurators.length) {
+      notify.info('No hay configuradores para exportar');
+      return;
+    }
+
+    const date = new Date().toISOString().slice(0, 10);
+    const fileName = `configuradores_${date}.json`;
+    const payload = configurators.map(exportPayload);
+    downloadJsonFile(fileName, payload);
+    notify.success(`Se exportaron ${configurators.length} configuradores`);
+  };
+
+  const openImport = () => {
+    setImportJsonText('');
+    setImportFileName('');
+    setJsonEditTargetId(null);
+    if (importFileInputRef.current) importFileInputRef.current.value = '';
+    setShowImportModal(true);
+  };
+
+  const handlePickImportFile = () => {
+    importFileInputRef.current?.click();
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      setImportJsonText(text);
+      setImportFileName(file.name);
+      notify.success(`Archivo cargado: ${file.name}`);
+    } catch (err) {
+      logger.error('[AdminConfiguratorPanel] Error reading import file', err);
+      notify.error('No se pudo leer el archivo JSON');
+    }
+  };
+
+  const handleImport = async () => {
+    if (!importJsonText.trim()) {
+      notify.error('Pega un JSON o carga un archivo antes de importar');
+      return;
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(importJsonText);
+    } catch (err) {
+      logger.error('[AdminConfiguratorPanel] Error parsing JSON', err);
+      notify.error('El contenido no es JSON válido');
+      return;
+    }
+
+    const items = Array.isArray(parsed) ? parsed : [parsed];
+    if (!items.length) {
+      notify.error('El JSON no contiene configuradores para importar');
+      return;
+    }
+
+    setImporting(true);
+    const existingIds = new Set(configurators.map((cfg) => cfg.id));
+
+    let created = 0;
+    let updated = 0;
+    let failed = 0;
+    const failures: string[] = [];
+
+    try {
+      for (let i = 0; i < items.length; i += 1) {
+        try {
+          const normalized = normalizeImportItem(items[i], i);
+          const alreadyExists = existingIds.has(normalized.id);
+
+          await saveConfigurator(
+            normalized.id,
+            normalized.name,
+            normalized.configurator,
+            normalized.description || ''
+          );
+
+          if (alreadyExists) {
+            updated += 1;
+          } else {
+            created += 1;
+            existingIds.add(normalized.id);
+          }
+        } catch (err) {
+          failed += 1;
+          const message = err instanceof Error ? err.message : 'Error desconocido';
+          failures.push(`Item ${i + 1}: ${message}`);
+        }
+      }
+
+      if (created || updated) {
+        await load();
+      }
+
+      if (failed === 0) {
+        notify.success(`Importación completada (${created} nuevos, ${updated} actualizados)`);
+        setShowImportModal(false);
+        setJsonEditTargetId(null);
+      } else {
+        notify.warning(
+          `Importación parcial (${created} nuevos, ${updated} actualizados, ${failed} con error)`
+        );
+        if (failures.length) {
+          notify.info(failures.slice(0, 2).join(' | '));
+          logger.warn('[AdminConfiguratorPanel] Import partial failures', failures);
+        }
+      }
+    } catch (err) {
+      logger.error('[AdminConfiguratorPanel] Error importing JSON', err);
+      notify.error('Error al importar configuradores');
+    } finally {
+      setImporting(false);
+    }
   };
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Configuradores de producto</h1>
           <p className="text-sm text-gray-500 mt-1">
             Crea plantillas de configuración paso a paso y asígnalas a los productos.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-medium text-sm rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Nuevo configurador
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={openImport}
+            className="flex items-center gap-2 px-4 py-2 bg-white text-gray-700 font-medium text-sm rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm"
+          >
+            <FileUp className="w-4 h-4" />
+            Importar JSON
+          </button>
+          <button
+            type="button"
+            onClick={handleExportAll}
+            className="flex items-center gap-2 px-4 py-2 bg-white text-gray-700 font-medium text-sm rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm"
+          >
+            <Download className="w-4 h-4" />
+            Exportar todo
+          </button>
+          <button
+            type="button"
+            onClick={openCreate}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-medium text-sm rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Nuevo configurador
+          </button>
+        </div>
       </div>
 
       {/* List */}
@@ -197,7 +483,7 @@ export default function AdminConfiguratorPanel() {
                       key={step}
                       className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-medium rounded-full"
                     >
-                      {stepLabels[step] || step}
+                      {getStepLabel(step)}
                     </span>
                   ))}
                 </div>
@@ -209,6 +495,14 @@ export default function AdminConfiguratorPanel() {
 
               {/* Actions */}
               <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleExportOne(cfg)}
+                  className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Exportar JSON"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
                 <button
                   type="button"
                   onClick={() => openEdit(cfg)}
@@ -317,6 +611,112 @@ export default function AdminConfiguratorPanel() {
                     <Save className="w-4 h-4" />
                   )}
                   {editing ? 'Guardar cambios' : 'Crear configurador'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-black/40"
+            onClick={() => {
+              setShowImportModal(false);
+              setJsonEditTargetId(null);
+            }}
+          />
+          <div className="relative min-h-full flex items-start justify-center p-4 pt-10">
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-bold text-gray-900">
+                  {jsonEditTargetId ? 'Editar configurador (JSON)' : 'Importar configuradores (JSON)'}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setJsonEditTargetId(null);
+                  }}
+                  className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="px-6 py-5 space-y-4">
+                <p className="text-sm text-gray-600">
+                  Acepta un objeto o un array. Formatos válidos:
+                  <code className="mx-1 bg-gray-100 px-1.5 py-0.5 rounded">
+                    {`{ id, name, description, configurator }`}
+                  </code>
+                  o un configurador directo con <code className="mx-1 bg-gray-100 px-1.5 py-0.5 rounded">steps/design/quantity</code>.
+                  {jsonEditTargetId && (
+                    <>
+                      {' '}Mantén el mismo <code className="mx-1 bg-gray-100 px-1.5 py-0.5 rounded">id</code> para actualizar el existente.
+                    </>
+                  )}
+                </p>
+
+                <div className="flex items-center gap-3">
+                  <input
+                    ref={importFileInputRef}
+                    type="file"
+                    accept=".json,application/json"
+                    className="hidden"
+                    onChange={handleImportFile}
+                  />
+                  <button
+                    type="button"
+                    onClick={handlePickImportFile}
+                    className="px-3 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    Seleccionar archivo JSON
+                  </button>
+                  {importFileName && (
+                    <span className="text-xs text-gray-500 truncate">Archivo: {importFileName}</span>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    JSON a importar
+                  </label>
+                  <textarea
+                    value={importJsonText}
+                    onChange={(e) => setImportJsonText(e.target.value)}
+                    placeholder='Pega aquí tu JSON. Ej: [{"id":"cfg_1","name":"Pegatinas","configurator":{...}}]'
+                    rows={14}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setJsonEditTargetId(null);
+                  }}
+                  className="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleImport}
+                  disabled={importing}
+                  className="flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-60"
+                >
+                  {importing ? (
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <FileUp className="w-4 h-4" />
+                  )}
+                  Importar JSON
                 </button>
               </div>
             </div>

@@ -9,9 +9,18 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { normalizeConfigurator, toConfiguratorV2 } from './configurator';
 import type { ProductConfigurator } from '../types/configurator';
 
 const COLLECTION = 'product_configurators';
+
+function safeNormalizeConfigurator(raw: unknown): ProductConfigurator {
+  try {
+    return normalizeConfigurator(raw);
+  } catch {
+    return raw as ProductConfigurator;
+  }
+}
 
 export interface StoredConfigurator {
   id: string;
@@ -32,8 +41,10 @@ export async function saveConfigurator(
   const existing = await getDoc(ref);
   const createdAt = existing.exists() ? existing.data().createdAt : Timestamp.now();
 
+  const normalizedConfigurator = toConfiguratorV2(configurator);
+
   // Strip undefined values — Firestore rejects them
-  const cleanConfigurator = JSON.parse(JSON.stringify(configurator));
+  const cleanConfigurator = JSON.parse(JSON.stringify(normalizedConfigurator));
 
   await setDoc(ref, {
     name,
@@ -52,7 +63,7 @@ export async function loadAllConfigurators(): Promise<StoredConfigurator[]> {
       id: d.id,
       name: data.name,
       description: data.description || '',
-      configurator: data.configurator,
+      configurator: safeNormalizeConfigurator(data.configurator),
       updatedAt: data.updatedAt?.toDate() || new Date(),
       createdAt: data.createdAt?.toDate() || new Date(),
     };
@@ -67,7 +78,7 @@ export async function loadConfigurator(id: string): Promise<StoredConfigurator |
     id: snap.id,
     name: data.name,
     description: data.description || '',
-    configurator: data.configurator,
+    configurator: safeNormalizeConfigurator(data.configurator),
     updatedAt: data.updatedAt?.toDate() || new Date(),
     createdAt: data.createdAt?.toDate() || new Date(),
   };

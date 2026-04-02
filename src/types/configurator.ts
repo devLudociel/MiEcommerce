@@ -1,26 +1,34 @@
 // src/types/configurator.ts
 /**
- * Product Configurator — schema y tipos para el configurador paso a paso.
- * Arquitectura Shopify-style: N grupos de opciones con pricing matricial.
+ * Product Configurator types
+ *
+ * Este archivo define:
+ * - El modelo legacy (V1) usado por el editor/admin actual
+ * - El modelo nuevo (V2) basado en attributes + pricing
+ * - Un modelo de compatibilidad para el frontend durante la migracion
  */
 
 // ============================================================================
 // STEPS
 // ============================================================================
 
-/**
- * IDs de paso. Los pasos de opciones son dinámicos: 'option:<groupId>'
- * Ej: 'option:material', 'option:color', 'option:shape'
- */
-export type ConfiguratorStepId =
-  | `option:${string}`
+export type LegacyConfiguratorStepId =
+  | 'variant'
+  | 'size'
   | 'design'
   | 'placement'
   | 'quantity'
   | 'summary';
 
+export type OptionStepId = `option:${string}`;
+export type AttributeStepId = `attribute:${string}`;
+
+export type ConfiguratorStepId = LegacyConfiguratorStepId | OptionStepId | AttributeStepId;
+
+export type ConfiguratorV2StepId = AttributeStepId | 'design' | 'placement' | 'quantity' | 'summary';
+
 // ============================================================================
-// OPTION GROUPS (reemplaza VariantConfig + SizeConfig)
+// LEGACY V1 OPTION GROUPS
 // ============================================================================
 
 export type OptionDisplayType = 'color' | 'image' | 'text';
@@ -30,21 +38,43 @@ export interface OptionValue {
   label: string;
   /** hex si type="color" | URL si type="image" | texto descriptivo si type="text" */
   value: string;
-  /** Imagen del producto cuando esta opción está seleccionada */
+  /** Imagen del producto cuando esta opcion esta seleccionada */
   previewImage?: string;
-  /** Unidades por hoja — sólo para products sheetBased */
+  /** Unidades por hoja (solo para sheetBased) */
   unitsPerSheet?: number;
 }
 
 export interface OptionGroup {
-  id: string;           // ej: 'material', 'color', 'shape', 'size'
-  label: string;        // ej: 'Material', 'Color', 'Forma', 'Talla'
+  id: string;
+  label: string;
   type: OptionDisplayType;
   values: OptionValue[];
 }
 
+export type VariantDisplayType = OptionDisplayType;
+
+export interface VariantOption {
+  id: string;
+  label: string;
+  value: string;
+  previewImage?: string;
+  unitsPerSheet?: number;
+}
+
+export interface VariantConfig {
+  label: string;
+  type: VariantDisplayType;
+  options: VariantOption[];
+}
+
+export interface SizeConfig {
+  label: string;
+  options: string[];
+  unitsPerSheet?: Record<string, number>;
+}
+
 // ============================================================================
-// DESIGN CONFIG
+// SHARED DESIGN / PLACEMENT
 // ============================================================================
 
 export interface DesignConfig {
@@ -54,10 +84,6 @@ export interface DesignConfig {
   designServicePrice: number;
   designServiceLabel?: string;
 }
-
-// ============================================================================
-// PLACEMENT CONFIG
-// ============================================================================
 
 export interface PlacementOption {
   id: string;
@@ -73,7 +99,7 @@ export interface PlacementConfig {
 }
 
 // ============================================================================
-// QUANTITY / PRICING TIERS
+// PRICING TIERS (shared)
 // ============================================================================
 
 export interface PricingTier {
@@ -85,50 +111,203 @@ export interface PricingTier {
 
 export interface QuantityConfig {
   min: number;
+  step?: number;
   tiers: PricingTier[];
-  /**
-   * Si true, los tramos se miden en HOJAS (from = hojas, price = precio total
-   * por esas hojas). Las unidades se calculan con OptionValue.unitsPerSheet
-   * del valor seleccionado en el grupo de opciones correspondiente.
-   */
   sheetBased?: boolean;
+
+  /** Legacy pricing por variante */
+  variantPricing?: Record<string, PricingTier[]>;
+  /** Legacy pricing por talla/tamano */
+  sizePricing?: Record<string, PricingTier[]>;
+
   /**
-   * Pricing por combinación de valores seleccionados.
-   * Clave = IDs de valores unidos con "+" en el orden de los OptionGroups.
-   *
-   * Ejemplos de claves:
-   *   "vinilo-mate"                   → sólo por material (independiente de forma)
-   *   "vinilo-mate+circular-3-8cm"    → combinación exacta material + forma
-   *
-   * Prioridad de búsqueda:
-   *   1. Combinación completa (todos los grupos seleccionados)
-   *   2. Cada valor individual, en orden de grupos (primero tiene prioridad)
-   *   3. Tramos por defecto (tiers)
+   * Pricing por combinacion de valores seleccionados.
+   * Clave = IDs unidos con "+" siguiendo el orden de grupos de opciones.
    */
   combinationPricing?: Record<string, PricingTier[]>;
 }
 
 // ============================================================================
-// CONFIGURATOR SCHEMA
+// NEW V2 ATTRIBUTES + PRICING
 // ============================================================================
 
-export interface ProductConfigurator {
+export type ProductConfiguratorAttributeType = 'select' | 'text' | 'color' | 'image';
+
+export interface ProductConfiguratorAttributeOption {
+  id: string;
+  label: string;
+  /**
+   * Valor visual opcional:
+   * - color -> hex
+   * - image -> URL
+   * - text/select -> opcional, normalmente igual a label
+   */
+  value?: string;
+  previewImage?: string;
+  unitsPerSheet?: number;
+}
+
+export type ProductConfiguratorConditionMap = Record<string, string[]>;
+
+export interface ProductConfiguratorDefaultWhenRule {
+  when: ProductConfiguratorConditionMap;
+  value: string;
+}
+
+export interface ProductConfiguratorAttribute {
+  id: string;
+  label: string;
+  type: ProductConfiguratorAttributeType;
+  required?: boolean;
+  options: ProductConfiguratorAttributeOption[];
+  /** Condicion de visibilidad: atributo -> opciones permitidas */
+  visibleWhen?: ProductConfiguratorConditionMap;
+  /** Condicion de habilitacion: atributo -> opciones permitidas */
+  enabledWhen?: ProductConfiguratorConditionMap;
+  /** Reglas de valor por defecto condicionado */
+  defaultWhen?: ProductConfiguratorDefaultWhenRule[];
+  /** Estrategia opcional para autoseleccion por defecto */
+  defaultOptionResolver?: string;
+}
+
+export interface ProductConfiguratorPricingQuantityInput {
+  min: number;
+  step: number;
+  label?: string;
+  /** Extension para compatibilidad con productos por hoja */
+  sheetBased?: boolean;
+}
+
+export interface ProductConfiguratorPricingRule {
+  match: Record<string, string>;
+  tiers: PricingTier[];
+}
+
+export interface ProductConfiguratorPricingSimple {
+  mode: 'simple';
+  quantityInput: ProductConfiguratorPricingQuantityInput;
+  tiers: PricingTier[];
+}
+
+export interface ProductConfiguratorPricingMatrix {
+  mode: 'matrix';
+  quantityInput: ProductConfiguratorPricingQuantityInput;
+  rules: ProductConfiguratorPricingRule[];
+}
+
+export interface ProductConfiguratorSheetPricingRule {
+  match: Record<string, string>;
+  unitsPerSheet: number;
+  sheetPricingTiers: PricingTier[];
+}
+
+export interface ProductConfiguratorPricingSheetMatrix {
+  mode: 'sheet-matrix';
+  quantityInput: ProductConfiguratorPricingQuantityInput;
+  rules: ProductConfiguratorSheetPricingRule[];
+}
+
+export type ProductConfiguratorPricing =
+  | ProductConfiguratorPricingSimple
+  | ProductConfiguratorPricingMatrix
+  | ProductConfiguratorPricingSheetMatrix;
+
+export interface ProductConfiguratorImportMeta {
+  legacy?: boolean;
+  source?: 'json' | 'csv' | 'excel' | 'manual' | string;
+  migratedAt?: string;
+  notes?: string;
+  [key: string]: unknown;
+}
+
+export interface ConfiguratorV1 {
+  version?: 1;
   steps: ConfiguratorStepId[];
-  /** Grupos de opciones — cada uno genera un paso 'option:<id>' */
+  variant?: VariantConfig;
+  size?: SizeConfig;
   options?: OptionGroup[];
   design: DesignConfig;
   placement?: PlacementConfig;
   quantity: QuantityConfig;
+  importMeta?: ProductConfiguratorImportMeta;
+  legacySnapshot?: unknown;
+}
+
+export interface ConfiguratorV2 {
+  version: 2;
+  steps: ConfiguratorV2StepId[];
+  attributes: ProductConfiguratorAttribute[];
+  pricing: ProductConfiguratorPricing;
+  design: DesignConfig;
+  placement?: PlacementConfig;
+  importMeta?: ProductConfiguratorImportMeta;
+  legacySnapshot?: unknown;
+}
+
+/**
+ * Forma de compatibilidad para el frontend actual.
+ * Mantiene quantity/options/variant/size y expone ademas attributes+pricing (V2).
+ */
+export interface ProductConfigurator {
+  version?: 1 | 2;
+  steps: ConfiguratorStepId[];
+
+  // UI legacy/actual
+  options?: OptionGroup[];
+  variant?: VariantConfig;
+  size?: SizeConfig;
+  design: DesignConfig;
+  placement?: PlacementConfig;
+  quantity: QuantityConfig;
+
+  // Nueva fuente de verdad
+  attributes?: ProductConfiguratorAttribute[];
+  pricing?: ProductConfiguratorPricing;
+  importMeta?: ProductConfiguratorImportMeta;
+  legacySnapshot?: unknown;
 }
 
 // ============================================================================
-// ESTADO INTERNO DEL CONFIGURADOR (React)
+// PRICING INPUT/OUTPUT TYPES
+// ============================================================================
+
+export type ProductConfiguratorSelection = Record<string, string>;
+
+export type ProductConfiguratorPriceErrorCode =
+  | 'MISSING_ATTRIBUTE'
+  | 'INVALID_QUANTITY'
+  | 'INVALID_SELECTION'
+  | 'NO_TIERS_DEFINED'
+  | 'NO_MATCHING_RULE';
+
+export interface ProductConfiguratorPriceError {
+  code: ProductConfiguratorPriceErrorCode;
+  message: string;
+  details?: Record<string, unknown>;
+}
+
+export interface ProductConfiguratorPriceResult {
+  ok: boolean;
+  pricingMode?: ProductConfiguratorPricing['mode'];
+  quantity?: number;
+  unitPrice: number;
+  totalPrice?: number;
+  effectiveUnitPrice?: number;
+  unitsPerSheet?: number;
+  sheetsNeeded?: number;
+  matchedRule: ProductConfiguratorPricingRule | ProductConfiguratorSheetPricingRule | null;
+  appliedTier: PricingTier | null;
+  matchedTier?: PricingTier | null;
+  error: ProductConfiguratorPriceError | null;
+}
+
+// ============================================================================
+// FRONTEND INTERNAL STATE
 // ============================================================================
 
 export type DesignMode = 'ready' | 'need-design' | null;
 
 export interface ConfiguratorSelections {
-  /** Valor seleccionado por grupo: { groupId: valueId } */
   options: Record<string, string>;
   designMode: DesignMode;
   designFile?: File;
@@ -154,7 +333,7 @@ export interface ConfiguratorState {
 }
 
 // ============================================================================
-// PRODUCTO CON CONFIGURADOR
+// PRODUCT
 // ============================================================================
 
 export interface ConfigurableProduct {
