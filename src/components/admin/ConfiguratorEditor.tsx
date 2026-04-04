@@ -843,6 +843,12 @@ function PlacementEditor({ config, onChange }: { config: PlacementConfig; onChan
   const updateOptionLabel = (id: string, label: string) =>
     update({ options: config.options.map((o) => (o.id === id ? { ...o, label } : o)) });
 
+  const updateOptionField = (id: string, field: string, value: number) =>
+    update({ options: config.options.map((o) => (o.id === id ? { ...o, [field]: value || undefined } : o)) });
+
+  const updateOptionBool = (id: string, field: string, value: boolean) =>
+    update({ options: config.options.map((o) => (o.id === id ? { ...o, [field]: value || undefined } : o)) });
+
   const PRESET_POSITIONS: PlacementOption[] = [
     { id: 'front-full', label: 'Frente grande', icon: '👕' },
     { id: 'front-center', label: 'Frente centro', icon: '🎯' },
@@ -880,17 +886,40 @@ function PlacementEditor({ config, onChange }: { config: PlacementConfig; onChan
         </div>
         <div className="space-y-2 mb-3">
           {config.options.map((opt) => (
-            <div key={opt.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
-              <span className="text-lg">{opt.icon}</span>
-              <input
-                type="text"
-                value={opt.label}
-                onChange={(e) => updateOptionLabel(opt.id, e.target.value)}
-                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-lg"
-              />
-              <button type="button" onClick={() => removeOption(opt.id)} className="p-1 text-red-500 hover:bg-red-50 rounded">
-                <X className="w-4 h-4" />
-              </button>
+            <div key={opt.id} className="bg-gray-50 rounded-lg px-3 py-2 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{opt.icon}</span>
+                <input
+                  type="text"
+                  value={opt.label}
+                  onChange={(e) => updateOptionLabel(opt.id, e.target.value)}
+                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-lg"
+                />
+                <button type="button" onClick={() => removeOption(opt.id)} className="p-1 text-red-500 hover:bg-red-50 rounded">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex items-center gap-3 pl-8 text-xs text-gray-500">
+                <label className="flex items-center gap-1" title="Recargo DTF (€)">
+                  DTF
+                  <input type="number" min={0} step={0.5} value={opt.surcharge ?? ''} onChange={(e) => updateOptionField(opt.id, 'surcharge', parseFloat(e.target.value) || 0)} placeholder="0" className="w-14 px-1.5 py-0.5 text-xs border border-gray-300 rounded text-right" />
+                  €
+                </label>
+                <label className="flex items-center gap-1" title="Vinilo: recargo por color (€)">
+                  Vinilo/color
+                  <input type="number" min={0} step={0.5} value={opt.vinylPerColorSurcharge ?? ''} onChange={(e) => updateOptionField(opt.id, 'vinylPerColorSurcharge', parseFloat(e.target.value) || 0)} placeholder="0" className="w-14 px-1.5 py-0.5 text-xs border border-gray-300 rounded text-right" />
+                  €
+                </label>
+                <label className="flex items-center gap-1" title="Bordado: recargo fijo (€)">
+                  Bordado
+                  <input type="number" min={0} step={0.5} value={opt.embroideryFixedSurcharge ?? ''} onChange={(e) => updateOptionField(opt.id, 'embroideryFixedSurcharge', parseFloat(e.target.value) || 0)} placeholder="0" className="w-14 px-1.5 py-0.5 text-xs border border-gray-300 rounded text-right" />
+                  €
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer ml-auto" title="Permitir esta zona para bordado">
+                  <input type="checkbox" checked={!!opt.embroideryAllowed} onChange={(e) => updateOptionBool(opt.id, 'embroideryAllowed', e.target.checked)} className="w-3.5 h-3.5 text-indigo-600 rounded" />
+                  Bordado permitido
+                </label>
+              </div>
             </div>
           ))}
         </div>

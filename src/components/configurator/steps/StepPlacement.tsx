@@ -5,6 +5,7 @@ interface StepPlacementProps {
   config: PlacementConfig;
   selected: string | undefined;
   selectedSize: string | undefined;
+  printType?: string;
   onSelect: (id: string) => void;
   onSizeSelect: (size: string) => void;
 }
@@ -13,21 +14,29 @@ export default function StepPlacement({
   config,
   selected,
   selectedSize,
+  printType,
   onSelect,
   onSizeSelect,
 }: StepPlacementProps) {
+  const visibleOptions =
+    printType === 'bordado'
+      ? config.options.filter((o) => o.embroideryAllowed)
+      : config.options;
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-gray-900">{config.label || 'Posición del diseño'}</h2>
         <p className="text-sm text-gray-500 mt-1">
-          Indica dónde quieres que vaya estampado tu diseño
+          {printType === 'bordado'
+            ? 'Zonas disponibles para bordado'
+            : 'Indica dónde quieres que vaya estampado tu diseño'}
         </p>
       </div>
 
       {/* Placement options grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {config.options.map((option) => {
+        {visibleOptions.map((option) => {
           const isSelected = selected === option.id;
           return (
             <button

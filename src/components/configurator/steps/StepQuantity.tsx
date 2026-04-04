@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { Star } from 'lucide-react';
-import type { QuantityConfig, PricingTier, OptionGroup } from '../../../types/configurator';
+import type { QuantityConfig, PricingTier, OptionGroup, ConfiguratorPricing } from '../../../types/configurator';
 
 interface StepQuantityProps {
   config: QuantityConfig;
@@ -9,6 +9,8 @@ interface StepQuantityProps {
   selectedOptions?: Record<string, string>;
   /** Unidades por hoja resueltas del valor de opción seleccionado */
   unitsPerSheet?: number;
+  /** Pricing breakdown for display */
+  pricing?: ConfiguratorPricing | null;
   onQuantityChange: (qty: number) => void;
 }
 
@@ -209,6 +211,7 @@ export default function StepQuantity({
   optionGroups,
   selectedOptions,
   unitsPerSheet,
+  pricing,
   onQuantityChange,
 }: StepQuantityProps) {
   const tiers = getActiveTiers(config, optionGroups, selectedOptions);
@@ -305,9 +308,23 @@ export default function StepQuantity({
           </button>
         </div>
 
-        <span className="ml-auto text-sm font-semibold text-indigo-600">
-          Total: {fmt(currentTier.price * quantity)}
-        </span>
+        <div className="ml-auto text-right">
+          {pricing?.basePrice != null && pricing?.printSurcharge != null && pricing.printSurcharge > 0 ? (
+            <div className="flex flex-col items-end gap-0.5">
+              <span className="text-xs text-gray-400">
+                {fmt(pricing.basePrice)} + {fmt(pricing.printSurcharge)}
+                {pricing.designPrice > 0 && ` + ${fmt(pricing.designPrice)} diseño`}
+              </span>
+              <span className="text-sm font-semibold text-indigo-600">
+                Total: {fmt(pricing.total)}
+              </span>
+            </div>
+          ) : (
+            <span className="text-sm font-semibold text-indigo-600">
+              Total: {fmt(pricing?.total ?? currentTier.price * quantity)}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

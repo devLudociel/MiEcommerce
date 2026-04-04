@@ -11,12 +11,45 @@ export default function PriceDisplay({ pricing, quantity, sheetBased }: PriceDis
   const fmt = (n: number) =>
     n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
 
+  const hasBreakdown = pricing.basePrice != null && pricing.printSurcharge != null && pricing.printSurcharge > 0;
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2 shadow-sm">
-      <div className="flex justify-between text-sm text-gray-600">
-        <span>{sheetBased ? 'Precio/hoja' : 'Precio unitario'}</span>
-        <span>{fmt(pricing.unitPrice)}</span>
-      </div>
+      {hasBreakdown ? (
+        <>
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>Precio base</span>
+            <span>{fmt(pricing.basePrice!)}</span>
+          </div>
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>{pricing.printSurchargeLabel || 'Estampado'}</span>
+            <span>+ {fmt(pricing.printSurcharge!)}</span>
+          </div>
+          {pricing.quantityDiscount != null && pricing.quantityDiscount > 0 && pricing.unitPriceBeforeDiscount != null && (
+            <div className="flex justify-between text-sm text-emerald-600">
+              <span>Dto. cantidad ({pricing.quantityDiscount}%)</span>
+              <span>&minus;{fmt(pricing.unitPriceBeforeDiscount - pricing.unitPrice)}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-sm font-semibold text-gray-800 border-t border-dashed border-gray-200 pt-1">
+            <span>Precio por unidad</span>
+            <span>{fmt(pricing.unitPrice)}</span>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>{sheetBased ? 'Precio/hoja' : 'Precio unitario'}</span>
+            <span>{fmt(pricing.unitPrice)}</span>
+          </div>
+          {pricing.quantityDiscount != null && pricing.quantityDiscount > 0 && pricing.unitPriceBeforeDiscount != null && (
+            <div className="flex justify-between text-sm text-emerald-600">
+              <span>Dto. cantidad ({pricing.quantityDiscount}%)</span>
+              <span>&minus;{fmt(pricing.unitPriceBeforeDiscount - pricing.unitPrice)}</span>
+            </div>
+          )}
+        </>
+      )}
 
       <div className="flex justify-between text-sm text-gray-600">
         <span>{sheetBased ? 'Hojas' : 'Cantidad'}</span>

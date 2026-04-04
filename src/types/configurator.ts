@@ -89,6 +89,14 @@ export interface PlacementOption {
   id: string;
   label: string;
   icon?: string;
+  /** Recargo DTF por zona (ej. pecho_pequeno = 4, espalda = 8) */
+  surcharge?: number;
+  /** Recargo vinilo por color por zona (ej. 2 => 2€/color) */
+  vinylPerColorSurcharge?: number;
+  /** Recargo fijo bordado por zona (ej. 12) */
+  embroideryFixedSurcharge?: number;
+  /** Permitir esta zona para bordado */
+  embroideryAllowed?: boolean;
 }
 
 export interface PlacementConfig {
@@ -323,6 +331,16 @@ export interface ConfiguratorPricing {
   designPrice: number;
   subtotal: number;
   total: number;
+  /** Precio base de la prenda (del pricing engine, sin recargo de estampado) */
+  basePrice?: number;
+  /** Recargo por estampado calculado (DTF/vinilo/bordado) */
+  printSurcharge?: number;
+  /** Etiqueta descriptiva del recargo (ej. "Pecho pequeño", "Vinilo textil (3 colores)") */
+  printSurchargeLabel?: string;
+  /** Descuento por cantidad aplicado (porcentaje, ej. 10 = 10%) */
+  quantityDiscount?: number;
+  /** Precio unitario sin descuento por cantidad */
+  unitPriceBeforeDiscount?: number;
 }
 
 export interface ConfiguratorState {

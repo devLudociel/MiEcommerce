@@ -64,6 +64,75 @@ function getPreviewImage(
   return fallback;
 }
 
+// ── Print-type–aware surcharge ────────────────────────────────────────────
+// Reads print_type / print_colors from selections.options and dispatches:
+//   dtf      → placement.surcharge
+//   vinilo   → placement.vinylPerColorSurcharge × colors
+//   bordado  → placement.embroideryFixedSurcharge
+
+function getPrintSurcharge(
+  product: ConfigurableProduct,
+  selections: ConfiguratorSelections
+): { surcharge: number; label: string } {
+  if (!selections.placement || !product.configurator.placement)
+    return { surcharge: 0, label: '' };
+
+  const placementOpt = product.configurator.placement.options.find(
+    (o) => o.id === selections.placement
+  );
+  if (!placementOpt) return { surcharge: 0, label: '' };
+
+  const printType = selections.options['print_type'] ?? '';
+
+  if (printType === 'vinilo') {
+    const colors = Math.max(Number(selections.options['print_colors']) || 1, 1);
+    const perColor = placementOpt.vinylPerColorSurcharge ?? 0;
+    return {
+      surcharge: perColor * colors,
+      label: `Vinilo textil (${colors} ${colors === 1 ? 'color' : 'colores'})`,
+    };
+  }
+
+  if (printType === 'bordado') {
+    return {
+      surcharge: placementOpt.embroideryFixedSurcharge ?? 0,
+      label: 'Bordado',
+    };
+  }
+
+  // DTF (default / explicit)
+  return {
+    surcharge: placementOpt.surcharge ?? 0,
+    label: placementOpt.label,
+  };
+}
+
+// ── Resolve active tiers (shared helper) ──────────────────────────────────
+
+function resolveActiveTiers(
+  product: ConfigurableProduct,
+  selections: ConfiguratorSelections
+) {
+  const { tiers, combinationPricing } = product.configurator.quantity;
+  const optionGroups = product.configurator.options ?? [];
+  let activeTiers = tiers;
+  if (combinationPricing) {
+    const valueIds = optionGroups
+      .map((g) => selections.options[g.id])
+      .filter((id): id is string => !!id);
+    if (valueIds.length > 1) {
+      const fullKey = valueIds.join('+');
+      if (combinationPricing[fullKey]?.length) activeTiers = combinationPricing[fullKey];
+    }
+    if (activeTiers === tiers) {
+      for (const id of valueIds) {
+        if (combinationPricing[id]?.length) { activeTiers = combinationPricing[id]; break; }
+      }
+    }
+  }
+  return activeTiers;
+}
+
 function calculatePricing(
   product: ConfigurableProduct,
   selections: ConfiguratorSelections
@@ -79,6 +148,7 @@ function calculatePricing(
       ? product.configurator.design.designServicePrice
       : 0;
 
+  // Sheet-based modes — no print surcharge applies
   if (priceResult.ok && priceResult.pricingMode === 'sheet-matrix') {
     const subtotal = priceResult.totalPrice ?? 0;
     const unitPrice = priceResult.effectiveUnitPrice ?? 0;
@@ -89,7 +159,6 @@ function calculatePricing(
     const matchedTier = priceResult.appliedTier;
     const subtotal = matchedTier?.price ?? 0;
     const tierFrom = Math.max(matchedTier?.from ?? 1, 1);
-
     return {
       unitPrice: subtotal / tierFrom,
       designPrice,
@@ -98,9 +167,45 @@ function calculatePricing(
     };
   }
 
-  const unitPrice = priceResult.ok ? priceResult.unitPrice : 0;
+  // ── Standard per-unit mode ──────────────────────────────────────────────
+  // basePrice  = engine unit price (size/variant tier, may include qty discount)
+  // surcharge  = print-type–aware extra (DTF | vinilo | bordado)
+  // unitPrice  = basePrice + surcharge
+
+  const engineUnitPrice = priceResult.ok ? priceResult.unitPrice : 0;
+  const { surcharge: printSurcharge, label: printSurchargeLabel } =
+    getPrintSurcharge(product, selections);
+
+  const basePrice = engineUnitPrice;
+  const unitPrice = basePrice + printSurcharge;
   const subtotal = unitPrice * selections.quantity;
-  return { unitPrice, designPrice, subtotal, total: subtotal + designPrice };
+
+  // Quantity discount: compare engine price against first-tier base
+  const activeTiers = resolveActiveTiers(product, selections);
+  let quantityDiscount: number | undefined;
+  let unitPriceBeforeDiscount: number | undefined;
+
+  if (activeTiers.length >= 2 && activeTiers[0]) {
+    const baseTierPrice = activeTiers[0].price;
+    if (baseTierPrice > 0 && engineUnitPrice < baseTierPrice) {
+      const pct = Math.round((1 - engineUnitPrice / baseTierPrice) * 100);
+      if (pct > 0) {
+        quantityDiscount = pct;
+        unitPriceBeforeDiscount = baseTierPrice + printSurcharge;
+      }
+    }
+  }
+
+  return {
+    unitPrice,
+    designPrice,
+    subtotal,
+    total: subtotal + designPrice,
+    ...(printSurcharge > 0
+      ? { basePrice, printSurcharge, printSurchargeLabel }
+      : {}),
+    ...(quantityDiscount != null ? { quantityDiscount, unitPriceBeforeDiscount } : {}),
+  };
 }
 
 // ============================================================================
@@ -309,9 +414,20 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
       for (const dep of dependents) {
         delete newOptions[dep.id];
       }
-      return { ...prev, options: newOptions };
+
+      // Auto-correct placement when switching to bordado
+      let placement = prev.placement;
+      if (groupId === 'print_type' && valueId === 'bordado' && product?.configurator.placement) {
+        const allowed = product.configurator.placement.options.filter((o) => o.embroideryAllowed);
+        const currentStillAllowed = allowed.some((o) => o.id === placement);
+        if (!currentStillAllowed && allowed[0]) {
+          placement = allowed[0].id;
+        }
+      }
+
+      return { ...prev, options: newOptions, placement };
     });
-  }, [attributes]);
+  }, [attributes, product]);
 
   const setDesignMode = useCallback((mode: DesignMode) => {
     setSelections((prev) => ({
@@ -577,6 +693,7 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
                 config={product.configurator.placement}
                 selected={selections.placement}
                 selectedSize={selections.placementSize}
+                printType={selections.options['print_type']}
                 onSelect={setPlacement}
                 onSizeSelect={setPlacementSize}
               />
@@ -589,6 +706,7 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
                 optionGroups={optionGroups}
                 selectedOptions={selections.options}
                 unitsPerSheet={unitsPerSheet}
+                pricing={pricing}
                 onQuantityChange={setQuantity}
               />
             )}
