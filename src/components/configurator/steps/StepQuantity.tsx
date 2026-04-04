@@ -276,55 +276,65 @@ export default function StepQuantity({
       </div>
 
       {/* Fine-tune quantity */}
-      <div className="flex items-center gap-4 pt-2 border-t border-gray-100">
-        <span className="text-sm text-gray-500 shrink-0">Cantidad exacta:</span>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setQty(quantity - 1)}
-            disabled={quantity <= config.min}
-            className="w-10 h-10 flex items-center justify-center rounded-xl border-2 border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
-            aria-label="Reducir cantidad"
-          >
-            <span className="text-lg leading-none">−</span>
-          </button>
+      <div className="space-y-3 pt-2 border-t border-gray-100">
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-500 shrink-0">Cantidad exacta:</span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setQty(quantity - 1)}
+              disabled={quantity <= config.min}
+              className="w-10 h-10 flex items-center justify-center rounded-xl border-2 border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+              aria-label="Reducir cantidad"
+            >
+              <span className="text-lg leading-none">−</span>
+            </button>
 
-          <input
-            type="number"
-            min={config.min}
-            value={quantity}
-            onChange={(e) => setQty(parseInt(e.target.value, 10) || config.min)}
-            className="w-20 text-center text-lg font-bold rounded-xl border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-            aria-label="Cantidad"
-          />
+            <input
+              type="number"
+              min={config.min}
+              value={quantity}
+              onChange={(e) => setQty(parseInt(e.target.value, 10) || config.min)}
+              className="w-20 text-center text-lg font-bold rounded-xl border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+              aria-label="Cantidad"
+            />
 
-          <button
-            type="button"
-            onClick={() => setQty(quantity + 1)}
-            className="w-10 h-10 flex items-center justify-center rounded-xl border-2 border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors shadow-sm"
-            aria-label="Aumentar cantidad"
-          >
-            <span className="text-lg leading-none">+</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setQty(quantity + 1)}
+              className="w-10 h-10 flex items-center justify-center rounded-xl border-2 border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors shadow-sm"
+              aria-label="Aumentar cantidad"
+            >
+              <span className="text-lg leading-none">+</span>
+            </button>
+          </div>
         </div>
 
-        <div className="ml-auto text-right">
-          {pricing?.basePrice != null && pricing?.printSurcharge != null && pricing.printSurcharge > 0 ? (
-            <div className="flex flex-col items-end gap-0.5">
-              <span className="text-xs text-gray-400">
-                {fmt(pricing.basePrice)} + {fmt(pricing.printSurcharge)}
-                {pricing.designPrice > 0 && ` + ${fmt(pricing.designPrice)} diseño`}
-              </span>
-              <span className="text-sm font-semibold text-indigo-600">
-                Total: {fmt(pricing.total)}
-              </span>
+        {/* Price breakdown — full width row */}
+        {pricing?.basePrice != null && pricing?.printSurcharge != null && pricing.printSurcharge > 0 ? (
+          <div className="flex items-center justify-between bg-indigo-50 rounded-xl px-4 py-2.5">
+            <div className="text-sm text-gray-600 space-x-1">
+              <span>{fmt(pricing.basePrice)}</span>
+              <span className="text-gray-400">+</span>
+              <span>{fmt(pricing.printSurcharge)}</span>
+              {pricing.designPrice > 0 && (
+                <>
+                  <span className="text-gray-400">+</span>
+                  <span>{fmt(pricing.designPrice)} diseño</span>
+                </>
+              )}
             </div>
-          ) : (
+            <span className="text-base font-bold text-indigo-700">
+              {fmt(pricing.total)}
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center justify-end">
             <span className="text-sm font-semibold text-indigo-600">
               Total: {fmt(pricing?.total ?? currentTier.price * quantity)}
             </span>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
