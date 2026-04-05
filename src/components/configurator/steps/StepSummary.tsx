@@ -23,6 +23,7 @@ export default function StepSummary({
   isAddingToCart,
   onAddToCart,
 }: StepSummaryProps) {
+  const fmt = (n: number) => n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
   const optionGroups = product.configurator.options ?? [];
 
   const lines: { icon: React.ReactNode; label: string; value: string }[] = [];
@@ -104,13 +105,31 @@ export default function StepSummary({
   })();
   const totalUnits = isSheetBased && unitsPerSheet ? selections.quantity * unitsPerSheet : undefined;
 
-  lines.push({
-    icon: <Hash className="w-4 h-4" />,
-    label: 'Cantidad',
-    value: isSheetBased
-      ? `${selections.quantity} ${selections.quantity === 1 ? 'hoja' : 'hojas'}${totalUnits ? ` (${totalUnits} uds.)` : ''}`
-      : `${selections.quantity} ${selections.quantity === 1 ? 'unidad' : 'unidades'}`,
-  });
+  const isTextBannerPricing = pricing.letterCount != null && pricing.letterUnitPrice != null;
+  if (isTextBannerPricing) {
+    const letterCount = pricing.letterCount!;
+    const letterUnitPrice = pricing.letterUnitPrice!;
+    const giftImagePennants = pricing.giftImagePennants ?? 2;
+
+    lines.push({
+      icon: <Hash className="w-4 h-4" />,
+      label: 'Letras',
+      value: `${letterCount} banderines × ${fmt(letterUnitPrice)} = ${fmt(letterCount * letterUnitPrice)}`,
+    });
+    lines.push({
+      icon: <Tag className="w-4 h-4" />,
+      label: 'Regalo',
+      value: `+ ${giftImagePennants} banderines temáticos`,
+    });
+  } else {
+    lines.push({
+      icon: <Hash className="w-4 h-4" />,
+      label: 'Cantidad',
+      value: isSheetBased
+        ? `${selections.quantity} ${selections.quantity === 1 ? 'hoja' : 'hojas'}${totalUnits ? ` (${totalUnits} uds.)` : ''}`
+        : `${selections.quantity} ${selections.quantity === 1 ? 'unidad' : 'unidades'}`,
+    });
+  }
 
   return (
     <div className="space-y-4">

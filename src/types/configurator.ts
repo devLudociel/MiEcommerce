@@ -337,6 +337,12 @@ export interface ConfiguratorPricing {
   designPrice: number;
   subtotal: number;
   total: number;
+  /** Pricing especial para banderines por texto */
+  letterCount?: number;
+  /** Precio por letra para banderines de texto */
+  letterUnitPrice?: number;
+  /** Cantidad de banderines tematicos de regalo */
+  giftImagePennants?: number;
   /** Precio base de la prenda (del pricing engine, sin recargo de estampado) */
   basePrice?: number;
   /** Recargo por estampado calculado (DTF/vinilo/bordado) */

@@ -218,6 +218,8 @@ export default function StepQuantity({
   const currentTier = getTierForQuantity(tiers, quantity);
   const basePrice = tiers[0]?.price ?? 0;
   const isSheetBased = !!config.sheetBased;
+  const isTextBannerPricing =
+    pricing?.letterCount != null && pricing?.letterUnitPrice != null;
 
   const setQty = useCallback(
     (value: number) => {
@@ -225,6 +227,46 @@ export default function StepQuantity({
     },
     [config.min, onQuantityChange]
   );
+
+  if (isTextBannerPricing) {
+    const letterCount = pricing.letterCount!;
+    const letterUnitPrice = pricing.letterUnitPrice!;
+    const giftImagePennants = pricing.giftImagePennants ?? 2;
+
+    return (
+      <div className="space-y-5">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Cantidad</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            En este producto el precio se calcula por letras del texto.
+          </p>
+        </div>
+
+        <div className="rounded-xl border-2 border-indigo-200 bg-indigo-50 p-4 space-y-2">
+          <div className="flex items-center justify-between text-sm text-gray-700">
+            <span>Letras del texto</span>
+            <span className="font-semibold">{letterCount}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm text-gray-700">
+            <span>{letterCount} banderines × {fmt(letterUnitPrice)}</span>
+            <span className="font-semibold">{fmt(letterCount * letterUnitPrice)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm text-gray-700">
+            <span>Regalo</span>
+            <span>+ {giftImagePennants} banderines temáticos</span>
+          </div>
+          <div className="border-t border-indigo-200 pt-2 flex items-center justify-between text-lg font-bold text-indigo-800">
+            <span>Total</span>
+            <span>{fmt(pricing.total)}</span>
+          </div>
+        </div>
+
+        <p className="text-xs text-gray-500">
+          La cantidad se mantiene en {config.min} para este cálculo.
+        </p>
+      </div>
+    );
+  }
 
   if (isSheetBased) {
     return (

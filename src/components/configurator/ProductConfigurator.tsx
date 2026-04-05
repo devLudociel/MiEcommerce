@@ -32,6 +32,10 @@ interface ProductConfiguratorProps {
   productId: string;
 }
 
+const TEXT_BANNER_OPTION_ID = 'texto_banderin';
+const TEXT_BANNER_PRICE_PER_LETTER = 0.9;
+const TEXT_BANNER_GIFT_IMAGE_PENNANTS = 2;
+
 // ============================================================================
 // PRICING HELPERS
 // ============================================================================
@@ -139,6 +143,23 @@ function calculatePricing(
   product: ConfigurableProduct,
   selections: ConfiguratorSelections
 ): ConfiguratorPricing {
+  const textBannerValue = selections.options[TEXT_BANNER_OPTION_ID];
+  if (typeof textBannerValue === 'string') {
+    const letterCount = textBannerValue.replace(/\s/g, '').length;
+    if (letterCount > 0) {
+      const subtotal = letterCount * TEXT_BANNER_PRICE_PER_LETTER;
+      return {
+        unitPrice: TEXT_BANNER_PRICE_PER_LETTER,
+        designPrice: 0,
+        subtotal,
+        total: subtotal,
+        letterCount,
+        letterUnitPrice: TEXT_BANNER_PRICE_PER_LETTER,
+        giftImagePennants: TEXT_BANNER_GIFT_IMAGE_PENNANTS,
+      };
+    }
+  }
+
   const priceResult = getUnitPrice(
     product.configurator,
     selections.options,
@@ -417,6 +438,18 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
     [product, selections]
   );
 
+  // En productos por texto (banderín), la cantidad no define precio.
+  // Forzamos cantidad mínima para evitar inconsistencias visuales y de carrito.
+  useEffect(() => {
+    if (!product || !pricing || pricing.letterCount == null) return;
+    const fixedQuantity = product.configurator.quantity.min;
+    if (selections.quantity !== fixedQuantity) {
+      setSelections((prev) =>
+        prev.quantity === fixedQuantity ? prev : { ...prev, quantity: fixedQuantity }
+      );
+    }
+  }, [product, pricing?.letterCount, selections.quantity]);
+
   const canGoNext = currentStepId
     ? isStepValid(currentStepId, product!, selections)
     : false;
@@ -499,12 +532,13 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
   const handleAddToCart = useCallback(async () => {
     if (!product || !pricing) return;
 
+    const isTextBannerPricing = pricing.letterCount != null && pricing.letterUnitPrice != null;
     const priceValidation = getUnitPrice(
       product.configurator,
       selections.options,
       selections.quantity
     );
-    if (!priceValidation.ok) {
+    if (!isTextBannerPricing && !priceValidation.ok) {
       notify.error(priceValidation.error?.message || 'No se pudo resolver el precio para esta configuración');
       return;
     }
@@ -529,9 +563,15 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
         configuratorId: product.id,
       };
 
-      if (priceValidation.pricingMode === 'sheet-matrix') {
+      if (!isTextBannerPricing && priceValidation.pricingMode === 'sheet-matrix') {
         if (priceValidation.unitsPerSheet) customization.unitsPerSheet = priceValidation.unitsPerSheet;
         if (priceValidation.sheetsNeeded) customization.sheetsNeeded = priceValidation.sheetsNeeded;
+      }
+
+      if (isTextBannerPricing) {
+        customization.letterCount = pricing.letterCount;
+        customization.letterUnitPrice = pricing.letterUnitPrice;
+        customization.giftImagePennants = pricing.giftImagePennants ?? TEXT_BANNER_GIFT_IMAGE_PENNANTS;
       }
 
       // All selected options
@@ -565,9 +605,12 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
       // Quantity: for sheetBased, store sheets and convert to units for cart
       const isSheetBased = product.configurator.quantity.sheetBased;
       const unitsPerSheet = getUnitsPerSheet(optionGroups, selections.options);
-      const cartQuantity =
-        isSheetBased && unitsPerSheet ? selections.quantity * unitsPerSheet : selections.quantity;
-      if (isSheetBased) customization.sheets = selections.quantity;
+      const cartQuantity = isTextBannerPricing
+        ? product.configurator.quantity.min
+        : isSheetBased && unitsPerSheet
+          ? selections.quantity * unitsPerSheet
+          : selections.quantity;
+      if (!isTextBannerPricing && isSheetBased) customization.sheets = selections.quantity;
 
       addToCart({
         id: product.id,
