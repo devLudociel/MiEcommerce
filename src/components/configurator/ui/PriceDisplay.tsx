@@ -56,6 +56,16 @@ export default function PriceDisplay({ pricing, quantity, sheetBased }: PriceDis
         <span>&times; {quantity}</span>
       </div>
 
+      {pricing.attributeSurcharges?.map((s, i) => (
+        <div key={i} className="flex justify-between text-sm text-gray-600">
+          <span>{s.label}</span>
+          <span className="text-right">
+            <span>+ {fmt(s.amount)}</span>
+            <span className="block text-xs text-gray-400">{s.detail}</span>
+          </span>
+        </div>
+      ))}
+
       {pricing.designPrice > 0 && (
         <div className="flex justify-between text-sm text-gray-600">
           <span>Servicio de diseño</span>

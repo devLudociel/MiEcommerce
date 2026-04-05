@@ -1333,7 +1333,7 @@ function AttributesEditor({
               {/* Type */}
               <div>
                 <label className="block text-xs text-gray-600 mb-2">Tipo de selector</label>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {ATTRIBUTE_TYPES.map((at) => (
                     <button
                       key={at.value}
@@ -1368,7 +1368,7 @@ function AttributesEditor({
                 <label className="block text-xs text-gray-600 mb-2">Opciones ({attr.options.length})</label>
                 <div className="space-y-2">
                   {attr.options.map((opt, oi) => (
-                    <div key={opt.id} className="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
+                    <div key={opt.id} className="flex flex-wrap items-center gap-2 bg-gray-50 rounded-lg p-2">
                       {attr.type === 'color' && (
                         <input
                           type="color"
@@ -1412,6 +1412,31 @@ function AttributesEditor({
                           className="w-16 px-1.5 py-1 text-xs border border-gray-300 rounded"
                         />
                       </div>
+                      <div className="flex items-center gap-1">
+                        <label className="text-xs text-gray-400 whitespace-nowrap">Recargo</label>
+                        <input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          placeholder="-"
+                          value={opt.surcharge ?? ''}
+                          onChange={(e) => {
+                            const v = parseFloat(e.target.value);
+                            updateOption(ai, oi, { surcharge: v > 0 ? v : undefined });
+                          }}
+                          className="w-16 px-1.5 py-1 text-xs border border-gray-300 rounded"
+                        />
+                      </div>
+                      {opt.surcharge != null && opt.surcharge > 0 && (
+                        <select
+                          value={opt.surchargeType ?? 'per_unit'}
+                          onChange={(e) => updateOption(ai, oi, { surchargeType: e.target.value as 'per_unit' | 'fixed' })}
+                          className="px-1.5 py-1 text-xs border border-gray-300 rounded"
+                        >
+                          <option value="per_unit">x ud.</option>
+                          <option value="fixed">fijo</option>
+                        </select>
+                      )}
                       <button
                         type="button"
                         onClick={() => removeOption(ai, oi)}

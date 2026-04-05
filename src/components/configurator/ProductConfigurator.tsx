@@ -180,6 +180,33 @@ function calculatePricing(
   const unitPrice = basePrice + printSurcharge;
   const subtotal = unitPrice * selections.quantity;
 
+  // ── Attribute option surcharges ──────────────────────────────────────────
+  const attributes = product.configurator.attributes ?? [];
+  const attributeSurcharges: Array<{ label: string; amount: number; detail: string }> = [];
+  let attributeSurchargeTotal = 0;
+
+  for (const attr of attributes) {
+    const selectedId = selections.options[attr.id];
+    if (!selectedId) continue;
+    const opt = attr.options.find((o) => o.id === selectedId);
+    if (!opt?.surcharge || opt.surcharge <= 0) continue;
+
+    const surchargeType = opt.surchargeType ?? 'per_unit';
+    let amount: number;
+    let detail: string;
+
+    if (surchargeType === 'fixed') {
+      amount = opt.surcharge;
+      detail = `+${opt.surcharge.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`;
+    } else {
+      amount = opt.surcharge * selections.quantity;
+      detail = `${selections.quantity} × ${opt.surcharge.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`;
+    }
+
+    attributeSurcharges.push({ label: opt.label, amount, detail });
+    attributeSurchargeTotal += amount;
+  }
+
   // Quantity discount: compare engine price against first-tier base
   const activeTiers = resolveActiveTiers(product, selections);
   let quantityDiscount: number | undefined;
@@ -196,15 +223,18 @@ function calculatePricing(
     }
   }
 
+  const total = subtotal + designPrice + attributeSurchargeTotal;
+
   return {
     unitPrice,
     designPrice,
     subtotal,
-    total: subtotal + designPrice,
+    total,
     ...(printSurcharge > 0
       ? { basePrice, printSurcharge, printSurchargeLabel }
       : {}),
     ...(quantityDiscount != null ? { quantityDiscount, unitPriceBeforeDiscount } : {}),
+    ...(attributeSurcharges.length > 0 ? { attributeSurcharges } : {}),
   };
 }
 

@@ -153,6 +153,10 @@ export interface ProductConfiguratorAttributeOption {
   value?: string;
   previewImage?: string;
   unitsPerSheet?: number;
+  /** Recargo adicional por seleccionar esta opción */
+  surcharge?: number;
+  /** per_unit = surcharge × quantity, fixed = surcharge una sola vez */
+  surchargeType?: 'per_unit' | 'fixed';
 }
 
 export type ProductConfiguratorConditionMap = Record<string, string[]>;
@@ -341,6 +345,12 @@ export interface ConfiguratorPricing {
   quantityDiscount?: number;
   /** Precio unitario sin descuento por cantidad */
   unitPriceBeforeDiscount?: number;
+  /** Recargos de opciones de atributos (surcharge en attribute options) */
+  attributeSurcharges?: Array<{
+    label: string;
+    amount: number;
+    detail: string;
+  }>;
 }
 
 export interface ConfiguratorState {

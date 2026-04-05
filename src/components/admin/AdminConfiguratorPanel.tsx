@@ -402,16 +402,16 @@ export default function AdminConfiguratorPanel() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-5xl mx-auto px-4 py-8 overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8 gap-4">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-gray-900">Configuradores de producto</h1>
           <p className="text-sm text-gray-500 mt-1">
             Crea plantillas de configuración paso a paso y asígnalas a los productos.
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={openImport}
@@ -464,7 +464,7 @@ export default function AdminConfiguratorPanel() {
           {configurators.map((cfg) => (
             <div
               key={cfg.id}
-              className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4 hover:border-indigo-300 transition-colors"
+              className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col sm:flex-row sm:items-center gap-4 hover:border-indigo-300 transition-colors overflow-hidden"
             >
               {/* Icon */}
               <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-2xl shrink-0">
@@ -533,7 +533,7 @@ export default function AdminConfiguratorPanel() {
             onClick={() => setShowModal(false)}
           />
           <div className="relative min-h-full flex items-start justify-center p-4 pt-10">
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl">
               {/* Modal header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-bold text-gray-900">
