@@ -8,7 +8,7 @@ import {
   removeFromCart,
 } from '../../store/cartStore';
 import type { CartItem } from '../../store/cartStore';
-import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { safeImageSrc } from '../../lib/placeholders';
 import { shippingInfoSchema } from '../../lib/validation/schemas';
 import { useFormValidation } from '../../hooks/useFormValidation';
 import { notify } from '../../lib/notifications';
@@ -1686,7 +1686,7 @@ export default function Checkout() {
 
                     <div className="flex gap-3">
                       <img
-                        src={item.image || FALLBACK_IMG_400x300}
+                        src={safeImageSrc(item.image)}
                         alt={item.name}
                         className="w-20 h-20 object-cover rounded-lg border border-gray-200"
                       />

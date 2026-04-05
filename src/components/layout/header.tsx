@@ -9,6 +9,7 @@ import { categories } from '../../data/categories';
 import { occasions } from '../../data/occasions';
 import CustomizationDetails from '../cart/CustomizationDetails';
 import { useBundleDiscounts } from '../../lib/bundleDiscounts';
+import { safeImageSrc } from '../../lib/placeholders';
 
 // ✅ DESPUÉS (sin error de hidratación)
 function CartBadge() {
@@ -86,7 +87,7 @@ const CartDropdown = memo(function CartDropdown() {
               <div key={`${item.id}-${item.variantId ?? 'v'}`} className="flex items-start gap-3">
                 {item.image ? (
                   <img
-                    src={item.image}
+                    src={safeImageSrc(item.image)}
                     alt={item.name}
                     className="w-12 h-12 rounded object-cover flex-shrink-0"
                   />

@@ -235,7 +235,7 @@ function inferAcabadoFromCandidates(values: string[]): boolean {
 
 function normalizeAttributeType(value: unknown): ProductConfiguratorAttributeType {
   const type = asString(value).toLowerCase();
-  if (type === 'color' || type === 'image' || type === 'text' || type === 'select') {
+  if (type === 'color' || type === 'image' || type === 'text' || type === 'select' || type === 'freetext') {
     return type;
   }
   return 'select';
@@ -246,7 +246,8 @@ function mapOptionTypeToAttributeType(type: OptionDisplayType): ProductConfigura
 }
 
 function mapAttributeTypeToOptionType(type: ProductConfiguratorAttributeType): OptionDisplayType {
-  return type === 'select' ? 'text' : type;
+  if (type === 'select' || type === 'freetext') return 'text';
+  return type;
 }
 
 function normalizeTierList(raw: unknown): PricingTier[] {
@@ -339,6 +340,7 @@ function normalizeAttributeOptions(
   attributeType: ProductConfiguratorAttributeType,
   attributeId: string
 ): ProductConfiguratorAttributeOption[] {
+  if (attributeType === 'freetext') return [];
   if (!Array.isArray(rawOptions)) return [];
 
   const options: ProductConfiguratorAttributeOption[] = [];
@@ -827,10 +829,19 @@ function normalizeV2Steps(
     }
   }
 
+  // Add any attributes not already in the steps list — append before fixed steps,
+  // preserving the order from the attributes array.
+  const fixedSteps: ConfiguratorV2StepId[] = ['design', 'placement', 'quantity', 'summary'];
   for (const attribute of attributes) {
     const attributeStep = `attribute:${attribute.id}` as AttributeStepId;
     if (!result.includes(attributeStep)) {
-      result.unshift(attributeStep);
+      // Insert before the first fixed step (design/placement/quantity/summary)
+      const firstFixedIndex = result.findIndex((s) => fixedSteps.includes(s));
+      if (firstFixedIndex >= 0) {
+        result.splice(firstFixedIndex, 0, attributeStep);
+      } else {
+        result.push(attributeStep);
+      }
     }
   }
 
@@ -878,6 +889,7 @@ function toConfiguratorV2Internal(
             enabledWhen: normalizeConditionMap(item.enabledWhen),
             defaultWhen: normalizeDefaultWhenRules(item.defaultWhen, id),
             defaultOptionResolver: asString(item.defaultOptionResolver) || undefined,
+            placeholder: asString(item.placeholder) || undefined,
           };
         });
     }
@@ -1348,7 +1360,7 @@ export function validateConfigurator(input: unknown): ConfiguratorValidationResu
     const type = normalizeAttributeType(attribute.type);
 
     const options = normalizeAttributeOptions(attribute.options, type, id);
-    if (options.length === 0) {
+    if (options.length === 0 && type !== 'freetext') {
       errors.push({
         code: 'INVALID_FORMAT',
         message: `El atributo ${id} debe tener al menos una opcion`,
@@ -1379,6 +1391,7 @@ export function validateConfigurator(input: unknown): ConfiguratorValidationResu
       enabledWhen: normalizeConditionMap(attribute.enabledWhen),
       defaultWhen: normalizeDefaultWhenRules(attribute.defaultWhen, id),
       defaultOptionResolver: asString(attribute.defaultOptionResolver) || undefined,
+      placeholder: asString(attribute.placeholder) || undefined,
     };
   });
 
@@ -1588,7 +1601,10 @@ function mapV2StepsToCompatibility(steps: ConfiguratorV2StepId[]): ConfiguratorS
 }
 
 function convertV2ToCompatibility(config: ConfiguratorV2): ProductConfigurator {
-  const options = config.attributes.map(attributeToOptionGroup);
+  // Freetext attributes have no predefined options — skip them in legacy option groups
+  const options = config.attributes
+    .filter((attr) => attr.type !== 'freetext')
+    .map(attributeToOptionGroup);
   const variantAttribute = findVariantAttribute(config.attributes);
   const sizeAttribute = findSizeAttribute(config.attributes);
 
@@ -1673,6 +1689,12 @@ function normalizeSelectionAgainstAttributes(
       asString(selection[attribute.id]) ||
       asString(normalizedKeyValue.get(attribute.id));
     if (!rawSelected) continue;
+
+    // Freetext attributes accept any string value — no option matching needed
+    if (attribute.type === 'freetext') {
+      normalizedSelection[attribute.id] = rawSelected;
+      continue;
+    }
 
     const normalizedSelectedId = normalizeOptionIdForAttribute(attribute.id, rawSelected);
     const exactMatch = attribute.options.find((option) => option.id === rawSelected);

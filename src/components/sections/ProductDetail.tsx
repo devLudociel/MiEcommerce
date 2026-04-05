@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { getProductReviewStats, db } from '../../lib/firebase';
 import { collection, query, where, limit, getDocs, orderBy } from 'firebase/firestore';
 import type { FirebaseProduct, InspirationImage, ProductVariant } from '../../types/firebase';
-import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { FALLBACK_IMG_400x300, safeImageSrc } from '../../lib/placeholders';
 import { addToCart } from '../../store/cartStore';
 import { useWishlist, toggleWishlist } from '../../store/wishlistStore';
 import AccessibleModal from '../common/AccessibleModal';
@@ -84,7 +84,7 @@ function toUIProduct(data: FirebaseProduct & { id: string }): UIProduct {
   const images: ProductImage[] = Array.isArray(data.images)
     ? data.images.map((url, i) => ({
         id: i + 1,
-        url: url || FALLBACK_IMG_400x300,
+        url: safeImageSrc(url),
         alt: `${data.name} ${i + 1}`,
       }))
     : [{ id: 1, url: FALLBACK_IMG_400x300, alt: data.name }];
@@ -353,7 +353,7 @@ export default function ProductDetail({ id, slug }: Props) {
     if (!uiProduct) return;
     const product = uiProduct;
     const variant = product.variants[selectedVariant];
-    const image = product.images[selectedImage]?.url || FALLBACK_IMG_400x300;
+    const image = safeImageSrc(product.images[selectedImage]?.url);
     setIsAddingToCart(true);
     try {
       addToCart({

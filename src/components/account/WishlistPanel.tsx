@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import { useWishlist } from '../../store/wishlistStore';
+import { safeImageSrc } from '../../lib/placeholders';
 import { ensureUserDoc, saveWishlist } from '../../lib/userProfile';
 
 export default function WishlistPanel() {
@@ -84,7 +85,7 @@ export default function WishlistPanel() {
               <div className="flex items-center gap-4">
                 {p.image ? (
                   <img
-                    src={p.image}
+                    src={safeImageSrc(p.image)}
                     alt={p.name}
                     className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
                   />

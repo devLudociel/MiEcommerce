@@ -5,6 +5,7 @@ import type { OrderData, PaymentInfo } from '../../lib/firebase';
 import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { logger } from '../../lib/logger';
 import { notify } from '../../lib/notifications';
+import { safeImageSrc } from '../../lib/placeholders';
 
 const PAGE_SIZE = 10; // Number of orders per page
 
@@ -372,7 +373,7 @@ export default function OrdersPanel() {
                   {order.items.slice(0, 4).map((item, idx) => (
                     <div key={idx} className="flex-shrink-0">
                       <img
-                        src={item.image || '/placeholder.jpg'}
+                        src={safeImageSrc(item.image)}
                         alt={item.name}
                         className="w-16 h-16 object-contain rounded-lg border-2 border-gray-200 bg-white"
                       />

@@ -3,6 +3,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import { ensureUserDoc } from '../../lib/userProfile';
 import { useWishlist } from '../../store/wishlistStore';
+import { safeImageSrc } from '../../lib/placeholders';
 
 export default function AccountDashboard() {
   const [user, setUser] = useState<{ uid: string; email: string; displayName?: string } | null>(
@@ -188,7 +189,7 @@ export default function AccountDashboard() {
                 <div className="aspect-square bg-white flex items-center justify-center p-4">
                   {item.image ? (
                     <img
-                      src={item.image}
+                      src={safeImageSrc(item.image)}
                       alt={item.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
@@ -233,7 +234,7 @@ export default function AccountDashboard() {
                 <div className="w-20 h-20 bg-gray-50 flex items-center justify-center rounded-lg flex-shrink-0">
                   {item.image ? (
                     <img
-                      src={item.image}
+                      src={safeImageSrc(item.image)}
                       alt={item.name}
                       className="w-full h-full object-cover rounded-lg"
                     />

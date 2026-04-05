@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { logger } from '../lib/logger';
+import { safeImageSrc } from '../lib/placeholders';
 
 // ============================================================================
 // TYPES
@@ -30,13 +31,20 @@ const MAX_COMPARE_ITEMS = 4; // Maximum items to compare at once
 // LOCAL STORAGE HELPERS
 // ============================================================================
 
+function sanitizeCompareItems(items: CompareItem[]): CompareItem[] {
+  return items.map((item) => ({
+    ...item,
+    image: typeof item.image === 'string' ? safeImageSrc(item.image) : item.image,
+  }));
+}
+
 function readCompareItems(): CompareItem[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(COMPARE_STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? sanitizeCompareItems(parsed as CompareItem[]) : [];
   } catch {
     return [];
   }
@@ -44,7 +52,7 @@ function readCompareItems(): CompareItem[] {
 
 function writeCompareItems(items: CompareItem[]) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(COMPARE_STORAGE_KEY, JSON.stringify(items));
+  localStorage.setItem(COMPARE_STORAGE_KEY, JSON.stringify(sanitizeCompareItems(items)));
   window.dispatchEvent(new CustomEvent(COMPARE_EVENT));
 }
 
@@ -58,10 +66,11 @@ function writeCompareItems(items: CompareItem[]) {
  */
 export function addToCompare(item: CompareItem): boolean {
   const items = readCompareItems();
+  const sanitizedItem = sanitizeCompareItems([item])[0];
 
   // Check if already in list
-  if (items.some((i) => i.id === item.id)) {
-    logger.info('[Compare] Item already in compare list', { id: item.id });
+  if (items.some((i) => i.id === sanitizedItem.id)) {
+    logger.info('[Compare] Item already in compare list', { id: sanitizedItem.id });
     return true;
   }
 
@@ -71,9 +80,9 @@ export function addToCompare(item: CompareItem): boolean {
     return false;
   }
 
-  const newItems = [...items, item];
+  const newItems = [...items, sanitizedItem];
   writeCompareItems(newItems);
-  logger.info('[Compare] Added to compare', { id: item.id, total: newItems.length });
+  logger.info('[Compare] Added to compare', { id: sanitizedItem.id, total: newItems.length });
   return true;
 }
 

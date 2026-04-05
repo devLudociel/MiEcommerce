@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useProducts } from '../../hooks/react-query/useProducts';
-import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { safeImageSrc } from '../../lib/placeholders';
 import { ProductGridSkeleton } from '../ui/Skeleton';
 
 interface Product {
@@ -37,7 +37,7 @@ export default function ProductGridOfertas() {
       description: doc.description || '',
       basePrice: Number((doc as any).basePrice || doc.price) || 0,
       salePrice: doc.salePrice ? Number(doc.salePrice) : undefined,
-      image: (doc.images && doc.images[0]) || FALLBACK_IMG_400x300,
+      image: safeImageSrc(doc.images?.[0]),
       images: doc.images || [],
       category: doc.category || 'general',
       rating: doc.rating || 0,

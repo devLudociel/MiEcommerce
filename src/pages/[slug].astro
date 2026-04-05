@@ -9,6 +9,12 @@ if (!slug) {
   return Astro.redirect('/404');
 }
 
+// Evita redirecciones 302 innecesarias para requests de assets inexistentes
+// (ej: /placeholder-product.jpg) que caen en esta ruta dinámica.
+if (slug.includes('.')) {
+  return new Response(null, { status: 404 });
+}
+
 let page: Page | null = null;
 
 try {

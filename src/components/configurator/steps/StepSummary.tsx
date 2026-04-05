@@ -1,10 +1,11 @@
 import React from 'react';
-import { ShoppingCart, Upload, Hash, MapPin, Tag } from 'lucide-react';
+import { ShoppingCart, Upload, Hash, MapPin, Tag, Type } from 'lucide-react';
 import type {
   ConfigurableProduct,
   ConfiguratorSelections,
   ConfiguratorPricing,
 } from '../../../types/configurator';
+import { safeImageSrc } from '../../../lib/placeholders';
 import PriceDisplay from '../ui/PriceDisplay';
 
 interface StepSummaryProps {
@@ -38,6 +39,20 @@ export default function StepSummary({
           value: val.label,
         });
       }
+    }
+  }
+
+  // Freetext attributes (V2)
+  const v2Attributes = product.configurator.attributes ?? [];
+  for (const attr of v2Attributes) {
+    if (attr.type !== 'freetext') continue;
+    const val = selections.options[attr.id];
+    if (val) {
+      lines.push({
+        icon: <Type className="w-4 h-4" />,
+        label: attr.label,
+        value: val,
+      });
     }
   }
 
@@ -108,7 +123,7 @@ export default function StepSummary({
       <div className="flex gap-3 bg-gray-50 rounded-xl border border-gray-200 p-3">
         {product.images[0] && (
           <img
-            src={product.images[0]}
+            src={safeImageSrc(product.images[0])}
             alt={product.name}
             className="w-14 h-14 rounded-lg object-cover shrink-0"
           />

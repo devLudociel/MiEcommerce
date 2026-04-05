@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { Download, FileArchive, Image as ImageIcon, FileText, Package } from 'lucide-react';
-import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { safeImageSrc } from '../../lib/placeholders';
 import { logger } from '../../lib/logger';
 
 interface DigitalProduct {
@@ -191,7 +191,7 @@ export default function DigitalProductsGrid() {
             {/* Image */}
             <div className="relative aspect-square overflow-hidden bg-gray-100">
               <img
-                src={product.images[0] || FALLBACK_IMG_400x300}
+                src={safeImageSrc(product.images[0])}
                 alt={product.name}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
               />

@@ -12,6 +12,7 @@ import {
 import { db } from '../../lib/firebase';
 import { queryKeys } from '../../lib/react-query/queryClient';
 import { logger } from '../../lib/logger';
+import { safeImageSrc } from '../../lib/placeholders';
 
 export interface Product {
   id: string;
@@ -51,6 +52,22 @@ interface ProductFilters {
   excludeIds?: string[];
   readyMade?: boolean;
   excludeReadyMade?: boolean;
+}
+
+function normalizeProductDoc(id: string, raw: Record<string, unknown>): Product {
+  const rawImages = Array.isArray(raw.images)
+    ? raw.images.filter((img): img is string => typeof img === 'string')
+    : [];
+  const sanitizedImages = rawImages.map((img) => safeImageSrc(img));
+  const rawPrimaryImage =
+    typeof raw.image === 'string' && raw.image.trim() ? raw.image : rawImages[0];
+
+  return {
+    ...(raw as Product),
+    id,
+    image: safeImageSrc(rawPrimaryImage),
+    images: sanitizedImages,
+  };
 }
 
 /**
@@ -101,11 +118,13 @@ async function fetchProducts(filters: ProductFilters = {}): Promise<Product[]> {
 
     const snapshot = await getDocs(q);
 
-    let products = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate(),
-    })) as Product[];
+    let products = snapshot.docs.map((doc) => {
+      const data = doc.data() as Record<string, unknown>;
+      return {
+        ...normalizeProductDoc(doc.id, data),
+        createdAt: (data.createdAt as { toDate?: () => Date } | undefined)?.toDate?.(),
+      };
+    });
 
     // Exclude specific IDs (client-side filter for related products)
     if (filters.excludeIds && filters.excludeIds.length > 0) {
@@ -160,10 +179,10 @@ async function fetchProduct(identifier: string, bySlug: boolean = false): Promis
       throw new Error(`Product not found: ${identifier}`);
     }
 
+    const snapshotData = snapshot.data() as Record<string, unknown>;
     const product = {
-      id: snapshot.id,
-      ...snapshot.data(),
-      createdAt: snapshot.data().createdAt?.toDate(),
+      ...normalizeProductDoc(snapshot.id, snapshotData),
+      createdAt: (snapshotData.createdAt as { toDate?: () => Date } | undefined)?.toDate?.(),
     } as Product;
 
     logger.debug('[useProduct] Fetched product', { identifier, name: product.name });

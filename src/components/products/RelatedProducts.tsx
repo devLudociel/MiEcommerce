@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { FALLBACK_IMG_400x300, safeImageSrc } from '../../lib/placeholders';
 
 interface RelatedProduct {
   id: string;
@@ -42,7 +42,7 @@ export const RelatedProducts = memo(function RelatedProducts({ products }: Relat
             : 0;
 
           const productUrl = `/producto/${product.slug || product.id}`;
-          const imageUrl = product.images[0]?.url || FALLBACK_IMG_400x300;
+          const imageUrl = safeImageSrc(product.images[0]?.url);
 
           return (
             <a

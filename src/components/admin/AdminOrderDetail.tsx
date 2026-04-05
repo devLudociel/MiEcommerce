@@ -7,6 +7,7 @@ import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import OrderItemPreview from './OrderItemPreview';
 import JSZip from 'jszip';
+import { safeImageSrc } from '../../lib/placeholders';
 
 // Interfaces for order items and customization
 interface ImageTransform {
@@ -742,7 +743,7 @@ export default function AdminOrderDetail() {
                   {(order.items || []).map((item: OrderItem, index: number) => (
                     <div key={index} className="flex gap-4 p-4 bg-gray-50 rounded-xl">
                       <img
-                        src={item.image}
+                        src={safeImageSrc(item.image)}
                         alt={item.name}
                         className="w-24 h-24 object-cover rounded-lg"
                         width={96}

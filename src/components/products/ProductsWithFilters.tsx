@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import FilterPanel, { type FilterOptions } from './FilterPanel';
-import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { safeImageSrc } from '../../lib/placeholders';
 import { logger } from '../../lib/logger';
 
 interface Product {
@@ -139,7 +139,7 @@ export default function ProductsWithFilters() {
               name: data.name || 'Producto',
               price: Number(data.basePrice) || 0,
               salePrice: data.salePrice ? Number(data.salePrice) : undefined,
-              image: (data.images && data.images[0]) || FALLBACK_IMG_400x300,
+              image: safeImageSrc(data.images?.[0]),
               slug: data.slug || doc.id,
               categoryId: categoryId,
               categoryName: category?.name || 'Otros',

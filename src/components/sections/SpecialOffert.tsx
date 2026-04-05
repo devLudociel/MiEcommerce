@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { addToCart } from '../../store/cartStore';
-import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { FALLBACK_IMG_400x300, safeImageSrc } from '../../lib/placeholders';
 import { loadSpecialOffers } from '../../lib/specialOffersMapper';
 
 interface SpecialOffer {
@@ -441,7 +441,7 @@ const SpecialOffers: React.FC<SpecialOffersProps> = ({
                       {/* Image Section */}
                       <div className="relative h-80 md:h-full overflow-hidden">
                         <img
-                          src={offer.image || FALLBACK_IMG_400x300}
+                          src={safeImageSrc(offer.image)}
                           alt={offer.title}
                           className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
                           onError={(e) => {
@@ -642,7 +642,7 @@ const SpecialOffers: React.FC<SpecialOffersProps> = ({
                     {/* Product Image */}
                     <div className="relative h-48 overflow-hidden">
                       <img
-                        src={offer.image || FALLBACK_IMG_400x300}
+                        src={safeImageSrc(offer.image)}
                         alt={offer.title}
                         className={`
                         w-full h-full object-cover transition-all duration-700

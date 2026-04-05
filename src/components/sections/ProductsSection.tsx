@@ -1,7 +1,7 @@
 import { logger } from '../../lib/logger';
 import { useState } from 'react';
 import { db } from '../../lib/firebase';
-import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { FALLBACK_IMG_400x300, safeImageSrc } from '../../lib/placeholders';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { useProducts } from '../../hooks/react-query/useProducts';
 import AccessibleModal from '../common/AccessibleModal';
@@ -209,7 +209,7 @@ export default function ProductsSection() {
               {products.map((product) => (
                 <div key={product.id} className="card card-product">
                   <img
-                    src={product.images?.[0] || FALLBACK_IMG_400x300}
+                    src={safeImageSrc(product.images?.[0])}
                     alt={product.name || 'Producto'}
                     onError={(e) => {
                       const img = e.currentTarget as HTMLImageElement;

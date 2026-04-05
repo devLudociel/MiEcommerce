@@ -1,9 +1,7 @@
 // src/components/products/ProductCard.tsx
 import React, { useCallback } from 'react';
 import CompareButton from './CompareButton';
-
-// Placeholder de imagen - ajusta según tu ubicación real
-const FALLBACK_IMG_400x300 = '/placeholder-product.jpg';
+import { FALLBACK_IMG_400x300, safeImageSrc } from '../../lib/placeholders';
 
 interface Product {
   id: string;
@@ -56,7 +54,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onClick }
       {/* Imagen del producto - Responsive aspect ratio */}
       <div className="relative aspect-[4/3] sm:aspect-[3/2] overflow-hidden bg-gray-100">
         <img
-          src={product.images[0] || FALLBACK_IMG_400x300}
+          src={safeImageSrc(product.images[0])}
           alt={product.name}
           loading="lazy"
           decoding="async"

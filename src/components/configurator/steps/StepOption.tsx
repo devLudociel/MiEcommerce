@@ -1,5 +1,6 @@
 import React from 'react';
 import type { OptionGroup } from '../../../types/configurator';
+import { safeImageSrc } from '../../../lib/placeholders';
 
 interface StepOptionProps {
   group: OptionGroup;
@@ -64,7 +65,7 @@ export default function StepOption({ group, selected, onSelect }: StepOptionProp
               aria-pressed={selected === val.id}
             >
               <img
-                src={val.value}
+                src={safeImageSrc(val.value)}
                 alt={val.label}
                 className="w-full h-full object-cover"
                 loading="lazy"

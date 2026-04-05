@@ -1,7 +1,7 @@
 // src/components/common/OptimizedImage.tsx
 import { useState, useEffect, useRef } from 'react';
 import { optimizeImage, generateSrcSet, type ImageSize } from '../../lib/imageOptimization';
-import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { FALLBACK_IMG_400x300, safeImageSrc } from '../../lib/placeholders';
 
 interface OptimizedImageProps {
   src: string;
@@ -57,8 +57,8 @@ export default function OptimizedImage({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Optimize source URL
-  const optimizedSrc = optimizeImage(src || FALLBACK_IMG_400x300, size);
-  const srcSet = useSrcSet ? generateSrcSet(src || FALLBACK_IMG_400x300) : undefined;
+  const optimizedSrc = optimizeImage(safeImageSrc(src), size);
+  const srcSet = useSrcSet ? generateSrcSet(safeImageSrc(src)) : undefined;
 
   // Intersection Observer for progressive lazy loading
   useEffect(() => {

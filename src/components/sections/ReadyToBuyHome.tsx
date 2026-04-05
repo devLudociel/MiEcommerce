@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { safeImageSrc } from '../../lib/placeholders';
 import { useProducts } from '../../hooks/react-query/useProducts';
 import { ProductGridSkeleton } from '../ui/Skeleton';
 import ErrorMessage from '../errors/ErrorMessage';
@@ -47,7 +47,7 @@ export default function ReadyToBuyHome({ maxItems = 6 }: ReadyToBuyHomeProps) {
         description: doc.description || '',
         price,
         hasVariants: variantPrices.length > 0,
-        image: (doc.images && doc.images[0]) || FALLBACK_IMG_400x300,
+        image: safeImageSrc(doc.images?.[0]),
         slug: doc.slug || doc.id,
         featured: doc.featured || false,
       } as ReadyProduct;

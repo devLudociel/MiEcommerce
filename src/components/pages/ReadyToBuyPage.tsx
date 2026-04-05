@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useProducts } from '../../hooks/react-query/useProducts';
 import ProductGrid from '../products/ProductGrid';
-import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { FALLBACK_IMG_400x300, safeImageSrc } from '../../lib/placeholders';
 import ErrorMessage from '../errors/ErrorMessage';
 
 export default function ReadyToBuyPage() {
@@ -30,7 +30,7 @@ export default function ReadyToBuyPage() {
         name: doc.name || 'Diseño listo',
         description: doc.description || '',
         basePrice: price,
-        images: doc.images && doc.images.length > 0 ? doc.images : [FALLBACK_IMG_400x300],
+        images: doc.images && doc.images.length > 0 ? doc.images.map((img: string) => safeImageSrc(img)) : [FALLBACK_IMG_400x300],
         attributes: [],
         tags: (doc as any).tags || [],
         featured: doc.featured || false,

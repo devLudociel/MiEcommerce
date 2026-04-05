@@ -3,6 +3,7 @@ import { db } from '../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { logger } from '../lib/logger';
 import { debounce } from '../lib/utils/debounce';
+import { safeImageSrc } from '../lib/placeholders';
 
 export interface WishlistItem {
   id: string | number;
@@ -25,6 +26,13 @@ type WishlistChangeDetail = {
   userId: string | null;
 };
 
+function sanitizeWishlistItems(items: WishlistItem[]): WishlistItem[] {
+  return items.map((item) => ({
+    ...item,
+    image: typeof item.image === 'string' ? safeImageSrc(item.image) : item.image,
+  }));
+}
+
 function readWishlist(userId?: string | null): WishlistItem[] {
   if (typeof window === 'undefined') return [];
   const storageKey = getWishlistStorageKey(userId);
@@ -32,7 +40,7 @@ function readWishlist(userId?: string | null): WishlistItem[] {
     const raw = localStorage.getItem(storageKey);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? sanitizeWishlistItems(parsed as WishlistItem[]) : [];
   } catch {
     // Intentional: localStorage may be unavailable or corrupted - return empty wishlist
     return [];
@@ -47,7 +55,8 @@ function writeWishlist(
   if (typeof window === 'undefined') return;
   const targetUserId = userId ?? currentUserId;
   const storageKey = getWishlistStorageKey(targetUserId);
-  localStorage.setItem(storageKey, JSON.stringify(items));
+  const sanitizedItems = sanitizeWishlistItems(items);
+  localStorage.setItem(storageKey, JSON.stringify(sanitizedItems));
   window.dispatchEvent(
     new CustomEvent<WishlistChangeDetail>(WL_EVENT, {
       detail: { userId: targetUserId ?? null },
@@ -56,7 +65,7 @@ function writeWishlist(
 
   // Save to Firestore if user is authenticated
   if (!options?.skipRemote && targetUserId) {
-    saveWishlistToFirestore(targetUserId, items);
+    saveWishlistToFirestore(targetUserId, sanitizedItems);
   }
 }
 
@@ -102,7 +111,7 @@ const loadWishlistFromFirestore = async (userId: string): Promise<WishlistItem[]
         userId,
         itemCount: wishlist.length,
       });
-      return wishlist;
+      return sanitizeWishlistItems(Array.isArray(wishlist) ? wishlist : []);
     }
   } catch (error) {
     logger.error('[WishlistStore] Error loading wishlist from Firestore', error);

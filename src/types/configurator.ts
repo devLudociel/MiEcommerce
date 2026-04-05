@@ -139,7 +139,7 @@ export interface QuantityConfig {
 // NEW V2 ATTRIBUTES + PRICING
 // ============================================================================
 
-export type ProductConfiguratorAttributeType = 'select' | 'text' | 'color' | 'image';
+export type ProductConfiguratorAttributeType = 'select' | 'text' | 'color' | 'image' | 'freetext';
 
 export interface ProductConfiguratorAttributeOption {
   id: string;
@@ -180,6 +180,8 @@ export interface ProductConfiguratorAttribute {
   defaultWhen?: ProductConfiguratorDefaultWhenRule[];
   /** Estrategia opcional para autoseleccion por defecto */
   defaultOptionResolver?: string;
+  /** Placeholder para atributos de tipo freetext */
+  placeholder?: string;
 }
 
 export interface ProductConfiguratorPricingQuantityInput {

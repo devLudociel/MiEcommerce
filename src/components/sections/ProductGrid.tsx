@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db, batchGetProductReviewStats } from '../../lib/firebase';
-import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { safeImageSrc } from '../../lib/placeholders';
 import {
   collection,
   query,
@@ -144,7 +144,7 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
             description: data.description || '',
             price: Number(data.basePrice) || 0,
             originalPrice: undefined,
-            image: (data.images && data.images[0]) || FALLBACK_IMG_400x300,
+            image: safeImageSrc(data.images?.[0]),
             images: data.images || [],
             category: data.category || 'general',
             badge: onSale ? 'sale' : data.featured ? 'hot' : undefined,

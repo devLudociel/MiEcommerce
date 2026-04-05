@@ -7,6 +7,7 @@ import { db, storage } from '../../lib/firebase';
 import { addToCart } from '../../store/cartStore';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
+import { safeImageSrc } from '../../lib/placeholders';
 import { normalizeConfigurator, getUnitPrice } from '../../lib/configurator';
 import type {
   ConfigurableProduct,
@@ -21,6 +22,7 @@ import type {
 import StepProgress from './ui/StepProgress';
 import PriceDisplay from './ui/PriceDisplay';
 import StepOption from './steps/StepOption';
+import StepFreetext from './steps/StepFreetext';
 import StepDesign from './steps/StepDesign';
 import StepPlacement from './steps/StepPlacement';
 import StepQuantity from './steps/StepQuantity';
@@ -57,11 +59,11 @@ function getPreviewImage(
     const valueId = selectedOptions[group.id];
     if (valueId) {
       const val = group.values.find((v) => v.id === valueId);
-      if (val?.previewImage) return val.previewImage;
-      if (group.type === 'image' && val?.value) return val.value;
+      if (val?.previewImage) return safeImageSrc(val.previewImage);
+      if (group.type === 'image' && val?.value) return safeImageSrc(val.value);
     }
   }
-  return fallback;
+  return fallback ? safeImageSrc(fallback) : undefined;
 }
 
 // ── Print-type–aware surcharge ────────────────────────────────────────────
@@ -242,7 +244,8 @@ function calculatePricing(
 // STEP VALIDATION
 // ============================================================================
 
-function attributeToOptionGroup(attr: ProductConfiguratorAttribute): OptionGroup {
+function attributeToOptionGroup(attr: ProductConfiguratorAttribute): OptionGroup | null {
+  if (attr.type === 'freetext') return null;
   return {
     id: attr.id,
     label: attr.label,
@@ -287,16 +290,11 @@ function isStepValid(
   product: ConfigurableProduct,
   selections: ConfiguratorSelections
 ): boolean {
-  if (stepId.startsWith('option:')) {
-    const groupId = stepId.slice(7);
-    return !!selections.options[groupId];
-  }
-  if (stepId.startsWith('attribute:')) {
-    const attrId = stepId.slice(10);
-    const attr = product.configurator.attributes?.find((a) => a.id === attrId);
-    if (!attr) return true;
-    if (attr.required === false) return true;
-    return !!selections.options[attrId];
+  if (stepId.startsWith('option:') || stepId.startsWith('attribute:')) {
+    const id = stepId.startsWith('option:') ? stepId.slice(7) : stepId.slice(10);
+    const attr = product.configurator.attributes?.find((a) => a.id === id);
+    if (attr && attr.required === false) return true;
+    return !!selections.options[id];
   }
   switch (stepId) {
     case 'design':
@@ -369,7 +367,11 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
             id: snap.id,
             name: data.name,
             description: data.description || '',
-            images: data.images || [],
+            images: Array.isArray(data.images)
+              ? data.images
+                  .filter((img: unknown): img is string => typeof img === 'string')
+                  .map((img) => safeImageSrc(img))
+              : [],
             slug: data.slug || '',
             basePrice: data.basePrice || 0,
             configurator,
@@ -572,7 +574,7 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
         name: product.name,
         price: pricing.total / Math.max(cartQuantity, 1),
         quantity: cartQuantity,
-        image: product.images[0] || '',
+        image: safeImageSrc(product.images[0]),
         customization: customization as any,
       });
 
@@ -676,30 +678,34 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
         <div className="lg:col-span-3 pb-[80px] sm:pb-0 min-w-0">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-7">
 
-            {/* Option group steps */}
-            {currentStepId?.startsWith('option:') && (() => {
-              const groupId = currentStepId.slice(7);
-              const group = optionGroups.find((g) => g.id === groupId);
-              return group ? (
-                <StepOption
-                  group={group}
-                  selected={selections.options[groupId]}
-                  onSelect={(valueId) => setOption(groupId, valueId)}
-                />
-              ) : null;
-            })()}
+            {/* Option / Attribute steps */}
+            {(currentStepId?.startsWith('option:') || currentStepId?.startsWith('attribute:')) && (() => {
+              const id = currentStepId!.startsWith('option:')
+                ? currentStepId!.slice(7)
+                : currentStepId!.slice(10);
 
-            {/* Attribute steps (V2) */}
-            {currentStepId?.startsWith('attribute:') && (() => {
-              const attrId = currentStepId.slice(10);
-              const attr = attributes?.find((a) => a.id === attrId);
-              if (!attr) return null;
-              const group = attributeToOptionGroup(attr);
+              // Check V2 attributes first (freetext needs special rendering)
+              const attr = attributes?.find((a) => a.id === id);
+              if (attr?.type === 'freetext') {
+                return (
+                  <StepFreetext
+                    attribute={attr}
+                    value={selections.options[id] ?? ''}
+                    onChange={(val) => setOption(id, val)}
+                  />
+                );
+              }
+
+              // Standard option group (legacy or V2 non-freetext)
+              const group = attr
+                ? attributeToOptionGroup(attr)
+                : optionGroups.find((g) => g.id === id) ?? null;
+              if (!group) return null;
               return (
                 <StepOption
                   group={group}
-                  selected={selections.options[attrId]}
-                  onSelect={(valueId) => setOption(attrId, valueId)}
+                  selected={selections.options[id]}
+                  onSelect={(valueId) => setOption(id, valueId)}
                 />
               );
             })()}

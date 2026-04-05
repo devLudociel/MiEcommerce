@@ -1,5 +1,5 @@
 import { memo, useCallback, useRef, useState } from 'react';
-import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { FALLBACK_IMG_400x300, safeImageSrc } from '../../lib/placeholders';
 
 interface ProductImage {
   id: number;
@@ -80,7 +80,7 @@ export const ProductGallery = memo(function ProductGallery({
           aria-label={isZoomed ? 'Reducir zoom de la imagen' : 'Ampliar zoom de la imagen'}
         >
           <img
-            src={currentImage?.url || FALLBACK_IMG_400x300}
+            src={safeImageSrc(currentImage?.url)}
             alt={currentImage?.alt || productName}
             loading="eager"
             decoding="async"
@@ -155,7 +155,7 @@ export const ProductGallery = memo(function ProductGallery({
             }`}
           >
             <img
-              src={img.url || FALLBACK_IMG_400x300}
+              src={safeImageSrc(img.url)}
               alt={img.alt}
               loading="lazy"
               decoding="async"

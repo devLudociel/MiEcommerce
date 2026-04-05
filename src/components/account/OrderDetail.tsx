@@ -3,7 +3,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import type { OrderData } from '../../lib/firebase';
 import { logger } from '../../lib/logger';
-import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { FALLBACK_IMG_400x300, safeImageSrc } from '../../lib/placeholders';
 import ShipmentTracking from './ShipmentTracking';
 import type { Timestamp } from 'firebase/firestore';
 
@@ -392,7 +392,7 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
               className="flex gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
             >
               <img
-                src={item.image || FALLBACK_IMG_400x300}
+                src={safeImageSrc(item.image)}
                 alt={item.name}
                 className="w-20 h-20 object-contain rounded-lg border-2 border-gray-200 bg-white"
                 onError={(e) => {

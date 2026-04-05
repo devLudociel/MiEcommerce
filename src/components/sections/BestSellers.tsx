@@ -1,7 +1,7 @@
 // src/components/sections/BestSellers.tsx
 import { useState, useEffect, useMemo } from 'react';
 import { useProducts } from '../../hooks/react-query/useProducts';
-import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { safeImageSrc } from '../../lib/placeholders';
 import { ProductCardSkeleton } from '../ui/Skeleton';
 
 interface Product {
@@ -31,7 +31,7 @@ export default function BestSellers() {
       name: doc.name || 'Producto',
       price: Number((doc as any).basePrice || doc.price) || 0,
       salePrice: doc.salePrice ? Number(doc.salePrice) : undefined,
-      image: (doc.images && doc.images[0]) || FALLBACK_IMG_400x300,
+      image: safeImageSrc(doc.images?.[0]),
       slug: doc.slug || doc.id,
       salesCount: (doc as any).salesCount || 0,
       rating: doc.rating || 4.5,

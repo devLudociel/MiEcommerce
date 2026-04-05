@@ -8,6 +8,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { withRetry } from '../lib/resilience';
 import { debounce } from '../lib/utils/debounce';
 import { klaviyoAddedToCart } from '../lib/klaviyo';
+import { safeImageSrc } from '../lib/placeholders';
 
 export interface CartItem {
   id: string;
@@ -50,6 +51,21 @@ const CART_GUEST_KEY = `${CART_STORAGE_PREFIX}:guest`;
 const getCartStorageKey = (userId?: string | null) =>
   userId ? `${CART_STORAGE_PREFIX}:${userId}` : CART_GUEST_KEY;
 
+const sanitizeCartItem = (item: CartItem): CartItem => ({
+  ...item,
+  image: safeImageSrc(item.image),
+});
+
+const sanitizeCartState = (state: Partial<CartState>): CartState => {
+  const items = Array.isArray(state.items)
+    ? state.items.map((item) => sanitizeCartItem(item as CartItem))
+    : [];
+  return {
+    items,
+    total: calculateTotal(items),
+  };
+};
+
 // Cargar carrito desde localStorage al iniciar
 const loadCartFromStorage = (userId?: string | null): CartState => {
   if (typeof window === 'undefined') {
@@ -67,10 +83,7 @@ const loadCartFromStorage = (userId?: string | null): CartState => {
         itemCount: parsed.items?.length || 0,
         total: parsed.total || 0,
       });
-      return {
-        items: parsed.items || [],
-        total: parsed.total || 0,
-      };
+      return sanitizeCartState(parsed);
     }
   } catch (e) {
     logger.error('[CartStore] Error loading cart from localStorage', {
@@ -89,13 +102,14 @@ const saveCartToStorage = (state: CartState, userId?: string | null): void => {
   if (typeof window === 'undefined') return;
 
   const storageKey = getCartStorageKey(userId);
+  const sanitizedState = sanitizeCartState(state);
 
   try {
-    localStorage.setItem(storageKey, JSON.stringify(state));
+    localStorage.setItem(storageKey, JSON.stringify(sanitizedState));
     logger.debug('[CartStore] Cart saved to localStorage', {
       storageKey,
-      itemCount: state.items.length,
-      total: state.total,
+      itemCount: sanitizedState.items.length,
+      total: sanitizedState.total,
     });
   } catch (e) {
     logger.error('[CartStore] Error saving cart to localStorage', {
@@ -181,10 +195,7 @@ const loadCartFromFirestore = async (userId: string): Promise<CartState | null> 
             userId,
             itemCount: data.items?.length || 0,
           });
-          return {
-            items: data.items || [],
-            total: data.total || 0,
-          };
+          return sanitizeCartState(data);
         }
         return null;
       },
@@ -284,9 +295,10 @@ export const setCurrentUserId = (userId: string | null): void => {
 
 // Agregar item al carrito
 export function addToCart(item: CartItem): void {
+  const sanitizedItem = sanitizeCartItem(item);
   const currentState = cartStore.get();
   const existingItemIndex = currentState.items.findIndex(
-    (i: CartItem) => i.id === item.id && i.variantId === item.variantId
+    (i: CartItem) => i.id === sanitizedItem.id && i.variantId === sanitizedItem.variantId
   );
 
   let newItems: CartItem[];
@@ -297,20 +309,20 @@ export function addToCart(item: CartItem): void {
       index === existingItemIndex ? { ...i, quantity: i.quantity + item.quantity } : i
     );
     logger.info('[CartStore] Item quantity updated', {
-      productId: item.id,
-      newQuantity: currentState.items[existingItemIndex].quantity + item.quantity,
+      productId: sanitizedItem.id,
+      newQuantity: currentState.items[existingItemIndex].quantity + sanitizedItem.quantity,
     });
-    notify.success(`Cantidad actualizada: ${item.name}`);
+    notify.success(`Cantidad actualizada: ${sanitizedItem.name}`);
   } else {
     // Si no existe, agregarlo
-    newItems = [...currentState.items, item];
+    newItems = [...currentState.items, sanitizedItem];
     logger.info('[CartStore] New item added to cart', {
-      productId: item.id,
-      productName: item.name,
-      price: item.price,
-      quantity: item.quantity,
+      productId: sanitizedItem.id,
+      productName: sanitizedItem.name,
+      price: sanitizedItem.price,
+      quantity: sanitizedItem.quantity,
     });
-    notify.success(`¡${item.name} agregado al carrito!`);
+    notify.success(`¡${sanitizedItem.name} agregado al carrito!`);
   }
 
   const newState: CartState = {
@@ -328,12 +340,12 @@ export function addToCart(item: CartItem): void {
 
   // Klaviyo event: Added to Cart
   klaviyoAddedToCart({
-    productId: item.id,
-    productName: item.name,
-    price: item.price,
-    quantity: item.quantity,
-    imageUrl: item.image,
-    productUrl: `https://imprimearte.es/producto/${item.id}`,
+    productId: sanitizedItem.id,
+    productName: sanitizedItem.name,
+    price: sanitizedItem.price,
+    quantity: sanitizedItem.quantity,
+    imageUrl: sanitizedItem.image,
+    productUrl: `https://imprimearte.es/producto/${sanitizedItem.id}`,
   });
 }
 

@@ -2,6 +2,7 @@ import { useCompare, type CompareItem } from '../../store/compareStore';
 import { GitCompareArrows, X, ShoppingCart, ExternalLink, ArrowLeft, Trash2 } from 'lucide-react';
 import { addToCart } from '../../store/cartStore';
 import { notify } from '../../lib/notifications';
+import { safeImageSrc } from '../../lib/placeholders';
 
 // ============================================================================
 // TYPES
@@ -28,7 +29,11 @@ export default function ProductComparison() {
       render: (item) => (
         <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100">
           {item.image ? (
-            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+            <img
+              src={safeImageSrc(item.image)}
+              alt={item.name}
+              className="w-full h-full object-cover"
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400">
               Sin imagen
@@ -178,7 +183,7 @@ export default function ProductComparison() {
             <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-purple-300">
               {items[0].image ? (
                 <img
-                  src={items[0].image}
+                  src={safeImageSrc(items[0].image)}
                   alt={items[0].name}
                   className="w-full h-full object-cover"
                 />

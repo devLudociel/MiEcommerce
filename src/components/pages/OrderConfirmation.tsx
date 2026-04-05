@@ -5,6 +5,7 @@ import { logger } from '../../lib/logger';
 import { db } from '../../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import type { OrderItem, ShippingInfo, PaymentInfo, BillingInfo } from '../../types/firebase';
+import { safeImageSrc } from '../../lib/placeholders';
 // Analytics tracking
 import { trackPurchase } from '../../lib/analytics';
 
@@ -426,7 +427,7 @@ export default function OrderConfirmation() {
               {order.items.map((item, index) => (
                 <div key={index} className="flex gap-4 p-4 bg-gray-50 rounded-xl">
                   <img
-                    src={item.image}
+                    src={safeImageSrc(item.image)}
                     alt={item.name}
                     className="w-20 h-20 object-cover rounded-lg"
                   />

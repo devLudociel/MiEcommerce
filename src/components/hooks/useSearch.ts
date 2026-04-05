@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { db } from '../../lib/firebase';
-import { FALLBACK_IMG_400x300 } from '../../lib/placeholders';
+import { safeImageSrc } from '../../lib/placeholders';
 import {
   collection,
   getDocs,
@@ -116,7 +116,7 @@ export const useSearch = (): UseSearchReturn => {
             name,
             description: desc,
             price: data?.basePrice ?? 0,
-            image: (data?.images && data.images[0]) || FALLBACK_IMG_400x300,
+            image: safeImageSrc(data?.images?.[0]),
             category: category,
           });
         }

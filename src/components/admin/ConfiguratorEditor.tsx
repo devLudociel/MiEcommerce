@@ -108,6 +108,7 @@ const ATTRIBUTE_TYPES: { value: ProductConfiguratorAttributeType; label: string;
   { value: 'color', label: 'Colores', icon: Palette },
   { value: 'image', label: 'Imágenes', icon: ImageIcon },
   { value: 'text', label: 'Texto', icon: Type },
+  { value: 'freetext', label: 'Texto libre', icon: Type },
 ];
 
 function createDefault(): ProductConfigurator {
@@ -1363,98 +1364,113 @@ function AttributesEditor({
                 <span className="text-sm text-gray-700">Obligatorio</span>
               </label>
 
-              {/* Options */}
-              <div>
-                <label className="block text-xs text-gray-600 mb-2">Opciones ({attr.options.length})</label>
-                <div className="space-y-2">
-                  {attr.options.map((opt, oi) => (
-                    <div key={opt.id} className="flex flex-wrap items-center gap-2 bg-gray-50 rounded-lg p-2">
-                      {attr.type === 'color' && (
-                        <input
-                          type="color"
-                          value={opt.value || '#000000'}
-                          onChange={(e) => updateOption(ai, oi, { value: e.target.value })}
-                          className="w-8 h-8 rounded border-0 cursor-pointer shrink-0"
-                        />
-                      )}
-                      <input
-                        type="text"
-                        value={opt.label}
-                        onChange={(e) => updateOption(ai, oi, { label: e.target.value, id: normalizeId(e.target.value) || opt.id })}
-                        placeholder="Nombre de la opcion"
-                        className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-gray-300 rounded-lg"
-                      />
-                      {attr.type === 'image' && (
-                        <OptionImageUpload
-                          currentUrl={opt.value}
-                          onUploaded={(url) => updateOption(ai, oi, { value: url })}
-                          placeholder="Subir imagen"
-                        />
-                      )}
-                      {(attr.type === 'color' || attr.type === 'select' || attr.type === 'text') && (
-                        <OptionImageUpload
-                          currentUrl={opt.previewImage}
-                          onUploaded={(url) => updateOption(ai, oi, { previewImage: url || undefined })}
-                          placeholder="+ Preview"
-                        />
-                      )}
-                      <div className="flex items-center gap-1">
-                        <label className="text-xs text-gray-400 whitespace-nowrap">u/h</label>
-                        <input
-                          type="number"
-                          min={0}
-                          placeholder="-"
-                          value={opt.unitsPerSheet ?? ''}
-                          onChange={(e) => {
-                            const v = parseInt(e.target.value, 10);
-                            updateOption(ai, oi, { unitsPerSheet: v > 0 ? v : undefined });
-                          }}
-                          className="w-16 px-1.5 py-1 text-xs border border-gray-300 rounded"
-                        />
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <label className="text-xs text-gray-400 whitespace-nowrap">Recargo</label>
-                        <input
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          placeholder="-"
-                          value={opt.surcharge ?? ''}
-                          onChange={(e) => {
-                            const v = parseFloat(e.target.value);
-                            updateOption(ai, oi, { surcharge: v > 0 ? v : undefined });
-                          }}
-                          className="w-16 px-1.5 py-1 text-xs border border-gray-300 rounded"
-                        />
-                      </div>
-                      {opt.surcharge != null && opt.surcharge > 0 && (
-                        <select
-                          value={opt.surchargeType ?? 'per_unit'}
-                          onChange={(e) => updateOption(ai, oi, { surchargeType: e.target.value as 'per_unit' | 'fixed' })}
-                          className="px-1.5 py-1 text-xs border border-gray-300 rounded"
-                        >
-                          <option value="per_unit">x ud.</option>
-                          <option value="fixed">fijo</option>
-                        </select>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => removeOption(ai, oi)}
-                        className="p-1 text-red-500 hover:bg-red-50 rounded shrink-0"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
+              {/* Freetext: placeholder field instead of options */}
+              {attr.type === 'freetext' ? (
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Placeholder</label>
+                  <input
+                    type="text"
+                    value={attr.placeholder ?? ''}
+                    onChange={(e) => updateAttr(ai, { placeholder: e.target.value || undefined })}
+                    placeholder='Ej: "Nombre del festejado"'
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">El usuario podrá escribir texto libre en este campo.</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => addOption(ai)}
-                  className="mt-2 flex items-center gap-1 text-sm text-indigo-600 font-medium hover:text-indigo-700"
-                >
-                  <Plus className="w-4 h-4" />Añadir opcion
-                </button>
-              </div>
+              ) : (
+                /* Options */
+                <div>
+                  <label className="block text-xs text-gray-600 mb-2">Opciones ({attr.options.length})</label>
+                  <div className="space-y-2">
+                    {attr.options.map((opt, oi) => (
+                      <div key={opt.id} className="flex flex-wrap items-center gap-2 bg-gray-50 rounded-lg p-2">
+                        {attr.type === 'color' && (
+                          <input
+                            type="color"
+                            value={opt.value || '#000000'}
+                            onChange={(e) => updateOption(ai, oi, { value: e.target.value })}
+                            className="w-8 h-8 rounded border-0 cursor-pointer shrink-0"
+                          />
+                        )}
+                        <input
+                          type="text"
+                          value={opt.label}
+                          onChange={(e) => updateOption(ai, oi, { label: e.target.value, id: normalizeId(e.target.value) || opt.id })}
+                          placeholder="Nombre de la opcion"
+                          className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-gray-300 rounded-lg"
+                        />
+                        {attr.type === 'image' && (
+                          <OptionImageUpload
+                            currentUrl={opt.value}
+                            onUploaded={(url) => updateOption(ai, oi, { value: url })}
+                            placeholder="Subir imagen"
+                          />
+                        )}
+                        {(attr.type === 'color' || attr.type === 'select' || attr.type === 'text') && (
+                          <OptionImageUpload
+                            currentUrl={opt.previewImage}
+                            onUploaded={(url) => updateOption(ai, oi, { previewImage: url || undefined })}
+                            placeholder="+ Preview"
+                          />
+                        )}
+                        <div className="flex items-center gap-1">
+                          <label className="text-xs text-gray-400 whitespace-nowrap">u/h</label>
+                          <input
+                            type="number"
+                            min={0}
+                            placeholder="-"
+                            value={opt.unitsPerSheet ?? ''}
+                            onChange={(e) => {
+                              const v = parseInt(e.target.value, 10);
+                              updateOption(ai, oi, { unitsPerSheet: v > 0 ? v : undefined });
+                            }}
+                            className="w-16 px-1.5 py-1 text-xs border border-gray-300 rounded"
+                          />
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <label className="text-xs text-gray-400 whitespace-nowrap">Recargo</label>
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            placeholder="-"
+                            value={opt.surcharge ?? ''}
+                            onChange={(e) => {
+                              const v = parseFloat(e.target.value);
+                              updateOption(ai, oi, { surcharge: v > 0 ? v : undefined });
+                            }}
+                            className="w-16 px-1.5 py-1 text-xs border border-gray-300 rounded"
+                          />
+                        </div>
+                        {opt.surcharge != null && opt.surcharge > 0 && (
+                          <select
+                            value={opt.surchargeType ?? 'per_unit'}
+                            onChange={(e) => updateOption(ai, oi, { surchargeType: e.target.value as 'per_unit' | 'fixed' })}
+                            className="px-1.5 py-1 text-xs border border-gray-300 rounded"
+                          >
+                            <option value="per_unit">x ud.</option>
+                            <option value="fixed">fijo</option>
+                          </select>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeOption(ai, oi)}
+                          className="p-1 text-red-500 hover:bg-red-50 rounded shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => addOption(ai)}
+                    className="mt-2 flex items-center gap-1 text-sm text-indigo-600 font-medium hover:text-indigo-700"
+                  >
+                    <Plus className="w-4 h-4" />Añadir opcion
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
