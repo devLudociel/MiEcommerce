@@ -59,15 +59,22 @@ function getPreviewImage(
   selectedOptions: Record<string, string>,
   fallback: string | undefined
 ): string | undefined {
+  let candidate: string | undefined;
+
   for (const group of optionGroups) {
     const valueId = selectedOptions[group.id];
     if (valueId) {
       const val = group.values.find((v) => v.id === valueId);
-      if (val?.previewImage) return safeImageSrc(val.previewImage);
-      if (group.type === 'image' && val?.value) return safeImageSrc(val.value);
+      if (val?.previewImage) {
+        candidate = safeImageSrc(val.previewImage);
+        continue;
+      }
+      if (group.type === 'image' && val?.value) {
+        candidate = safeImageSrc(val.value);
+      }
     }
   }
-  return fallback ? safeImageSrc(fallback) : undefined;
+  return candidate ?? (fallback ? safeImageSrc(fallback) : undefined);
 }
 
 // ── Print-type–aware surcharge ────────────────────────────────────────────
