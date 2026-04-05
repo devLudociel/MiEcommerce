@@ -207,6 +207,8 @@ export interface ProductConfiguratorPricingMatrix {
   mode: 'matrix';
   quantityInput: ProductConfiguratorPricingQuantityInput;
   rules: ProductConfiguratorPricingRule[];
+  /** Recargo fijo opcional para grabado (se suma una sola vez al total) */
+  engravingSurcharge?: number;
 }
 
 export interface ProductConfiguratorSheetPricingRule {
@@ -337,6 +339,10 @@ export interface ConfiguratorPricing {
   designPrice: number;
   subtotal: number;
   total: number;
+  /** Subtotal del producto base (sin grabado fijo ni servicio de diseño) */
+  productBaseSubtotal?: number;
+  /** Recargo fijo de grabado aplicado al total */
+  engravingSurcharge?: number;
   /** Pricing especial para banderines por texto */
   letterCount?: number;
   /** Precio por letra para banderines de texto */

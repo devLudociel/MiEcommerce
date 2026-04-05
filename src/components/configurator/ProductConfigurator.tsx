@@ -195,12 +195,27 @@ function calculatePricing(
   // surcharge  = print-type–aware extra (DTF | vinilo | bordado)
   // unitPrice  = basePrice + surcharge
 
-  const engineUnitPrice = priceResult.ok ? priceResult.unitPrice : 0;
+  const matrixPricing =
+    product.configurator.pricing?.mode === 'matrix'
+      ? product.configurator.pricing
+      : null;
+  const rawEngineUnitPrice = priceResult.ok ? priceResult.unitPrice : 0;
+  const useProductBaseFallback =
+    !!matrixPricing &&
+    (priceResult.appliedTier?.price ?? rawEngineUnitPrice) === 0 &&
+    product.basePrice > 0;
+  const engineUnitPrice = useProductBaseFallback ? product.basePrice : rawEngineUnitPrice;
+  const engravingSurcharge =
+    matrixPricing?.engravingSurcharge && matrixPricing.engravingSurcharge > 0
+      ? matrixPricing.engravingSurcharge
+      : 0;
+
   const { surcharge: printSurcharge, label: printSurchargeLabel } =
     getPrintSurcharge(product, selections);
 
   const basePrice = engineUnitPrice;
   const unitPrice = basePrice + printSurcharge;
+  const productBaseSubtotal = basePrice * selections.quantity;
   const subtotal = unitPrice * selections.quantity;
 
   // ── Attribute option surcharges ──────────────────────────────────────────
@@ -235,7 +250,7 @@ function calculatePricing(
   let quantityDiscount: number | undefined;
   let unitPriceBeforeDiscount: number | undefined;
 
-  if (activeTiers.length >= 2 && activeTiers[0]) {
+  if (!useProductBaseFallback && activeTiers.length >= 2 && activeTiers[0]) {
     const baseTierPrice = activeTiers[0].price;
     if (baseTierPrice > 0 && engineUnitPrice < baseTierPrice) {
       const pct = Math.round((1 - engineUnitPrice / baseTierPrice) * 100);
@@ -246,13 +261,14 @@ function calculatePricing(
     }
   }
 
-  const total = subtotal + designPrice + attributeSurchargeTotal;
+  const total = subtotal + designPrice + attributeSurchargeTotal + engravingSurcharge;
 
   return {
     unitPrice,
     designPrice,
     subtotal,
     total,
+    ...(engravingSurcharge > 0 ? { productBaseSubtotal, engravingSurcharge } : {}),
     ...(printSurcharge > 0
       ? { basePrice, printSurcharge, printSurchargeLabel }
       : {}),

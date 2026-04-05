@@ -299,6 +299,70 @@ describe('configurator engine', () => {
     expect(result.error?.code).toBe('NO_MATCHING_RULE');
   });
 
+  it('permite matrix sin rules cuando existe engravingSurcharge', () => {
+    const config = {
+      version: 2,
+      steps: ['attribute:texto_grabado', 'design', 'quantity', 'summary'],
+      attributes: [
+        {
+          id: 'texto_grabado',
+          label: 'Texto grabado',
+          type: 'freetext',
+          options: [],
+          required: false,
+        },
+      ],
+      pricing: {
+        mode: 'matrix',
+        quantityInput: { min: 1, step: 1 },
+        engravingSurcharge: 8,
+        rules: [],
+      },
+      design: BASE_DESIGN,
+    };
+
+    const validation = validateConfigurator(config);
+
+    expect(validation.valid).toBe(true);
+    expect(validation.errors).toHaveLength(0);
+    expect(validation.normalized.pricing.mode).toBe('matrix');
+    if (validation.normalized.pricing.mode === 'matrix') {
+      expect(validation.normalized.pricing.rules).toHaveLength(0);
+      expect(validation.normalized.pricing.engravingSurcharge).toBe(8);
+    }
+  });
+
+  it('getUnitPrice devuelve ok en matrix sin rules cuando hay engravingSurcharge', () => {
+    const config = {
+      version: 2,
+      steps: ['attribute:texto_grabado', 'design', 'quantity', 'summary'],
+      attributes: [
+        {
+          id: 'texto_grabado',
+          label: 'Texto grabado',
+          type: 'freetext',
+          options: [],
+          required: false,
+        },
+      ],
+      pricing: {
+        mode: 'matrix',
+        quantityInput: { min: 1, step: 1 },
+        engravingSurcharge: 8,
+        rules: [],
+      },
+      design: BASE_DESIGN,
+    };
+
+    const result = getUnitPrice(config, { texto_grabado: 'HUGO' }, 3);
+
+    expect(result.ok).toBe(true);
+    expect(result.pricingMode).toBe('matrix');
+    expect(result.unitPrice).toBe(0);
+    expect(result.totalPrice).toBe(0);
+    expect(result.error).toBeNull();
+  });
+
   it('ordena tiers desordenados durante validacion', () => {
     const config = {
       version: 2,

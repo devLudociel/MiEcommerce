@@ -63,15 +63,21 @@ function TierCardUnit({
   nextTier,
   isActive,
   basePrice,
+  fallbackUnitPrice,
   onClick,
 }: {
   tier: PricingTier;
   nextTier?: PricingTier;
   isActive: boolean;
   basePrice: number;
+  fallbackUnitPrice?: number;
   onClick: () => void;
 }) {
-  const savings = savingsPercent(basePrice, tier.price);
+  const displayUnitPrice =
+    tier.price === 0 && fallbackUnitPrice != null && fallbackUnitPrice > 0
+      ? fallbackUnitPrice
+      : tier.price;
+  const savings = savingsPercent(basePrice, displayUnitPrice);
   const rangeLabel = nextTier
     ? `${tier.from} – ${nextTier.from - 1} uds.`
     : `${tier.from}+ uds.`;
@@ -103,7 +109,7 @@ function TierCardUnit({
         {rangeLabel}
       </span>
       <span className={`text-2xl font-bold leading-tight ${isActive ? 'text-indigo-700' : 'text-gray-900'}`}>
-        {fmt(tier.price)}
+        {fmt(displayUnitPrice)}
         <span className="text-sm font-normal text-gray-400 ml-1">/ud.</span>
       </span>
       {savings > 0 && (
@@ -220,6 +226,24 @@ export default function StepQuantity({
   const isSheetBased = !!config.sheetBased;
   const isTextBannerPricing =
     pricing?.letterCount != null && pricing?.letterUnitPrice != null;
+  const hasEngravingBreakdown =
+    pricing?.engravingSurcharge != null &&
+    pricing.engravingSurcharge > 0 &&
+    pricing?.productBaseSubtotal != null;
+  const tierFallbackUnitPrice =
+    hasEngravingBreakdown && quantity > 0
+      ? pricing.productBaseSubtotal! / quantity
+      : undefined;
+  const tierGridBasePrice =
+    basePrice === 0 && tierFallbackUnitPrice != null && tierFallbackUnitPrice > 0
+      ? tierFallbackUnitPrice
+      : basePrice;
+  const engravingPrintTotal =
+    pricing?.printSurcharge != null && pricing.printSurcharge > 0
+      ? pricing.printSurcharge * quantity
+      : 0;
+  const engravingAttributeTotal =
+    pricing?.attributeSurcharges?.reduce((sum, s) => sum + s.amount, 0) ?? 0;
 
   const setQty = useCallback(
     (value: number) => {
@@ -311,7 +335,8 @@ export default function StepQuantity({
             tier={tier}
             nextTier={tiers[i + 1]}
             isActive={tier.from === currentTier.from}
-            basePrice={basePrice}
+            basePrice={tierGridBasePrice}
+            fallbackUnitPrice={tierFallbackUnitPrice}
             onClick={() => setQty(tier.from)}
           />
         ))}
@@ -353,7 +378,37 @@ export default function StepQuantity({
         </div>
 
         {/* Price breakdown — full width row */}
-        {pricing?.basePrice != null && pricing?.printSurcharge != null && pricing.printSurcharge > 0 ? (
+        {hasEngravingBreakdown ? (
+          <div className="flex items-center justify-between bg-indigo-50 rounded-xl px-4 py-2.5">
+            <div className="text-sm text-gray-600 space-x-1">
+              <span>{fmt(pricing.productBaseSubtotal!)}</span>
+              <span className="text-gray-400">+</span>
+              <span>{fmt(pricing.engravingSurcharge!)}</span>
+              <span className="text-xs text-gray-500">grabado</span>
+              {engravingPrintTotal > 0 && (
+                <>
+                  <span className="text-gray-400">+</span>
+                  <span>{fmt(engravingPrintTotal)} estampado</span>
+                </>
+              )}
+              {engravingAttributeTotal > 0 && (
+                <>
+                  <span className="text-gray-400">+</span>
+                  <span>{fmt(engravingAttributeTotal)} extras</span>
+                </>
+              )}
+              {pricing.designPrice > 0 && (
+                <>
+                  <span className="text-gray-400">+</span>
+                  <span>{fmt(pricing.designPrice)} diseño</span>
+                </>
+              )}
+            </div>
+            <span className="text-base font-bold text-indigo-700">
+              {fmt(pricing.total)}
+            </span>
+          </div>
+        ) : pricing?.basePrice != null && pricing?.printSurcharge != null && pricing.printSurcharge > 0 ? (
           <div className="flex items-center justify-between bg-indigo-50 rounded-xl px-4 py-2.5">
             <div className="text-sm text-gray-600 space-x-1">
               <span>{fmt(pricing.basePrice)}</span>

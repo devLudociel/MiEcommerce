@@ -694,6 +694,8 @@ function normalizePricingFromV2(
 
   const rulesRaw = Array.isArray(rawPricing.rules) ? rawPricing.rules : [];
   const rules: ProductConfiguratorPricingRule[] = [];
+  const hasEngravingSurcharge = rawPricing.engravingSurcharge !== undefined;
+  const engravingSurcharge = toNonNegativeNumber(rawPricing.engravingSurcharge, 0);
 
   for (const rawRule of rulesRaw) {
     if (!isRecord(rawRule)) continue;
@@ -721,6 +723,7 @@ function normalizePricingFromV2(
     mode: 'matrix',
     quantityInput: { min, step, label: quantityLabel, sheetBased },
     rules,
+    ...(hasEngravingSurcharge ? { engravingSurcharge } : {}),
   };
 }
 
@@ -1291,7 +1294,11 @@ function sortAndValidatePricing(
     });
   }
 
-  if (normalized.pricing.rules.length === 0) {
+  const allowMatrixWithoutRules =
+    normalized.pricing.mode === 'matrix' &&
+    normalized.pricing.engravingSurcharge !== undefined;
+
+  if (normalized.pricing.rules.length === 0 && !allowMatrixWithoutRules) {
     errors.push({
       code: 'MISSING_TIERS',
       message:
@@ -2158,6 +2165,27 @@ export function getUnitPrice(
       matchedRule: null,
       appliedTier: tier,
       matchedTier: tier,
+      error: null,
+    };
+  }
+
+  // Matrix fallback: permite configuraciones sin rules cuando hay recargo fijo de grabado.
+  // En ese caso el engine devuelve unitPrice=0 para que la UI aplique product.basePrice.
+  if (
+    pricing.rules.length === 0 &&
+    pricing.engravingSurcharge !== undefined
+  ) {
+    const fallbackTier: PricingTier = { from: pricing.quantityInput.min, price: 0 };
+    return {
+      ok: true,
+      pricingMode: 'matrix',
+      quantity,
+      unitPrice: 0,
+      totalPrice: 0,
+      effectiveUnitPrice: 0,
+      matchedRule: null,
+      appliedTier: fallbackTier,
+      matchedTier: fallbackTier,
       error: null,
     };
   }

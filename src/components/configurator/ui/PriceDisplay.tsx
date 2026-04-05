@@ -40,6 +40,63 @@ export default function PriceDisplay({ pricing, quantity, sheetBased }: PriceDis
     );
   }
 
+  const hasEngravingBreakdown =
+    pricing.engravingSurcharge != null &&
+    pricing.engravingSurcharge > 0 &&
+    pricing.productBaseSubtotal != null;
+
+  if (hasEngravingBreakdown) {
+    const productBaseSubtotal = pricing.productBaseSubtotal!;
+    const engravingSurcharge = pricing.engravingSurcharge!;
+    const printSurchargeTotal =
+      pricing.printSurcharge != null && pricing.printSurcharge > 0
+        ? pricing.printSurcharge * quantity
+        : 0;
+
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2 shadow-sm">
+        <div className="flex justify-between text-sm text-gray-700">
+          <span>Producto</span>
+          <span>{fmt(productBaseSubtotal)}</span>
+        </div>
+
+        {printSurchargeTotal > 0 && (
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>{pricing.printSurchargeLabel || 'Estampado'}</span>
+            <span>+ {fmt(printSurchargeTotal)}</span>
+          </div>
+        )}
+
+        {pricing.attributeSurcharges?.map((s, i) => (
+          <div key={i} className="flex justify-between text-sm text-gray-600">
+            <span>{s.label}</span>
+            <span className="text-right">
+              <span>+ {fmt(s.amount)}</span>
+              <span className="block text-xs text-gray-400">{s.detail}</span>
+            </span>
+          </div>
+        ))}
+
+        <div className="flex justify-between text-sm text-gray-700">
+          <span>Grabado</span>
+          <span>+ {fmt(engravingSurcharge)}</span>
+        </div>
+
+        {pricing.designPrice > 0 && (
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>Servicio de diseño</span>
+            <span>+ {fmt(pricing.designPrice)}</span>
+          </div>
+        )}
+
+        <div className="border-t pt-2 flex justify-between text-lg font-bold text-gray-900">
+          <span>Total</span>
+          <span>{fmt(pricing.total)}</span>
+        </div>
+      </div>
+    );
+  }
+
   const hasBreakdown = pricing.basePrice != null && pricing.printSurcharge != null && pricing.printSurcharge > 0;
 
   return (
