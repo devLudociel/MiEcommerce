@@ -11,6 +11,20 @@ import CustomizationDetails from '../cart/CustomizationDetails';
 import { useBundleDiscounts } from '../../lib/bundleDiscounts';
 import { safeImageSrc } from '../../lib/placeholders';
 
+const NAV_HIDDEN_CATEGORY_SLUGS = new Set(['packaging']);
+const NAV_HIDDEN_SUBCATEGORY_SLUGS = new Set(['packaging-corporativo', 'packaging-eventos']);
+
+const navCategories = categories
+  .filter((category) => !NAV_HIDDEN_CATEGORY_SLUGS.has(category.slug))
+  .map((category) => ({
+    ...category,
+    subcategories: category.subcategories.filter(
+      (subcategory) =>
+        !NAV_HIDDEN_SUBCATEGORY_SLUGS.has(subcategory.slug) &&
+        !subcategory.name.toLowerCase().includes('packaging')
+    ),
+  }));
+
 // ✅ DESPUÉS (sin error de hidratación)
 function CartBadge() {
   const [count, setCount] = useState(0);
@@ -694,7 +708,7 @@ const Header: React.FC<HeaderProps> = () => {
               className="hidden lg:flex items-center gap-0.5 xl:gap-1 flex-wrap relative"
               style={{ overflowY: 'visible' }}
             >
-              {categories.map((category) => (
+              {navCategories.map((category) => (
                 <div
                   key={category.id}
                   className="flex-shrink-0"
@@ -1033,7 +1047,7 @@ const Header: React.FC<HeaderProps> = () => {
         >
           <div className="container" style={{ padding: 'var(--spacing-4) var(--spacing-4)' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-1)' }}>
-              {categories.map((category) => (
+              {navCategories.map((category) => (
                 <div key={category.id} style={{ borderBottom: '1px solid var(--color-gray-100)' }}>
                   <button
                     onClick={() => setActiveMenu(activeMenu === category.id ? null : category.id)}
