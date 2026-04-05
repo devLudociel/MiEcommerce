@@ -366,12 +366,23 @@ function normalizeAttributeOptions(
 
     const unitsPerSheet = toPositiveInt(rawOption.unitsPerSheet, 0);
 
+    const rawSurcharge = typeof rawOption.surcharge === 'number' ? rawOption.surcharge : parseFloat(String(rawOption.surcharge ?? ''));
+    const surcharge = rawSurcharge > 0 ? rawSurcharge : undefined;
+
+    const rawSurchargeType = asString(rawOption.surchargeType);
+    const surchargeType: 'per_unit' | 'fixed' | undefined =
+      surcharge != null
+        ? rawSurchargeType === 'fixed' ? 'fixed' : 'per_unit'
+        : undefined;
+
     options.push({
       id,
       label,
       value,
       previewImage: asString(rawOption.previewImage) || undefined,
       unitsPerSheet: unitsPerSheet > 0 ? unitsPerSheet : undefined,
+      surcharge,
+      surchargeType,
     });
   }
 
