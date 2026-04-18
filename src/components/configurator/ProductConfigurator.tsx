@@ -41,16 +41,36 @@ const TEXT_BANNER_GIFT_IMAGE_PENNANTS = 2;
 // Attribute IDs / labels that identify a "size" attribute for textile products
 const SIZE_ATTR_IDS = new Set(['talla', 'size', 'talla_ropa', 'talla_camiseta', 'talla_sudadera', 'talla_hoodie', 'tallas']);
 
-/** Returns the size attribute if this product should use the size-quantity grid */
+/**
+ * Returns the size attribute if this product should use the size-quantity grid.
+ * Checks V2 attributes first, then falls back to V1 option groups.
+ */
 function findSizeAttribute(
-  attributes?: ProductConfiguratorAttribute[]
+  attributes?: ProductConfiguratorAttribute[],
+  optionGroups?: OptionGroup[]
 ): ProductConfiguratorAttribute | undefined {
-  return attributes?.find(
-    (a) =>
-      SIZE_ATTR_IDS.has(a.id.toLowerCase()) ||
-      a.label.toLowerCase().includes('talla') ||
-      a.label.toLowerCase().includes('size')
-  );
+  const isSizeId = (id: string, label: string) =>
+    SIZE_ATTR_IDS.has(id.toLowerCase()) ||
+    label.toLowerCase().includes('talla') ||
+    label.toLowerCase().includes('size');
+
+  // V2 attributes
+  const attrMatch = attributes?.find((a) => isSizeId(a.id, a.label));
+  if (attrMatch) return attrMatch;
+
+  // V1 option groups — normalize to attribute shape
+  const optMatch = optionGroups?.find((g) => isSizeId(g.id, g.label));
+  if (optMatch) {
+    return {
+      id: optMatch.id,
+      label: optMatch.label,
+      type: 'select',
+      required: false,
+      options: optMatch.values.map((v) => ({ id: v.id, label: v.label, value: v.value })),
+    };
+  }
+
+  return undefined;
 }
 
 /**
@@ -482,16 +502,21 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
   const attributes = product?.configurator.attributes;
   const optionGroups = product?.configurator.options ?? [];
 
-  /** Detected size attribute — triggers the textile grid mode */
-  const sizeAttribute = useMemo(() => findSizeAttribute(attributes), [attributes]);
+  /** Detected size attribute — triggers the textile grid mode (checks V2 attrs + V1 option groups) */
+  const sizeAttribute = useMemo(
+    () => findSizeAttribute(attributes, optionGroups),
+    [attributes, optionGroups]
+  );
   /** In grid mode, the size step is folded into StepSizeGrid; remove it from wizard */
   const isSizeGrid = !!sizeAttribute && !product?.configurator.quantity.sheetBased;
 
   const steps = useMemo(() => {
     const visible = getVisibleSteps(allSteps, attributes, selections.options);
     if (!isSizeGrid || !sizeAttribute) return visible;
-    // Remove the standalone size attribute step — handled inside StepSizeGrid
-    return visible.filter((s) => s !== `attribute:${sizeAttribute.id}`);
+    // Remove both V1 (option:X) and V2 (attribute:X) size steps — handled inside StepSizeGrid
+    return visible.filter(
+      (s) => s !== `attribute:${sizeAttribute.id}` && s !== `option:${sizeAttribute.id}`
+    );
   }, [allSteps, attributes, selections.options, isSizeGrid, sizeAttribute]);
 
   /** Total units across all sizes (for grid mode) */
@@ -528,10 +553,19 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
 
   const currentStepId = steps[currentStep] as ConfiguratorStepId | undefined;
 
-  const pricing = useMemo(
-    () => (product ? calculatePricing(product, selections) : null),
-    [product, selections]
-  );
+  const pricing = useMemo(() => {
+    if (!product) return null;
+    // In size-grid mode, use the total across all sizes for pricing so the sidebar
+    // shows the correct tier, unit price, and subtotal.
+    if (isSizeGrid && sizeAttribute && sizeGridTotal > 0) {
+      const firstSizeId = sizeAttribute.options[0]?.id;
+      const opts = firstSizeId
+        ? { ...selections.options, [sizeAttribute.id]: firstSizeId }
+        : selections.options;
+      return calculatePricing(product, { ...selections, options: opts, quantity: sizeGridTotal });
+    }
+    return calculatePricing(product, selections);
+  }, [product, selections, isSizeGrid, sizeAttribute, sizeGridTotal]);
 
   // En productos por texto (banderín), la cantidad no define precio.
   // Forzamos cantidad mínima para evitar inconsistencias visuales y de carrito.
@@ -1024,6 +1058,9 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
                 pricing={pricing}
                 isAddingToCart={isAddingToCart}
                 onAddToCart={handleAddToCart}
+                sizeGridAttribute={isSizeGrid ? sizeAttribute : undefined}
+                sizeQuantities={isSizeGrid ? sizeQuantities : undefined}
+                sizeGridTotal={isSizeGrid ? sizeGridTotal : undefined}
               />
             )}
           </div>
@@ -1129,7 +1166,11 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
             </div>
           )}
           {pricing && currentStepId !== 'summary' && (
-            <PriceDisplay pricing={pricing} quantity={selections.quantity} sheetBased={isSheetBased} />
+            <PriceDisplay
+              pricing={pricing}
+              quantity={isSizeGrid ? sizeGridTotal : selections.quantity}
+              sheetBased={isSheetBased}
+            />
           )}
         </div>
       </div>

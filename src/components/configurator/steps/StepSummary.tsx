@@ -4,6 +4,7 @@ import type {
   ConfigurableProduct,
   ConfiguratorSelections,
   ConfiguratorPricing,
+  ProductConfiguratorAttribute,
 } from '../../../types/configurator';
 import { safeImageSrc } from '../../../lib/placeholders';
 import PriceDisplay from '../ui/PriceDisplay';
@@ -14,6 +15,12 @@ interface StepSummaryProps {
   pricing: ConfiguratorPricing;
   isAddingToCart: boolean;
   onAddToCart: () => void;
+  /** When in size-grid mode, the size attribute to exclude from option lines */
+  sizeGridAttribute?: ProductConfiguratorAttribute;
+  /** When in size-grid mode, the per-size quantities */
+  sizeQuantities?: Record<string, number>;
+  /** When in size-grid mode, the combined total quantity */
+  sizeGridTotal?: number;
 }
 
 export default function StepSummary({
@@ -22,14 +29,19 @@ export default function StepSummary({
   pricing,
   isAddingToCart,
   onAddToCart,
+  sizeGridAttribute,
+  sizeQuantities,
+  sizeGridTotal,
 }: StepSummaryProps) {
   const fmt = (n: number) => n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
   const optionGroups = product.configurator.options ?? [];
+  const isSizeGrid = !!sizeGridAttribute && !!sizeQuantities;
 
   const lines: { icon: React.ReactNode; label: string; value: string }[] = [];
 
-  // All selected option groups
+  // All selected option groups — skip the size group when in grid mode
   for (const group of optionGroups) {
+    if (isSizeGrid && group.id === sizeGridAttribute.id) continue;
     const valueId = selections.options[group.id];
     if (valueId) {
       const val = group.values.find((v) => v.id === valueId);
@@ -46,6 +58,7 @@ export default function StepSummary({
   // Freetext attributes (V2)
   const v2Attributes = product.configurator.attributes ?? [];
   for (const attr of v2Attributes) {
+    if (isSizeGrid && attr.id === sizeGridAttribute.id) continue;
     if (attr.type !== 'freetext') continue;
     const val = selections.options[attr.id];
     if (val) {
@@ -121,6 +134,16 @@ export default function StepSummary({
       label: 'Regalo',
       value: `+ ${giftImagePennants} banderines temáticos`,
     });
+  } else if (isSizeGrid && sizeQuantities && sizeGridAttribute) {
+    // Size-grid mode: show per-size breakdown
+    const total = sizeGridTotal ?? Object.values(sizeQuantities).reduce((s, q) => s + q, 0);
+    const selectedSizes = sizeGridAttribute.options.filter((o) => (sizeQuantities[o.id] ?? 0) > 0);
+    const breakdownStr = selectedSizes.map((o) => `${o.label}: ${sizeQuantities[o.id]}`).join(' · ');
+    lines.push({
+      icon: <Hash className="w-4 h-4" />,
+      label: 'Tallas y cantidades',
+      value: `${total} uds. (${breakdownStr})`,
+    });
   } else {
     lines.push({
       icon: <Hash className="w-4 h-4" />,
@@ -194,7 +217,11 @@ export default function StepSummary({
 
       {/* Pricing — hidden on mobile */}
       <div className="hidden sm:block">
-        <PriceDisplay pricing={pricing} quantity={selections.quantity} sheetBased={isSheetBased} />
+        <PriceDisplay
+          pricing={pricing}
+          quantity={isSizeGrid ? (sizeGridTotal ?? selections.quantity) : selections.quantity}
+          sheetBased={isSheetBased}
+        />
       </div>
 
       {/* Add to cart — hidden on mobile */}
