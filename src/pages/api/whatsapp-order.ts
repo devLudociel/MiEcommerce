@@ -43,16 +43,19 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   try {
-    // Initialize Firebase Admin with a unique app name to avoid conflicts
+    // Initialize Firebase Admin — use process.env to bypass Astro's env handling
     const appName = `wa-order-${Date.now()}`;
-    const svcRaw = import.meta.env.FIREBASE_SERVICE_ACCOUNT as string;
+    const svcRaw = (process.env.FIREBASE_SERVICE_ACCOUNT || import.meta.env.FIREBASE_SERVICE_ACCOUNT) as string;
     const svc = JSON.parse(svcRaw);
-    // Ensure private_key newlines are correct
+    // Normalize private_key newlines (Vercel sometimes stores \\n instead of \n)
     if (svc.private_key) {
       svc.private_key = svc.private_key.replace(/\\n/g, '\n');
     }
 
-    const app = initializeApp({ credential: cert(svc) }, appName);
+    const app = initializeApp({
+      credential: cert(svc),
+      projectId: svc.project_id,
+    }, appName);
     const db = getFirestore(app);
 
     const orderId = `wa_${telefono}_${Date.now()}`;
