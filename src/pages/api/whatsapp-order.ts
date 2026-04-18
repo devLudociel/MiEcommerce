@@ -21,10 +21,9 @@ async function getGoogleAccessToken(svc: Record<string, string>): Promise<string
   const signingInput = `${header}.${payload}`;
   const privateKey = svc.private_key.replace(/\\n/g, '\n');
 
-  const signature = crypto.sign('sha256', Buffer.from(signingInput), {
-    key: privateKey,
-    padding: crypto.constants.RSA_PKCS1_PADDING,
-  }).toString('base64url');
+  const signer = crypto.createSign('RSA-SHA256');
+  signer.update(signingInput);
+  const signature = signer.sign(privateKey, 'base64url');
 
   const jwt = `${signingInput}.${signature}`;
 
