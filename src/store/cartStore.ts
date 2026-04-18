@@ -18,6 +18,9 @@ export interface CartItem {
   image: string;
   variantId?: number;
   variantName?: string;
+  /** Unique key encoding product + all attribute selections. Used to distinguish
+   *  e.g. "Camiseta Talla M Negro" from "Camiseta Talla L Negro" in the cart. */
+  variantKey?: string;
   customization?: {
     customizationId?: string;
     uploadedImage?: string | null;
@@ -297,9 +300,14 @@ export const setCurrentUserId = (userId: string | null): void => {
 export function addToCart(item: CartItem): void {
   const sanitizedItem = sanitizeCartItem(item);
   const currentState = cartStore.get();
-  const existingItemIndex = currentState.items.findIndex(
-    (i: CartItem) => i.id === sanitizedItem.id && i.variantId === sanitizedItem.variantId
-  );
+  const existingItemIndex = currentState.items.findIndex((i: CartItem) => {
+    // If both items have a variantKey, use it as the discriminator
+    if (sanitizedItem.variantKey && i.variantKey) {
+      return i.variantKey === sanitizedItem.variantKey;
+    }
+    // Fallback: match by (id, variantId) for non-configurator items
+    return i.id === sanitizedItem.id && i.variantId === sanitizedItem.variantId;
+  });
 
   let newItems: CartItem[];
 
@@ -353,15 +361,17 @@ export function addToCart(item: CartItem): void {
 export function updateCartItemQuantity(
   itemId: string,
   variantId: number | undefined,
-  quantity: number
+  quantity: number,
+  variantKey?: string
 ): void {
   const currentState = cartStore.get();
 
-  const newItems = currentState.items.map((item: CartItem) =>
-    item.id === itemId && item.variantId === variantId
-      ? { ...item, quantity: Math.max(1, quantity) }
-      : item
-  );
+  const newItems = currentState.items.map((item: CartItem) => {
+    const matches = variantKey && item.variantKey
+      ? item.variantKey === variantKey
+      : item.id === itemId && item.variantId === variantId;
+    return matches ? { ...item, quantity: Math.max(1, quantity) } : item;
+  });
 
   const newState: CartState = {
     items: newItems,
@@ -378,16 +388,16 @@ export function updateCartItemQuantity(
 }
 
 // Remover item del carrito
-export function removeFromCart(itemId: string, variantId?: number): void {
+export function removeFromCart(itemId: string, variantId?: number, variantKey?: string): void {
   const currentState = cartStore.get();
 
-  const removedItem = currentState.items.find(
-    (item: CartItem) => item.id === itemId && item.variantId === variantId
-  );
+  const matcher = (item: CartItem) =>
+    variantKey && item.variantKey
+      ? item.variantKey === variantKey
+      : item.id === itemId && item.variantId === variantId;
 
-  const newItems = currentState.items.filter(
-    (item: CartItem) => !(item.id === itemId && item.variantId === variantId)
-  );
+  const removedItem = currentState.items.find(matcher);
+  const newItems = currentState.items.filter((item) => !matcher(item));
 
   const newState: CartState = {
     items: newItems,

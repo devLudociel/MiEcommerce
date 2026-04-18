@@ -26,7 +26,9 @@ import StepFreetext from './steps/StepFreetext';
 import StepDesign from './steps/StepDesign';
 import StepPlacement from './steps/StepPlacement';
 import StepQuantity from './steps/StepQuantity';
+import StepSizeGrid from './steps/StepSizeGrid';
 import StepSummary from './steps/StepSummary';
+import type { ProductConfiguratorAttribute } from '../../types/configurator';
 
 interface ProductConfiguratorProps {
   productId: string;
@@ -35,6 +37,38 @@ interface ProductConfiguratorProps {
 const TEXT_BANNER_OPTION_ID = 'texto_banderin';
 const TEXT_BANNER_PRICE_PER_LETTER = 0.9;
 const TEXT_BANNER_GIFT_IMAGE_PENNANTS = 2;
+
+// Attribute IDs / labels that identify a "size" attribute for textile products
+const SIZE_ATTR_IDS = new Set(['talla', 'size', 'talla_ropa', 'talla_camiseta', 'talla_sudadera', 'talla_hoodie', 'tallas']);
+
+/** Returns the size attribute if this product should use the size-quantity grid */
+function findSizeAttribute(
+  attributes?: ProductConfiguratorAttribute[]
+): ProductConfiguratorAttribute | undefined {
+  return attributes?.find(
+    (a) =>
+      SIZE_ATTR_IDS.has(a.id.toLowerCase()) ||
+      a.label.toLowerCase().includes('talla') ||
+      a.label.toLowerCase().includes('size')
+  );
+}
+
+/**
+ * Builds a stable unique key for a cart item encoding product + all attribute
+ * selections + placement. Two items with the same variantKey are identical.
+ */
+function buildVariantKey(
+  productId: string,
+  options: Record<string, string>,
+  placement?: string
+): string {
+  const optsPart = Object.keys(options)
+    .sort()
+    .filter((k) => options[k])
+    .map((k) => `${k}:${options[k]}`)
+    .join('|');
+  return [productId, optsPart, placement ?? ''].join(';;');
+}
 
 // ============================================================================
 // PRICING HELPERS
@@ -352,7 +386,8 @@ function isStepValid(
       return true;
     }
     case 'quantity':
-      return selections.quantity >= product.configurator.quantity.min;
+      // In size-grid mode, check total across all sizes instead of single quantity
+      return false; // handled at call site via canGoNext override below
     case 'summary':
       return true;
     default:
@@ -371,12 +406,17 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
   const [currentStep, setCurrentStep] = useState(0);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+  /** Summary of sizes added in last cart action, for the success screen */
+  const [lastAddedSizes, setLastAddedSizes] = useState<Array<{ label: string; qty: number }>>([]);
 
   const [selections, setSelections] = useState<ConfiguratorSelections>({
     options: {},
     designMode: null,
     quantity: 1,
   });
+
+  /** Per-size quantities when product has a size attribute (textile grid mode) */
+  const [sizeQuantities, setSizeQuantities] = useState<Record<string, number>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -442,10 +482,42 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
   const attributes = product?.configurator.attributes;
   const optionGroups = product?.configurator.options ?? [];
 
-  const steps = useMemo(
-    () => getVisibleSteps(allSteps, attributes, selections.options),
-    [allSteps, attributes, selections.options]
+  /** Detected size attribute — triggers the textile grid mode */
+  const sizeAttribute = useMemo(() => findSizeAttribute(attributes), [attributes]);
+  /** In grid mode, the size step is folded into StepSizeGrid; remove it from wizard */
+  const isSizeGrid = !!sizeAttribute && !product?.configurator.quantity.sheetBased;
+
+  const steps = useMemo(() => {
+    const visible = getVisibleSteps(allSteps, attributes, selections.options);
+    if (!isSizeGrid || !sizeAttribute) return visible;
+    // Remove the standalone size attribute step — handled inside StepSizeGrid
+    return visible.filter((s) => s !== `attribute:${sizeAttribute.id}`);
+  }, [allSteps, attributes, selections.options, isSizeGrid, sizeAttribute]);
+
+  /** Total units across all sizes (for grid mode) */
+  const sizeGridTotal = useMemo(
+    () => Object.values(sizeQuantities).reduce((s, q) => s + q, 0),
+    [sizeQuantities]
   );
+
+  /** Active pricing tiers for grid mode (computed without size selection) */
+  const sizeGridTiers = useMemo(() => {
+    if (!product || !isSizeGrid) return [];
+    return resolveActiveTiers(product, { ...selections, options: { ...selections.options } });
+  }, [product, isSizeGrid, selections]);
+
+  /** Unit price for current total in grid mode */
+  const sizeGridUnitPrice = useMemo(() => {
+    if (!product || !isSizeGrid || sizeGridTotal === 0) return 0;
+    const firstSizeId = sizeAttribute?.options[0]?.id;
+    const optionsForPrice = firstSizeId
+      ? { ...selections.options, [sizeAttribute!.id]: firstSizeId }
+      : selections.options;
+    const result = getUnitPrice(product.configurator, optionsForPrice, sizeGridTotal);
+    if (!result.ok) return 0;
+    const { surcharge: printSurcharge } = getPrintSurcharge(product, selections);
+    return result.unitPrice + printSurcharge;
+  }, [product, isSizeGrid, sizeGridTotal, sizeAttribute, selections]);
 
   // Clamp currentStep if visible steps shrink
   useEffect(() => {
@@ -473,9 +545,14 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
     }
   }, [product, pricing?.letterCount, selections.quantity]);
 
-  const canGoNext = currentStepId
-    ? isStepValid(currentStepId, product!, selections)
-    : false;
+  const canGoNext = useMemo(() => {
+    if (!currentStepId || !product) return false;
+    if (currentStepId === 'quantity') {
+      const min = product.configurator.quantity.min;
+      return isSizeGrid ? sizeGridTotal >= min : selections.quantity >= min;
+    }
+    return isStepValid(currentStepId, product, selections);
+  }, [currentStepId, product, isSizeGrid, sizeGridTotal, selections]);
   const isLastStep = currentStep === steps.length - 1;
 
   const goNext = useCallback(() => {
@@ -551,24 +628,73 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
     setSelections((prev) => ({ ...prev, quantity }));
   }, []);
 
+  const setSizeQuantity = useCallback((sizeId: string, qty: number) => {
+    setSizeQuantities((prev) => ({ ...prev, [sizeId]: qty }));
+  }, []);
+
+  // ── Shared: build base customization from current selections ──────────────
+  const buildBaseCustomization = useCallback((
+    opts: Record<string, string>,
+    uploadedDesignUrl: string | undefined,
+    includeDesignServicePrice: boolean,
+    pricingRef: typeof pricing
+  ) => {
+    const customization: Record<string, unknown> = { configuratorId: product!.id };
+
+    // All selected options
+    for (const group of optionGroups) {
+      const valueId = opts[group.id];
+      if (valueId) {
+        const val = group.values.find((v) => v.id === valueId);
+        customization[`option_${group.id}`] = valueId;
+        customization[`option_${group.id}_label`] = val?.label;
+      }
+    }
+    // V2 attributes (not in optionGroups)
+    if (attributes) {
+      for (const attr of attributes) {
+        if (!optionGroups.find((g) => g.id === attr.id)) {
+          const valueId = opts[attr.id];
+          if (valueId) {
+            const opt = attr.options.find((o) => o.id === valueId);
+            customization[`option_${attr.id}`] = valueId;
+            customization[`option_${attr.id}_label`] = opt?.label;
+          }
+        }
+      }
+    }
+
+    if (selections.designMode === 'ready') {
+      customization.designMode = 'ready';
+      customization.uploadedImage = uploadedDesignUrl || null;
+    }
+    if (selections.designMode === 'need-design') {
+      customization.designMode = 'need-design';
+      customization.designNotes = selections.designNotes || '';
+      if (includeDesignServicePrice) {
+        customization.designServicePrice = pricingRef?.designPrice ?? 0;
+      }
+    }
+    if (selections.placement) {
+      const placementOpt = product!.configurator.placement?.options.find(
+        (o) => o.id === selections.placement
+      );
+      customization.placement = selections.placement;
+      customization.placementLabel = placementOpt?.label;
+      if (selections.placementSize) customization.placementSize = selections.placementSize;
+    }
+    return customization;
+  }, [product, optionGroups, attributes, selections]);
+
   // Add to cart
   const handleAddToCart = useCallback(async () => {
     if (!product || !pricing) return;
 
     const isTextBannerPricing = pricing.letterCount != null && pricing.letterUnitPrice != null;
-    const priceValidation = getUnitPrice(
-      product.configurator,
-      selections.options,
-      selections.quantity
-    );
-    if (!isTextBannerPricing && !priceValidation.ok) {
-      notify.error(priceValidation.error?.message || 'No se pudo resolver el precio para esta configuración');
-      return;
-    }
-
     setIsAddingToCart(true);
 
     try {
+      // Upload design file once
       let uploadedDesignUrl: string | undefined;
       if (selections.designMode === 'ready' && selections.designFile) {
         const uid = getAuth().currentUser?.uid;
@@ -582,9 +708,74 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
         uploadedDesignUrl = await getDownloadURL(fileRef);
       }
 
-      const customization: Record<string, unknown> = {
-        configuratorId: product.id,
-      };
+      // ── SIZE GRID MODE: add one cart item per size with qty > 0 ───────────
+      if (isSizeGrid && sizeAttribute) {
+        const selectedSizes = sizeAttribute.options.filter(
+          (opt) => (sizeQuantities[opt.id] ?? 0) > 0
+        );
+        if (selectedSizes.length === 0) {
+          notify.error('Indica al menos una talla con cantidad mayor a 0.');
+          return;
+        }
+
+        const unitPrice = sizeGridUnitPrice;
+        let isFirstSize = true;
+
+        for (const sizeOpt of selectedSizes) {
+          const qty = sizeQuantities[sizeOpt.id];
+          const sizeOptions = { ...selections.options, [sizeAttribute.id]: sizeOpt.id };
+          const customization = buildBaseCustomization(
+            sizeOptions,
+            uploadedDesignUrl,
+            isFirstSize, // design service price only on first item
+            pricing
+          );
+          const variantKey = buildVariantKey(product.id, sizeOptions, selections.placement);
+
+          addToCart({
+            id: product.id,
+            name: product.name,
+            price: unitPrice,
+            quantity: qty,
+            image: safeImageSrc(product.images[0]),
+            variantKey,
+            variantName: sizeOpt.label,
+            customization: customization as any,
+          });
+
+          isFirstSize = false;
+        }
+
+        setLastAddedSizes(
+          selectedSizes.map((opt) => ({ label: opt.label, qty: sizeQuantities[opt.id] }))
+        );
+        setAddedToCart(true);
+        logger.info('[Configurator] Added size grid items to cart', {
+          productId: product.id,
+          sizes: selectedSizes.map((o) => ({ id: o.id, qty: sizeQuantities[o.id] })),
+          totalQty: sizeGridTotal,
+          unitPrice,
+        });
+        return;
+      }
+
+      // ── STANDARD MODE ─────────────────────────────────────────────────────
+      const priceValidation = getUnitPrice(
+        product.configurator,
+        selections.options,
+        selections.quantity
+      );
+      if (!isTextBannerPricing && !priceValidation.ok) {
+        notify.error(priceValidation.error?.message || 'No se pudo resolver el precio para esta configuración');
+        return;
+      }
+
+      const customization = buildBaseCustomization(
+        selections.options,
+        uploadedDesignUrl,
+        true,
+        pricing
+      );
 
       if (!isTextBannerPricing && priceValidation.pricingMode === 'sheet-matrix') {
         if (priceValidation.unitsPerSheet) customization.unitsPerSheet = priceValidation.unitsPerSheet;
@@ -597,35 +788,6 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
         customization.giftImagePennants = pricing.giftImagePennants ?? TEXT_BANNER_GIFT_IMAGE_PENNANTS;
       }
 
-      // All selected options
-      for (const group of optionGroups) {
-        const valueId = selections.options[group.id];
-        if (valueId) {
-          const val = group.values.find((v) => v.id === valueId);
-          customization[`option_${group.id}`] = valueId;
-          customization[`option_${group.id}_label`] = val?.label;
-        }
-      }
-
-      if (selections.designMode === 'ready') {
-        customization.designMode = 'ready';
-        customization.uploadedImage = uploadedDesignUrl || null;
-      }
-      if (selections.designMode === 'need-design') {
-        customization.designMode = 'need-design';
-        customization.designNotes = selections.designNotes || '';
-        customization.designServicePrice = pricing.designPrice;
-      }
-      if (selections.placement) {
-        const placementOpt = product.configurator.placement?.options.find(
-          (o) => o.id === selections.placement
-        );
-        customization.placement = selections.placement;
-        customization.placementLabel = placementOpt?.label;
-        if (selections.placementSize) customization.placementSize = selections.placementSize;
-      }
-
-      // Quantity: for sheetBased, store sheets and convert to units for cart
       const isSheetBased = product.configurator.quantity.sheetBased;
       const unitsPerSheet = getUnitsPerSheet(optionGroups, selections.options);
       const cartQuantity = isTextBannerPricing
@@ -635,15 +797,19 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
           : selections.quantity;
       if (!isTextBannerPricing && isSheetBased) customization.sheets = selections.quantity;
 
+      const variantKey = buildVariantKey(product.id, selections.options, selections.placement);
+
       addToCart({
         id: product.id,
         name: product.name,
         price: pricing.total / Math.max(cartQuantity, 1),
         quantity: cartQuantity,
         image: safeImageSrc(product.images[0]),
+        variantKey,
         customization: customization as any,
       });
 
+      setLastAddedSizes([]);
       setAddedToCart(true);
       logger.info('[Configurator] Added to cart', {
         productId: product.id,
@@ -656,7 +822,8 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
     } finally {
       setIsAddingToCart(false);
     }
-  }, [product, pricing, selections, optionGroups]);
+  }, [product, pricing, selections, optionGroups, isSizeGrid, sizeAttribute, sizeQuantities,
+      sizeGridUnitPrice, sizeGridTotal, buildBaseCustomization]);
 
   // ============================================================================
   // RENDER
@@ -684,9 +851,26 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
   if (addedToCart) {
     const isSheetBased = product.configurator.quantity.sheetBased;
     const uph = getUnitsPerSheet(optionGroups, selections.options);
-    const qtyLabel = isSheetBased
-      ? `${selections.quantity} ${selections.quantity === 1 ? 'hoja' : 'hojas'}${uph ? ` (${selections.quantity * uph} uds.)` : ''}`
-      : String(selections.quantity);
+
+    // Summary label shown in the success screen
+    let qtyLabel: string;
+    if (isSizeGrid && lastAddedSizes.length > 0) {
+      const totalAdded = lastAddedSizes.reduce((s, r) => s + r.qty, 0);
+      qtyLabel = `${totalAdded} unidades (${lastAddedSizes.map((r) => `${r.label}: ${r.qty}`).join(', ')})`;
+    } else if (isSheetBased) {
+      qtyLabel = `${selections.quantity} ${selections.quantity === 1 ? 'hoja' : 'hojas'}${uph ? ` (${selections.quantity * uph} uds.)` : ''}`;
+    } else {
+      qtyLabel = `${selections.quantity} unidades`;
+    }
+
+    const handleAddAnotherVariant = () => {
+      // Reset only size quantities (keep color, design, placement) → go back to quantity step
+      setSizeQuantities({});
+      setAddedToCart(false);
+      setLastAddedSizes([]);
+      const quantityStepIndex = steps.findIndex((s) => s === 'quantity');
+      setCurrentStep(quantityStepIndex >= 0 ? quantityStepIndex : steps.length - 2);
+    };
 
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
@@ -695,12 +879,23 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Producto añadido al carrito</h2>
-        <p className="text-gray-500 mb-8">{product.name} &times; {qtyLabel}</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Añadido al carrito!</h2>
+        <p className="text-gray-500 mb-1 font-medium">{product.name}</p>
+        <p className="text-gray-400 text-sm mb-8">{qtyLabel}</p>
+
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <a href="/cart" className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors">
             Ver carrito
           </a>
+          {isSizeGrid && (
+            <button
+              type="button"
+              onClick={handleAddAnotherVariant}
+              className="px-6 py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-colors"
+            >
+              Añadir otro color / variante
+            </button>
+          )}
           <a href="/" className="px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors">
             Seguir comprando
           </a>
@@ -801,7 +996,16 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
               />
             )}
 
-            {currentStepId === 'quantity' && (
+            {currentStepId === 'quantity' && isSizeGrid && sizeAttribute ? (
+              <StepSizeGrid
+                sizeAttribute={sizeAttribute}
+                sizeQuantities={sizeQuantities}
+                tiers={sizeGridTiers}
+                unitPrice={sizeGridUnitPrice}
+                minQuantity={product.configurator.quantity.min}
+                onSizeQuantityChange={setSizeQuantity}
+              />
+            ) : currentStepId === 'quantity' && (
               <StepQuantity
                 config={product.configurator.quantity}
                 quantity={selections.quantity}

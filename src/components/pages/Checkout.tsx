@@ -806,7 +806,7 @@ export default function Checkout() {
         cancelText: 'Cancelar',
       });
       if (confirmed) {
-        removeFromCart(item.id, item.variantId);
+        removeFromCart(item.id, item.variantId, item.variantKey);
       }
     },
     [confirm]
@@ -1672,7 +1672,7 @@ export default function Checkout() {
               <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
                 {cart.items.map((item) => (
                   <div
-                    key={`${item.id}-${item.variantId || 'no-variant'}`}
+                    key={item.variantKey ?? `${item.id}-${item.variantId ?? 'nv'}`}
                     className="relative bg-gray-50 rounded-lg p-3 border border-gray-200 hover:border-cyan-300 transition-all"
                   >
                     {/* Delete Button */}
@@ -1702,7 +1702,7 @@ export default function Checkout() {
                         <div className="flex items-center gap-2 mb-2">
                           <button
                             onClick={() =>
-                              updateCartItemQuantity(item.id, item.variantId, item.quantity - 1)
+                              updateCartItemQuantity(item.id, item.variantId, item.quantity - 1, item.variantKey)
                             }
                             disabled={item.quantity <= 1}
                             className="p-1 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
@@ -1715,7 +1715,7 @@ export default function Checkout() {
                           </span>
                           <button
                             onClick={() =>
-                              updateCartItemQuantity(item.id, item.variantId, item.quantity + 1)
+                              updateCartItemQuantity(item.id, item.variantId, item.quantity + 1, item.variantKey)
                             }
                             className="p-1 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-all"
                             title="Aumentar cantidad"
