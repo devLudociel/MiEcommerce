@@ -41,6 +41,12 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: 'telefono and importe required' }), { status: 400 });
   }
 
+  // Debug: check Firebase env vars
+  const hasSvc = !!import.meta.env.FIREBASE_SERVICE_ACCOUNT;
+  const hasEmail = !!import.meta.env.FIREBASE_CLIENT_EMAIL;
+  const hasKey = !!import.meta.env.FIREBASE_PRIVATE_KEY;
+  console.log('[whatsapp-order] Firebase env vars:', { hasSvc, hasEmail, hasKey });
+
   try {
     const db = getAdminDb();
     const orderId = `wa_${telefono}_${Date.now()}`;
@@ -83,6 +89,6 @@ export const POST: APIRoute = async ({ request }) => {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[whatsapp-order] Error creating order:', err);
-    return new Response(JSON.stringify({ error: 'Internal error', detail: msg }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Internal error', detail: msg, firebase: { hasSvc, hasEmail, hasKey } }), { status: 500 });
   }
 };
