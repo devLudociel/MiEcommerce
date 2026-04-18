@@ -88,6 +88,10 @@ export const POST: APIRoute = async ({ request }) => {
     const orderId = `wa_${telefono}_${Date.now()}`;
     const now = new Date().toISOString();
 
+    const nameParts = (customerName || '').trim().split(' ');
+    const firstName = nameParts[0] || 'WhatsApp';
+    const lastName = nameParts.slice(1).join(' ') || telefono;
+
     const fields: Record<string, unknown> = {};
     const doc = {
       orderId, source: 'whatsapp', status: 'processing', paymentStatus: 'paid',
@@ -100,6 +104,19 @@ export const POST: APIRoute = async ({ request }) => {
       total: parseFloat(importe),
       totalCents: Math.round(parseFloat(importe) * 100),
       currency: 'eur',
+      shippingInfo: {
+        firstName,
+        lastName,
+        email: customerEmail || '',
+        phone: telefono,
+        address: 'Pedido WhatsApp',
+        city: 'Los Llanos de Aridane',
+        state: 'Santa Cruz de Tenerife',
+        zipCode: '38760',
+        country: 'España',
+        notes: detalles || '',
+        shippingMethod: envio || 'pendiente',
+      },
     };
 
     for (const [k, v] of Object.entries(doc)) {
