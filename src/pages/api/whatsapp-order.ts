@@ -100,13 +100,14 @@ export const POST: APIRoute = async ({ request }) => {
       total: parseFloat(importe),
       totalCents: Math.round(parseFloat(importe) * 100),
       currency: 'eur',
-      createdAt: now,
-      updatedAt: now,
     };
 
     for (const [k, v] of Object.entries(doc)) {
       fields[k] = toFirestoreValue(v);
     }
+    // Store as proper Firestore Timestamps so .toDate() works in the dashboard
+    fields['createdAt'] = { timestampValue: now };
+    fields['updatedAt'] = { timestampValue: now };
 
     const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/orders?documentId=${orderId}`;
     const res = await fetch(url, {
