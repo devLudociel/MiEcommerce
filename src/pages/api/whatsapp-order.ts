@@ -104,15 +104,23 @@ export const POST: APIRoute = async ({ request }) => {
       total: parseFloat(importe),
       totalCents: Math.round(parseFloat(importe) * 100),
       currency: 'eur',
-      items: [
-        {
+      items: (() => {
+        const qty = parseInt(cantidad || '1', 10) || 1;
+        const unitPrice = parseFloat(importe) / qty;
+        const customizationValues: Array<{ fieldLabel: string; value: string }> = [];
+        if (detalles) customizationValues.push({ fieldLabel: 'Detalles del pedido', value: detalles });
+        if (envio) customizationValues.push({ fieldLabel: 'Método de envío', value: envio });
+        return [{
           productId: 'whatsapp-custom',
           name: producto || 'Pedido personalizado WhatsApp',
-          quantity: parseInt(cantidad || '1', 10) || 1,
-          details: detalles || '',
-          customization: { envio: envio || '' },
-        },
-      ],
+          quantity: qty,
+          price: Math.round(unitPrice * 100) / 100,
+          productionStatus: 'pending',
+          customization: customizationValues.length > 0
+            ? { categoryName: 'Pedido WhatsApp', values: customizationValues }
+            : null,
+        }];
+      })(),
       shippingInfo: {
         firstName,
         lastName,
