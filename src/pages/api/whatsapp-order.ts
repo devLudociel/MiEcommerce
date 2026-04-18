@@ -47,10 +47,14 @@ export const POST: APIRoute = async ({ request }) => {
   const hasKey = !!import.meta.env.FIREBASE_PRIVATE_KEY;
   let svcParseOk = false;
   let svcProjectId = '';
+  let svcKeyLen = 0;
+  let svcKeyStart = '';
   try {
     const svc = JSON.parse(import.meta.env.FIREBASE_SERVICE_ACCOUNT as string);
     svcParseOk = true;
     svcProjectId = svc.project_id || '';
+    svcKeyLen = (svc.private_key || '').length;
+    svcKeyStart = (svc.private_key || '').substring(0, 27);
   } catch {}
   console.log('[whatsapp-order] Firebase env vars:', { hasSvc, hasEmail, hasKey, svcParseOk, svcProjectId });
 
@@ -96,6 +100,6 @@ export const POST: APIRoute = async ({ request }) => {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[whatsapp-order] Error creating order:', err);
-    return new Response(JSON.stringify({ error: 'Internal error', detail: msg, firebase: { hasSvc, hasEmail, hasKey, svcParseOk, svcProjectId } }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Internal error', detail: msg, firebase: { hasSvc, hasEmail, hasKey, svcParseOk, svcProjectId, svcKeyLen, svcKeyStart } }), { status: 500 });
   }
 };
