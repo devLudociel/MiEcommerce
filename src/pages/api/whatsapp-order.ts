@@ -81,7 +81,8 @@ export const POST: APIRoute = async ({ request }) => {
 
     return new Response(JSON.stringify({ ok: true, orderId }), { status: 200 });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
     console.error('[whatsapp-order] Error creating order:', err);
-    return new Response(JSON.stringify({ error: 'Internal error' }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Internal error', detail: msg }), { status: 500 });
   }
 };
