@@ -103,19 +103,29 @@ export const POST: APIRoute = async ({ request }) => {
 
     logger.info('[update-order-tracking] Order tracking updated successfully', { orderId });
 
-    // Trigger n8n: WhatsApp tracking notification
+    // Trigger n8n: WhatsApp shipping notification
     const n8nWebhookUrl = import.meta.env.N8N_ORDER_NOTIFICATION_WEBHOOK_URL as string | undefined;
     if (n8nWebhookUrl && trackingNumber && carrier) {
       const orderData = orderSnap.data() || {};
+      const shippingInfo = orderData.shippingInfo as Record<string, string> | undefined;
+      // Resolve phone: try top-level customerPhone, then shippingInfo.phone
+      const customerPhone =
+        (orderData.customerPhone as string | undefined) ||
+        shippingInfo?.phone ||
+        '';
+      const customerName =
+        (orderData.customerName as string | undefined) ||
+        [shippingInfo?.firstName, shippingInfo?.lastName].filter(Boolean).join(' ') ||
+        '';
       await triggerN8nWebhook(n8nWebhookUrl, {
-        event: 'order.tracking.updated',
+        event: 'order.status.shipped',
         orderId,
         trackingNumber,
         carrier,
         trackingUrl,
-        customerPhone: orderData.customerPhone as string | undefined,
-        customerName: orderData.customerName as string | undefined,
-        customerEmail: orderData.customerEmail as string | undefined,
+        customerPhone,
+        customerName,
+        customerEmail: (orderData.customerEmail as string | undefined) || shippingInfo?.email || '',
       });
     }
 

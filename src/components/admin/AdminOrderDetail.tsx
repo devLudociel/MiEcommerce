@@ -88,6 +88,15 @@ export default function AdminOrderDetail() {
   const [editingNotes, setEditingNotes] = useState<Record<number, boolean>>({});
   const [notesContent, setNotesContent] = useState<Record<number, string>>({});
 
+  // Tracking dialog: shown when item status is set to "shipped"
+  const [trackingDialog, setTrackingDialog] = useState<{
+    open: boolean;
+    itemIndex: number | null;
+    trackingNumber: string;
+    carrier: string;
+    trackingUrl: string;
+  }>({ open: false, itemIndex: null, trackingNumber: '', carrier: 'Correos', trackingUrl: '' });
+
   const showModal = (
     type: 'info' | 'warning' | 'error' | 'success',
     title: string,
@@ -441,46 +450,78 @@ export default function AdminOrderDetail() {
   };
 
   /**
-   * Actualiza el estado de producción de un item específico
+   * Actualiza el estado de producción de un item específico en Firestore
+   */
+  const doUpdateProductionStatus = async (itemIndex: number, newStatus: string) => {
+    if (!orderId || !user) return;
+    const token = await user.getIdToken();
+    const response = await fetch('/api/admin/update-item-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ orderId, itemIndex, status: newStatus }),
+    });
+    if (!response.ok) throw new Error('Failed to update status');
+    if (order) {
+      const updatedItems = [...order.items];
+      updatedItems[itemIndex] = { ...updatedItems[itemIndex], productionStatus: newStatus as any };
+      setOrder({ ...order, items: updatedItems });
+    }
+  };
+
+  /**
+   * Actualiza el estado de producción de un item.
+   * Si el nuevo estado es "shipped", abre el diálogo de seguimiento primero.
    */
   const handleUpdateProductionStatus = async (itemIndex: number, newStatus: string) => {
     if (!orderId || !user) return;
-
+    if (newStatus === 'shipped') {
+      // Open tracking dialog — status update happens after confirm
+      setTrackingDialog({ open: true, itemIndex, trackingNumber: '', carrier: 'Correos', trackingUrl: '' });
+      return;
+    }
     try {
-      const token = await user.getIdToken();
-
-      const response = await fetch('/api/admin/update-item-status', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          orderId,
-          itemIndex,
-          status: newStatus,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update status');
-      }
-
-      // Actualizar el estado local
-      if (order) {
-        const updatedItems = [...order.items];
-        updatedItems[itemIndex] = {
-          ...updatedItems[itemIndex],
-          productionStatus: newStatus as any,
-        };
-        setOrder({ ...order, items: updatedItems });
-      }
-
+      await doUpdateProductionStatus(itemIndex, newStatus);
       notify.success('Estado de producción actualizado');
       logger.info('[AdminOrderDetail] Production status updated', { itemIndex, newStatus });
     } catch (error) {
       logger.error('[AdminOrderDetail] Error updating production status', error);
       notify.error('No se pudo actualizar el estado. Intenta nuevamente.');
+    }
+  };
+
+  /**
+   * Confirma el envío: actualiza estado + guarda tracking + notifica al cliente
+   */
+  const handleConfirmShipped = async () => {
+    const { itemIndex, trackingNumber, carrier, trackingUrl } = trackingDialog;
+    if (itemIndex === null || !orderId || !user) return;
+    setTrackingDialog((d) => ({ ...d, open: false }));
+
+    try {
+      // 1. Update item production status to shipped
+      await doUpdateProductionStatus(itemIndex, 'shipped');
+
+      // 2. If tracking info provided, save it + notify customer
+      if (trackingNumber.trim()) {
+        const token = await user.getIdToken();
+        await fetch('/api/update-order-tracking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            orderId,
+            trackingNumber: trackingNumber.trim(),
+            carrier: carrier.trim(),
+            ...(trackingUrl.trim() ? { trackingUrl: trackingUrl.trim() } : {}),
+          }),
+        });
+        notify.success('Pedido marcado como enviado · Email de seguimiento enviado al cliente');
+      } else {
+        notify.success('Pedido marcado como enviado');
+      }
+      logger.info('[AdminOrderDetail] Item shipped with tracking', { itemIndex, trackingNumber, carrier });
+    } catch (error) {
+      logger.error('[AdminOrderDetail] Error confirming shipped', error);
+      notify.error('Error al marcar como enviado. Intenta nuevamente.');
     }
   };
 
@@ -627,6 +668,85 @@ export default function AdminOrderDetail() {
       >
         {modal.message}
       </AccessibleModal>
+
+      {/* Tracking dialog — shown when marking an item as shipped */}
+      {trackingDialog.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h2 className="text-xl font-black text-gray-800 mb-1 flex items-center gap-2">
+              📦 Marcar como Enviado
+            </h2>
+            <p className="text-sm text-gray-500 mb-5">
+              Introduce el número de seguimiento para notificar automáticamente al cliente por email y WhatsApp.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">
+                  Transportista <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={trackingDialog.carrier}
+                  onChange={(e) => setTrackingDialog((d) => ({ ...d, carrier: e.target.value }))}
+                  className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none text-sm"
+                >
+                  {['Correos', 'Correos Express', 'Seur', 'MRW', 'GLS', 'DHL', 'UPS', 'Nacex', 'Otro'].map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">
+                  Número de seguimiento
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: ES123456789ES"
+                  value={trackingDialog.trackingNumber}
+                  onChange={(e) => setTrackingDialog((d) => ({ ...d, trackingNumber: e.target.value }))}
+                  className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none text-sm font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">
+                  URL de seguimiento <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://..."
+                  value={trackingDialog.trackingUrl}
+                  onChange={(e) => setTrackingDialog((d) => ({ ...d, trackingUrl: e.target.value }))}
+                  className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none text-sm"
+                />
+              </div>
+
+              {trackingDialog.trackingNumber.trim() && (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-sm text-indigo-700">
+                  ✉️ Se enviará un email con el número de seguimiento al cliente
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setTrackingDialog((d) => ({ ...d, open: false }))}
+                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmShipped}
+                className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all text-sm flex items-center justify-center gap-2"
+              >
+                <Icon name="package" className="w-4 h-4" />
+                Confirmar Envío
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="container mx-auto px-6 max-w-6xl">

@@ -422,3 +422,118 @@ export function newsletterWelcomeTemplate(email: string): { subject: string; htm
     `,
   };
 }
+
+/**
+ * Plantilla de email de envío con número de seguimiento
+ */
+export function orderShippingTemplate(
+  order: OrderData,
+  trackingNumber: string,
+  carrier: string,
+  trackingUrl?: string
+): { subject: string; html: string } {
+  const carrierLinks: Record<string, string> = {
+    correos: 'https://www.correos.es/es/es/herramientas/localizador/envios/detalle',
+    seur: 'https://www.seur.com/livetracking/',
+    mrw: 'https://www.mrw.es/seguimiento_envios/buscador_de_envios.asp',
+    dhl: 'https://www.dhl.com/es-es/home/tracking.html',
+    gls: 'https://gls-group.com/ES/es/seguimiento-envios',
+    ups: 'https://www.ups.com/track?loc=es_ES',
+    nacex: 'https://www.nacex.es/cambiaNegocio.do?destino=verEstadosEnvio',
+    'correos express': 'https://www.correosexpress.com/wpccont/tcs/index.html',
+  };
+
+  const trackingLink = trackingUrl || carrierLinks[carrier.toLowerCase()] || '';
+
+  return {
+    subject: `📦 ¡Tu pedido #${order.id?.slice(0, 8)} está en camino! - ImprimeArte`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Tu pedido está en camino</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 20px;">
+          <tr>
+            <td align="center">
+              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+
+                <!-- Header -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); padding: 40px; text-align: center;">
+                    <div style="font-size: 56px; margin-bottom: 10px;">📦</div>
+                    <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">¡Tu pedido va en camino!</h1>
+                    <p style="color: #e0d9ff; margin: 10px 0 0 0; font-size: 16px;">Hola ${order.shippingInfo.firstName}, pronto llegará a tus manos</p>
+                  </td>
+                </tr>
+
+                <!-- Contenido -->
+                <tr>
+                  <td style="padding: 40px;">
+
+                    <!-- Tracking info destacado -->
+                    <div style="background: linear-gradient(135deg, #ede9fe 0%, #e0e7ff 100%); border: 2px solid #7c3aed; border-radius: 12px; padding: 24px; margin-bottom: 30px; text-align: center;">
+                      <p style="margin: 0 0 6px 0; font-size: 13px; color: #6d28d9; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Número de seguimiento</p>
+                      <p style="margin: 0 0 16px 0; font-size: 26px; font-weight: 900; color: #4c1d95; letter-spacing: 0.05em; font-family: monospace;">${trackingNumber}</p>
+                      <p style="margin: 0 0 16px 0; font-size: 14px; color: #5b21b6;">Transportista: <strong>${carrier}</strong></p>
+                      ${trackingLink ? `
+                      <a href="${trackingLink}" style="display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px;">
+                        🔍 Rastrear mi paquete
+                      </a>
+                      ` : ''}
+                    </div>
+
+                    <!-- Info pedido -->
+                    <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
+                      <table width="100%">
+                        <tr>
+                          <td style="padding: 8px 12px;">
+                            <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Número de Pedido</div>
+                            <div style="font-size: 16px; font-weight: bold; color: #1e293b;">#${order.id?.slice(0, 8)}</div>
+                          </td>
+                          <td style="padding: 8px 12px; text-align: right;">
+                            <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Total</div>
+                            <div style="font-size: 16px; font-weight: bold; color: #7c3aed;">€${order.total.toFixed(2)}</div>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+
+                    <!-- Dirección de entrega -->
+                    <div style="padding: 16px 20px; background-color: #f0fdf4; border-left: 4px solid #22c55e; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
+                      <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 700; color: #166534;">📍 Entregando en:</p>
+                      <p style="margin: 0; font-size: 14px; color: #15803d; line-height: 1.6;">
+                        ${order.shippingInfo.firstName} ${order.shippingInfo.lastName}<br>
+                        ${order.shippingInfo.address}<br>
+                        ${order.shippingInfo.zipCode} ${order.shippingInfo.city}, ${order.shippingInfo.state}
+                      </p>
+                    </div>
+
+                    <p style="font-size: 14px; color: #64748b; line-height: 1.6; text-align: center;">
+                      Si tienes alguna duda, contáctanos en<br>
+                      <a href="https://imprimearte.es" style="color: #7c3aed; font-weight: bold;">imprimearte.es</a>
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #e2e8f0;">
+                    <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+                      © ${new Date().getFullYear()} ImprimeArte. Todos los derechos reservados.
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+  };
+}

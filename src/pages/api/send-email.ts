@@ -5,6 +5,7 @@ import { getAdminDb } from '../../lib/firebase-admin';
 import {
   orderConfirmationTemplate,
   orderStatusUpdateTemplate,
+  orderShippingTemplate,
   newsletterWelcomeTemplate,
 } from '../../lib/emailTemplates';
 import type { OrderData } from '../../types/firebase';
@@ -83,7 +84,7 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const { orderId, type, newStatus, email } = validationResult.data;
+    const { orderId, type, newStatus, email, trackingNumber, carrier, trackingUrl } = validationResult.data;
     logger.info('📧 Datos recibidos:', { orderId, type, newStatus, email: email ? '***@***' : undefined });
 
     // Newsletter welcome doesn't need orderId, just email
@@ -167,6 +168,10 @@ export const POST: APIRoute = async ({ request }) => {
       html = t.html;
     } else if (type === 'status-update' && newStatus) {
       const t = orderStatusUpdateTemplate(order, String(newStatus));
+      subject = t.subject;
+      html = t.html;
+    } else if (type === 'tracking-update' && trackingNumber && carrier) {
+      const t = orderShippingTemplate(order, trackingNumber, carrier, trackingUrl);
       subject = t.subject;
       html = t.html;
     } else {
