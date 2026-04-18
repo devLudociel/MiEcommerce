@@ -104,6 +104,15 @@ export const POST: APIRoute = async ({ request }) => {
       total: parseFloat(importe),
       totalCents: Math.round(parseFloat(importe) * 100),
       currency: 'eur',
+      items: [
+        {
+          productId: 'whatsapp-custom',
+          name: producto || 'Pedido personalizado WhatsApp',
+          quantity: parseInt(cantidad || '1', 10) || 1,
+          details: detalles || '',
+          customization: { envio: envio || '' },
+        },
+      ],
       shippingInfo: {
         firstName,
         lastName,
