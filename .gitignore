@@ -39,3 +39,4 @@ lint-warnings.txt
 informeCSP/
 node_modules/
 firebase-debug.log
+.vercel

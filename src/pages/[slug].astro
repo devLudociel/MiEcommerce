@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getPageBySlug } from '../lib/pages';
 import type { Page } from '../lib/pages';
+import { marked } from 'marked';
 
 const { slug } = Astro.params;
 
@@ -30,9 +31,54 @@ if (!page) {
 
 const title = page.title;
 const description = page.metaDescription || page.title;
+const isBlog = page.type === 'blog';
+const canonical = new URL(Astro.url.pathname, Astro.site || Astro.url.origin).toString();
+const parsedContent = marked(page.content);
+
+const publishedDate = page.publishedAt
+  ? new Date(page.publishedAt.seconds * 1000).toISOString()
+  : null;
+const modifiedDate = page.updatedAt
+  ? new Date(page.updatedAt.seconds * 1000).toISOString()
+  : publishedDate;
+
+const jsonLd = isBlog
+  ? JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: title,
+      description: description,
+      image: page.featuredImage || undefined,
+      datePublished: publishedDate,
+      dateModified: modifiedDate,
+      author: {
+        '@type': 'Organization',
+        name: page.author || 'ImprimeArte',
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: 'ImprimeArte',
+        logo: {
+          '@type': 'ImageObject',
+          url: new URL('/logoFac.png', Astro.url.origin).toString(),
+        },
+      },
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': canonical,
+      },
+    })
+  : null;
 ---
 
-<BaseLayout title={title} description={description}>
+<BaseLayout
+  title={title}
+  description={description}
+  ogType={isBlog ? 'article' : 'website'}
+  ogImage={page.featuredImage || undefined}
+  canonical={canonical}
+>
+  {jsonLd && <script type="application/ld+json" set:html={jsonLd} slot="head" />}
   <div class="min-h-screen bg-gray-50 py-12">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <!-- Header -->
@@ -89,7 +135,7 @@ const description = page.metaDescription || page.title;
           prose-ol:list-decimal prose-ol:ml-6
           prose-li:text-gray-700 prose-li:mb-2
           prose-blockquote:border-l-4 prose-blockquote:border-cyan-500 prose-blockquote:pl-4 prose-blockquote:italic"
-          set:html={page.content.replace(/\n/g, '<br />')}
+          set:html={parsedContent}
         />
       </div>
 

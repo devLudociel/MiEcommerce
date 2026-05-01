@@ -15,12 +15,16 @@ interface Props {
   title: string;
   description?: string;
   ogImage?: string;
+  ogType?: string;
+  canonical?: string;
 }
 
 const {
   title,
   description = 'Especialistas en personalización: estampado, bordado, impresión 3D, corte láser y mucho más.',
   ogImage = '/og-image.jpg',
+  ogType = 'website',
+  canonical,
 } = Astro.props;
 const nonce = Astro.locals?.cspNonce;
 const pathname = Astro.url.pathname;
@@ -41,7 +45,8 @@ const showChatWidget =
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
 
-    <meta property="og:type" content="website" />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <meta property="og:type" content={ogType} />
     <meta property="og:url" content={Astro.url} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -64,6 +69,7 @@ const showChatWidget =
     <link rel="dns-prefetch" href="https://www.googleapis.com" />
 
     <title>{title}</title>
+    <slot name="head" />
     <script is:inline nonce={nonce}>
       (() => {
         let initialized = false;
