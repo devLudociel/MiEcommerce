@@ -12,9 +12,9 @@
 // Por ahora se muestran reseñas editadas a mano. Activa la API para que sean dinámicas.
 
 import { useState, useEffect } from 'react';
-import { getApprovedReviews, type CustomerReview } from '../../lib/reviews';
 
-// Reseñas de respaldo (actualiza con tus reseñas reales de Google)
+// Reseñas estáticas de respaldo — se usan si la API de Google no está configurada
+// o mientras carga. Actualiza estos textos con tus reseñas reales.
 const FALLBACK_REVIEWS = [
   {
     id: 'g1',
@@ -22,6 +22,7 @@ const FALLBACK_REVIEWS = [
     location: 'Los Llanos',
     rating: 5,
     text: 'Pedí una taza con la foto de mi padre por su cumpleaños. La calidad es brutal y me la tuvieron lista en 48h. Repetiré seguro.',
+    timeAgo: '',
   },
   {
     id: 'g2',
@@ -29,6 +30,7 @@ const FALLBACK_REVIEWS = [
     location: 'Santa Cruz de La Palma',
     rating: 5,
     text: 'Encargué camisetas para nuestra asociación. Asesoramiento de 10, llegaron antes de lo prometido y al precio justo.',
+    timeAgo: '',
   },
   {
     id: 'g3',
@@ -36,8 +38,18 @@ const FALLBACK_REVIEWS = [
     location: 'Breña Alta',
     rating: 5,
     text: 'Las invitaciones de mi boda quedaron preciosas. Me ayudaron con el diseño desde cero — gente paciente y con buen gusto.',
+    timeAgo: '',
   },
 ];
+
+interface ReviewItem {
+  id: string;
+  customerName: string;
+  location?: string;
+  rating: number;
+  text: string;
+  timeAgo?: string;
+}
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -52,35 +64,27 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export default function CustomerReviews() {
-  const [reviews, setReviews] = useState<Array<{
-    id: string;
-    customerName: string;
-    location?: string;
-    rating: number;
-    text: string;
-  }>>(FALLBACK_REVIEWS);
+  const [reviews, setReviews] = useState<ReviewItem[]>(FALLBACK_REVIEWS);
+  const [globalRating, setGlobalRating] = useState<number | null>(null);
+  const [totalReviews, setTotalReviews] = useState<number | null>(null);
 
   useEffect(() => {
     let mounted = true;
-    async function loadReviews() {
+    async function loadGoogleReviews() {
       try {
-        const approved = await getApprovedReviews(6);
-        if (mounted && approved.length >= 3) {
-          setReviews(
-            approved.slice(0, 3).map((r: CustomerReview) => ({
-              id: r.id,
-              customerName: r.customerName,
-              location: undefined,
-              rating: r.rating,
-              text: r.text,
-            }))
-          );
+        const res = await fetch('/api/google-reviews');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (mounted && data.reviews?.length >= 1) {
+          setReviews(data.reviews);
         }
+        if (mounted && data.rating) setGlobalRating(data.rating);
+        if (mounted && data.total) setTotalReviews(data.total);
       } catch {
         // keep fallback reviews
       }
     }
-    loadReviews();
+    loadGoogleReviews();
     return () => { mounted = false; };
   }, []);
 
@@ -99,7 +103,7 @@ export default function CustomerReviews() {
             color: '#FFF200',
             marginBottom: '0.8rem',
           }}>
-            Lo que dicen nuestros clientes · 4,9 ★ en Google
+            Lo que dicen nuestros clientes · {globalRating ? `${globalRating.toFixed(1)} ★` : '4,9 ★'}{totalReviews ? ` · ${totalReviews} reseñas en Google` : ' en Google'}
           </p>
           <h2 style={{
             fontFamily: "'Cormorant Garamond', Georgia, serif",
@@ -163,6 +167,11 @@ export default function CustomerReviews() {
                   {review.location && (
                     <span style={{ fontWeight: 400, color: 'rgba(255,255,255,0.3)' }}>
                       {' · '}{review.location}
+                    </span>
+                  )}
+                  {review.timeAgo && (
+                    <span style={{ fontWeight: 400, color: 'rgba(255,255,255,0.25)', display: 'block', marginTop: 2, textTransform: 'none', letterSpacing: 0 }}>
+                      {review.timeAgo}
                     </span>
                   )}
                 </div>
