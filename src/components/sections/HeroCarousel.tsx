@@ -301,141 +301,128 @@ const HeroCarousel = memo(() => {
             )}
           </div>
 
-          {/* ── COLUMNA DERECHA — tarjetas producto ── */}
-          <div className="w-full lg:w-[48%] relative hidden md:flex items-center justify-center" style={{ minHeight: 400 }}>
+          {/* ── COLUMNA DERECHA — imagen principal del banner ── */}
+          <div className="w-full lg:w-[46%] relative hidden md:flex items-center justify-center" style={{ minHeight: 420 }}>
 
-            {/* Badge superior */}
-            <div
-              style={{
+            {/* Tarjeta imagen principal */}
+            <div style={{
+              position: 'relative',
+              width: '88%',
+              maxWidth: 440,
+              aspectRatio: '4/5',
+              borderRadius: 24,
+              overflow: 'hidden',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.14)',
+              backgroundColor: '#e8ddd0',
+            }}>
+              {slide.backgroundImage ? (
+                <img
+                  src={slide.backgroundImage}
+                  alt={slide.title}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                    opacity: isTransitioning ? 0.6 : 1,
+                    transition: 'opacity 0.3s ease',
+                  }}
+                />
+              ) : (
+                /* Placeholder con gradiente de marca cuando no hay imagen */
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(135deg, #EC008C22 0%, #00AEEF22 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <span style={{
+                    fontFamily: "'Cormorant Garamond', serif",
+                    fontSize: '1.1rem',
+                    color: 'rgba(26,26,26,0.3)',
+                    textAlign: 'center',
+                    padding: '0 2rem',
+                  }}>
+                    Sube una imagen desde<br/>Admin → Banners
+                  </span>
+                </div>
+              )}
+
+              {/* Overlay degradado abajo */}
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                background: 'linear-gradient(to top, rgba(26,26,26,0.65) 0%, transparent 55%)',
+                padding: '28px 20px 20px',
+              }}>
+                <div style={{
+                  fontFamily: "'Montserrat', sans-serif",
+                  fontSize: '0.6rem',
+                  color: 'rgba(255,255,255,0.7)',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  marginBottom: 4,
+                }}>
+                  Hecho a mano · La Palma
+                </div>
+                <div style={{
+                  fontFamily: "'Cormorant Garamond', serif",
+                  fontWeight: 500,
+                  fontSize: '1.15rem',
+                  color: '#fff',
+                  lineHeight: 1.3,
+                  opacity: isTransitioning ? 0 : 1,
+                  transition: 'opacity 0.3s ease',
+                }}>
+                  {slide.subtitle || slide.title}
+                </div>
+              </div>
+
+              {/* Badge amarillo superior */}
+              <div style={{
                 position: 'absolute',
                 top: 16,
-                left: '8%',
-                zIndex: 20,
+                left: 16,
                 backgroundColor: '#FFF200',
                 color: '#1A1A1A',
                 fontFamily: "'Montserrat', sans-serif",
                 fontWeight: 800,
-                fontSize: '0.65rem',
+                fontSize: '0.6rem',
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                padding: '7px 14px',
+                padding: '6px 12px',
                 borderRadius: 50,
-              }}
-            >
-              Hecho a mano · La Palma
-            </div>
-
-            {/* Tarjeta 3 — fondo (más grande) */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                right: '4%',
-                width: '62%',
-                aspectRatio: '4/5',
-                borderRadius: 16,
-                overflow: 'hidden',
-                backgroundColor: '#d9d3c7',
-                boxShadow: '0 8px 40px rgba(0,0,0,0.08)',
-                zIndex: 10,
-              }}
-            >
-              {cardImages[2] && (
-                <img src={cardImages[2]} alt={PRODUCT_CARDS[2].label} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
-              )}
-              <div style={{
-                position: 'absolute', bottom: 0, left: 0, right: 0,
-                background: 'linear-gradient(to top, rgba(26,26,26,0.55) 0%, transparent 60%)',
-                padding: '20px 16px 14px',
               }}>
-                <div style={{ color: '#fff', fontFamily: "'Montserrat', sans-serif", fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.7 }}>{PRODUCT_CARDS[2].tag}</div>
-                <div style={{ color: '#fff', fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, fontSize: '1rem', marginTop: 2 }}>{PRODUCT_CARDS[2].label}</div>
-              </div>
-            </div>
-
-            {/* Tarjeta 2 — medio */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '6%',
-                right: '22%',
-                width: '54%',
-                aspectRatio: '4/5',
-                borderRadius: 16,
-                overflow: 'hidden',
-                backgroundColor: '#c8d8d0',
-                boxShadow: '0 12px 48px rgba(0,0,0,0.12)',
-                zIndex: 11,
-              }}
-            >
-              {cardImages[1] && (
-                <img src={cardImages[1]} alt={PRODUCT_CARDS[1].label} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
-              )}
-              <div style={{
-                position: 'absolute', bottom: 0, left: 0, right: 0,
-                background: 'linear-gradient(to top, rgba(26,26,26,0.55) 0%, transparent 60%)',
-                padding: '20px 16px 14px',
-              }}>
-                <div style={{ color: '#fff', fontFamily: "'Montserrat', sans-serif", fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.7 }}>{PRODUCT_CARDS[1].tag}</div>
-                <div style={{ color: '#fff', fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, fontSize: '1rem', marginTop: 2 }}>{PRODUCT_CARDS[1].label}</div>
-              </div>
-            </div>
-
-            {/* Tarjeta 1 — frontal */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '20%',
-                left: '4%',
-                width: '50%',
-                aspectRatio: '4/5',
-                borderRadius: 16,
-                overflow: 'hidden',
-                backgroundColor: '#e8ddd0',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
-                zIndex: 12,
-              }}
-            >
-              {cardImages[0] && (
-                <img src={cardImages[0]} alt={PRODUCT_CARDS[0].label} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
-              )}
-              <div style={{
-                position: 'absolute', bottom: 0, left: 0, right: 0,
-                background: 'linear-gradient(to top, rgba(26,26,26,0.6) 0%, transparent 60%)',
-                padding: '20px 16px 14px',
-              }}>
-                <div style={{ color: '#fff', fontFamily: "'Montserrat', sans-serif", fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.7 }}>{PRODUCT_CARDS[0].tag}</div>
-                <div style={{ color: '#fff', fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, fontSize: '1rem', marginTop: 2 }}>{PRODUCT_CARDS[0].label}</div>
+                ImprimeArte
               </div>
             </div>
 
             {/* Tarjeta flotante "Pedido reciente" */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '8%',
-                left: '2%',
-                zIndex: 20,
-                backgroundColor: '#fff',
-                borderRadius: 12,
-                padding: '12px 16px',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-                minWidth: 180,
-                maxWidth: 220,
-              }}
-            >
-              <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '0.6rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 4 }}>
+            <div style={{
+              position: 'absolute',
+              bottom: '6%',
+              right: '2%',
+              backgroundColor: '#fff',
+              borderRadius: 14,
+              padding: '12px 16px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.13)',
+              minWidth: 190,
+              maxWidth: 230,
+              zIndex: 10,
+            }}>
+              <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '0.58rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 4 }}>
                 Pedido reciente
               </div>
               <div style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, fontSize: '0.95rem', color: '#1A1A1A', lineHeight: 1.3 }}>
                 Taza sublimada · Foto familiar
               </div>
-              <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '0.68rem', color: '#888', marginTop: 4 }}>
+              <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '0.66rem', color: '#888', marginTop: 4 }}>
                 Encargado por María, Los Llanos · 12,90 €
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#22c55e' }} />
-                <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '0.62rem', color: '#22c55e', fontWeight: 600 }}>Listo en 48h</span>
+                <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '0.6rem', color: '#22c55e', fontWeight: 600 }}>Listo en 48h</span>
               </div>
             </div>
           </div>
