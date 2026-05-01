@@ -1,5 +1,5 @@
 // src/components/sections/CategoriesShowcase.tsx
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { categories as navbarCategories } from '../../data/categories';
@@ -11,26 +11,41 @@ interface Category {
   image?: string;
 }
 
-const MOBILE_ITEMS_PER_PAGE = 3;
+// Descripciones y números para el grid editorial
+const CATEGORY_META: Record<string, { desc: string; num: string }> = {
+  textiles:         { desc: 'Camisetas, sudaderas, totes', num: '01' },
+  papeleria:        { desc: 'Invitaciones, libretas, tarjetas', num: '02' },
+  sublimados:       { desc: 'Tazas, cojines, fundas', num: '03' },
+  'corte-grabado':  { desc: 'Madera, metacrilato, cuero', num: '04' },
+  eventos:          { desc: 'Bodas, comuniones, empresas', num: '05' },
+  'impresion-3d':   { desc: 'Piezas, figuras, prototipos', num: '06' },
+  'graficos-impresos': { desc: 'Flyers, carteles, etiquetas', num: '01' },
+  packaging:        { desc: 'Cajas, bolsas, etiquetas', num: '06' },
+};
+
 const MAIN_CATEGORIES: Category[] = navbarCategories.map(({ id, name, slug }) => ({
   id,
   name,
   slug,
 }));
-const MAIN_CATEGORY_SLUGS = new Set(MAIN_CATEGORIES.map((category) => category.slug));
+const MAIN_CATEGORY_SLUGS = new Set(MAIN_CATEGORIES.map((c) => c.slug));
+
+// Warm placeholder colors per category slot
+const PLACEHOLDER_COLORS = [
+  '#ddd8cc', '#c8d4ce', '#d8c8c0',
+  '#c8ccd4', '#d4c8d0', '#ccd4c8',
+];
 
 export default function CategoriesShowcase() {
   const [categoryImages, setCategoryImages] = useState<Record<string, string>>({});
-  const [mobilePage, setMobilePage] = useState(0);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   const categories = useMemo(
     () =>
-      MAIN_CATEGORIES.map((category) => ({
+      MAIN_CATEGORIES.slice(0, 6).map((category, idx) => ({
         ...category,
         image: categoryImages[category.slug],
+        meta: CATEGORY_META[category.slug] || { desc: '', num: String(idx + 1).padStart(2, '0') },
+        placeholderColor: PLACEHOLDER_COLORS[idx % PLACEHOLDER_COLORS.length],
       })),
     [categoryImages]
   );
@@ -49,206 +64,188 @@ export default function CategoriesShowcase() {
     return () => unsub();
   }, []);
 
-  useEffect(() => {
-    const node = scrollRef.current;
-
-    if (!node) return;
-
-    const updateScrollState = () => {
-      const maxScrollLeft = node.scrollWidth - node.clientWidth;
-      setCanScrollLeft(node.scrollLeft > 8);
-      setCanScrollRight(node.scrollLeft < maxScrollLeft - 8);
-    };
-
-    updateScrollState();
-    node.addEventListener('scroll', updateScrollState, { passive: true });
-    window.addEventListener('resize', updateScrollState);
-
-    return () => {
-      node.removeEventListener('scroll', updateScrollState);
-      window.removeEventListener('resize', updateScrollState);
-    };
-  }, [categories.length]);
-
-  useEffect(() => {
-    const lastPage = Math.max(0, Math.ceil(categories.length / MOBILE_ITEMS_PER_PAGE) - 1);
-    setMobilePage((currentPage) => Math.min(currentPage, lastPage));
-  }, [categories.length]);
-
-  const totalMobilePages = Math.ceil(categories.length / MOBILE_ITEMS_PER_PAGE);
-  const mobilePageCategories = categories.slice(
-    mobilePage * MOBILE_ITEMS_PER_PAGE,
-    mobilePage * MOBILE_ITEMS_PER_PAGE + MOBILE_ITEMS_PER_PAGE
-  );
-
-  const scrollByDesktopPage = (direction: 'left' | 'right') => {
-    const node = scrollRef.current;
-    if (!node) return;
-
-    const amount = Math.max(node.clientWidth * 0.72, 260);
-    node.scrollBy({
-      left: direction === 'right' ? amount : -amount,
-      behavior: 'smooth',
-    });
-  };
-
-  const goToMobilePage = (page: number) => {
-    const nextPage = Math.min(Math.max(page, 0), totalMobilePages - 1);
-    setMobilePage(nextPage);
-  };
-
   return (
-    <section className="py-8 sm:py-12 bg-white">
-      <div className="max-w-7xl mx-auto px-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-6 sm:mb-8">
-          Explorar todas las categorías
-        </h2>
+    <section style={{ backgroundColor: '#F5F0E8', padding: '5rem 0' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 1.5rem' }}>
 
-        {/* Desktop: horizontal scrollable row */}
-        <div className="relative hidden sm:block">
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-white via-white/90 to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-white via-white/90 to-transparent" />
-
-          <button
-            type="button"
-            onClick={() => scrollByDesktopPage('left')}
-            disabled={!canScrollLeft}
-            className="absolute left-0 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-2xl border border-cyan-100 bg-white/95 text-cyan-700 shadow-[0_16px_40px_-24px_rgba(0,172,232,0.75)] transition-all duration-200 hover:-translate-y-[52%] hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300 disabled:shadow-none"
-            aria-label="Ver categorías anteriores"
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <p style={{
+              fontFamily: "'Montserrat', sans-serif",
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: '#EC008C',
+              marginBottom: '0.6rem',
+            }}>
+              Qué hacemos
+            </p>
+            <h2 style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontSize: 'clamp(1.9rem, 3.5vw, 2.8rem)',
+              fontWeight: 500,
+              lineHeight: 1.15,
+              color: '#1A1A1A',
+              margin: 0,
+            }}>
+              Seis técnicas, una{' '}
+              <em style={{ fontStyle: 'italic' }}>sola promesa</em>:{' '}
+              <br className="hidden md:block" />
+              que el regalo se sienta tuyo.
+            </h2>
+          </div>
+          <a
+            href="/productos"
+            style={{
+              fontFamily: "'Montserrat', sans-serif",
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              color: '#1A1A1A',
+              border: '1.5px solid #1A1A1A',
+              borderRadius: 50,
+              padding: '10px 22px',
+              whiteSpace: 'nowrap',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              textDecoration: 'none',
+              transition: 'background 0.2s, color 0.2s',
+            }}
+            onMouseEnter={(e) => { const a = e.currentTarget as HTMLAnchorElement; a.style.backgroundColor = '#1A1A1A'; a.style.color = '#fff'; }}
+            onMouseLeave={(e) => { const a = e.currentTarget as HTMLAnchorElement; a.style.backgroundColor = 'transparent'; a.style.color = '#1A1A1A'; }}
           >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M15 6l-6 6 6 6" />
+            Ver todo el catálogo
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-          </button>
+          </a>
+        </div>
 
-          <div
-            ref={scrollRef}
-            className="flex gap-8 overflow-x-auto scroll-smooth px-16 pb-3"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {categories.map((category) => (
-              <a
-                key={category.id}
-                href={`/categoria/${category.slug}`}
-                className="flex flex-col items-center gap-4 flex-shrink-0 group"
-                style={{ minWidth: '160px', maxWidth: '192px' }}
+        {/* Grid 3×2 */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '1rem',
+        }}
+          className="categories-grid"
+        >
+          {categories.map((cat) => (
+            <a
+              key={cat.id}
+              href={`/categoria/${cat.slug}`}
+              style={{ textDecoration: 'none', display: 'block' }}
+              className="category-card-link"
+            >
+              <div
+                className="category-card"
+                style={{
+                  backgroundColor: '#fff',
+                  borderRadius: 16,
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+                }}
+                onMouseEnter={(e) => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.transform = 'translateY(-4px)';
+                  el.style.boxShadow = '0 16px 48px rgba(0,0,0,0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.transform = 'translateY(0)';
+                  el.style.boxShadow = 'none';
+                }}
               >
-                <div className="w-36 h-36 lg:w-40 lg:h-40 rounded-full bg-[#f5f0e8] border border-[#ede8de] flex items-center justify-center overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-all duration-200 group-hover:-translate-y-1.5 group-hover:shadow-xl">
-                  {category.image ? (
+                {/* Foto */}
+                <div style={{
+                  position: 'relative',
+                  aspectRatio: '4/3',
+                  backgroundColor: cat.placeholderColor,
+                  overflow: 'hidden',
+                }}>
+                  {cat.image ? (
                     <img
-                      src={category.image}
-                      alt={category.name}
-                      className="w-full h-full object-cover"
+                      src={cat.image}
+                      alt={cat.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                     />
                   ) : (
-                    <span className="text-2xl font-bold text-gray-400">
-                      {category.name.charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-                <span className="text-base text-center text-gray-800 font-semibold leading-tight">
-                  {category.name}
-                </span>
-              </a>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => scrollByDesktopPage('right')}
-            disabled={!canScrollRight}
-            className="absolute right-0 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-2xl border border-cyan-100 bg-white/95 text-cyan-700 shadow-[0_16px_40px_-24px_rgba(0,172,232,0.75)] transition-all duration-200 hover:-translate-y-[52%] hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300 disabled:shadow-none"
-            aria-label="Ver más categorías"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 6l6 6-6 6" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Mobile: 3-item carousel with dots */}
-        <div className="overflow-hidden sm:hidden">
-          <div className="relative px-6 xs:px-10">
-            {totalMobilePages > 1 && (
-              <button
-                type="button"
-                onClick={() => goToMobilePage(mobilePage - 1)}
-                disabled={mobilePage === 0}
-                className="absolute left-0 top-6 z-10 flex h-8 w-8 xs:h-10 xs:w-10 items-center justify-center rounded-xl border border-cyan-100 bg-white/95 text-cyan-700 shadow-[0_14px_30px_-24px_rgba(0,172,232,0.8)] transition-all duration-200 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300 disabled:shadow-none"
-                aria-label="Categorías anteriores"
-              >
-                <svg className="h-3.5 w-3.5 xs:h-4.5 xs:w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M15 6l-6 6 6 6" />
-                </svg>
-              </button>
-            )}
-
-            <div className="grid grid-cols-3 gap-x-3 gap-y-3 xs:gap-x-4 xs:gap-y-4">
-              {mobilePageCategories.map((category) => (
-                <a
-                  key={category.id}
-                  href={`/categoria/${category.slug}`}
-                  className="flex min-w-0 flex-col items-center gap-2 group"
-                >
-                  <div className="w-20 h-20 xs:w-24 xs:h-24 rounded-full bg-[#f5f0e8] border border-[#ede8de] flex items-center justify-center overflow-hidden mx-auto shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-all duration-200 group-active:scale-[0.98]">
-                    {category.image ? (
-                      <img
-                        src={category.image}
-                        alt={category.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-2xl font-bold text-gray-400">
-                        {category.name.charAt(0).toUpperCase()}
+                    <div style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <span style={{
+                        fontFamily: "'Montserrat', sans-serif",
+                        fontSize: '0.65rem',
+                        color: 'rgba(26,26,26,0.35)',
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                      }}>
+                        [ foto · {cat.name.toLowerCase()} ]
                       </span>
-                    )}
+                    </div>
+                  )}
+                  {/* Número */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 12,
+                    left: 14,
+                    fontFamily: "'Montserrat', sans-serif",
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    color: 'rgba(26,26,26,0.5)',
+                    letterSpacing: '0.05em',
+                  }}>
+                    {cat.meta.num} / 06
                   </div>
-                  <span className="max-w-full text-[11px] xs:text-sm text-center text-gray-800 font-semibold leading-tight px-1 break-words">
-                    {category.name}
-                  </span>
-                </a>
-              ))}
-              {mobilePageCategories.length < MOBILE_ITEMS_PER_PAGE &&
-                Array.from({ length: MOBILE_ITEMS_PER_PAGE - mobilePageCategories.length }).map(
-                  (_, i) => <div key={`empty-${i}`} />
-                )}
-            </div>
+                </div>
 
-            {totalMobilePages > 1 && (
-              <button
-                type="button"
-                onClick={() => goToMobilePage(mobilePage + 1)}
-                disabled={mobilePage === totalMobilePages - 1}
-                className="absolute right-0 top-6 z-10 flex h-8 w-8 xs:h-10 xs:w-10 items-center justify-center rounded-xl border border-cyan-100 bg-white/95 text-cyan-700 shadow-[0_14px_30px_-24px_rgba(0,172,232,0.8)] transition-all duration-200 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300 disabled:shadow-none"
-                aria-label="Ver más categorías"
-              >
-                <svg className="h-3.5 w-3.5 xs:h-4.5 xs:w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 6l6 6-6 6" />
-                </svg>
-              </button>
-            )}
-          </div>
-
-          {/* Pagination dots */}
-          {totalMobilePages > 1 && (
-            <div className="mt-4 flex justify-center gap-2">
-              {Array.from({ length: totalMobilePages }).map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => goToMobilePage(i)}
-                  className={`rounded-full transition-all duration-200 ${
-                    i === mobilePage
-                      ? 'h-2 w-5 bg-cyan-500 shadow-[0_6px_16px_-10px_rgba(0,172,232,0.9)]'
-                      : 'h-2 w-2 bg-gray-300 hover:bg-cyan-200'
-                  }`}
-                  aria-label={`Página ${i + 1}`}
-                />
-              ))}
-            </div>
-          )}
+                {/* Info */}
+                <div style={{ padding: '14px 16px 16px' }}>
+                  <h3 style={{
+                    fontFamily: "'Cormorant Garamond', Georgia, serif",
+                    fontSize: '1.15rem',
+                    fontWeight: 600,
+                    color: '#1A1A1A',
+                    margin: '0 0 4px',
+                    lineHeight: 1.2,
+                  }}>
+                    {cat.name}
+                  </h3>
+                  <p style={{
+                    fontFamily: "'Montserrat', sans-serif",
+                    fontSize: '0.72rem',
+                    color: '#888',
+                    margin: 0,
+                    letterSpacing: '0.01em',
+                  }}>
+                    {cat.meta.desc}
+                  </p>
+                </div>
+              </div>
+            </a>
+          ))}
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .categories-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .categories-grid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 0.6rem !important;
+          }
+        }
+      `}</style>
     </section>
   );
 }

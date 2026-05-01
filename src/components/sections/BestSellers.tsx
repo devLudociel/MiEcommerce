@@ -1,8 +1,7 @@
 // src/components/sections/BestSellers.tsx
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useProducts } from '../../hooks/react-query/useProducts';
 import { safeImageSrc } from '../../lib/placeholders';
-import { ProductCardSkeleton } from '../ui/Skeleton';
 
 interface Product {
   id: string;
@@ -12,21 +11,20 @@ interface Product {
   image: string;
   slug?: string;
   salesCount: number;
-  rating: number;
+  isNew?: boolean;
 }
 
-export default function BestSellers() {
-  const [activeIndex, setActiveIndex] = useState(0);
+// Warm placeholder colors for cards without image
+const CARD_COLORS = ['#e8ddd0', '#dde8e0', '#e0dde8', '#e8e0dd'];
 
-  // Fetch products with React Query - get 20 to sort client-side
+export default function BestSellers() {
   const { data: rawProducts = [], isLoading: loading } = useProducts({
     limit: 20,
     excludeReadyMade: true,
   });
 
-  // Transform and sort products
   const products = useMemo(() => {
-    const items: Product[] = rawProducts.map((doc) => ({
+    const items: Product[] = rawProducts.map((doc, idx) => ({
       id: doc.id,
       name: doc.name || 'Producto',
       price: Number((doc as any).basePrice || doc.price) || 0,
@@ -34,39 +32,21 @@ export default function BestSellers() {
       image: safeImageSrc(doc.images?.[0]),
       slug: doc.slug || doc.id,
       salesCount: (doc as any).salesCount || 0,
-      rating: doc.rating || 4.5,
+      isNew: idx < 2 && (doc as any).salesCount === 0,
     }));
-
-    // Sort by salesCount and take top 6
-    return items.sort((a, b) => b.salesCount - a.salesCount).slice(0, 6);
+    return items.sort((a, b) => b.salesCount - a.salesCount).slice(0, 4);
   }, [rawProducts]);
-
-  // Auto-rotate products every 4 seconds
-  useEffect(() => {
-    if (products.length === 0) return;
-
-    const interval = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % products.length);
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, [products.length]);
 
   if (loading) {
     return (
-      <section className="py-20 bg-gradient-to-br from-gray-50 via-white to-cyan-50">
-        <div className="max-w-7xl mx-auto px-4">
-          {/* Header skeleton */}
-          <div className="text-center mb-16">
-            <div className="inline-block mb-4 h-8 w-48 bg-gray-200 rounded-full animate-pulse"></div>
-            <div className="h-10 w-96 bg-gray-200 rounded mx-auto mb-4 animate-pulse"></div>
-            <div className="h-6 w-64 bg-gray-200 rounded mx-auto animate-pulse"></div>
+      <section style={{ backgroundColor: '#fff', padding: '5rem 0' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2.5rem' }}>
+            <div style={{ height: 40, width: 320, backgroundColor: '#f0ebe3', borderRadius: 8, animation: 'pulse 1.5s infinite' }} />
           </div>
-
-          {/* Product grid skeleton */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
-            {[...Array(6)].map((_, i) => (
-              <ProductCardSkeleton key={i} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+            {[...Array(4)].map((_, i) => (
+              <div key={i} style={{ backgroundColor: '#f0ebe3', borderRadius: 16, aspectRatio: '3/4', animation: 'pulse 1.5s infinite' }} />
             ))}
           </div>
         </div>
@@ -77,162 +57,228 @@ export default function BestSellers() {
   if (products.length === 0) return null;
 
   return (
-    <section className="py-20 bg-gradient-to-br from-gray-50 via-white to-cyan-50 relative overflow-hidden">
-      {/* Decorative Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-yellow-200 to-orange-200 rounded-full opacity-20 blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-cyan-200 to-blue-200 rounded-full opacity-20 blur-3xl"></div>
-      </div>
+    <section style={{ backgroundColor: '#fff', padding: '5rem 0' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 1.5rem' }}>
 
-      <div className="max-w-7xl mx-auto px-4 relative">
         {/* Header */}
-        <div className="text-center mb-16">
-          <div className="inline-block mb-4">
-            <span className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-sm font-bold uppercase tracking-wider rounded-full shadow-lg">
-              🔥 Los más vendidos
-            </span>
-          </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-            Favoritos de nuestros clientes
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <h2 style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 'clamp(1.8rem, 3vw, 2.5rem)',
+            fontWeight: 500,
+            color: '#1A1A1A',
+            margin: 0,
+            lineHeight: 1.15,
+          }}>
+            Lo más pedido{' '}
+            <em style={{ fontStyle: 'italic', color: '#555' }}>esta semana</em>
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Los productos más populares que nuestros clientes adoran
-          </p>
+          <a
+            href="/productos"
+            style={{
+              fontFamily: "'Montserrat', sans-serif",
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              color: '#555',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              borderBottom: '1px solid #ccc',
+              paddingBottom: 2,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Ver todos los productos
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </a>
         </div>
 
-        {/* Products Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
+        {/* Product Grid */}
+        <div
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}
+          className="bestsellers-grid"
+        >
           {products.map((product, index) => (
             <a
               key={product.id}
               href={`/producto/${product.slug}`}
-              className={`group relative bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 ${
-                activeIndex === index ? 'ring-4 ring-cyan-400 ring-opacity-50' : ''
-              }`}
-              style={{
-                animationDelay: `${index * 100}ms`,
-              }}
+              style={{ textDecoration: 'none', display: 'block' }}
             >
-              {/* Rank Badge */}
-              <div className="absolute top-2 left-2 z-10">
-                <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-white text-sm font-bold">#{index + 1}</span>
-                </div>
-              </div>
-
-              {/* Sale Badge */}
-              {product.salePrice && (
-                <div className="absolute top-2 right-2 z-10">
-                  <span className="px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full shadow-lg">
-                    -{Math.round((1 - product.salePrice / product.price) * 100)}%
-                  </span>
-                </div>
-              )}
-
-              {/* Product Image */}
-              <div className="relative h-32 md:h-48 overflow-hidden">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-
-                {/* Overlay on hover */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                {/* Quick view button on hover */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <span className="px-3 py-1 bg-white text-gray-800 text-xs font-semibold rounded-full shadow-lg">
-                    Ver detalles
-                  </span>
-                </div>
-              </div>
-
-              {/* Product Info */}
-              <div className="p-3 md:p-4">
-                {/* Rating */}
-                <div className="flex items-center gap-1 mb-2">
-                  {[...Array(5)].map((_, i) => (
-                    <svg
-                      key={i}
-                      className={`w-3 h-3 ${i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-
-                {/* Name */}
-                <h3 className="text-sm md:text-base font-semibold text-gray-800 mb-2 line-clamp-2 group-hover:text-cyan-600 transition-colors">
-                  {product.name}
-                </h3>
-
-                {/* Price */}
-                <div className="flex flex-col gap-1">
-                  {product.salePrice ? (
-                    <>
-                      <span className="text-lg md:text-xl font-bold text-red-600">
-                        €{product.salePrice.toFixed(2)}
-                      </span>
-                      <span className="text-xs md:text-sm text-gray-400 line-through">
-                        €{product.price.toFixed(2)}
-                      </span>
-                    </>
+              <div
+                style={{
+                  backgroundColor: '#fff',
+                  borderRadius: 16,
+                  overflow: 'hidden',
+                  border: '1px solid #f0ebe3',
+                  transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.transform = 'translateY(-4px)';
+                  el.style.boxShadow = '0 16px 48px rgba(0,0,0,0.09)';
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.transform = 'translateY(0)';
+                  el.style.boxShadow = 'none';
+                }}
+              >
+                {/* Image area */}
+                <div style={{
+                  position: 'relative',
+                  aspectRatio: '1/1',
+                  backgroundColor: CARD_COLORS[index % CARD_COLORS.length],
+                  overflow: 'hidden',
+                }}>
+                  {product.image ? (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
                   ) : (
-                    <span className="text-lg md:text-xl font-bold text-cyan-600">
-                      €{product.price.toFixed(2)}
-                    </span>
+                    <div style={{
+                      width: '100%', height: '100%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <span style={{
+                        fontFamily: "'Montserrat', sans-serif",
+                        fontSize: '0.6rem',
+                        color: 'rgba(26,26,26,0.3)',
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                      }}>
+                        [ producto ]
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Badge */}
+                  {index === 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 10,
+                      left: 10,
+                      backgroundColor: '#1A1A1A',
+                      color: '#fff',
+                      fontFamily: "'Montserrat', sans-serif",
+                      fontSize: '0.58rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      padding: '4px 10px',
+                      borderRadius: 50,
+                    }}>
+                      Top ventas
+                    </div>
+                  )}
+                  {product.isNew && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 10,
+                      left: 10,
+                      backgroundColor: '#EC008C',
+                      color: '#fff',
+                      fontFamily: "'Montserrat', sans-serif",
+                      fontSize: '0.58rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      padding: '4px 10px',
+                      borderRadius: 50,
+                    }}>
+                      Nuevo
+                    </div>
+                  )}
+                  {product.salePrice && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 10,
+                      right: 10,
+                      backgroundColor: '#FFF200',
+                      color: '#1A1A1A',
+                      fontFamily: "'Montserrat', sans-serif",
+                      fontSize: '0.58rem',
+                      fontWeight: 800,
+                      padding: '4px 10px',
+                      borderRadius: 50,
+                    }}>
+                      -{Math.round((1 - product.salePrice / product.price) * 100)}%
+                    </div>
                   )}
                 </div>
 
-                {/* Sales count */}
-                <div className="mt-2 text-xs text-gray-500">{product.salesCount} vendidos</div>
-              </div>
-
-              {/* Shine effect on hover */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000 opacity-20"></div>
+                {/* Info */}
+                <div style={{ padding: '14px 14px 16px' }}>
+                  <h3 style={{
+                    fontFamily: "'Montserrat', sans-serif",
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    color: '#1A1A1A',
+                    margin: '0 0 6px',
+                    lineHeight: 1.35,
+                    overflow: 'hidden',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                  } as React.CSSProperties}>
+                    {product.name}
+                  </h3>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                    {product.salePrice ? (
+                      <>
+                        <span style={{
+                          fontFamily: "'Montserrat', sans-serif",
+                          fontWeight: 700,
+                          fontSize: '1rem',
+                          color: '#1A1A1A',
+                        }}>
+                          {product.salePrice.toFixed(2).replace('.', ',')} €
+                        </span>
+                        <span style={{
+                          fontFamily: "'Montserrat', sans-serif",
+                          fontSize: '0.78rem',
+                          color: '#bbb',
+                          textDecoration: 'line-through',
+                        }}>
+                          {product.price.toFixed(2).replace('.', ',')} €
+                        </span>
+                      </>
+                    ) : (
+                      <span style={{
+                        fontFamily: "'Montserrat', sans-serif",
+                        fontWeight: 700,
+                        fontSize: '1rem',
+                        color: '#1A1A1A',
+                      }}>
+                        {product.price > 0 ? `desde ${product.price.toFixed(2).replace('.', ',')} €` : 'Ver precio'}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             </a>
           ))}
         </div>
-
-        {/* Navigation Dots */}
-        <div className="flex justify-center gap-2 mt-8">
-          {products.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setActiveIndex(index)}
-              className={`transition-all duration-300 rounded-full ${
-                index === activeIndex
-                  ? 'bg-cyan-500 w-8 h-3'
-                  : 'bg-gray-300 w-3 h-3 hover:bg-gray-400'
-              }`}
-              aria-label={`Destacar producto ${index + 1}`}
-            />
-          ))}
-        </div>
-
-        {/* CTA Button */}
-        <div className="text-center mt-12">
-          <a
-            href="/productos"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-full hover:from-cyan-600 hover:to-blue-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
-          >
-            <span>Ver todos los productos</span>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M14 5l7 7m0 0l-7 7m7-7H3"
-              />
-            </svg>
-          </a>
-        </div>
       </div>
+
+      <style>{`
+        @media (max-width: 900px) {
+          .bestsellers-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .bestsellers-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 0.6rem !important;
+          }
+        }
+      `}</style>
     </section>
   );
 }

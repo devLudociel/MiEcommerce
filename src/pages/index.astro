@@ -6,7 +6,8 @@ import BestSellersWithProvider from '../components/sections/BestSellersWithProvi
 import ProductGrid from '../components/sections/ProductGrid.tsx';
 import ReadyToBuyHomeWithProvider from '../components/sections/ReadyToBuyHomeWithProvider.tsx';
 import DigitalProductsHomeWithProvider from '../components/sections/DigitalProductsHomeWithProvider.tsx';
-import WhyChooseUs from '../components/sections/WhyChooseUs.tsx';
+import CustomerReviews from '../components/sections/CustomerReviews.tsx';
+import ContactWhatsApp from '../components/sections/ContactWhatsApp.tsx';
 import FooterComponent from '../components/sections/Footer.tsx';
 
 // SEO Optimizado
@@ -16,37 +17,31 @@ const ogImage = '/og-home.jpg';
 ---
 
 <BaseLayout title={title} description={description} ogImage={ogImage}>
-  <!-- 1. Hero Section: Captura de atención inmediata -->
-  <!-- client:load = Cargar inmediatamente (crítico para primera impresión) -->
+  <!-- 1. Hero: split layout editorial con tarjetas producto -->
   <HeroCarousel client:load />
 
-  <!-- 2. Categories: Navegación rápida a lo que buscan -->
-  <!-- client:load = Necesario porque lee de Firebase (client:visible no funciona con return null) -->
+  <!-- 2. Qué hacemos: grid numerado de categorías -->
   <CategoriesShowcase client:load />
 
-  <!-- 3. Best Sellers: Social proof + productos populares -->
-  <!-- client:visible = Cargar cuando es visible (below the fold) -->
+  <!-- 3. Lo más pedido esta semana -->
   <BestSellersWithProvider client:visible />
 
-  <!-- 4. Product Grid: Productos FÍSICOS destacados de Firebase -->
-  <!-- client:visible = Cargar cuando es visible (below the fold) -->
+  <!-- 4. Productos físicos destacados -->
   <ProductGrid client:visible />
 
-  <!-- 5. Ready to Buy: Diseños listos para comprar -->
-  <!-- client:visible = Cargar cuando es visible (below the fold) -->
+  <!-- 5. Diseños listos para comprar -->
   <ReadyToBuyHomeWithProvider client:visible maxItems={6} />
 
-  <!-- 6. Digital Products: Productos DIGITALES descargables -->
-  <!-- client:visible = Cargar cuando es visible (below the fold) -->
+  <!-- 6. Productos digitales descargables -->
   <DigitalProductsHomeWithProvider client:visible maxItems={4} />
 
-  <!-- 7. Why Choose Us: Generar confianza con stats reales -->
-  <!-- client:idle = Cargar cuando el navegador está idle (no muy interactivo) -->
-  <WhyChooseUs client:idle />
+  <!-- 7. Que dicen nuestros clientes — sección oscura -->
+  <CustomerReviews client:visible />
 
-  <!-- 8. Footer: Información de contacto, legal y newsletter -->
-  <!-- client:only = Solo renderizar en cliente (mejor para contenido estático) -->
-  <!-- Newsletter integrado en el footer - un solo sistema unificado -->
+  <!-- 8. Contacto + Newsletter fusionados -->
+  <ContactWhatsApp client:visible />
+
+  <!-- 9. Footer -->
   <footer class="bg-gray-800 text-white py-12">
     <FooterComponent client:only="react" />
   </footer>

@@ -2,7 +2,6 @@ import { useState, useEffect, memo, useCallback } from 'react';
 import { heroSlides, type HeroSlide } from '../../data/heroSlides';
 import { getActiveBanners, type HeroBanner } from '../../lib/heroBanners';
 
-// Interface for unified slide data (works with both static and dynamic banners)
 interface SlideData {
   id: string | number;
   title: string;
@@ -16,7 +15,6 @@ interface SlideData {
   accentColor: string;
 }
 
-// Convert Firebase banner to slide data
 function bannerToSlide(banner: HeroBanner): SlideData {
   return {
     id: banner.id,
@@ -32,7 +30,6 @@ function bannerToSlide(banner: HeroBanner): SlideData {
   };
 }
 
-// Convert static slide to unified format
 function staticToSlide(slide: HeroSlide): SlideData {
   return {
     id: slide.id,
@@ -42,276 +39,412 @@ function staticToSlide(slide: HeroSlide): SlideData {
     ctaPrimary: slide.ctaPrimary,
     ctaPrimaryUrl: '/productos',
     ctaSecondary: slide.ctaSecondary,
-    ctaSecondaryUrl: '/productos',
+    ctaSecondaryUrl: '/como-personalizar',
     backgroundImage: slide.backgroundImage,
     accentColor: slide.accentColor,
   };
 }
 
-// PERFORMANCE: Memoize component to prevent unnecessary re-renders
+// Tarjetas decorativas del lado derecho
+const PRODUCT_CARDS = [
+  { label: 'Camiseta personalizada', tag: 'TEXTIL · DTF' },
+  { label: 'Grabado láser', tag: 'MADERA · METACRILATO' },
+  { label: 'Taza sublimada', tag: 'SUBLIMACIÓN · 11oz' },
+];
+
 const HeroCarousel = memo(() => {
   const [slides, setSlides] = useState<SlideData[]>(() => heroSlides.map(staticToSlide));
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // Load banners from Firebase
   useEffect(() => {
     let mounted = true;
-
     async function loadBanners() {
       try {
         const banners = await getActiveBanners();
         if (mounted && banners.length > 0) {
           setSlides(banners.map(bannerToSlide));
         }
-      } catch (error) {
-        console.error('Error loading banners, using defaults:', error);
-        // Keep using static slides on error
-      } finally {
-        // No-op: keep component rendering with available slides
+      } catch {
+        // keep static slides
       }
     }
-
     loadBanners();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
-  // PERFORMANCE: Wrap event handlers in useCallback
-  const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
-  }, [slides.length]);
-
-  const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-  }, [slides.length]);
-
-  const goToSlide = useCallback((index: number) => {
-    setCurrentSlide(index);
-  }, []);
-
+  // Ciclo automático de texto cada 6s
   useEffect(() => {
-    if (!isAutoPlaying || slides.length === 0) return;
-    const interval = setInterval(nextSlide, 5000);
+    if (slides.length <= 1) return;
+    const interval = setInterval(() => {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCurrentSlide((prev) => (prev + 1) % slides.length);
+        setIsTransitioning(false);
+      }, 300);
+    }, 6000);
     return () => clearInterval(interval);
-  }, [isAutoPlaying, currentSlide, nextSlide, slides.length]);
+  }, [slides.length]);
 
-  // PERFORMANCE: Wrap toggle handler in useCallback
-  const toggleAutoPlay = useCallback(() => {
-    setIsAutoPlaying((prev) => !prev);
-  }, []);
-
-  const pauseAutoPlay = useCallback(() => {
-    setIsAutoPlaying(false);
-  }, []);
-
-  const resumeAutoPlay = useCallback(() => {
-    setIsAutoPlaying(true);
-  }, []);
-
-  const getAccentGlowStyle = useCallback((color: string) => {
-    const accentColors = {
-      cyan: 'rgba(0, 172, 232, 0.18)',
-      magenta: 'rgba(240, 0, 240, 0.16)',
-      yellow: 'rgba(255, 240, 0, 0.14)',
-      rainbow: 'rgba(99, 102, 241, 0.16)',
-    };
-    const accent = accentColors[color as keyof typeof accentColors] || accentColors.cyan;
-
-    return {
-      background: `radial-gradient(circle at 20% 32%, ${accent} 0%, rgba(15, 23, 42, 0) 48%)`,
-    };
-  }, []);
-
-  // Handle CTA click with URL navigation
   const handleCtaClick = useCallback((url: string) => {
-    if (url) {
-      window.location.href = url;
-    }
+    if (url) window.location.href = url;
   }, []);
 
-  if (slides.length === 0) {
-    return null;
-  }
+  const slide = slides[currentSlide] || slides[0];
+  if (!slide) return null;
+
+  // Usa la imagen del slide actual como fondo de la tarjeta principal
+  const cardImages = slides.slice(0, 3).map((s) => s.backgroundImage);
 
   return (
-    <section className="w-full px-3 sm:px-4 md:px-6 lg:px-8 mt-2 sm:mt-3 md:mt-4 mb-4 sm:mb-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="relative overflow-hidden h-[200px] sm:h-[260px] md:h-[320px] lg:h-[380px] rounded-xl sm:rounded-2xl">
-          {/* Slides Container */}
-          <div className="relative h-full">
-            {slides.map((slide, index) => {
-              const isActive = index === currentSlide;
-              const accentGlowStyle = getAccentGlowStyle(slide.accentColor);
+    <section
+      style={{ backgroundColor: '#F5F0E8', fontFamily: "'Montserrat', sans-serif" }}
+      className="w-full overflow-hidden"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 lg:py-20">
+        <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
 
-              return (
-                <div
-                  key={slide.id}
-                  className="absolute inset-0 transition-opacity duration-1000"
+          {/* ── COLUMNA IZQUIERDA ── */}
+          <div className="w-full lg:w-[52%] flex flex-col gap-6">
+
+            {/* Pill badge */}
+            <div className="flex">
+              <span
+                style={{
+                  backgroundColor: '#1A1A1A',
+                  color: '#fff',
+                  fontFamily: "'Montserrat', sans-serif",
+                  fontSize: '11px',
+                  letterSpacing: '0.08em',
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold uppercase"
+              >
+                <span
+                  style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#EC008C', flexShrink: 0 }}
+                />
+                Taller en La Palma · Envíos a toda Canarias
+              </span>
+            </div>
+
+            {/* Título mixto serif + italic */}
+            <div
+              style={{
+                opacity: isTransitioning ? 0 : 1,
+                transform: isTransitioning ? 'translateY(8px)' : 'translateY(0)',
+                transition: 'opacity 0.3s ease, transform 0.3s ease',
+              }}
+            >
+              <h1
+                style={{
+                  fontFamily: "'Cormorant Garamond', Georgia, serif",
+                  fontSize: 'clamp(2.6rem, 5.5vw, 4.2rem)',
+                  fontWeight: 500,
+                  lineHeight: 1.1,
+                  color: '#1A1A1A',
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                {slide.subtitle && (
+                  <span style={{ display: 'block', fontSize: '55%', fontWeight: 400, color: '#555', marginBottom: '0.15em', letterSpacing: '0.05em', textTransform: 'uppercase', fontFamily: "'Montserrat', sans-serif", fontSize: 'clamp(0.7rem, 1.2vw, 0.9rem)' }}>
+                    {slide.subtitle}
+                  </span>
+                )}
+                <span style={{ display: 'block' }}>
+                  {/* Divide el título: última palabra en itálica */}
+                  {(() => {
+                    const words = slide.title.trim().split(' ');
+                    const italic = words.slice(-2).join(' ');
+                    const normal = words.slice(0, -2).join(' ');
+                    return (
+                      <>
+                        {normal && <>{normal} </>}
+                        <em style={{ fontStyle: 'italic', color: '#1A1A1A' }}>{italic}</em>
+                        <span style={{ color: '#FFF200', marginLeft: 4, display: 'inline-block', width: 10, height: 10, borderRadius: '50%', backgroundColor: '#EC008C', verticalAlign: 'middle' }} />
+                      </>
+                    );
+                  })()}
+                </span>
+              </h1>
+            </div>
+
+            {/* Descripción */}
+            <p
+              style={{
+                color: '#555',
+                fontSize: 'clamp(0.95rem, 1.4vw, 1.1rem)',
+                lineHeight: 1.7,
+                maxWidth: 480,
+                opacity: isTransitioning ? 0 : 1,
+                transition: 'opacity 0.3s ease',
+              }}
+            >
+              {slide.description}
+            </p>
+
+            {/* CTAs */}
+            <div className="flex flex-wrap gap-3">
+              {slide.ctaPrimary && (
+                <button
+                  onClick={() => handleCtaClick(slide.ctaPrimaryUrl)}
                   style={{
-                    opacity: isActive ? 1 : 0,
-                    zIndex: isActive ? 20 : 10,
-                    pointerEvents: isActive ? 'auto' : 'none',
+                    backgroundColor: '#1A1A1A',
+                    color: '#fff',
+                    fontFamily: "'Montserrat', sans-serif",
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    padding: '14px 28px',
+                    borderRadius: 50,
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    transition: 'background 0.2s, transform 0.15s',
                   }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#EC008C'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#1A1A1A'; }}
                 >
-                  {/* Background Image */}
-                  <div className="absolute inset-0 bg-slate-950" />
+                  {slide.ctaPrimary}
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              )}
+              {slide.ctaSecondary && (
+                <button
+                  onClick={() => handleCtaClick(slide.ctaSecondaryUrl)}
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: '#1A1A1A',
+                    fontFamily: "'Montserrat', sans-serif",
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    padding: '13px 28px',
+                    borderRadius: 50,
+                    border: '1.5px solid #1A1A1A',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.2s, color 0.2s',
+                  }}
+                  onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = '#EC008C'; b.style.color = '#EC008C'; }}
+                  onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = '#1A1A1A'; b.style.color = '#1A1A1A'; }}
+                >
+                  {slide.ctaSecondary}
+                </button>
+              )}
+            </div>
+
+            {/* Stats */}
+            <div
+              style={{
+                borderTop: '1px solid rgba(26,26,26,0.12)',
+                paddingTop: '1.25rem',
+                marginTop: '0.5rem',
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '2rem',
+              }}
+            >
+              {[
+                { value: '+1.200', label: 'Pedidos personalizados' },
+                { value: '24–72h', label: 'Entrega en La Palma' },
+                { value: '4,9 ★', label: 'Opiniones Google' },
+              ].map((stat) => (
+                <div key={stat.label}>
                   <div
-                    className="absolute inset-0 bg-center bg-no-repeat"
                     style={{
-                      backgroundImage: `url(${slide.backgroundImage})`,
-                      backgroundSize: 'contain',
-                      transform: isActive ? 'scale(1)' : 'scale(1.03)',
-                      transition: 'transform 1000ms ease-out',
+                      fontFamily: "'Montserrat', sans-serif",
+                      fontWeight: 800,
+                      fontSize: 'clamp(1.1rem, 2vw, 1.35rem)',
+                      color: '#EC008C',
+                      letterSpacing: '-0.02em',
                     }}
-                  />
-
+                  >
+                    {stat.value}
+                  </div>
                   <div
-                    className="absolute inset-0 opacity-70 transition-opacity duration-1000"
-                    style={accentGlowStyle}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-transparent to-slate-950/8" />
-
-                  {/* CTA Only */}
-                  <div className="absolute inset-x-0 bottom-10 sm:bottom-14 md:bottom-16 z-10 px-4 sm:px-6">
-                    <div className="mx-auto flex max-w-7xl justify-center sm:justify-start">
-                      <div
-                        className="flex flex-row flex-wrap items-center justify-center gap-2 rounded-2xl bg-slate-950/40 px-3 py-2 shadow-[0_24px_50px_-32px_rgba(15,23,42,0.95)] transition-all duration-1000 sm:justify-start sm:gap-3 sm:px-4 sm:py-3"
-                        style={{
-                          opacity: isActive ? 1 : 0,
-                          transform: isActive ? 'translateY(0)' : 'translateY(1.5rem)',
-                          transitionDelay: '350ms',
-                        }}
-                      >
-                        {slide.ctaPrimary && (
-                          <button
-                            onClick={() => handleCtaClick(slide.ctaPrimaryUrl)}
-                            className="rounded-xl bg-white px-3 py-2 text-[11px] font-bold text-slate-950 shadow-[0_20px_35px_-18px_rgba(255,255,255,0.7)] transition-all hover:-translate-y-0.5 hover:bg-slate-100 hover:shadow-[0_28px_45px_-20px_rgba(255,255,255,0.8)] active:scale-95 sm:px-4 sm:py-2.5 sm:text-sm md:px-5 touch-manipulation"
-                          >
-                            {slide.ctaPrimary}
-                          </button>
-                        )}
-                        {slide.ctaSecondary && (
-                          <button
-                            onClick={() => handleCtaClick(slide.ctaSecondaryUrl)}
-                            className="rounded-xl bg-cyan-500 px-3 py-2 text-[11px] font-bold text-white shadow-[0_20px_35px_-18px_rgba(6,182,212,0.8)] transition-all hover:-translate-y-0.5 hover:bg-cyan-400 hover:shadow-[0_28px_45px_-20px_rgba(34,211,238,0.9)] active:scale-95 sm:px-4 sm:py-2.5 sm:text-sm md:px-5 touch-manipulation"
-                          >
-                            {slide.ctaSecondary}
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                    style={{
+                      fontSize: '0.7rem',
+                      color: '#888',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.07em',
+                      fontWeight: 600,
+                      marginTop: 2,
+                    }}
+                  >
+                    {stat.label}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
 
-          {/* Navigation Controls - Responsive */}
-          <div className="absolute bottom-2 sm:bottom-4 md:bottom-6 left-1/2 transform -translate-x-1/2 z-30">
-            <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
-              {/* Dots - Tamaño responsive */}
-              <div className="flex items-center gap-1 sm:gap-2">
-                {slides.map((_, index) => (
+            {/* Dots de slides */}
+            {slides.length > 1 && (
+              <div style={{ display: 'flex', gap: 6 }}>
+                {slides.map((_, i) => (
                   <button
-                    key={index}
-                    onClick={() => goToSlide(index)}
-                    className={`carousel-dot w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 rounded-full transition-all duration-300 touch-manipulation ${
-                      index === currentSlide
-                        ? 'bg-white scale-125'
-                        : 'bg-white/50 hover:bg-white/80'
-                    }`}
-                    type="button"
-                    aria-label={`Ir a la diapositiva ${index + 1}`}
-                    aria-current={index === currentSlide ? 'true' : undefined}
-                    aria-pressed={index === currentSlide}
+                    key={i}
+                    onClick={() => setCurrentSlide(i)}
+                    aria-label={`Slide ${i + 1}`}
+                    style={{
+                      width: i === currentSlide ? 24 : 8,
+                      height: 8,
+                      borderRadius: 50,
+                      backgroundColor: i === currentSlide ? '#EC008C' : 'rgba(26,26,26,0.2)',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'width 0.3s, background 0.3s',
+                      padding: 0,
+                    }}
                   />
                 ))}
               </div>
+            )}
+          </div>
 
-              {/* Play/Pause - Solo desktop */}
-              <button
-                onClick={toggleAutoPlay}
-                className="hidden sm:flex ml-2 sm:ml-4 p-1.5 sm:p-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 text-white hover:bg-white/30 transition-all touch-manipulation"
-                type="button"
-                aria-label={isAutoPlaying ? 'Pausar carrusel' : 'Reproducir carrusel'}
-                aria-pressed={!isAutoPlaying}
-              >
-                {isAutoPlaying ? (
-                  <svg
-                    className="w-3 h-3 sm:w-3.5 sm:h-3.5"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    aria-hidden="true"
-                  >
-                    <path d="M5 4h3v12H5V4zm7 0h3v12h-3V4z" />
-                  </svg>
-                ) : (
-                  <svg
-                    className="w-3 h-3 sm:w-3.5 sm:h-3.5"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    aria-hidden="true"
-                  >
-                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                  </svg>
-                )}
-              </button>
+          {/* ── COLUMNA DERECHA — tarjetas producto ── */}
+          <div className="w-full lg:w-[48%] relative hidden md:flex items-center justify-center" style={{ minHeight: 400 }}>
+
+            {/* Badge superior */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 16,
+                left: '8%',
+                zIndex: 20,
+                backgroundColor: '#FFF200',
+                color: '#1A1A1A',
+                fontFamily: "'Montserrat', sans-serif",
+                fontWeight: 800,
+                fontSize: '0.65rem',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                padding: '7px 14px',
+                borderRadius: 50,
+              }}
+            >
+              Hecho a mano · La Palma
+            </div>
+
+            {/* Tarjeta 3 — fondo (más grande) */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                right: '4%',
+                width: '62%',
+                aspectRatio: '4/5',
+                borderRadius: 16,
+                overflow: 'hidden',
+                backgroundColor: '#d9d3c7',
+                boxShadow: '0 8px 40px rgba(0,0,0,0.08)',
+                zIndex: 10,
+              }}
+            >
+              {cardImages[2] && (
+                <img src={cardImages[2]} alt={PRODUCT_CARDS[2].label} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
+              )}
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                background: 'linear-gradient(to top, rgba(26,26,26,0.55) 0%, transparent 60%)',
+                padding: '20px 16px 14px',
+              }}>
+                <div style={{ color: '#fff', fontFamily: "'Montserrat', sans-serif", fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.7 }}>{PRODUCT_CARDS[2].tag}</div>
+                <div style={{ color: '#fff', fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, fontSize: '1rem', marginTop: 2 }}>{PRODUCT_CARDS[2].label}</div>
+              </div>
+            </div>
+
+            {/* Tarjeta 2 — medio */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '6%',
+                right: '22%',
+                width: '54%',
+                aspectRatio: '4/5',
+                borderRadius: 16,
+                overflow: 'hidden',
+                backgroundColor: '#c8d8d0',
+                boxShadow: '0 12px 48px rgba(0,0,0,0.12)',
+                zIndex: 11,
+              }}
+            >
+              {cardImages[1] && (
+                <img src={cardImages[1]} alt={PRODUCT_CARDS[1].label} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
+              )}
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                background: 'linear-gradient(to top, rgba(26,26,26,0.55) 0%, transparent 60%)',
+                padding: '20px 16px 14px',
+              }}>
+                <div style={{ color: '#fff', fontFamily: "'Montserrat', sans-serif", fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.7 }}>{PRODUCT_CARDS[1].tag}</div>
+                <div style={{ color: '#fff', fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, fontSize: '1rem', marginTop: 2 }}>{PRODUCT_CARDS[1].label}</div>
+              </div>
+            </div>
+
+            {/* Tarjeta 1 — frontal */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '20%',
+                left: '4%',
+                width: '50%',
+                aspectRatio: '4/5',
+                borderRadius: 16,
+                overflow: 'hidden',
+                backgroundColor: '#e8ddd0',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+                zIndex: 12,
+              }}
+            >
+              {cardImages[0] && (
+                <img src={cardImages[0]} alt={PRODUCT_CARDS[0].label} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
+              )}
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                background: 'linear-gradient(to top, rgba(26,26,26,0.6) 0%, transparent 60%)',
+                padding: '20px 16px 14px',
+              }}>
+                <div style={{ color: '#fff', fontFamily: "'Montserrat', sans-serif", fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.7 }}>{PRODUCT_CARDS[0].tag}</div>
+                <div style={{ color: '#fff', fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, fontSize: '1rem', marginTop: 2 }}>{PRODUCT_CARDS[0].label}</div>
+              </div>
+            </div>
+
+            {/* Tarjeta flotante "Pedido reciente" */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '8%',
+                left: '2%',
+                zIndex: 20,
+                backgroundColor: '#fff',
+                borderRadius: 12,
+                padding: '12px 16px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                minWidth: 180,
+                maxWidth: 220,
+              }}
+            >
+              <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '0.6rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 4 }}>
+                Pedido reciente
+              </div>
+              <div style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, fontSize: '0.95rem', color: '#1A1A1A', lineHeight: 1.3 }}>
+                Taza sublimada · Foto familiar
+              </div>
+              <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '0.68rem', color: '#888', marginTop: 4 }}>
+                Encargado por María, Los Llanos · 12,90 €
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#22c55e' }} />
+                <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '0.62rem', color: '#22c55e', fontWeight: 600 }}>Listo en 48h</span>
+              </div>
             </div>
           </div>
 
-          {/* Arrow Navigation - Ocultar en móvil, visible en tablet+ */}
-          <button
-            onClick={nextSlide}
-            onMouseEnter={pauseAutoPlay}
-            onMouseLeave={resumeAutoPlay}
-            className="hidden sm:block absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 z-30 p-2 sm:p-2.5 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 text-white hover:bg-white/30 transition-all hover:scale-110 active:scale-95 touch-manipulation"
-            type="button"
-            aria-label="Siguiente diapositiva"
-          >
-            <svg
-              className="w-4 h-4 sm:w-5 sm:h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-
-          <button
-            onClick={prevSlide}
-            onMouseEnter={pauseAutoPlay}
-            onMouseLeave={resumeAutoPlay}
-            className="hidden sm:block absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 z-30 p-2 sm:p-2.5 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 text-white hover:bg-white/30 transition-all hover:scale-110 active:scale-95 touch-manipulation"
-            type="button"
-            aria-label="Diapositiva anterior"
-          >
-            <svg
-              className="w-4 h-4 sm:w-5 sm:h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
         </div>
       </div>
     </section>
   );
 });
 
-// Add display name for debugging
 HeroCarousel.displayName = 'HeroCarousel';
-
 export default HeroCarousel;
