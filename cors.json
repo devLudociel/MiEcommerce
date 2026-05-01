@@ -5,10 +5,19 @@
       "http://localhost:3000",
       "http://localhost:5173",
       "http://localhost:5000",
-      "https://imprimearte.es"
+      "https://imprimearte.es",
+      "https://www.imprimearte.es"
     ],
     "method": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
     "maxAgeSeconds": 3600,
-    "responseHeader": ["Content-Type", "Access-Control-Allow-Origin", "x-goog-resumable"]
+    "responseHeader": [
+      "Content-Type",
+      "Access-Control-Allow-Origin",
+      "x-goog-resumable",
+      "Content-Range",
+      "Accept-Ranges",
+      "Content-Length",
+      "Range"
+    ]
   }
 ]
