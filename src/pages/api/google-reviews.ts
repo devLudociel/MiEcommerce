@@ -52,6 +52,7 @@ export const GET: APIRoute = async () => {
         rating: r.rating,
         text: r.text ?? '',
         timeAgo: r.relative_time_description ?? '',
+        profilePhoto: r.profile_photo_url ?? null,
       }));
 
     return new Response(JSON.stringify({ reviews, rating, total }), {
