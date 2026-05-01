@@ -29,6 +29,11 @@ service firebase.storage {
       return request.resource.contentType.matches('image/.*');
     }
 
+    // Helper function to check if file is a video
+    function isVideo() {
+      return request.resource.contentType.matches('video/.*');
+    }
+
     // Helper function to check if file is allowed type
     function isAllowedFileType() {
       return request.resource.contentType.matches('image/.*') ||
@@ -161,10 +166,10 @@ service firebase.storage {
     // PRODUCTS: Admin product images
     // ==========================================================================
     match /products/{fileName} {
-      // SECURITY FIX: Only ADMINS can upload product images
+      // Only ADMINS can upload product images or videos
       allow create, update: if isAdmin() &&
                               isValidSize() &&
-                              isImage();
+                              (isImage() || isVideo());
 
       // Anyone can read (public product images)
       allow read: if true;

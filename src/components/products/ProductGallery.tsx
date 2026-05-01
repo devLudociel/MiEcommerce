@@ -1,6 +1,8 @@
 import { memo, useCallback, useRef, useState } from 'react';
 import { FALLBACK_IMG_400x300, safeImageSrc } from '../../lib/placeholders';
 
+const isVideoUrl = (url: string) => /\.(mp4|webm|ogg)(\?|$)/i.test(url);
+
 interface ProductImage {
   id: number;
   url: string;
@@ -69,30 +71,42 @@ export const ProductGallery = memo(function ProductGallery({
         <div
           ref={imageRef}
           className={`relative bg-white rounded-3xl overflow-hidden shadow-xl border-4 border-transparent ${
-            isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'
+            !isVideoUrl(currentImage?.url || '') ? (isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in') : ''
           } hover:border-cyan-500/50 transition-all duration-500`}
-          onClick={handleToggleZoom}
-          onKeyDown={handleZoomKeyDown}
+          onClick={!isVideoUrl(currentImage?.url || '') ? handleToggleZoom : undefined}
+          onKeyDown={!isVideoUrl(currentImage?.url || '') ? handleZoomKeyDown : undefined}
           onMouseMove={handleImageZoom}
-          role="button"
-          tabIndex={0}
-          aria-pressed={isZoomed}
-          aria-label={isZoomed ? 'Reducir zoom de la imagen' : 'Ampliar zoom de la imagen'}
+          role={!isVideoUrl(currentImage?.url || '') ? 'button' : undefined}
+          tabIndex={!isVideoUrl(currentImage?.url || '') ? 0 : undefined}
+          aria-pressed={!isVideoUrl(currentImage?.url || '') ? isZoomed : undefined}
+          aria-label={!isVideoUrl(currentImage?.url || '') ? (isZoomed ? 'Reducir zoom de la imagen' : 'Ampliar zoom de la imagen') : undefined}
         >
-          <img
-            src={safeImageSrc(currentImage?.url)}
-            alt={currentImage?.alt || productName}
-            loading="eager"
-            decoding="async"
-            className={`w-full h-80 md:h-[380px] lg:h-[420px] object-contain bg-white transition-all duration-700 ${
-              isZoomed ? 'scale-150' : 'scale-100 group-hover:scale-105'
-            }`}
-            onError={(e) => {
-              const img = e.currentTarget as HTMLImageElement;
-              img.onerror = null;
-              img.src = FALLBACK_IMG_400x300;
-            }}
-          />
+          {isVideoUrl(currentImage?.url || '') ? (
+            <video
+              src={currentImage?.url}
+              className="w-full h-80 md:h-[380px] lg:h-[420px] object-contain bg-white"
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+            />
+          ) : (
+            <img
+              src={safeImageSrc(currentImage?.url)}
+              alt={currentImage?.alt || productName}
+              loading="eager"
+              decoding="async"
+              className={`w-full h-80 md:h-[380px] lg:h-[420px] object-contain bg-white transition-all duration-700 ${
+                isZoomed ? 'scale-150' : 'scale-100 group-hover:scale-105'
+              }`}
+              onError={(e) => {
+                const img = e.currentTarget as HTMLImageElement;
+                img.onerror = null;
+                img.src = FALLBACK_IMG_400x300;
+              }}
+            />
+          )}
 
           {/* Zoom Icon */}
           <div
@@ -154,18 +168,28 @@ export const ProductGallery = memo(function ProductGallery({
                 : 'border-gray-200 hover:border-cyan-300'
             }`}
           >
-            <img
-              src={safeImageSrc(img.url)}
-              alt={img.alt}
-              loading="lazy"
-              decoding="async"
-              className="w-full h-20 sm:h-24 object-contain bg-white"
-              onError={(e) => {
-                const imgEl = e.currentTarget as HTMLImageElement;
-                imgEl.onerror = null;
-                imgEl.src = FALLBACK_IMG_400x300;
-              }}
-            />
+            {isVideoUrl(img.url) ? (
+              <video
+                src={img.url}
+                className="w-full h-20 sm:h-24 object-contain bg-white"
+                muted
+                playsInline
+                preload="metadata"
+              />
+            ) : (
+              <img
+                src={safeImageSrc(img.url)}
+                alt={img.alt}
+                loading="lazy"
+                decoding="async"
+                className="w-full h-20 sm:h-24 object-contain bg-white"
+                onError={(e) => {
+                  const imgEl = e.currentTarget as HTMLImageElement;
+                  imgEl.onerror = null;
+                  imgEl.src = FALLBACK_IMG_400x300;
+                }}
+              />
+            )}
             {idx === selectedImage && (
               <div className="absolute inset-0 bg-cyan-500/20 flex items-center justify-center">
                 <svg

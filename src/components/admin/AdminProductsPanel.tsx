@@ -1853,19 +1853,19 @@ export default function AdminProductsPanelV2() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Subir imágenes
+                    Subir imágenes o vídeos
                   </label>
                   <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-purple-400 transition-colors">
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                       <Upload className="w-8 h-8 text-gray-400 mb-2" />
                       <p className="text-sm text-gray-600">
-                        {uploadingImages ? 'Subiendo...' : 'Click para subir imágenes'}
+                        {uploadingImages ? 'Subiendo...' : 'Click para subir imágenes o vídeos (MP4)'}
                       </p>
                     </div>
                     <input
                       type="file"
                       multiple
-                      accept="image/*"
+                      accept="image/*,video/mp4,video/webm"
                       onChange={(e) => handleImageUpload(e.target.files)}
                       className="hidden"
                       disabled={uploadingImages}
@@ -1873,16 +1873,26 @@ export default function AdminProductsPanelV2() {
                   </label>
                 </div>
 
-                {/* Preview de imágenes */}
+                {/* Preview de imágenes/vídeos */}
                 {formData.images && formData.images.length > 0 && (
                   <div className="grid grid-cols-4 gap-4">
                     {formData.images.map((url, index) => (
                       <div key={index} className="relative group">
-                        <img
-                          src={url}
-                          alt={`Imagen ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg"
-                        />
+                        {/\.(mp4|webm|ogg)(\?|$)/i.test(url) ? (
+                          <video
+                            src={url}
+                            className="w-full h-24 object-cover rounded-lg"
+                            muted
+                            playsInline
+                            preload="metadata"
+                          />
+                        ) : (
+                          <img
+                            src={url}
+                            alt={`Imagen ${index + 1}`}
+                            className="w-full h-24 object-cover rounded-lg"
+                          />
+                        )}
                         <button
                           onClick={() => handleRemoveImage(index)}
                           className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"

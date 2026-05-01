@@ -28,7 +28,6 @@ import StepPlacement from './steps/StepPlacement';
 import StepQuantity from './steps/StepQuantity';
 import StepSizeGrid from './steps/StepSizeGrid';
 import StepSummary from './steps/StepSummary';
-import type { ProductConfiguratorAttribute } from '../../types/configurator';
 
 interface ProductConfiguratorProps {
   productId: string;
@@ -1158,11 +1157,22 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
         <div className="hidden lg:block lg:col-span-2 space-y-6">
           {previewImage && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
-              <img
-                src={previewImage}
-                alt={product.name}
-                className="w-full aspect-square object-contain rounded-xl"
-              />
+              {/\.(mp4|webm|ogg)(\?|$)/i.test(previewImage) ? (
+                <video
+                  src={previewImage}
+                  className="w-full aspect-square object-contain rounded-xl"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={previewImage}
+                  alt={product.name}
+                  className="w-full aspect-square object-contain rounded-xl"
+                />
+              )}
             </div>
           )}
           {pricing && currentStepId !== 'summary' && (
