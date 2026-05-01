@@ -398,33 +398,6 @@ const HeroCarousel = memo(() => {
               </div>
             </div>
 
-            {/* Tarjeta flotante "Pedido reciente" */}
-            <div style={{
-              position: 'absolute',
-              bottom: '6%',
-              right: '2%',
-              backgroundColor: '#fff',
-              borderRadius: 14,
-              padding: '12px 16px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.13)',
-              minWidth: 190,
-              maxWidth: 230,
-              zIndex: 10,
-            }}>
-              <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '0.58rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 4 }}>
-                Pedido reciente
-              </div>
-              <div style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, fontSize: '0.95rem', color: '#1A1A1A', lineHeight: 1.3 }}>
-                Taza sublimada · Foto familiar
-              </div>
-              <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '0.66rem', color: '#888', marginTop: 4 }}>
-                Encargado por María, Los Llanos · 12,90 €
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#22c55e' }} />
-                <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '0.6rem', color: '#22c55e', fontWeight: 600 }}>Listo en 48h</span>
-              </div>
-            </div>
           </div>
 
         </div>
