@@ -299,7 +299,7 @@ export default function ContactWhatsApp() {
                 hola@imprimearte.es
               </a>
               <a
-                href="https://www.instagram.com/imprimearte"
+                href="https://www.instagram.com/imprimearte_lapalma"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{

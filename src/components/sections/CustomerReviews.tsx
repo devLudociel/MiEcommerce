@@ -2,12 +2,14 @@
 // Sección de reseñas de clientes — fondo oscuro estilo editorial
 //
 // CONECTAR RESEÑAS GOOGLE EN VIVO:
-// 1. Ve a Google Maps → busca tu negocio → copia la URL → el Place ID está en:
-//    https://maps.google.com/...?cid=XXXXXXXXXXXXXXXX  → ese número es tu Place ID
-// 2. Añade a tu .env:  VITE_GOOGLE_PLACE_ID=ChIJxxxxxxxxxx
-// 3. Usa la API de Google Places (Places API v2) para fetchear reviews
-//    (requiere activar "Places API" en Google Cloud Console)
-// 4. Por ahora se muestran reseñas reales editadas a mano abajo.
+// 1. Ve a Google Cloud Console → activa "Places API (New)"
+// 2. Crea API key → añade a .env: VITE_GOOGLE_PLACES_API_KEY=xxxx
+// 3. Tu Place ID está en la URL de Google Maps:
+//    https://www.google.com/maps/place/...data=!4m2!3m1!1s0xc6bf3d59732be69:0xae2151bb6704aef0
+//    → usa ese valor en la llamada a Places API
+// 4. Llama a: GET https://places.googleapis.com/v1/places/<placeId>/reviews
+//    con header X-Goog-Api-Key y X-Goog-FieldMask: reviews
+// Por ahora se muestran reseñas editadas a mano. Activa la API para que sean dinámicas.
 
 import { useState, useEffect } from 'react';
 import { getApprovedReviews, type CustomerReview } from '../../lib/reviews';
@@ -172,7 +174,7 @@ export default function CustomerReviews() {
         {/* CTA Google */}
         <div style={{ marginTop: '2.5rem', textAlign: 'center' }}>
           <a
-            href="https://g.page/r/imprimearte/review"
+            href="https://maps.app.goo.gl/ezn288NdLtgg8ba36"
             target="_blank"
             rel="noopener noreferrer"
             style={{
