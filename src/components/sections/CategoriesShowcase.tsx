@@ -11,23 +11,33 @@ interface Category {
   image?: string;
 }
 
-// Descripciones y números para el grid editorial
-const CATEGORY_META: Record<string, { desc: string; num: string }> = {
-  textiles:         { desc: 'Camisetas, sudaderas, totes', num: '01' },
-  papeleria:        { desc: 'Invitaciones, libretas, tarjetas', num: '02' },
-  sublimados:       { desc: 'Tazas, cojines, fundas', num: '03' },
-  'corte-grabado':  { desc: 'Madera, metacrilato, cuero', num: '04' },
-  eventos:          { desc: 'Bodas, comuniones, empresas', num: '05' },
-  'impresion-3d':   { desc: 'Piezas, figuras, prototipos', num: '06' },
-  'graficos-impresos': { desc: 'Flyers, carteles, etiquetas', num: '01' },
-  packaging:        { desc: 'Cajas, bolsas, etiquetas', num: '06' },
+// Las 6 técnicas que se muestran en el showcase (en orden)
+const SHOWCASE_SLUGS = [
+  'graficos-impresos',
+  'textiles',
+  'sublimados',
+  'corte-grabado',
+  'impresion-3d',
+  'papeleria',
+];
+
+const CATEGORY_META: Record<string, { desc: string }> = {
+  'graficos-impresos': { desc: 'Flyers, carteles, etiquetas' },
+  textiles:            { desc: 'Camisetas, sudaderas, totes' },
+  sublimados:          { desc: 'Tazas, cojines, fundas' },
+  'corte-grabado':     { desc: 'Madera, metacrilato, cuero' },
+  'impresion-3d':      { desc: 'Filamento, resina, figuras' },
+  papeleria:           { desc: 'Invitaciones, libretas, tarjetas' },
 };
 
-const MAIN_CATEGORIES: Category[] = navbarCategories.map(({ id, name, slug }) => ({
-  id,
-  name,
-  slug,
-}));
+const allCategoriesMap = new Map(
+  navbarCategories.map(({ id, name, slug }) => [slug, { id, name, slug }])
+);
+
+const MAIN_CATEGORIES: Category[] = SHOWCASE_SLUGS
+  .map((slug) => allCategoriesMap.get(slug))
+  .filter((c): c is Category => !!c);
+
 const MAIN_CATEGORY_SLUGS = new Set(MAIN_CATEGORIES.map((c) => c.slug));
 
 // Warm placeholder colors per category slot
@@ -41,10 +51,11 @@ export default function CategoriesShowcase() {
 
   const categories = useMemo(
     () =>
-      MAIN_CATEGORIES.slice(0, 6).map((category, idx) => ({
+      MAIN_CATEGORIES.map((category, idx) => ({
         ...category,
         image: categoryImages[category.slug],
-        meta: CATEGORY_META[category.slug] || { desc: '', num: String(idx + 1).padStart(2, '0') },
+        num: String(idx + 1).padStart(2, '0'),
+        desc: CATEGORY_META[category.slug]?.desc ?? '',
         placeholderColor: PLACEHOLDER_COLORS[idx % PLACEHOLDER_COLORS.length],
       })),
     [categoryImages]
@@ -201,7 +212,7 @@ export default function CategoriesShowcase() {
                     color: 'rgba(26,26,26,0.5)',
                     letterSpacing: '0.05em',
                   }}>
-                    {cat.meta.num} / 06
+                    {cat.num} / {String(categories.length).padStart(2, '0')}
                   </div>
                 </div>
 
@@ -224,7 +235,7 @@ export default function CategoriesShowcase() {
                     margin: 0,
                     letterSpacing: '0.01em',
                   }}>
-                    {cat.meta.desc}
+                    {cat.desc}
                   </p>
                 </div>
               </div>
