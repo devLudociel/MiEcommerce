@@ -1,45 +1,42 @@
 // src/components/sections/WhyChooseUs.tsx
+import { Zap, Sparkles, BadgeCheck, Palette, Tag, Trophy } from 'lucide-react';
+
 export default function WhyChooseUs() {
   const features = [
     {
-      icon: '⚡',
+      icon: <Zap size={28} />,
       title: 'Entrega Rápida',
-      description:
-        'Recibe tus productos personalizados en 3-5 días laborables. Envíos express disponibles.',
+      description: 'Recibe tus productos en 24–72h en La Palma. Envíos a toda Canarias.',
       color: 'from-yellow-400 to-orange-500',
     },
     {
-      icon: '✨',
+      icon: <Sparkles size={28} />,
       title: 'Calidad Premium',
       description: 'Utilizamos materiales de primera calidad y tecnología de última generación.',
       color: 'from-purple-400 to-pink-500',
     },
     {
-      icon: '💯',
-      title: 'Garantía 100%',
-      description:
-        '30 días de garantía en todos nuestros productos. Si no estás satisfecho, te devolvemos tu dinero.',
+      icon: <BadgeCheck size={28} />,
+      title: 'Satisfacción garantizada',
+      description: 'Si algo no te convence, lo repetimos. Trabajamos hasta que quede perfecto.',
       color: 'from-green-400 to-cyan-500',
     },
     {
-      icon: '🎨',
+      icon: <Palette size={28} />,
       title: 'Diseño Personalizado',
-      description:
-        'Crea diseños únicos con nuestro editor online o envíanos tu idea y la hacemos realidad.',
+      description: 'Crea diseños únicos con nuestro editor online o envíanos tu idea y la hacemos realidad.',
       color: 'from-blue-400 to-indigo-500',
     },
     {
-      icon: '💰',
-      title: 'Mejores Precios',
-      description:
-        'Precios competitivos sin comprometer la calidad. Descuentos en pedidos grandes.',
+      icon: <Tag size={28} />,
+      title: 'Precios justos',
+      description: 'Precios competitivos sin comprometer la calidad. Descuentos en pedidos grandes.',
       color: 'from-red-400 to-pink-500',
     },
     {
-      icon: '🏆',
-      title: 'Expertos en Canarias',
-      description:
-        'Más de 10 años de experiencia en personalización. Servicio local con alcance regional.',
+      icon: <Trophy size={28} />,
+      title: 'Taller local en La Palma',
+      description: 'Somos de aquí. Puedes venir a vernos, hablar con quien hace tu pedido.',
       color: 'from-cyan-400 to-blue-500',
     },
   ];
@@ -81,7 +78,7 @@ export default function WhyChooseUs() {
             >
               {/* Icon Container */}
               <div
-                className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br ${feature.color} rounded-2xl mb-6 text-3xl shadow-lg transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}
+                className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br ${feature.color} rounded-2xl mb-6 text-white shadow-lg transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}
               >
                 {feature.icon}
               </div>

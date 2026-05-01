@@ -7,6 +7,25 @@ import {
   getShortAddress,
   type ContactInfoInput,
 } from '../../lib/contactInfo';
+import { Phone, Mail, MapPin, ShieldCheck, Truck, Star, MessageCircle, CreditCard, Building2, Smartphone, ArrowUp } from 'lucide-react';
+import { FaInstagram, FaFacebook, FaWhatsapp, FaYoutube, FaPinterest, FaLinkedin, FaTwitter } from 'react-icons/fa';
+import { FaTiktok, FaXTwitter } from 'react-icons/fa6';
+
+// Icono de red social por nombre de plataforma
+function SocialIcon({ platform, size = 20 }: { platform: string; size?: number }) {
+  const p = platform.toLowerCase();
+  const props = { size, style: { display: 'block' } };
+  if (p === 'instagram') return <FaInstagram {...props} />;
+  if (p === 'facebook') return <FaFacebook {...props} />;
+  if (p === 'whatsapp') return <FaWhatsapp {...props} />;
+  if (p === 'youtube') return <FaYoutube {...props} />;
+  if (p === 'pinterest') return <FaPinterest {...props} />;
+  if (p === 'linkedin') return <FaLinkedin {...props} />;
+  if (p === 'tiktok') return <FaTiktok {...props} />;
+  if (p === 'twitter' || p === 'x') return <FaXTwitter {...props} />;
+  // fallback: inicial
+  return <span style={{ fontWeight: 800, fontSize: size * 0.7 }}>{platform[0]}</span>;
+}
 
 interface FooterLink {
   name: string;
@@ -240,17 +259,17 @@ const Footer: React.FC = () => {
 
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-sm text-gray-400">
-                  <span className="text-cyan-400">📞</span>
+                  <Phone size={15} className="text-cyan-400 shrink-0" />
                   <span>{contactInfo?.phoneDisplay || '645 341 452'}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-400">
-                  <span className="text-cyan-400">📧</span>
-                  <span>{contactInfo?.email || 'info@imprimarte.com'}</span>
+                  <Mail size={15} className="text-cyan-400 shrink-0" />
+                  <span>{contactInfo?.email || 'hola@imprimearte.es'}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-400">
-                  <span className="text-cyan-400">📍</span>
+                  <MapPin size={15} className="text-cyan-400 shrink-0" />
                   <span>
-                    {contactInfo ? getShortAddress(contactInfo) : 'Santa Cruz de Tenerife, España'}
+                    {contactInfo ? getShortAddress(contactInfo) : 'Los Llanos de Aridane, La Palma'}
                   </span>
                 </div>
               </div>
@@ -287,7 +306,7 @@ const Footer: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
               <div className="flex flex-col items-center">
                 <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mb-3">
-                  <span className="text-2xl">🔒</span>
+                  <ShieldCheck size={22} className="text-green-400" />
                 </div>
                 <h5 className="font-bold text-white text-sm mb-1">Pago Seguro</h5>
                 <p className="text-xs text-gray-400">Encriptación SSL</p>
@@ -295,26 +314,26 @@ const Footer: React.FC = () => {
 
               <div className="flex flex-col items-center">
                 <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mb-3">
-                  <span className="text-2xl">🚚</span>
+                  <Truck size={22} className="text-blue-400" />
                 </div>
                 <h5 className="font-bold text-white text-sm mb-1">Envío Rápido</h5>
-                <p className="text-xs text-gray-400">3-5 días hábiles</p>
+                <p className="text-xs text-gray-400">24–72h en La Palma</p>
               </div>
 
               <div className="flex flex-col items-center">
-                <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center mb-3">
-                  <span className="text-2xl">✨</span>
+                <div className="w-12 h-12 bg-yellow-500/10 rounded-xl flex items-center justify-center mb-3">
+                  <Star size={22} className="text-yellow-400" />
                 </div>
                 <h5 className="font-bold text-white text-sm mb-1">Calidad Premium</h5>
-                <p className="text-xs text-gray-400">Materiales certificados</p>
+                <p className="text-xs text-gray-400">4,9 ★ en Google</p>
               </div>
 
               <div className="flex flex-col items-center">
-                <div className="w-12 h-12 bg-orange-500/10 rounded-xl flex items-center justify-center mb-3">
-                  <span className="text-2xl">💬</span>
+                <div className="w-12 h-12 bg-pink-500/10 rounded-xl flex items-center justify-center mb-3">
+                  <MessageCircle size={22} className="text-pink-400" />
                 </div>
-                <h5 className="font-bold text-white text-sm mb-1">Soporte 24/7</h5>
-                <p className="text-xs text-gray-400">Siempre disponibles</p>
+                <h5 className="font-bold text-white text-sm mb-1">WhatsApp directo</h5>
+                <p className="text-xs text-gray-400">Respuesta en &lt;1h</p>
               </div>
             </div>
           </div>
@@ -338,8 +357,8 @@ const Footer: React.FC = () => {
                     className="group relative"
                     aria-label={social.platform}
                   >
-                    <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1 group-hover:bg-white/10">
-                      {social.icon}
+                    <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1 group-hover:bg-white/10">
+                      <SocialIcon platform={social.platform} size={20} />
                     </div>
                     <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                       {social.platform}
@@ -395,13 +414,18 @@ const Footer: React.FC = () => {
             <div className="flex items-center gap-3">
               <span className="text-sm text-gray-400">Pagos:</span>
               <div className="flex gap-2">
-                {['💳', '🏦', '📱', '💰'].map((icon, i) => (
+                {[
+                  { icon: <CreditCard size={14} />, label: 'Tarjeta' },
+                  { icon: <Building2 size={14} />, label: 'Transferencia' },
+                  { icon: <Smartphone size={14} />, label: 'Bizum' },
+                  { icon: <FaWhatsapp size={14} />, label: 'Pago contra pedido' },
+                ].map((item, i) => (
                   <div
                     key={i}
-                    className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:bg-white/10 transition-colors"
-                    title={['Tarjeta', 'Transferencia', 'PayPal', 'Contra reembolso'][i]}
+                    className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 hover:bg-white/10 transition-colors text-gray-300"
+                    title={item.label}
                   >
-                    {icon}
+                    {item.icon}
                   </div>
                 ))}
               </div>
@@ -413,17 +437,10 @@ const Footer: React.FC = () => {
       {/* Back to Top Button */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-rainbow rounded-xl text-white shadow-lg hover:shadow-2xl transform hover:scale-110 transition-all duration-300 z-40"
+        className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-rainbow rounded-xl text-white shadow-lg hover:shadow-2xl transform hover:scale-110 transition-all duration-300 z-40 flex items-center justify-center"
         aria-label="Volver arriba"
       >
-        <svg className="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M5 10l7-7m0 0l7 7m-7-7v18"
-          />
-        </svg>
+        <ArrowUp size={22} />
       </button>
     </footer>
   );
