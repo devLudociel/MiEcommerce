@@ -81,6 +81,14 @@ function redirectRelative(pathname: string, search = ''): Response {
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname, search } = context.url;
+
+  // Redirect www → no-www before any CSP header is generated
+  const host = context.request.headers.get('host') || context.request.headers.get('x-forwarded-host') || '';
+  if (host.startsWith('www.')) {
+    const destination = `https://${host.replace(/^www\./, '')}${pathname}${search}`;
+    return new Response(null, { status: 301, headers: { Location: destination } });
+  }
+
   const nonce = randomBytes(16).toString('base64');
   context.locals.cspNonce = nonce;
   const securityHeaders = getSecurityHeaders(nonce);

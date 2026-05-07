@@ -15,7 +15,7 @@ const title = 'ImprimeArte - Estampado, Bordado e Impresión 3D Personalizada';
 const description = 'Servicios profesionales de personalización en Los Llanos de Aridane: estampado textil, bordado, impresión 3D en resina y filamento, corte láser, sublimación. Calidad premium, precios desde €2. ¡Envío a toda Canarias!';
 const ogImage = '/og-home.jpg';
 
-const schemaJson = JSON.stringify({
+const schema = {
   "@context": "https://schema.org",
   "@graph": [
     {
@@ -85,11 +85,10 @@ const schemaJson = JSON.stringify({
       }
     }
   ]
-});
+};
 ---
 
-<BaseLayout title={title} description={description} ogImage={ogImage}>
-  <script type="application/ld+json" slot="head" set:html={schemaJson}></script>
+<BaseLayout title={title} description={description} ogImage={ogImage} schema={schema}>
   <!-- 1. Hero: split layout editorial con tarjetas producto -->
   <HeroCarousel client:load />
 

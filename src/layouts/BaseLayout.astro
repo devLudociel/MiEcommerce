@@ -17,6 +17,7 @@ interface Props {
   ogImage?: string;
   ogType?: string;
   canonical?: string;
+  schema?: Record<string, unknown>;
 }
 
 const {
@@ -25,10 +26,12 @@ const {
   ogImage = '/logoFac.png',
   ogType = 'website',
   canonical,
+  schema,
 } = Astro.props;
 const nonce = Astro.locals?.cspNonce;
 const pathname = Astro.url.pathname;
 const canonicalURL = canonical ?? `https://imprimearte.es${pathname === '/' ? '' : pathname}`;
+const schemaJson = schema ? JSON.stringify(schema) : null;
 const showChatWidget =
   !pathname.startsWith('/admin') &&
   !pathname.startsWith('/account') &&
@@ -74,8 +77,8 @@ const showChatWidget =
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
     <title>{title}</title>
+    {schemaJson && <script nonce={nonce} type="application/ld+json" set:html={schemaJson}></script>}
     <slot name="head" />
-    <slot name="schema" />
     <script is:inline nonce={nonce}>
       (() => {
         let initialized = false;
