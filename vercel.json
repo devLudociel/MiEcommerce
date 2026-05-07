@@ -1,9 +1,15 @@
 {
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/",
       "has": [{ "type": "host", "value": "www.imprimearte.es" }],
-      "destination": "https://imprimearte.es/:path*",
+      "destination": "https://imprimearte.es/",
+      "permanent": true
+    },
+    {
+      "source": "/:path+",
+      "has": [{ "type": "host", "value": "www.imprimearte.es" }],
+      "destination": "https://imprimearte.es/:path+",
       "permanent": true
     }
   ]
