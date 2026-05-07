@@ -22,12 +22,13 @@ interface Props {
 const {
   title,
   description = 'Especialistas en personalización: estampado, bordado, impresión 3D, corte láser y mucho más.',
-  ogImage = '/og-image.jpg',
+  ogImage = '/logoFac.png',
   ogType = 'website',
   canonical,
 } = Astro.props;
 const nonce = Astro.locals?.cspNonce;
 const pathname = Astro.url.pathname;
+const canonicalURL = canonical ?? `https://imprimearte.es${pathname === '/' ? '' : pathname}`;
 const showChatWidget =
   !pathname.startsWith('/admin') &&
   !pathname.startsWith('/account') &&
@@ -45,7 +46,7 @@ const showChatWidget =
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
 
-    {canonical && <link rel="canonical" href={canonical} />}
+    <link rel="canonical" href={canonicalURL} />
     <meta property="og:type" content={ogType} />
     <meta property="og:url" content={Astro.url} />
     <meta property="og:title" content={title} />
@@ -74,6 +75,7 @@ const showChatWidget =
 
     <title>{title}</title>
     <slot name="head" />
+    <slot name="schema" />
     <script is:inline nonce={nonce}>
       (() => {
         let initialized = false;

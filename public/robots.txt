@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /account/
+Disallow: /cuenta/
+Disallow: /checkout
+Disallow: /confirmacion
+Disallow: /login
+Disallow: /api/
+
+Sitemap: https://imprimearte.es/sitemap.xml

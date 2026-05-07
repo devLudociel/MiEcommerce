@@ -1,35 +1,29 @@
 import type { APIRoute } from 'astro';
 
-const staticRoutes = [
-  '/',
-  '/productos',
-  '/productos/ofertas',
-  '/productos/digitales',
-  '/ofertas',
-  '/listos-para-comprar',
-  '/como-funciona',
-  '/guia-materiales',
-  '/galeria',
-  '/faq',
-  '/contacto',
-  '/sobre-nosotros',
-  '/devoluciones',
-  '/terminos-condiciones',
-  '/politica-privacidad',
-  '/politica-cookies',
-  '/blog',
+const SITE = 'https://imprimearte.es';
+
+const staticRoutes: { url: string; priority: string; changefreq: string }[] = [
+  { url: '/', priority: '1.0', changefreq: 'weekly' },
+  { url: '/productos', priority: '0.9', changefreq: 'daily' },
+  { url: '/productos/ofertas', priority: '0.8', changefreq: 'daily' },
+  { url: '/sobre-nosotros', priority: '0.7', changefreq: 'monthly' },
+  { url: '/como-funciona', priority: '0.7', changefreq: 'monthly' },
+  { url: '/contacto', priority: '0.7', changefreq: 'monthly' },
+  { url: '/faq', priority: '0.6', changefreq: 'monthly' },
+  { url: '/guia-materiales', priority: '0.6', changefreq: 'monthly' },
+  { url: '/devoluciones', priority: '0.5', changefreq: 'yearly' },
+  { url: '/politica-privacidad', priority: '0.3', changefreq: 'yearly' },
+  { url: '/terminos-condiciones', priority: '0.3', changefreq: 'yearly' },
 ];
 
 export const GET: APIRoute = () => {
-  const site =
-    (import.meta.env.PUBLIC_SITE_URL || 'https://example.com').replace(/\/$/, '');
-  const lastmod = new Date().toISOString();
+  const today = new Date().toISOString().split('T')[0];
 
   const urls = staticRoutes
-    .map((path) => {
-      const loc = `${site}${path}`;
-      return `<url><loc>${loc}</loc><lastmod>${lastmod}</lastmod></url>`;
-    })
+    .map(
+      ({ url, priority, changefreq }) =>
+        `<url><loc>${SITE}${url}</loc><lastmod>${today}</lastmod><changefreq>${changefreq}</changefreq><priority>${priority}</priority></url>`
+    )
     .join('');
 
   const body =
@@ -37,6 +31,9 @@ export const GET: APIRoute = () => {
     `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`;
 
   return new Response(body, {
-    headers: { 'Content-Type': 'application/xml; charset=utf-8' },
+    headers: {
+      'Content-Type': 'application/xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=86400',
+    },
   });
 };

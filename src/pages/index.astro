@@ -17,6 +17,77 @@ const ogImage = '/og-home.jpg';
 ---
 
 <BaseLayout title={title} description={description} ogImage={ogImage}>
+  <script is:inline slot="schema" type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "LocalBusiness",
+        "@id": "https://imprimearte.es/#business",
+        "name": "ImprimeArte",
+        "description": "Especialistas en personalización textil, bordado, impresión 3D, corte láser y sublimación en Los Llanos de Aridane, La Palma.",
+        "url": "https://imprimearte.es",
+        "telephone": "+34 643 037 152",
+        "email": "info@imprimearte.es",
+        "image": "https://imprimearte.es/logoFac.png",
+        "logo": "https://imprimearte.es/logoFac.png",
+        "priceRange": "€€",
+        "currenciesAccepted": "EUR",
+        "paymentAccepted": "Cash, Credit Card, Transfer",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Los Llanos de Aridane",
+          "addressLocality": "Los Llanos de Aridane",
+          "addressRegion": "La Palma",
+          "postalCode": "38760",
+          "addressCountry": "ES"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 28.658,
+          "longitude": -17.917
+        },
+        "areaServed": [
+          { "@type": "Place", "name": "La Palma" },
+          { "@type": "Place", "name": "Canarias" },
+          { "@type": "Place", "name": "España" }
+        ],
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Servicios de personalización",
+          "itemListElement": [
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Estampado textil DTF" } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Bordado personalizado" } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Impresión 3D en resina y filamento" } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Corte láser" } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Sublimación" } }
+          ]
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.9",
+          "bestRating": "5",
+          "worstRating": "1",
+          "ratingCount": "16"
+        },
+        "sameAs": [
+          "https://www.instagram.com/imprimearte.es"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://imprimearte.es/#website",
+        "url": "https://imprimearte.es",
+        "name": "ImprimeArte",
+        "description": "Servicios profesionales de personalización en La Palma, Canarias",
+        "inLanguage": "es-ES",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://imprimearte.es/productos?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  })} />
   <!-- 1. Hero: split layout editorial con tarjetas producto -->
   <HeroCarousel client:load />
 
