@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '../../lib/firebase';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import type { ProductTag } from '../../types/firebase';
 
 // ============================================================================
@@ -33,33 +33,37 @@ let tagsCache: TagsCache = {};
 let cacheInitialized = false;
 let subscribers: ((cache: TagsCache) => void)[] = [];
 
-// Initialize cache with Firestore listener
+// Single fetch on idle — tags rarely change, no live listener needed.
 function initTagsCache() {
   if (cacheInitialized) return;
   cacheInitialized = true;
 
   if (typeof window === 'undefined') return;
 
-  onSnapshot(
-    collection(db, 'productTags'),
-    (snapshot) => {
-      const newCache: TagsCache = {};
-      snapshot.docs.forEach((doc) => {
-        const data = doc.data() as ProductTag;
-        if (data.active) {
-          newCache[data.slug] = { ...data, id: doc.id };
-          // Also index by name for backwards compatibility
-          newCache[data.name.toLowerCase()] = { ...data, id: doc.id };
-        }
+  const load = () => {
+    getDocs(collection(db, 'productTags'))
+      .then((snapshot) => {
+        const newCache: TagsCache = {};
+        snapshot.docs.forEach((doc) => {
+          const data = doc.data() as ProductTag;
+          if (data.active) {
+            newCache[data.slug] = { ...data, id: doc.id };
+            newCache[data.name.toLowerCase()] = { ...data, id: doc.id };
+          }
+        });
+        tagsCache = newCache;
+        subscribers.forEach((cb) => cb(newCache));
+      })
+      .catch((error: { code?: string }) => {
+        console.debug('[ProductTagBadge] Could not load custom tags:', error?.code);
       });
-      tagsCache = newCache;
-      subscribers.forEach((cb) => cb(newCache));
-    },
-    (error) => {
-      // Silently handle permission errors - tags will use fallback colors
-      console.debug('[ProductTagBadge] Could not load custom tags:', error.code);
-    }
-  );
+  };
+
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(load, { timeout: 3000 });
+  } else {
+    setTimeout(load, 1500);
+  }
 }
 
 function useTagsCache(): TagsCache {
