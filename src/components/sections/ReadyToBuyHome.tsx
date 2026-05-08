@@ -114,6 +114,8 @@ export default function ReadyToBuyHome({ maxItems = 6 }: ReadyToBuyHomeProps) {
                   <img
                     src={product.image}
                     alt={product.name}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute top-4 left-4">

@@ -3,6 +3,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import DigitalProductsGrid from '../../components/products/DigitalProductsGrid';
 import FooterComponent from '../../components/sections/Footer.tsx';
 
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=300, stale-while-revalidate=86400'
+);
+
 const title = 'Productos Digitales - Descargas Instantáneas | ImprimeArte';
 const description = 'Descarga packs de imágenes, cliparts, plantillas y recursos digitales al instante. Calidad profesional para tus proyectos creativos.';
 ---

@@ -211,6 +211,8 @@ export default function ProductsSection() {
                   <img
                     src={safeImageSrc(product.images?.[0])}
                     alt={product.name || 'Producto'}
+                    loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       const img = e.currentTarget as HTMLImageElement;
                       // Evita bucles: elimina el onerror y fija un placeholder confiable

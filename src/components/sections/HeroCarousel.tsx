@@ -319,6 +319,9 @@ const HeroCarousel = memo(() => {
                 <img
                   src={slide.backgroundImage}
                   alt={slide.title}
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                   style={{
                     width: '100%',
                     height: '100%',

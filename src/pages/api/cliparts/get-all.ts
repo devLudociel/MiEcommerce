@@ -57,7 +57,13 @@ export const GET: APIRoute = async ({ url }) => {
         page,
         limit,
       }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      }
     );
   } catch (error) {
     logger.error('[cliparts/get-all] Error:', error);

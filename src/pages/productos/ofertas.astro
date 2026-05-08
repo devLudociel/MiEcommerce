@@ -1,6 +1,11 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProductGridOfertasWithProvider from '../../components/sections/ProductGridOfertasWithProvider.tsx';
+
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=300, stale-while-revalidate=86400'
+);
 ---
 
 <BaseLayout title="Productos en Oferta - ImprimeArte">

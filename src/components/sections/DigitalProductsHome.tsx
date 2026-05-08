@@ -150,6 +150,8 @@ const DigitalProductsHome: React.FC<DigitalProductsHomeProps> = ({ maxItems = 4 
                   <img
                     src={product.image}
                     alt={product.name}
+                    loading="lazy"
+                    decoding="async"
                     className={`
                       w-full h-full object-cover transition-all duration-700
                       ${hoveredProduct === product.id ? 'scale-110 rotate-2' : 'scale-100'}

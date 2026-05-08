@@ -4,6 +4,11 @@ import CategoryPageOptimized from '../../components/pages/CategoryPageOptimized'
 
 export const prerender = false; // Habilita SSR para esta página
 
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=300, stale-while-revalidate=86400'
+);
+
 const { slug } = Astro.params;
 const slugArray = slug ? slug.split('/') : [];
 const categorySlug = slugArray[0];

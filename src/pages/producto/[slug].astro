@@ -1,16 +1,134 @@
 ---
 import Layout from '../../layouts/BaseLayout.astro';
 import ProductDetailWithProvider from '../../components/sections/ProductDetailWithProvider';
+import { getAdminDb } from '../../lib/firebase-admin';
 
 export const prerender = false;
+
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=600, stale-while-revalidate=86400'
+);
 
 const { slug } = Astro.params;
 
 if (!slug) {
   return Astro.redirect('/404');
 }
+
+interface ProductDoc {
+  id: string;
+  name?: string;
+  description?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  images?: string[];
+  basePrice?: number;
+  salePrice?: number;
+  onSale?: boolean;
+  active?: boolean;
+  stock?: number;
+  trackInventory?: boolean;
+  allowBackorder?: boolean;
+  variants?: { price?: number }[];
+  slug?: string;
+  brand?: string;
+  category?: string;
+  averageRating?: number;
+  totalReviews?: number;
+}
+
+let product: ProductDoc | null = null;
+try {
+  const db = getAdminDb();
+  const snap = await db.collection('products').where('slug', '==', slug).limit(1).get();
+  if (!snap.empty) {
+    const doc = snap.docs[0];
+    product = { id: doc.id, ...(doc.data() as Record<string, unknown>) } as ProductDoc;
+  }
+} catch {
+  product = null;
+}
+
+const productName = product?.name ?? 'Producto';
+const title = product?.metaTitle?.trim()
+  ? product.metaTitle
+  : `${productName} | ImprimeArte`;
+const description = product?.metaDescription?.trim()
+  ? product.metaDescription
+  : product?.description?.slice(0, 160) ??
+    'Producto personalizable en ImprimeArte. Estampado, bordado, impresión 3D y más en La Palma.';
+const ogImage = product?.images?.[0] ?? '/logoFac.png';
+
+const variantPrices = Array.isArray(product?.variants)
+  ? product!.variants
+      .map((v) => Number(v?.price))
+      .filter((n): n is number => Number.isFinite(n) && n > 0)
+  : [];
+const basePrice = Number(product?.basePrice) || 0;
+const minPrice = variantPrices.length ? Math.min(...variantPrices) : basePrice;
+const finalPrice =
+  product?.onSale && product?.salePrice && product.salePrice > 0
+    ? Number(product.salePrice)
+    : minPrice;
+
+const inStock =
+  product?.active !== false &&
+  (product?.allowBackorder === true ||
+    !product?.trackInventory ||
+    (typeof product?.stock === 'number' && product.stock > 0));
+
+const productUrl = `https://imprimearte.es/producto/${product?.slug ?? slug}`;
+const productImages = Array.isArray(product?.images) && product!.images!.length
+  ? product!.images!.filter((img): img is string => typeof img === 'string' && img.length > 0)
+  : ['https://imprimearte.es/logoFac.png'];
+
+const schema = product
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      '@id': `${productUrl}#product`,
+      name: productName,
+      description: product.description ?? description,
+      image: productImages,
+      sku: product.slug ?? product.id,
+      mpn: product.id,
+      brand: {
+        '@type': 'Brand',
+        name: product.brand ?? 'ImprimeArte',
+      },
+      ...(product.category && { category: product.category }),
+      offers: {
+        '@type': 'Offer',
+        url: productUrl,
+        priceCurrency: 'EUR',
+        price: finalPrice.toFixed(2),
+        availability: inStock
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/OutOfStock',
+        itemCondition: 'https://schema.org/NewCondition',
+        seller: {
+          '@type': 'Organization',
+          name: 'ImprimeArte',
+        },
+      },
+      ...(typeof product.averageRating === 'number' &&
+      typeof product.totalReviews === 'number' &&
+      product.totalReviews > 0
+        ? {
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: product.averageRating,
+              reviewCount: product.totalReviews,
+              bestRating: 5,
+              worstRating: 1,
+            },
+          }
+        : {}),
+    }
+  : undefined;
 ---
 
-<Layout title="Producto">
+<Layout title={title} description={description} ogImage={ogImage} ogType="product" schema={schema}>
   <ProductDetailWithProvider slug={slug} client:load />
 </Layout>

@@ -67,6 +67,8 @@ function Avatar({ name, photo, index }: { name: string; photo?: string | null; i
       <img
         src={photo}
         alt={name}
+        loading="lazy"
+        decoding="async"
         style={{
           width: 44,
           height: 44,

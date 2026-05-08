@@ -67,7 +67,10 @@ export const GET: APIRoute = async ({ request, url }) => {
 
     return new Response(JSON.stringify({ templates }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+      },
     });
   } catch (error) {
     logger.error('[get-by-category] Error:', error);
