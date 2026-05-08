@@ -31,6 +31,8 @@ const {
 const nonce = Astro.locals?.cspNonce;
 const pathname = Astro.url.pathname;
 const canonicalURL = canonical ?? `https://imprimearte.es${pathname === '/' ? '' : pathname}`;
+const ogImageAbsolute = /^https?:\/\//.test(ogImage) ? ogImage : `https://imprimearte.es${ogImage.startsWith('/') ? '' : '/'}${ogImage}`;
+const ogUrlAbsolute = `https://imprimearte.es${pathname}`;
 const schemaJson = schema ? JSON.stringify(schema) : null;
 const showChatWidget =
   !pathname.startsWith('/admin') &&
@@ -51,16 +53,16 @@ const showChatWidget =
 
     <link rel="canonical" href={canonicalURL} />
     <meta property="og:type" content={ogType} />
-    <meta property="og:url" content={Astro.url} />
+    <meta property="og:url" content={ogUrlAbsolute} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={new URL(ogImage, Astro.url)} />
+    <meta property="og:image" content={ogImageAbsolute} />
 
     <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content={Astro.url} />
+    <meta property="twitter:url" content={ogUrlAbsolute} />
     <meta property="twitter:title" content={title} />
     <meta property="twitter:description" content={description} />
-    <meta property="twitter:image" content={new URL(ogImage, Astro.url)} />
+    <meta property="twitter:image" content={ogImageAbsolute} />
 
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" href="/logoFac.png" />

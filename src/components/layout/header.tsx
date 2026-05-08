@@ -300,9 +300,9 @@ const Header: React.FC<HeaderProps> = () => {
                 <span className="text-sm font-semibold text-gray-800 leading-none">Inicio</span>
               </div>
               <div className="hidden md:block">
-                <h1 className="text-lg md:text-xl font-bold text-gray-800 leading-tight">
+                <span className="block text-lg md:text-xl font-bold text-gray-800 leading-tight">
                   ImprimeArte
-                </h1>
+                </span>
                 <p className="text-xs text-gray-600">Impresión y personalización</p>
               </div>
             </a>
