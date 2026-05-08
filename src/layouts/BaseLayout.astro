@@ -201,17 +201,33 @@ const showChatWidget =
           s.src = 'https://static.klaviyo.com/onsite/js/RW52DT/klaviyo.js?company_id=RW52DT';
           document.head.appendChild(s);
         };
-        const trigger = () => {
+        let triggered = false;
+        const fire = () => {
+          if (triggered) return;
+          triggered = true;
+          loadKlaviyo();
+        };
+        // Load on first user interaction (scroll/touch/click) OR after 8s
+        // whichever comes first — saves ~600ms TBT on initial load.
+        const events = ['scroll', 'touchstart', 'mousemove', 'keydown', 'click'];
+        const onInteraction = () => {
+          events.forEach((e) => window.removeEventListener(e, onInteraction));
+          fire();
+        };
+        events.forEach((e) =>
+          window.addEventListener(e, onInteraction, { once: true, passive: true })
+        );
+        const fallback = () => {
           if (typeof window.requestIdleCallback === 'function') {
-            window.requestIdleCallback(loadKlaviyo, { timeout: 5000 });
+            window.requestIdleCallback(fire, { timeout: 12000 });
           } else {
-            setTimeout(loadKlaviyo, 3000);
+            setTimeout(fire, 8000);
           }
         };
         if (document.readyState === 'complete') {
-          trigger();
+          fallback();
         } else {
-          window.addEventListener('load', trigger, { once: true });
+          window.addEventListener('load', fallback, { once: true });
         }
       })();
     </script>
