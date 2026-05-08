@@ -1,11 +1,6 @@
 // hooks/useAuth.ts
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
 import type { User } from 'firebase/auth';
-import { auth } from '../../lib/firebase';
-import { resolveAdminAccess } from '../../lib/auth/adminAccessClient';
-import { syncCartWithUser } from '../../store/cartStore';
-import { syncWishlistWithUser } from '../../store/wishlistStore';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -27,8 +22,25 @@ export function useAuth() {
     let unsubscribe: (() => void) | null = null;
     let cancelled = false;
 
-    const subscribe = () => {
+    const subscribe = async () => {
       if (cancelled) return;
+
+      // Dynamic imports — defer Firebase Auth bundle (~90KB iframe) until
+      // browser is idle. Keeps it out of the LCP critical path.
+      const [{ onAuthStateChanged }, { auth }, { resolveAdminAccess }, cartStore, wishlistStore] =
+        await Promise.all([
+          import('firebase/auth'),
+          import('../../lib/firebase'),
+          import('../../lib/auth/adminAccessClient'),
+          import('../../store/cartStore'),
+          import('../../store/wishlistStore'),
+        ]);
+
+      if (cancelled) return;
+
+      const { syncCartWithUser } = cartStore;
+      const { syncWishlistWithUser } = wishlistStore;
+
       unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
         setLoading(true);
         setUser(currentUser);
@@ -65,13 +77,12 @@ export function useAuth() {
       });
     };
 
-    // Defer auth subscription past LCP — avoids Firebase Auth iframe blocking the critical path.
     let idleHandle: number | null = null;
     let timerHandle: number | null = null;
     if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
-      idleHandle = window.requestIdleCallback(subscribe, { timeout: 2500 });
+      idleHandle = window.requestIdleCallback(() => void subscribe(), { timeout: 2500 });
     } else {
-      timerHandle = window.setTimeout(subscribe, 1200);
+      timerHandle = window.setTimeout(() => void subscribe(), 1200);
     }
 
     return () => {
@@ -88,6 +99,10 @@ export function useAuth() {
 
   const logout = async () => {
     try {
+      const [{ signOut }, { auth }] = await Promise.all([
+        import('firebase/auth'),
+        import('../../lib/firebase'),
+      ]);
       await signOut(auth);
       await syncSessionCookie(null);
       window.location.href = '/';

@@ -1,6 +1,6 @@
 import { useState, useEffect, memo, useCallback } from 'react';
 import { heroSlides, type HeroSlide } from '../../data/heroSlides';
-import { getActiveBanners, type HeroBanner } from '../../lib/heroBanners';
+import type { HeroBanner } from '../../lib/heroBanners';
 
 interface SlideData {
   id: string | number;
@@ -59,8 +59,10 @@ const HeroCarousel = memo(() => {
 
   useEffect(() => {
     let mounted = true;
-    async function loadBanners() {
+    const loadBanners = async () => {
       try {
+        // Dynamic import — keeps Firebase out of the LCP critical bundle.
+        const { getActiveBanners } = await import('../../lib/heroBanners');
         const banners = await getActiveBanners();
         if (mounted && banners.length > 0) {
           setSlides(banners.map(bannerToSlide));
@@ -68,9 +70,20 @@ const HeroCarousel = memo(() => {
       } catch {
         // keep static slides
       }
+    };
+    const trigger = () => void loadBanners();
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      const handle = window.requestIdleCallback(trigger, { timeout: 3000 });
+      return () => {
+        mounted = false;
+        window.cancelIdleCallback?.(handle);
+      };
     }
-    loadBanners();
-    return () => { mounted = false; };
+    const timer = setTimeout(trigger, 1500);
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
   }, []);
 
   // Ciclo automático de texto cada 6s

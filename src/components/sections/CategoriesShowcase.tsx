@@ -1,7 +1,5 @@
 // src/components/sections/CategoriesShowcase.tsx
 import { useState, useEffect, useMemo } from 'react';
-import { db } from '../../lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
 import { categories as navbarCategories } from '../../data/categories';
 
 interface Category {
@@ -63,31 +61,36 @@ export default function CategoriesShowcase() {
 
   useEffect(() => {
     let cancelled = false;
-    const load = () => {
-      getDocs(collection(db, 'categories'))
-        .then((snapshot) => {
-          if (cancelled) return;
-          const imagesBySlug = snapshot.docs.reduce<Record<string, string>>((acc, doc) => {
-            const data = doc.data() as Category;
-            if (MAIN_CATEGORY_SLUGS.has(data.slug) && data.image) {
-              acc[data.slug] = data.image;
-            }
-            return acc;
-          }, {});
-          setCategoryImages(imagesBySlug);
-        })
-        .catch(() => {
-          // Keep static fallback images
-        });
+    const load = async () => {
+      try {
+        // Dynamic Firebase import keeps it out of the LCP critical bundle.
+        const [{ db }, { collection, getDocs }] = await Promise.all([
+          import('../../lib/firebase'),
+          import('firebase/firestore'),
+        ]);
+        if (cancelled) return;
+        const snapshot = await getDocs(collection(db, 'categories'));
+        if (cancelled) return;
+        const imagesBySlug = snapshot.docs.reduce<Record<string, string>>((acc, doc) => {
+          const data = doc.data() as Category;
+          if (MAIN_CATEGORY_SLUGS.has(data.slug) && data.image) {
+            acc[data.slug] = data.image;
+          }
+          return acc;
+        }, {});
+        setCategoryImages(imagesBySlug);
+      } catch {
+        // Keep static fallback images
+      }
     };
     if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
-      const handle = window.requestIdleCallback(load, { timeout: 3000 });
+      const handle = window.requestIdleCallback(() => void load(), { timeout: 3000 });
       return () => {
         cancelled = true;
         window.cancelIdleCallback?.(handle);
       };
     }
-    const timer = setTimeout(load, 1000);
+    const timer = setTimeout(() => void load(), 1500);
     return () => {
       cancelled = true;
       clearTimeout(timer);

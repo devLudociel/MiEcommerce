@@ -2,8 +2,6 @@
 // Reusable component for displaying product tags with custom colors
 
 import { useEffect, useState } from 'react';
-import { db } from '../../lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
 import type { ProductTag } from '../../types/firebase';
 
 // ============================================================================
@@ -40,29 +38,34 @@ function initTagsCache() {
 
   if (typeof window === 'undefined') return;
 
-  const load = () => {
-    getDocs(collection(db, 'productTags'))
-      .then((snapshot) => {
-        const newCache: TagsCache = {};
-        snapshot.docs.forEach((doc) => {
-          const data = doc.data() as ProductTag;
-          if (data.active) {
-            newCache[data.slug] = { ...data, id: doc.id };
-            newCache[data.name.toLowerCase()] = { ...data, id: doc.id };
-          }
-        });
-        tagsCache = newCache;
-        subscribers.forEach((cb) => cb(newCache));
-      })
-      .catch((error: { code?: string }) => {
-        console.debug('[ProductTagBadge] Could not load custom tags:', error?.code);
+  const load = async () => {
+    try {
+      // Dynamic Firebase import — never bundled into the LCP critical chunk.
+      const [{ db }, { collection, getDocs }] = await Promise.all([
+        import('../../lib/firebase'),
+        import('firebase/firestore'),
+      ]);
+      const snapshot = await getDocs(collection(db, 'productTags'));
+      const newCache: TagsCache = {};
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data() as ProductTag;
+        if (data.active) {
+          newCache[data.slug] = { ...data, id: doc.id };
+          newCache[data.name.toLowerCase()] = { ...data, id: doc.id };
+        }
       });
+      tagsCache = newCache;
+      subscribers.forEach((cb) => cb(newCache));
+    } catch (error) {
+      const err = error as { code?: string };
+      console.debug('[ProductTagBadge] Could not load custom tags:', err?.code);
+    }
   };
 
   if (typeof window.requestIdleCallback === 'function') {
-    window.requestIdleCallback(load, { timeout: 3000 });
+    window.requestIdleCallback(() => void load(), { timeout: 3000 });
   } else {
-    setTimeout(load, 1500);
+    setTimeout(() => void load(), 1500);
   }
 }
 
