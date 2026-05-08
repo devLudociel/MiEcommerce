@@ -15,7 +15,26 @@ export default function LeadSignupPopup() {
     const path = window.location.pathname || '/';
     if (path !== HOME_PATH) return;
 
-    setIsOpen(true);
+    // Defer popup to avoid hijacking LCP / blocking initial paint.
+    // Opens on first user interaction (scroll/touch/click) or 10s fallback.
+    let cancelled = false;
+    let timer: number | null = null;
+    const open = () => {
+      if (cancelled) return;
+      cancelled = true;
+      events.forEach((e) => window.removeEventListener(e, open));
+      if (timer !== null) clearTimeout(timer);
+      setIsOpen(true);
+    };
+    const events = ['scroll', 'touchstart', 'click', 'keydown'] as const;
+    events.forEach((e) => window.addEventListener(e, open, { once: true, passive: true }));
+    timer = window.setTimeout(open, 10000);
+
+    return () => {
+      cancelled = true;
+      events.forEach((e) => window.removeEventListener(e, open));
+      if (timer !== null) clearTimeout(timer);
+    };
   }, [loading, user]);
 
   const handleClose = () => setIsOpen(false);
