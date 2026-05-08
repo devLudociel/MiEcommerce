@@ -32,8 +32,6 @@ import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'fire
 import type { FirebaseStorage, StorageReference, UploadResult } from 'firebase/storage';
 import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import type { Auth } from 'firebase/auth';
-import { getAnalytics } from 'firebase/analytics';
-import type { Analytics } from 'firebase/analytics';
 
 // Firebase configuration using environment variables
 const firebaseConfig = {
@@ -103,9 +101,6 @@ try {
   // Non-critical: emails will be in default language
   console.warn('[Firebase] Could not set language code:', e);
 }
-
-// Initialize Analytics (only in browser)
-export const analytics: Analytics | null = typeof window !== 'undefined' ? getAnalytics(app) : null;
 
 // Reduce Firestore console noise
 try {
