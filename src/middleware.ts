@@ -151,6 +151,7 @@ function getContentSecurityPolicy(nonce: string): string {
     'https://*.googleapis.com',
     'https://www.googletagmanager.com',
     'https://connect.facebook.net',
+    'https://www.facebook.com',
     'https://js.stripe.com',
     'https://static.klaviyo.com',
     'https://static-tracking.klaviyo.com',
