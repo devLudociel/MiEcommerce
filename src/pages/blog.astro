@@ -1,13 +1,14 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getBlogPosts } from '../lib/pages';
+import type { BlogPost } from '../lib/pages';
 
 Astro.response.headers.set(
   'Cache-Control',
   'public, max-age=0, s-maxage=600, stale-while-revalidate=86400'
 );
 
-let posts = [];
+let posts: BlogPost[] = [];
 try {
   posts = await getBlogPosts();
 } catch (error) {
@@ -41,7 +42,7 @@ try {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {posts.map((post) => (
               <a
-                href={`/${post.slug}`}
+                href={`/blog/${post.slug}`}
                 class="group bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
               >
                 {post.featuredImage && (

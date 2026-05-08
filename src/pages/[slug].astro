@@ -29,6 +29,11 @@ if (!page) {
   return Astro.redirect('/404');
 }
 
+// 301 redirect blog posts to canonical /blog/[slug] URL.
+if (page.type === 'blog') {
+  return Astro.redirect(`/blog/${page.slug}`, 301);
+}
+
 const title = page.title;
 const description = page.metaDescription || page.title;
 const isBlog = page.type === 'blog';

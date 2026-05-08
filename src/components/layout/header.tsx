@@ -959,6 +959,12 @@ const Header: React.FC<HeaderProps> = () => {
                 >
                   Ofertas
                 </a>
+                <a
+                  href="/blog"
+                  className="px-1.5 xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-medium text-gray-700 hover:text-cyan-600 hover:bg-gray-50 rounded-lg transition-all whitespace-nowrap"
+                >
+                  Blog
+                </a>
               </div>
             </nav>
           </div>
@@ -1282,6 +1288,28 @@ const Header: React.FC<HeaderProps> = () => {
                     </span>
                   </div>
                   <span style={{ fontSize: '0.75rem', color: '#dc2626' }}>Ver ofertas →</span>
+                </a>
+
+                <a
+                  href="/blog"
+                  className="flex items-center justify-between"
+                  style={{
+                    padding: 'var(--spacing-4)',
+                    borderRadius: '8px',
+                    border: '1px solid #d1d5db',
+                    background: '#f9fafb',
+                    textDecoration: 'none',
+                    marginTop: 'var(--spacing-3)',
+                  }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                    <span style={{ fontSize: '1.25rem' }}>📝</span>
+                    <span className="font-medium text-sm" style={{ color: '#374151' }}>
+                      Blog
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>Leer artículos →</span>
                 </a>
               </div>
             </div>
