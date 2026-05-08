@@ -83,7 +83,7 @@ export default function CategoriesShowcase() {
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <p style={{
-              fontFamily: "'Montserrat', sans-serif",
+              fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
               fontSize: '0.7rem',
               fontWeight: 700,
               letterSpacing: '0.12em',
@@ -94,7 +94,7 @@ export default function CategoriesShowcase() {
               Qué hacemos
             </p>
             <h2 style={{
-              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontFamily: "'Cormorant Garamond', 'Cormorant Fallback', Georgia, serif",
               fontSize: 'clamp(1.9rem, 3.5vw, 2.8rem)',
               fontWeight: 500,
               lineHeight: 1.15,
@@ -110,7 +110,7 @@ export default function CategoriesShowcase() {
           <a
             href="/productos"
             style={{
-              fontFamily: "'Montserrat', sans-serif",
+              fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
               fontSize: '0.85rem',
               fontWeight: 600,
               color: '#1A1A1A',
@@ -193,7 +193,7 @@ export default function CategoriesShowcase() {
                       justifyContent: 'center',
                     }}>
                       <span style={{
-                        fontFamily: "'Montserrat', sans-serif",
+                        fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                         fontSize: '0.65rem',
                         color: 'rgba(26,26,26,0.35)',
                         letterSpacing: '0.1em',
@@ -208,7 +208,7 @@ export default function CategoriesShowcase() {
                     position: 'absolute',
                     top: 12,
                     left: 14,
-                    fontFamily: "'Montserrat', sans-serif",
+                    fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                     fontSize: '0.68rem',
                     fontWeight: 700,
                     color: 'rgba(26,26,26,0.5)',
@@ -221,7 +221,7 @@ export default function CategoriesShowcase() {
                 {/* Info */}
                 <div style={{ padding: '14px 16px 16px' }}>
                   <h3 style={{
-                    fontFamily: "'Cormorant Garamond', Georgia, serif",
+                    fontFamily: "'Cormorant Garamond', 'Cormorant Fallback', Georgia, serif",
                     fontSize: '1.15rem',
                     fontWeight: 600,
                     color: '#1A1A1A',
@@ -231,7 +231,7 @@ export default function CategoriesShowcase() {
                     {cat.name}
                   </h3>
                   <p style={{
-                    fontFamily: "'Montserrat', sans-serif",
+                    fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                     fontSize: '0.72rem',
                     color: '#888',
                     margin: 0,

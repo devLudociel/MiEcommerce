@@ -293,8 +293,12 @@ const Header: React.FC<HeaderProps> = () => {
               <img
                 src="/logoFac.png"
                 alt="ImprimeArte"
+                width={48}
+                height={48}
                 className="w-10 h-10 md:w-12 md:h-12 object-contain rounded-xl shadow-md"
                 loading="eager"
+                fetchPriority="high"
+                decoding="sync"
               />
               <div className="md:hidden">
                 <span className="text-sm font-semibold text-gray-800 leading-none">Inicio</span>

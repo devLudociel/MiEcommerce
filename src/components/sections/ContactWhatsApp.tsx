@@ -59,7 +59,7 @@ export default function ContactWhatsApp() {
           {/* Columna izquierda */}
           <div>
             <p style={{
-              fontFamily: "'Montserrat', sans-serif",
+              fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
               fontSize: '0.65rem',
               fontWeight: 700,
               letterSpacing: '0.14em',
@@ -71,7 +71,7 @@ export default function ContactWhatsApp() {
             </p>
 
             <h2 style={{
-              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontFamily: "'Cormorant Garamond', 'Cormorant Fallback', Georgia, serif",
               fontSize: 'clamp(1.8rem, 3.5vw, 2.8rem)',
               fontWeight: 500,
               color: '#1A1A1A',
@@ -85,7 +85,7 @@ export default function ContactWhatsApp() {
             </h2>
 
             <p style={{
-              fontFamily: "'Montserrat', sans-serif",
+              fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
               fontSize: '0.92rem',
               color: '#666',
               lineHeight: 1.7,
@@ -107,7 +107,7 @@ export default function ContactWhatsApp() {
                 gap: 10,
                 backgroundColor: '#25D366',
                 color: '#fff',
-                fontFamily: "'Montserrat', sans-serif",
+                fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                 fontWeight: 700,
                 fontSize: '0.9rem',
                 padding: '14px 28px',
@@ -132,7 +132,7 @@ export default function ContactWhatsApp() {
               paddingTop: '1.75rem',
             }}>
               <p style={{
-                fontFamily: "'Montserrat', sans-serif",
+                fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                 fontSize: '0.75rem',
                 fontWeight: 600,
                 color: '#888',
@@ -144,7 +144,7 @@ export default function ContactWhatsApp() {
 
               {status === 'success' ? (
                 <div style={{
-                  fontFamily: "'Montserrat', sans-serif",
+                  fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                   fontSize: '0.85rem',
                   color: '#22c55e',
                   fontWeight: 600,
@@ -167,7 +167,7 @@ export default function ContactWhatsApp() {
                     disabled={status === 'loading'}
                     style={{
                       flex: 1,
-                      fontFamily: "'Montserrat', sans-serif",
+                      fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                       fontSize: '0.85rem',
                       padding: '11px 16px',
                       borderRadius: 50,
@@ -183,7 +183,7 @@ export default function ContactWhatsApp() {
                     type="submit"
                     disabled={status === 'loading'}
                     style={{
-                      fontFamily: "'Montserrat', sans-serif",
+                      fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                       fontWeight: 700,
                       fontSize: '0.82rem',
                       padding: '11px 22px',
@@ -205,7 +205,7 @@ export default function ContactWhatsApp() {
               )}
               {status === 'error' && errorMsg && (
                 <p style={{
-                  fontFamily: "'Montserrat', sans-serif",
+                  fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                   fontSize: '0.75rem',
                   color: '#EC008C',
                   marginTop: 6,
@@ -229,7 +229,7 @@ export default function ContactWhatsApp() {
           >
             <div style={{ marginBottom: '1.25rem' }}>
               <p style={{
-                fontFamily: "'Montserrat', sans-serif",
+                fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                 fontSize: '0.6rem',
                 fontWeight: 700,
                 letterSpacing: '0.12em',
@@ -244,7 +244,7 @@ export default function ContactWhatsApp() {
                 Visítanos
               </p>
               <p style={{
-                fontFamily: "'Montserrat', sans-serif",
+                fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                 fontSize: '0.78rem',
                 color: '#444',
                 lineHeight: 1.7,
@@ -257,7 +257,7 @@ export default function ContactWhatsApp() {
 
             <div>
               <p style={{
-                fontFamily: "'Montserrat', sans-serif",
+                fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                 fontSize: '0.6rem',
                 fontWeight: 700,
                 letterSpacing: '0.12em',
@@ -287,7 +287,7 @@ export default function ContactWhatsApp() {
               <a
                 href="mailto:hola@imprimearte.es"
                 style={{
-                  fontFamily: "'Montserrat', sans-serif",
+                  fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                   fontSize: '0.75rem',
                   fontWeight: 600,
                   color: '#1A1A1A',
@@ -303,7 +303,7 @@ export default function ContactWhatsApp() {
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
-                  fontFamily: "'Montserrat', sans-serif",
+                  fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                   fontSize: '0.75rem',
                   fontWeight: 600,
                   color: '#888',

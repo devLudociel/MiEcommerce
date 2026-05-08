@@ -63,7 +63,7 @@ export default function BestSellers() {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h2 style={{
-            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontFamily: "'Cormorant Garamond', 'Cormorant Fallback', Georgia, serif",
             fontSize: 'clamp(1.8rem, 3vw, 2.5rem)',
             fontWeight: 500,
             color: '#1A1A1A',
@@ -76,7 +76,7 @@ export default function BestSellers() {
           <a
             href="/productos"
             style={{
-              fontFamily: "'Montserrat', sans-serif",
+              fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
               fontSize: '0.82rem',
               fontWeight: 600,
               color: '#555',
@@ -148,7 +148,7 @@ export default function BestSellers() {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       <span style={{
-                        fontFamily: "'Montserrat', sans-serif",
+                        fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                         fontSize: '0.6rem',
                         color: 'rgba(26,26,26,0.3)',
                         letterSpacing: '0.1em',
@@ -167,7 +167,7 @@ export default function BestSellers() {
                       left: 10,
                       backgroundColor: '#1A1A1A',
                       color: '#fff',
-                      fontFamily: "'Montserrat', sans-serif",
+                      fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                       fontSize: '0.58rem',
                       fontWeight: 700,
                       letterSpacing: '0.08em',
@@ -185,7 +185,7 @@ export default function BestSellers() {
                       left: 10,
                       backgroundColor: '#EC008C',
                       color: '#fff',
-                      fontFamily: "'Montserrat', sans-serif",
+                      fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                       fontSize: '0.58rem',
                       fontWeight: 700,
                       letterSpacing: '0.08em',
@@ -203,7 +203,7 @@ export default function BestSellers() {
                       right: 10,
                       backgroundColor: '#FFF200',
                       color: '#1A1A1A',
-                      fontFamily: "'Montserrat', sans-serif",
+                      fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                       fontSize: '0.58rem',
                       fontWeight: 800,
                       padding: '4px 10px',
@@ -217,7 +217,7 @@ export default function BestSellers() {
                 {/* Info */}
                 <div style={{ padding: '14px 14px 16px' }}>
                   <h3 style={{
-                    fontFamily: "'Montserrat', sans-serif",
+                    fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                     fontSize: '0.85rem',
                     fontWeight: 600,
                     color: '#1A1A1A',
@@ -234,7 +234,7 @@ export default function BestSellers() {
                     {product.salePrice ? (
                       <>
                         <span style={{
-                          fontFamily: "'Montserrat', sans-serif",
+                          fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                           fontWeight: 700,
                           fontSize: '1rem',
                           color: '#1A1A1A',
@@ -242,7 +242,7 @@ export default function BestSellers() {
                           {product.salePrice.toFixed(2).replace('.', ',')} €
                         </span>
                         <span style={{
-                          fontFamily: "'Montserrat', sans-serif",
+                          fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                           fontSize: '0.78rem',
                           color: '#bbb',
                           textDecoration: 'line-through',
@@ -252,7 +252,7 @@ export default function BestSellers() {
                       </>
                     ) : (
                       <span style={{
-                        fontFamily: "'Montserrat', sans-serif",
+                        fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                         fontWeight: 700,
                         fontSize: '1rem',
                         color: '#1A1A1A',

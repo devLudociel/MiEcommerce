@@ -98,7 +98,7 @@ const HeroCarousel = memo(() => {
 
   return (
     <section
-      style={{ backgroundColor: '#F5F0E8', fontFamily: "'Montserrat', sans-serif" }}
+      style={{ backgroundColor: '#F5F0E8', fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif" }}
       className="w-full overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 lg:py-20">
@@ -113,7 +113,7 @@ const HeroCarousel = memo(() => {
                 style={{
                   backgroundColor: '#1A1A1A',
                   color: '#fff',
-                  fontFamily: "'Montserrat', sans-serif",
+                  fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                   fontSize: '11px',
                   letterSpacing: '0.08em',
                 }}
@@ -136,7 +136,7 @@ const HeroCarousel = memo(() => {
             >
               <h1
                 style={{
-                  fontFamily: "'Cormorant Garamond', Georgia, serif",
+                  fontFamily: "'Cormorant Garamond', 'Cormorant Fallback', Georgia, serif",
                   fontSize: 'clamp(2.6rem, 5.5vw, 4.2rem)',
                   fontWeight: 500,
                   lineHeight: 1.1,
@@ -145,7 +145,7 @@ const HeroCarousel = memo(() => {
                 }}
               >
                 {slide.subtitle && (
-                  <span style={{ display: 'block', fontSize: '55%', fontWeight: 400, color: '#555', marginBottom: '0.15em', letterSpacing: '0.05em', textTransform: 'uppercase', fontFamily: "'Montserrat', sans-serif", fontSize: 'clamp(0.7rem, 1.2vw, 0.9rem)' }}>
+                  <span style={{ display: 'block', fontSize: '55%', fontWeight: 400, color: '#555', marginBottom: '0.15em', letterSpacing: '0.05em', textTransform: 'uppercase', fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif", fontSize: 'clamp(0.7rem, 1.2vw, 0.9rem)' }}>
                     {slide.subtitle}
                   </span>
                 )}
@@ -189,7 +189,7 @@ const HeroCarousel = memo(() => {
                   style={{
                     backgroundColor: '#1A1A1A',
                     color: '#fff',
-                    fontFamily: "'Montserrat', sans-serif",
+                    fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                     fontWeight: 700,
                     fontSize: '0.9rem',
                     padding: '14px 28px',
@@ -216,7 +216,7 @@ const HeroCarousel = memo(() => {
                   style={{
                     backgroundColor: 'transparent',
                     color: '#1A1A1A',
-                    fontFamily: "'Montserrat', sans-serif",
+                    fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                     fontWeight: 600,
                     fontSize: '0.9rem',
                     padding: '13px 28px',
@@ -252,7 +252,7 @@ const HeroCarousel = memo(() => {
                 <div key={stat.label}>
                   <div
                     style={{
-                      fontFamily: "'Montserrat', sans-serif",
+                      fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                       fontWeight: 800,
                       fontSize: 'clamp(1.1rem, 2vw, 1.35rem)',
                       color: '#EC008C',
@@ -342,7 +342,7 @@ const HeroCarousel = memo(() => {
                   justifyContent: 'center',
                 }}>
                   <span style={{
-                    fontFamily: "'Cormorant Garamond', serif",
+                    fontFamily: "'Cormorant Garamond', 'Cormorant Fallback', Georgia, serif",
                     fontSize: '1.1rem',
                     color: 'rgba(26,26,26,0.3)',
                     textAlign: 'center',
@@ -360,7 +360,7 @@ const HeroCarousel = memo(() => {
                 padding: '28px 20px 20px',
               }}>
                 <div style={{
-                  fontFamily: "'Montserrat', sans-serif",
+                  fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                   fontSize: '0.6rem',
                   color: 'rgba(255,255,255,0.7)',
                   letterSpacing: '0.12em',
@@ -370,7 +370,7 @@ const HeroCarousel = memo(() => {
                   Hecho a mano · La Palma
                 </div>
                 <div style={{
-                  fontFamily: "'Cormorant Garamond', serif",
+                  fontFamily: "'Cormorant Garamond', 'Cormorant Fallback', Georgia, serif",
                   fontWeight: 500,
                   fontSize: '1.15rem',
                   color: '#fff',
@@ -389,7 +389,7 @@ const HeroCarousel = memo(() => {
                 left: 16,
                 backgroundColor: '#FFF200',
                 color: '#1A1A1A',
-                fontFamily: "'Montserrat', sans-serif",
+                fontFamily: "'Montserrat', 'Montserrat Fallback', system-ui, sans-serif",
                 fontWeight: 800,
                 fontSize: '0.6rem',
                 letterSpacing: '0.1em',

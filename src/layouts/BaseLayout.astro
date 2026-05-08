@@ -76,7 +76,23 @@ const showChatWidget =
     <!-- Editorial fonts: Cormorant Garamond (serif display) + Montserrat (UI) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Montserrat:wght@400;500;600;700&display=swap"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Montserrat:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Montserrat:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
 
     <title>{title}</title>
     {schemaJson && <script nonce={nonce} type="application/ld+json" set:html={schemaJson}></script>}
@@ -84,12 +100,18 @@ const showChatWidget =
     <script is:inline nonce={nonce}>
       (() => {
         let initialized = false;
+        let pending = false;
 
         const setHeaderHeight = () => {
-          const header = document.querySelector('header');
-          if (!header) return;
-          const height = Math.ceil(header.getBoundingClientRect().height);
-          document.documentElement.style.setProperty('--header-height', `${height}px`);
+          if (pending) return;
+          pending = true;
+          requestAnimationFrame(() => {
+            pending = false;
+            const header = document.querySelector('header');
+            if (!header) return;
+            const height = Math.ceil(header.getBoundingClientRect().height);
+            document.documentElement.style.setProperty('--header-height', `${height}px`);
+          });
         };
 
         const init = () => {
@@ -106,14 +128,22 @@ const showChatWidget =
             const observer = new ResizeObserver(setHeaderHeight);
             observer.observe(header);
           } else {
-            window.addEventListener('resize', setHeaderHeight);
+            window.addEventListener('resize', setHeaderHeight, { passive: true });
+          }
+        };
+
+        const schedule = () => {
+          if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(init, { timeout: 1500 });
+          } else {
+            setTimeout(init, 200);
           }
         };
 
         if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', init, { once: true });
+          document.addEventListener('DOMContentLoaded', schedule, { once: true });
         } else {
-          init();
+          schedule();
         }
       })();
     </script>
@@ -125,26 +155,64 @@ const showChatWidget =
       <slot />
     </main>
     <!-- Toast Notifications Container -->
-    <Toaster {...toasterConfig} client:load />
+    <Toaster {...toasterConfig} client:idle />
     <!-- Product Comparison Bar -->
-    <CompareBar client:load />
+    <CompareBar client:idle />
     <!-- Promotional Popups -->
     <PromoPopupDisplay client:idle />
-    <WelcomeBonusPopup client:load />
-    <LeadSignupPopup client:load />
+    <WelcomeBonusPopup client:idle />
+    <LeadSignupPopup client:idle />
     {showChatWidget && <N8nChatWidget />}
     <!-- Cookie Consent Banner -->
-    <CookieConsent client:load />
+    <CookieConsent client:idle />
     <!-- Analytics Tracking -->
-    <Analytics client:load />
-    <script
-      async
-      type="text/javascript"
-      src="https://static.klaviyo.com/onsite/js/RW52DT/klaviyo.js?company_id=RW52DT"
-    ></script>
+    <Analytics client:idle />
     <script is:inline nonce={nonce}>
-      // Initialize Klaviyo object on page load
-      !function(){if(!window.klaviyo){window._klOnsite=window._klOnsite||[];try{window.klaviyo=new Proxy({},{get:function(n,i){return"push"===i?function(){var n;(n=window._klOnsite).push.apply(n,arguments)}:function(){for(var n=arguments.length,o=new Array(n),w=0;w<n;w++)o[w]=arguments[w];var t="function"==typeof o[o.length-1]?o.pop():void 0,e=new Promise((function(n){window._klOnsite.push([i].concat(o,[function(i){t&&t(i),n(i)}]))}));return e}}})}catch(n){window.klaviyo=window.klaviyo||[],window.klaviyo.push=function(){var n;(n=window._klOnsite).push.apply(n,arguments)}}}}();
+      // Defer Klaviyo to avoid blocking initial render (saves ~700ms TBT)
+      (() => {
+        const loadKlaviyo = () => {
+          if (!window.klaviyo) {
+            window._klOnsite = window._klOnsite || [];
+            try {
+              window.klaviyo = new Proxy({}, {
+                get: function (n, i) {
+                  return i === 'push'
+                    ? function () {
+                        var n;
+                        (n = window._klOnsite).push.apply(n, arguments);
+                      }
+                    : function () {
+                        for (var n = arguments.length, o = new Array(n), w = 0; w < n; w++) o[w] = arguments[w];
+                        var t = typeof o[o.length - 1] === 'function' ? o.pop() : void 0;
+                        return new Promise(function (n) {
+                          window._klOnsite.push([i].concat(o, [function (i) { t && t(i); n(i); }]));
+                        });
+                      };
+                },
+              });
+            } catch (n) {
+              window.klaviyo = window.klaviyo || [];
+              window.klaviyo.push = function () { var n; (n = window._klOnsite).push.apply(n, arguments); };
+            }
+          }
+          var s = document.createElement('script');
+          s.async = true;
+          s.src = 'https://static.klaviyo.com/onsite/js/RW52DT/klaviyo.js?company_id=RW52DT';
+          document.head.appendChild(s);
+        };
+        const trigger = () => {
+          if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(loadKlaviyo, { timeout: 5000 });
+          } else {
+            setTimeout(loadKlaviyo, 3000);
+          }
+        };
+        if (document.readyState === 'complete') {
+          trigger();
+        } else {
+          window.addEventListener('load', trigger, { once: true });
+        }
+      })();
     </script>
   </body>
 </html>
