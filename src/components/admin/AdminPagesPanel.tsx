@@ -1,5 +1,6 @@
 // src/components/admin/AdminPagesPanel.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { marked } from 'marked';
 import {
   getAllPages,
   createPage,
@@ -19,6 +20,45 @@ import { storage } from '../../lib/firebase';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+
+type EditorMode = 'edit' | 'preview';
+
+interface MarkdownStats {
+  hasH2: boolean;
+  hasParagraphs: boolean;
+  hasLinks: boolean;
+  wordCount: number;
+}
+
+function analyzeMarkdown(content: string): MarkdownStats {
+  return {
+    hasH2: /^##\s/m.test(content),
+    hasParagraphs: /\n\n/.test(content),
+    hasLinks: /\[[^\]]+\]\([^)]+\)/.test(content),
+    wordCount: content.trim().split(/\s+/).filter(Boolean).length,
+  };
+}
+
+function insertMarkdown(
+  textarea: HTMLTextAreaElement | null,
+  before: string,
+  after: string,
+  placeholder: string,
+  setContent: (v: string) => void
+) {
+  if (!textarea) return;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const value = textarea.value;
+  const selected = value.slice(start, end) || placeholder;
+  const newText = value.slice(0, start) + before + selected + after + value.slice(end);
+  setContent(newText);
+  setTimeout(() => {
+    textarea.focus();
+    const cursor = start + before.length;
+    textarea.setSelectionRange(cursor, cursor + selected.length);
+  }, 0);
+}
 
 type TabType = 'pages' | 'blog' | 'gallery';
 
@@ -73,8 +113,16 @@ export default function AdminPagesPanel() {
 
   const [uploading, setUploading] = useState(false);
 
+  // Editor markdown state
+  const [editorMode, setEditorMode] = useState<EditorMode>('edit');
+  const [showCheatsheet, setShowCheatsheet] = useState(false);
+  const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
+
   // Accessible confirmation dialog
   const { confirm, ConfirmDialog } = useConfirmDialog();
+
+  const setContentValue = (v: string) => setFormData((prev) => ({ ...prev, content: v }));
+  const mdStats = analyzeMarkdown(formData.content);
 
   useEffect(() => {
     loadData();
@@ -525,17 +573,172 @@ export default function AdminPagesPanel() {
               </div>
 
               <div className="col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Contenido *
-                </label>
-                <textarea
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl font-mono text-sm"
-                  rows={12}
-                  required
-                  placeholder="Usa Markdown: # Título, ## Subtítulo, **negrita**, - lista"
-                />
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Contenido (Markdown) *
+                  </label>
+                  <div className="flex items-center gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setShowCheatsheet((v) => !v)}
+                      className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700"
+                    >
+                      {showCheatsheet ? '✕ Cerrar' : '? Sintaxis'}
+                    </button>
+                  </div>
+                </div>
+
+                {showCheatsheet && (
+                  <div className="mb-3 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm">
+                    <h4 className="font-bold mb-2 text-blue-900">Cheatsheet Markdown</h4>
+                    <div className="grid grid-cols-2 gap-2 font-mono text-xs">
+                      <div><code className="bg-white px-2 py-1 rounded">## Título sección</code> → Heading H2</div>
+                      <div><code className="bg-white px-2 py-1 rounded">### Subtítulo</code> → Heading H3</div>
+                      <div><code className="bg-white px-2 py-1 rounded">**texto**</code> → <strong>negrita</strong></div>
+                      <div><code className="bg-white px-2 py-1 rounded">*texto*</code> → <em>itálica</em></div>
+                      <div><code className="bg-white px-2 py-1 rounded">[texto](/ruta)</code> → enlace</div>
+                      <div><code className="bg-white px-2 py-1 rounded">- ítem</code> → lista</div>
+                      <div><code className="bg-white px-2 py-1 rounded">1. ítem</code> → lista numerada</div>
+                      <div><code className="bg-white px-2 py-1 rounded">&gt; cita</code> → blockquote</div>
+                    </div>
+                    <p className="mt-3 text-blue-800 text-xs">
+                      <strong>Importante:</strong> separa cada bloque (heading, párrafo, lista) con una <strong>línea en blanco</strong>. Sin línea en blanco antes de <code>##</code>, no se renderiza como heading.
+                    </p>
+                  </div>
+                )}
+
+                {/* Tabs Editor / Preview */}
+                <div className="flex border-b border-gray-200 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditorMode('edit')}
+                    className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${
+                      editorMode === 'edit'
+                        ? 'border-cyan-500 text-cyan-600'
+                        : 'border-transparent text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    ✎ Editor
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditorMode('preview')}
+                    className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${
+                      editorMode === 'preview'
+                        ? 'border-cyan-500 text-cyan-600'
+                        : 'border-transparent text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    👁 Vista previa
+                  </button>
+                </div>
+
+                {editorMode === 'edit' ? (
+                  <>
+                    {/* Toolbar */}
+                    <div className="flex flex-wrap gap-1 p-2 bg-gray-50 border border-gray-300 border-b-0 rounded-t-xl">
+                      <button
+                        type="button"
+                        title="Heading H2"
+                        onClick={() => insertMarkdown(contentTextareaRef.current, '\n\n## ', '\n\n', 'Título de sección', setContentValue)}
+                        className="px-3 py-1 bg-white hover:bg-gray-100 rounded font-bold text-sm border border-gray-200"
+                      >H2</button>
+                      <button
+                        type="button"
+                        title="Heading H3"
+                        onClick={() => insertMarkdown(contentTextareaRef.current, '\n\n### ', '\n\n', 'Subtítulo', setContentValue)}
+                        className="px-3 py-1 bg-white hover:bg-gray-100 rounded font-bold text-sm border border-gray-200"
+                      >H3</button>
+                      <button
+                        type="button"
+                        title="Negrita"
+                        onClick={() => insertMarkdown(contentTextareaRef.current, '**', '**', 'texto en negrita', setContentValue)}
+                        className="px-3 py-1 bg-white hover:bg-gray-100 rounded font-bold text-sm border border-gray-200"
+                      >B</button>
+                      <button
+                        type="button"
+                        title="Itálica"
+                        onClick={() => insertMarkdown(contentTextareaRef.current, '*', '*', 'texto en itálica', setContentValue)}
+                        className="px-3 py-1 bg-white hover:bg-gray-100 rounded italic text-sm border border-gray-200"
+                      >I</button>
+                      <button
+                        type="button"
+                        title="Enlace"
+                        onClick={() => insertMarkdown(contentTextareaRef.current, '[', '](/ruta)', 'texto del enlace', setContentValue)}
+                        className="px-3 py-1 bg-white hover:bg-gray-100 rounded text-sm border border-gray-200 text-cyan-600 underline"
+                      >Link</button>
+                      <button
+                        type="button"
+                        title="Lista"
+                        onClick={() => insertMarkdown(contentTextareaRef.current, '\n\n- ', '\n- ítem 2\n- ítem 3\n\n', 'ítem 1', setContentValue)}
+                        className="px-3 py-1 bg-white hover:bg-gray-100 rounded text-sm border border-gray-200"
+                      >• Lista</button>
+                      <button
+                        type="button"
+                        title="Lista numerada"
+                        onClick={() => insertMarkdown(contentTextareaRef.current, '\n\n1. ', '\n2. paso 2\n3. paso 3\n\n', 'paso 1', setContentValue)}
+                        className="px-3 py-1 bg-white hover:bg-gray-100 rounded text-sm border border-gray-200"
+                      >1. Lista</button>
+                      <button
+                        type="button"
+                        title="Cita"
+                        onClick={() => insertMarkdown(contentTextareaRef.current, '\n\n> ', '\n\n', 'cita destacada', setContentValue)}
+                        className="px-3 py-1 bg-white hover:bg-gray-100 rounded text-sm border border-gray-200"
+                      >❝ Cita</button>
+                      <button
+                        type="button"
+                        title="Línea en blanco entre párrafos"
+                        onClick={() => insertMarkdown(contentTextareaRef.current, '\n\n', '', '', setContentValue)}
+                        className="px-3 py-1 bg-white hover:bg-gray-100 rounded text-sm border border-gray-200"
+                      >¶ Párrafo</button>
+                    </div>
+                    <textarea
+                      ref={contentTextareaRef}
+                      value={formData.content}
+                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 border-t-0 rounded-b-xl font-mono text-sm leading-relaxed"
+                      rows={20}
+                      required
+                      placeholder={`## Introducción\n\nPrimer párrafo del post. Puedes usar **negrita** o [enlaces](/productos).\n\n## Sección principal\n\n- Punto 1\n- Punto 2\n\n### Subsección\n\nMás contenido aquí...`}
+                    />
+                  </>
+                ) : (
+                  <div className="border border-gray-300 rounded-xl p-6 bg-white min-h-[500px] max-h-[700px] overflow-y-auto">
+                    {formData.content.trim() ? (
+                      <div
+                        className="prose prose-lg max-w-none
+                          prose-headings:font-bold prose-headings:text-gray-900
+                          prose-h2:text-3xl prose-h2:mt-8 prose-h2:mb-4
+                          prose-h3:text-2xl prose-h3:mt-6 prose-h3:mb-3
+                          prose-p:text-gray-700 prose-p:leading-relaxed
+                          prose-a:text-cyan-600 hover:prose-a:underline
+                          prose-strong:text-gray-900
+                          prose-ul:list-disc prose-ol:list-decimal
+                          prose-li:my-1
+                          prose-blockquote:border-l-4 prose-blockquote:border-cyan-500"
+                        dangerouslySetInnerHTML={{ __html: marked(formData.content) as string }}
+                      />
+                    ) : (
+                      <p className="text-gray-400 text-center py-12">Escribe contenido en el editor para ver la vista previa</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Stats / validación */}
+                <div className="mt-2 flex flex-wrap gap-3 text-xs">
+                  <span className="text-gray-600">
+                    📊 {mdStats.wordCount} palabras
+                  </span>
+                  <span className={mdStats.hasH2 ? 'text-green-600' : 'text-orange-600'}>
+                    {mdStats.hasH2 ? '✓' : '⚠'} Headings H2
+                  </span>
+                  <span className={mdStats.hasParagraphs ? 'text-green-600' : 'text-orange-600'}>
+                    {mdStats.hasParagraphs ? '✓' : '⚠'} Párrafos separados
+                  </span>
+                  <span className={mdStats.hasLinks ? 'text-green-600' : 'text-gray-500'}>
+                    {mdStats.hasLinks ? '✓' : '○'} Enlaces internos
+                  </span>
+                </div>
               </div>
 
               <div className="col-span-2">
@@ -742,7 +945,7 @@ export default function AdminPagesPanel() {
                           Eliminar
                         </button>
                         <a
-                          href={`/${page.slug}`}
+                          href={page.type === 'blog' ? `/blog/${page.slug}` : `/${page.slug}`}
                           target="_blank"
                           className="px-3 py-1 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700"
                           rel="noreferrer"
