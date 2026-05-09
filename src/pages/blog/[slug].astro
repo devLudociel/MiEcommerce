@@ -135,21 +135,42 @@ const schema = {
 
         <!-- Content -->
         <div
-          class="prose prose-lg prose-cyan max-w-none
+          class="blog-content prose prose-lg max-w-none
           prose-headings:font-bold prose-headings:text-gray-900
           prose-h1:text-4xl prose-h1:mb-6
           prose-h2:text-3xl prose-h2:mt-8 prose-h2:mb-4
           prose-h3:text-2xl prose-h3:mt-6 prose-h3:mb-3
           prose-p:text-gray-700 prose-p:leading-relaxed prose-p:mb-4
-          prose-a:text-cyan-600 prose-a:no-underline hover:prose-a:underline
           prose-strong:text-gray-900 prose-strong:font-bold
           prose-ul:list-disc prose-ul:ml-6
           prose-ol:list-decimal prose-ol:ml-6
           prose-li:text-gray-700 prose-li:mb-2
           prose-img:rounded-xl prose-img:my-6
-          prose-blockquote:border-l-4 prose-blockquote:border-cyan-500 prose-blockquote:pl-4 prose-blockquote:italic"
+          prose-blockquote:border-l-4 prose-blockquote:border-cyan-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:bg-cyan-50 prose-blockquote:py-2 prose-blockquote:rounded-r-lg"
           set:html={parsedContent}
         />
+
+        <style is:global>
+          /* Links blog: paleta marca cyan / magenta / amber rotativos */
+          .blog-content a {
+            color: #0891b2; /* cyan-600 */
+            text-decoration: none;
+            background-image: linear-gradient(120deg, #06b6d4 0%, #d946ef 50%, #f59e0b 100%);
+            background-repeat: no-repeat;
+            background-size: 100% 2px;
+            background-position: 0 100%;
+            padding-bottom: 2px;
+            transition: color 0.2s ease, background-size 0.3s ease;
+            font-weight: 600;
+          }
+          .blog-content a:hover {
+            color: #d946ef; /* fuchsia-500 magenta */
+            background-size: 100% 3px;
+          }
+          .blog-content a:visited {
+            color: #0e7490; /* cyan-700 */
+          }
+        </style>
       </article>
 
       <!-- Back Button -->
