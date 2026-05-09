@@ -214,9 +214,8 @@ export default function LoginPanel() {
             operationType: result.operationType,
           });
 
-          if (result?.additionalUserInfo?.isNewUser) {
-            await grantWelcomeBonus(result.user);
-          }
+          // Always attempt grant — server deduplicates via welcome_bonus_users
+          await grantWelcomeBonus(result.user);
 
           // Clear the redirect flag
           sessionStorage.removeItem('auth_redirect_pending');
@@ -329,9 +328,8 @@ export default function LoginPanel() {
         logger.info('[LoginPanel] signInWithGoogle via popup: start', { isMobile });
         const result = await signInWithPopup(auth, provider);
         logger.info('[LoginPanel] signInWithGoogle via popup: success');
-        if (result?.additionalUserInfo?.isNewUser) {
-          await grantWelcomeBonus(result.user);
-        }
+        // Always attempt grant — server deduplicates via welcome_bonus_users
+        await grantWelcomeBonus(result.user);
         await redirectAfterLogin();
         return;
       } catch (e: unknown) {
