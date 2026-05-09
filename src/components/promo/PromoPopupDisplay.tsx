@@ -160,6 +160,39 @@ function ModalPopup({ popup, isVisible, onDismiss, onButtonClick }: PopupProps) 
   const textColor = popup.textColor || '#1f2937';
   const accentColor = popup.accentColor || '#0891b2';
 
+  // Email capture state
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitState, setSubmitState] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (submitting || !email) return;
+    setSubmitting(true);
+    setSubmitState('idle');
+    try {
+      const resp = await fetch('/api/klaviyo/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, listId: popup.klaviyoListId }),
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        setErrorMsg(data?.error || 'Error al suscribirse');
+        setSubmitState('error');
+      } else {
+        setSubmitState('success');
+        setTimeout(() => onDismiss(), 2500);
+      }
+    } catch {
+      setErrorMsg('Error de red');
+      setSubmitState('error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <>
       {/* Backdrop */}
@@ -222,27 +255,66 @@ function ModalPopup({ popup, isVisible, onDismiss, onButtonClick }: PopupProps) 
               {popup.message}
             </p>
 
-            {/* Buttons */}
-            <div className="space-y-3">
-              {popup.buttonText && (
-                <button
-                  onClick={() => onButtonClick(popup.buttonUrl)}
-                  className="w-full py-3 px-6 rounded-lg font-semibold text-white transition-transform hover:scale-105"
-                  style={{ backgroundColor: accentColor }}
-                >
-                  {popup.buttonText}
-                </button>
-              )}
-              {popup.secondaryButtonText && (
-                <button
-                  onClick={() => onButtonClick(popup.secondaryButtonUrl)}
-                  className="w-full py-3 px-6 rounded-lg font-semibold transition-colors hover:bg-black/5"
-                  style={{ color: textColor }}
-                >
-                  {popup.secondaryButtonText}
-                </button>
-              )}
-            </div>
+            {popup.captureEmail ? (
+              submitState === 'success' ? (
+                <div className="py-4">
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3"
+                    style={{ backgroundColor: `${accentColor}20` }}
+                  >
+                    <span style={{ color: accentColor, fontSize: 28 }}>✓</span>
+                  </div>
+                  <p className="font-semibold" style={{ color: textColor }}>
+                    {popup.successMessage || '¡Listo! Revisa tu email.'}
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={handleEmailSubmit} className="space-y-3">
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="tu@email.com"
+                    disabled={submitting}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2"
+                    style={{ borderColor: `${accentColor}40` }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full py-3 px-6 rounded-lg font-semibold text-white transition-transform hover:scale-105 disabled:opacity-60"
+                    style={{ backgroundColor: accentColor }}
+                  >
+                    {submitting ? 'Enviando...' : popup.buttonText || 'Suscribirme'}
+                  </button>
+                  {submitState === 'error' && (
+                    <p className="text-sm text-red-600">{errorMsg}</p>
+                  )}
+                </form>
+              )
+            ) : (
+              <div className="space-y-3">
+                {popup.buttonText && (
+                  <button
+                    onClick={() => onButtonClick(popup.buttonUrl)}
+                    className="w-full py-3 px-6 rounded-lg font-semibold text-white transition-transform hover:scale-105"
+                    style={{ backgroundColor: accentColor }}
+                  >
+                    {popup.buttonText}
+                  </button>
+                )}
+                {popup.secondaryButtonText && (
+                  <button
+                    onClick={() => onButtonClick(popup.secondaryButtonUrl)}
+                    className="w-full py-3 px-6 rounded-lg font-semibold transition-colors hover:bg-black/5"
+                    style={{ color: textColor }}
+                  >
+                    {popup.secondaryButtonText}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

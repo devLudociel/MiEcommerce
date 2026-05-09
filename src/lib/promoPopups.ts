@@ -52,6 +52,10 @@ export interface PromoPopup {
   // Frequency
   showOnce: boolean; // If true, don't show again after dismissed
   showFrequency?: number; // Show every X hours (0 = every visit)
+  // Email capture (Klaviyo)
+  captureEmail?: boolean; // Si true, popup muestra input email + botón submit
+  klaviyoListId?: string; // ID lista Klaviyo (default: Newsletter Imprime Arte QS8c8H)
+  successMessage?: string; // Mensaje tras suscripción exitosa
   // Status
   active: boolean;
   priority: number; // Higher = shown first if multiple popups qualify

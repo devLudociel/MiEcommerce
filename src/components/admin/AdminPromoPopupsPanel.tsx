@@ -67,6 +67,9 @@ export default function AdminPromoPopupsPanel() {
     showToLoggedIn: null,
     showOnce: true,
     showFrequency: 0,
+    captureEmail: false,
+    klaviyoListId: 'QS8c8H',
+    successMessage: '¡Listo! Revisa tu email para confirmar.',
     active: true,
     priority: 50,
   });
@@ -106,6 +109,9 @@ export default function AdminPromoPopupsPanel() {
       showToLoggedIn: null,
       showOnce: true,
       showFrequency: 0,
+      captureEmail: false,
+      klaviyoListId: 'QS8c8H',
+      successMessage: '¡Listo! Revisa tu email para confirmar.',
       active: true,
       priority: 50,
     });
@@ -141,6 +147,9 @@ export default function AdminPromoPopupsPanel() {
       showToLoggedIn: popup.showToLoggedIn ?? null,
       showOnce: popup.showOnce,
       showFrequency: popup.showFrequency || 0,
+      captureEmail: popup.captureEmail || false,
+      klaviyoListId: popup.klaviyoListId || 'QS8c8H',
+      successMessage: popup.successMessage || '¡Listo! Revisa tu email para confirmar.',
       active: popup.active,
       priority: popup.priority,
     });
@@ -556,6 +565,53 @@ export default function AdminPromoPopupsPanel() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Captura email Klaviyo */}
+          <div className="border border-cyan-200 bg-cyan-50 rounded-xl p-4">
+            <h4 className="font-medium text-gray-900 mb-3">📧 Capturar email (Klaviyo)</h4>
+            <label className="flex items-center gap-2 mb-3">
+              <input
+                type="checkbox"
+                checked={formData.captureEmail || false}
+                onChange={(e) => setFormData({ ...formData, captureEmail: e.target.checked })}
+                className="w-4 h-4 text-cyan-600 rounded focus:ring-cyan-500"
+              />
+              <span className="text-sm text-gray-700">
+                Mostrar formulario de email en lugar de botones — al enviar, suscribe a lista Klaviyo y dispara flow Bienvenida
+              </span>
+            </label>
+            {formData.captureEmail && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    ID Lista Klaviyo
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.klaviyoListId || ''}
+                    onChange={(e) => setFormData({ ...formData, klaviyoListId: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm"
+                    placeholder="QS8c8H"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Default: <code className="bg-white px-1 rounded">QS8c8H</code> (Newsletter Imprime Arte → flow Bienvenida)
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Mensaje tras suscripción exitosa
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.successMessage || ''}
+                    onChange={(e) => setFormData({ ...formData, successMessage: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="¡Listo! Revisa tu email."
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Targeting */}
