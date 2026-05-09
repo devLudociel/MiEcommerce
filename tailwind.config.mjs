@@ -1,3 +1,5 @@
+import typography from '@tailwindcss/typography';
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -81,6 +83,7 @@ export default {
     },
   },
   plugins: [
+    typography,
     function({ addUtilities }) {
       addUtilities({
         // Ocultar scrollbar pero mantener funcionalidad

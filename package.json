@@ -66,6 +66,7 @@
     "@astrojs/tailwind": "^6.0.2",
     "@astrojs/vercel": "^8.0.0",
     "@playwright/test": "^1.56.1",
+    "@tailwindcss/typography": "^0.5.19",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/dompurify": "^3.2.0",
