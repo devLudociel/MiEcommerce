@@ -60,6 +60,60 @@ function insertMarkdown(
   }, 0);
 }
 
+/**
+ * Auto-formatea markdown que perdió newlines en copy/paste.
+ * Detecta `##`, `###`, `- `, `1. ` inline y agrega `\n\n` antes/después.
+ * Idempotente: si ya está bien formateado, no rompe nada.
+ */
+function autoFixMarkdown(content: string): { fixed: string; changes: number } {
+  let result = content;
+  let changes = 0;
+
+  // Primero normalizar: trim espacios al inicio/fin
+  result = result.trim();
+
+  // Agregar \n\n antes de ## (si no está al inicio y no tiene ya \n\n antes)
+  result = result.replace(/([^\n])\s*(#{2,3}\s)/g, (_match, prev, hash) => {
+    changes++;
+    return `${prev}\n\n${hash}`;
+  });
+
+  // Agregar \n\n después del título de heading (## Texto del título Otro_contenido)
+  // Detecta línea con ## seguida en la misma línea por más texto que NO es continuación del título
+  result = result.replace(/^(#{2,3} [^\n]{1,150}?)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ])/gm, (match, heading, nextStart) => {
+    // Solo si el siguiente texto parece ser un nuevo párrafo (empieza mayúscula después de espacio largo)
+    if (heading.length > 30 && match.length > heading.length + 20) {
+      changes++;
+      return `${heading}\n\n${nextStart}`;
+    }
+    return match;
+  });
+
+  // Agregar \n\n antes de bullets pegados a texto (texto. - bullet)
+  result = result.replace(/([.:!?])\s+(- \*\*)/g, (_match, punct, bullet) => {
+    changes++;
+    return `${punct}\n\n${bullet}`;
+  });
+
+  // Agregar \n\n antes de listas numeradas pegadas
+  result = result.replace(/([.:!?])\s+(\d+\.\s\*\*)/g, (_match, punct, bullet) => {
+    changes++;
+    return `${punct}\n\n${bullet}`;
+  });
+
+  // Separar bullets pegados entre sí: ` - ítem1 - ítem2` → `- ítem1\n- ítem2`
+  result = result.replace(/(\S)\s+(- \*\*[^*]+\*\*)/g, (match, prev, bullet) => {
+    if (prev === '\n' || prev === '*') return match;
+    changes++;
+    return `${prev}\n${bullet}`;
+  });
+
+  // Colapsar 3+ newlines a 2
+  result = result.replace(/\n{3,}/g, '\n\n');
+
+  return { fixed: result, changes };
+}
+
 type TabType = 'pages' | 'blog' | 'gallery';
 
 /** Input type for creating/updating pages - mirrors Page without id and timestamps */
@@ -691,6 +745,23 @@ export default function AdminPagesPanel() {
                         onClick={() => insertMarkdown(contentTextareaRef.current, '\n\n', '', '', setContentValue)}
                         className="px-3 py-1 bg-white hover:bg-gray-100 rounded text-sm border border-gray-200"
                       >¶ Párrafo</button>
+
+                      <div className="ml-auto">
+                        <button
+                          type="button"
+                          title="Auto-arreglar formato markdown (agrega saltos de línea perdidos en copy/paste)"
+                          onClick={() => {
+                            const { fixed, changes } = autoFixMarkdown(formData.content);
+                            setContentValue(fixed);
+                            if (changes > 0) {
+                              notify.success(`✓ Markdown arreglado: ${changes} cambios aplicados`);
+                            } else {
+                              notify.info('Markdown ya está bien formateado');
+                            }
+                          }}
+                          className="px-3 py-1 bg-amber-100 hover:bg-amber-200 rounded text-sm border border-amber-300 font-semibold text-amber-900"
+                        >🔧 Auto-arreglar</button>
+                      </div>
                     </div>
                     <textarea
                       ref={contentTextareaRef}
