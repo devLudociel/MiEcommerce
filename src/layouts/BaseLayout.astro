@@ -7,7 +7,6 @@ import CookieConsent from '../components/analytics/CookieConsent.tsx';
 import CompareBar from '../components/products/CompareBar';
 import PromoPopupDisplay from '../components/promo/PromoPopupDisplay';
 import WelcomeBonusPopup from '../components/common/WelcomeBonusPopup';
-import LeadSignupPopup from '../components/common/LeadSignupPopup';
 import N8nChatWidget from '../components/support/N8nChatWidget.astro';
 import '../styles/global.css';
 
@@ -159,10 +158,9 @@ const showChatWidget =
     <Toaster {...toasterConfig} client:idle />
     <!-- Product Comparison Bar -->
     <CompareBar client:idle />
-    <!-- Promotional Popups -->
+    <!-- Promotional Popups (max 1 por sesión vía gate en shouldShowPopup) -->
     <PromoPopupDisplay client:idle />
     <WelcomeBonusPopup client:idle />
-    <LeadSignupPopup client:idle />
     {showChatWidget && <N8nChatWidget />}
     <!-- Cookie Consent Banner -->
     <CookieConsent client:idle />

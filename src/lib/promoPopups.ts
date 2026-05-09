@@ -75,6 +75,8 @@ export type PromoPopupInput = Omit<
 
 const POPUP_STORAGE_KEY = 'dismissed_popups';
 const POPUP_LAST_SHOWN_KEY = 'popup_last_shown';
+const POPUP_SESSION_GATE_KEY = 'popup_session_shown';
+const DEFAULT_COOLDOWN_HOURS = 7 * 24; // 7 días entre re-impresiones del mismo popup
 
 interface DismissedPopups {
   [popupId: string]: number; // timestamp when dismissed
@@ -125,6 +127,8 @@ export function setPopupLastShown(popupId: string): void {
     const lastShown = getLastShownPopups();
     lastShown[popupId] = Date.now();
     localStorage.setItem(POPUP_LAST_SHOWN_KEY, JSON.stringify(lastShown));
+    // Marcar gate sesión para bloquear cualquier otro popup hasta próxima visita
+    markPopupShownThisSession();
   } catch {
     // Ignore storage errors
   }
@@ -135,6 +139,29 @@ export function clearDismissedPopups(): void {
   try {
     localStorage.removeItem(POPUP_STORAGE_KEY);
     localStorage.removeItem(POPUP_LAST_SHOWN_KEY);
+    sessionStorage.removeItem(POPUP_SESSION_GATE_KEY);
+  } catch {
+    // Ignore
+  }
+}
+
+/**
+ * Session gate: max 1 popup promocional por sesión de navegación.
+ * Evita fatiga de popups y conflictos entre sistemas (custom + Klaviyo).
+ */
+export function hasShownPopupThisSession(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return sessionStorage.getItem(POPUP_SESSION_GATE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function markPopupShownThisSession(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(POPUP_SESSION_GATE_KEY, '1');
   } catch {
     // Ignore
   }
@@ -150,6 +177,9 @@ export function shouldShowPopup(
   isLoggedIn: boolean | null
 ): boolean {
   const now = Date.now();
+
+  // Session gate: solo 1 popup por sesión navegación
+  if (hasShownPopupThisSession()) return false;
 
   // Check if active
   if (!popup.active) return false;
@@ -194,14 +224,13 @@ export function shouldShowPopup(
     if (dismissed[popup.id]) return false;
   }
 
-  // Check frequency
-  if (popup.showFrequency && popup.showFrequency > 0) {
-    const lastShown = getLastShownPopups();
-    const lastShownTime = lastShown[popup.id];
-    if (lastShownTime) {
-      const hoursSinceShown = (now - lastShownTime) / (1000 * 60 * 60);
-      if (hoursSinceShown < popup.showFrequency) return false;
-    }
+  // Check frequency. Si admin no setea showFrequency, aplica cooldown default 7d
+  const lastShown = getLastShownPopups();
+  const lastShownTime = lastShown[popup.id];
+  if (lastShownTime) {
+    const hoursSinceShown = (now - lastShownTime) / (1000 * 60 * 60);
+    const cooldown = popup.showFrequency && popup.showFrequency > 0 ? popup.showFrequency : DEFAULT_COOLDOWN_HOURS;
+    if (hoursSinceShown < cooldown) return false;
   }
 
   return true;

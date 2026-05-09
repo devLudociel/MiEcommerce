@@ -2,7 +2,6 @@
 import LandingAnalytics from '../components/landing/LandingAnalytics.tsx';
 import CookieConsent from '../components/analytics/CookieConsent.tsx';
 import WelcomeBonusPopup from '../components/common/WelcomeBonusPopup';
-import LeadSignupPopup from '../components/common/LeadSignupPopup';
 import N8nChatWidget from '../components/support/N8nChatWidget.astro';
 import '../styles/global.css';
 
@@ -126,7 +125,6 @@ const {
       facebookPixelId={facebookPixelId}
     />
     <WelcomeBonusPopup client:load />
-    <LeadSignupPopup client:load />
     <N8nChatWidget />
   </body>
 </html>
