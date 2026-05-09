@@ -131,20 +131,23 @@ export async function getAllPages(type?: 'page' | 'blog' | 'gallery'): Promise<P
 }
 
 export async function getPublishedPages(type?: 'page' | 'blog' | 'gallery'): Promise<Page[]> {
-  // Get all pages and filter in memory to avoid complex index requirements
-  const allPages = await getAllPages(type);
+  // Query con where('status','==','published') para satisfacer Firestore rules
+  // (rules requieren que la query esté garantizada por la condición resource.data.status == 'published')
+  const q = query(pagesCollection, where('status', '==', 'published'));
+  const snapshot = await getDocs(q);
+  let pages = snapshot.docs.map((doc) => doc.data() as Page);
 
-  // Filter only published pages
-  const publishedPages = allPages.filter((page) => page.status === 'published');
+  if (type) {
+    pages = pages.filter((page) => page.type === type);
+  }
 
-  // Sort by publishedAt (or createdAt if publishedAt is missing)
-  publishedPages.sort((a, b) => {
+  pages.sort((a, b) => {
     const dateA = a.publishedAt?.seconds || a.createdAt.seconds;
     const dateB = b.publishedAt?.seconds || b.createdAt.seconds;
-    return dateB - dateA; // Descending order
+    return dateB - dateA;
   });
 
-  return publishedPages;
+  return pages;
 }
 
 // ============================================================================
