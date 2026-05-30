@@ -52,11 +52,16 @@ export function trackProductView(product: {
   slug?: string;
   productSlug?: string;
   name: string;
-  price: number;
+  price?: number;
+  basePrice?: number;
+  unitPrice?: number;
   category?: string;
   brand?: string;
 }) {
-  GA4.trackProductView(product);
+  GA4.trackProductView({
+    ...product,
+    price: product.price ?? product.unitPrice ?? product.basePrice ?? 0,
+  });
   FB.trackFBProductView(product);
 }
 
@@ -68,11 +73,16 @@ export function trackAddToCart(product: {
   slug?: string;
   productSlug?: string;
   name: string;
-  price: number;
+  price?: number;
+  basePrice?: number;
+  unitPrice?: number;
   quantity: number;
   category?: string;
 }) {
-  GA4.trackAddToCart(product);
+  GA4.trackAddToCart({
+    ...product,
+    price: product.price ?? product.unitPrice ?? product.basePrice ?? 0,
+  });
   FB.trackFBAddToCart(product);
 }
 
@@ -85,16 +95,23 @@ interface AnalyticsItem {
   name?: string;
   category?: string;
   price?: number;
+  basePrice?: number;
   unitPrice?: number;
   item_price?: number;
-  quantity: number;
+  quantity?: number;
 }
 
 /**
  * Track checkout initiation (InitiateCheckout / begin_checkout)
  */
 export function trackBeginCheckout(items: AnalyticsItem[], value: number) {
-  GA4.trackBeginCheckout(items, value);
+  GA4.trackBeginCheckout(
+    items.map((item) => ({
+      ...item,
+      quantity: item.quantity ?? 1,
+    })),
+    value
+  );
   FB.trackFBInitiateCheckout(items, value);
 }
 
@@ -109,24 +126,51 @@ export function trackPurchase(order: {
   tax?: number;
   items: AnalyticsItem[];
 }) {
-  GA4.trackPurchase(order);
+  GA4.trackPurchase({
+    ...order,
+    items: order.items.map((item) => ({
+      ...item,
+      quantity: item.quantity ?? 1,
+    })),
+  });
   FB.trackFBPurchase(order, order.id);
 }
 
 /**
  * Track search
  */
-export function trackSearch(searchTerm: string) {
+export function trackSearch(searchTerm: string, results: AnalyticsItem[] = []) {
   GA4.trackSearch(searchTerm);
-  FB.trackFBSearch(searchTerm);
+  FB.trackFBSearch(searchTerm, results);
 }
 
 /**
  * Track lead generation (newsletter signup, contact form)
  */
-export function trackLead(value?: number) {
+export function trackLead(
+  payload?:
+    | number
+    | {
+        content_name?: string;
+        value?: number;
+        product?: AnalyticsItem;
+        quantity?: number;
+        unitPrice?: number;
+      }
+) {
   GA4.trackNewsletterSignup('');
-  FB.trackFBLead(value);
+  FB.trackFBLead(payload);
+}
+
+/**
+ * Track contact intent (WhatsApp, phone, email, contact button)
+ */
+export function trackContact(payload?: {
+  content_name?: string;
+  value?: number;
+  product?: AnalyticsItem;
+}) {
+  FB.trackFBContact(payload);
 }
 
 /**
@@ -137,11 +181,50 @@ export function trackUserRegistration(method: string = 'email') {
 }
 
 /**
+ * Track completed registration in Meta Pixel
+ */
+export function trackCompleteRegistration(method: string = 'email') {
+  GA4.trackUserRegistration(method);
+  FB.trackFBCompleteRegistration();
+}
+
+/**
  * Track design customization started (custom event)
  */
-export function trackCustomizeProduct(productName: string) {
+export function trackCustomizeProduct(
+  product:
+    | string
+    | {
+        id?: string;
+        slug?: string;
+        productSlug?: string;
+        name?: string;
+        price?: number;
+        basePrice?: number;
+        unitPrice?: number;
+        quantity?: number;
+        category?: string;
+      },
+  quantity = 1,
+  unitPrice?: number
+) {
+  const productName = typeof product === 'string' ? product : product.name || product.slug || product.id || '';
   GA4.trackDesignCreated(productName);
-  FB.trackFBCustomizeProduct(productName);
+  FB.trackFBCustomizeProduct(product, quantity, unitPrice);
+}
+
+/**
+ * Track payment step after Stripe PaymentIntent creation
+ */
+export function trackAddPaymentInfo(items: AnalyticsItem[], value?: number) {
+  FB.trackFBAddPaymentInfo(items, value);
+}
+
+/**
+ * Track add to wishlist
+ */
+export function trackAddToWishlist(product: AnalyticsItem) {
+  FB.trackFBAddToWishlist(product);
 }
 
 /**

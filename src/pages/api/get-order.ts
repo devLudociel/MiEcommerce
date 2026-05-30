@@ -106,6 +106,7 @@ export const GET: APIRoute = async ({ url, request }) => {
       shipping: Number(orderData.shipping || orderData.shippingCost || 0),
       total: Number(orderData.total || 0),
       status: orderData.status || 'pending',
+      paymentStatus: orderData.paymentStatus || 'pending',
     };
 
     return new Response(JSON.stringify(order), {

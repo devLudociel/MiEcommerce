@@ -82,8 +82,8 @@ export function trackLandingView(slug: string, campaignId?: string): void {
     ...flattenUtm(utm),
   });
 
-  // Facebook Pixel: ViewContent para la landing
-  FB.trackFBCustomEvent('ViewContent', {
+  // Facebook Pixel: custom landing event, separated from product ViewContent
+  FB.trackFBCustomEvent('LandingView', {
     content_type: 'landing_page',
     content_name: slug,
     campaign_id: campaignId || slug,
@@ -104,7 +104,7 @@ export function trackCtaClick(slug: string, ctaType: string, ctaPosition: string
   });
 
   // Facebook Pixel: Lead al hacer clic en CTA
-  FB.trackFBLead();
+  FB.trackFBLead({ content_name: `CTA landing: ${ctaType}`, value: 0 });
 
   console.log('[Landing Tracking] CTA click:', slug, ctaType, ctaPosition);
 }
@@ -127,7 +127,7 @@ export function trackLandingFormSubmit(slug: string, formData?: Record<string, s
     ...(formData || {}),
   });
 
-  FB.trackFBLead();
+  FB.trackFBLead({ content_name: `Formulario landing: ${slug}`, value: 0 });
 
   console.log('[Landing Tracking] Form submit:', slug);
 }

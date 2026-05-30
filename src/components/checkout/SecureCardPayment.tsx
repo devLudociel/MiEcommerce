@@ -23,6 +23,7 @@ interface SecureCardPaymentProps {
   };
   onSuccess: (paymentIntentId: string, orderId: string) => void;
   onError: (error: string) => void;
+  onPaymentIntentCreated?: (paymentIntentId: string) => void;
   getAuthToken?: () => Promise<string | null>;
 }
 
@@ -49,6 +50,7 @@ export default function SecureCardPayment({
   billingDetails,
   onSuccess,
   onError,
+  onPaymentIntentCreated,
   getAuthToken,
 }: SecureCardPaymentProps) {
   const stripe = useStripe();
@@ -172,6 +174,7 @@ export default function SecureCardPayment({
         orderId: effectiveOrderId,
         paymentIntentId,
       });
+      onPaymentIntentCreated?.(paymentIntentId);
 
       // Step 3: Confirm payment with PaymentMethod (CLIENT-SIDE ONLY)
       logger.info('[SecureCardPayment] Confirming payment', { paymentIntentId });

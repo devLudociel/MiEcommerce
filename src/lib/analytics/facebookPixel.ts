@@ -19,12 +19,41 @@ interface AnalyticsItem {
   slug?: string;
   productSlug?: string;
   name?: string;
-  quantity: number;
+  quantity?: number;
   price?: number;
+  basePrice?: number;
   unitPrice?: number;
   item_price?: number;
   category?: string;
 }
+
+type MetaContent = {
+  id: string;
+  quantity: number;
+  item_price: number;
+};
+
+type ProductEventInput = AnalyticsItem & {
+  name?: string;
+};
+
+type ProductPayloadInput = ProductEventInput | string;
+
+type LeadPayload =
+  | number
+  | {
+      content_name?: string;
+      value?: number;
+      product?: ProductEventInput;
+      quantity?: number;
+      unitPrice?: number;
+    };
+
+type ContactPayload = {
+  content_name?: string;
+  value?: number;
+  product?: ProductEventInput;
+};
 
 // Facebook Pixel function type
 type FbqFunction = ((...args: unknown[]) => void) & {
@@ -41,6 +70,10 @@ declare global {
     fbq?: FbqFunction;
     _fbq?: FbqFunction;
   }
+}
+
+function hasFbq(): boolean {
+  return typeof window !== 'undefined' && typeof window.fbq === 'function';
 }
 
 function toNonEmptyString(value: unknown): string | null {
@@ -81,13 +114,43 @@ function toMetaContent(item: AnalyticsItem) {
   if (!id) return null;
 
   const quantity = toPositiveQuantity(item.quantity);
-  const itemPrice = toPrice(item.unitPrice ?? item.item_price ?? item.price);
+  const itemPrice = toPrice(item.unitPrice ?? item.item_price ?? item.price ?? item.basePrice);
 
   return {
     id,
     quantity,
     item_price: itemPrice,
   };
+}
+
+function buildContents(items: AnalyticsItem[]) {
+  return items
+    .map((item) => toMetaContent(item))
+    .filter((content): content is NonNullable<ReturnType<typeof toMetaContent>> =>
+      Boolean(content)
+    );
+}
+
+function contentsValue(contents: MetaContent[]): number {
+  return toMetaValue(
+    contents.reduce((sum, item) => sum + item.item_price * item.quantity, 0)
+  );
+}
+
+function contentsNumItems(contents: Array<{ quantity: number }>): number {
+  return contents.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+function buildSingleContent(
+  product: ProductEventInput,
+  quantity = 1,
+  unitPrice?: number
+): MetaContent | null {
+  return toMetaContent({
+    ...product,
+    quantity,
+    unitPrice: unitPrice ?? product.unitPrice,
+  });
 }
 
 /**
@@ -143,9 +206,9 @@ export function initFacebookPixel(pixelId: string) {
  * Track page view
  */
 export function trackFBPageView() {
-  if (!window.fbq) return;
+  if (!hasFbq()) return;
 
-  window.fbq('track', 'PageView');
+  window.fbq!('track', 'PageView');
 
   console.log('[FB Pixel] Page view');
 }
@@ -158,29 +221,23 @@ export function trackFBProductView(product: {
   slug?: string;
   productSlug?: string;
   name: string;
-  price: number;
+  price?: number;
+  basePrice?: number;
+  unitPrice?: number;
   category?: string;
 }) {
-  if (!window.fbq) return;
+  if (!hasFbq()) return;
 
-  const contentId = getCatalogContentId(product);
-  if (!contentId) return;
+  const content = buildSingleContent(product, 1);
+  if (!content) return;
 
-  const itemPrice = toPrice(product.price);
-
-  window.fbq('track', 'ViewContent', {
-    content_ids: [contentId],
+  window.fbq!('track', 'ViewContent', {
+    content_ids: [content.id],
     content_type: 'product',
-    contents: [
-      {
-        id: contentId,
-        quantity: 1,
-        item_price: itemPrice,
-      },
-    ],
+    contents: [content],
     content_name: product.name,
     content_category: product.category || 'General',
-    value: itemPrice,
+    value: content.item_price,
     currency: 'EUR',
   });
 
@@ -195,31 +252,24 @@ export function trackFBAddToCart(product: {
   slug?: string;
   productSlug?: string;
   name: string;
-  price: number;
+  price?: number;
+  basePrice?: number;
+  unitPrice?: number;
   quantity: number;
   category?: string;
 }) {
-  if (!window.fbq) return;
+  if (!hasFbq()) return;
 
-  const contentId = getCatalogContentId(product);
-  if (!contentId) return;
+  const content = buildSingleContent(product, product.quantity);
+  if (!content) return;
 
-  const quantity = toPositiveQuantity(product.quantity);
-  const itemPrice = toPrice(product.price);
-
-  window.fbq('track', 'AddToCart', {
-    content_ids: [contentId],
+  window.fbq!('track', 'AddToCart', {
+    content_ids: [content.id],
     content_type: 'product',
-    contents: [
-      {
-        id: contentId,
-        quantity,
-        item_price: itemPrice,
-      },
-    ],
+    contents: [content],
     content_name: product.name,
     content_category: product.category || 'General',
-    value: toMetaValue(itemPrice * quantity),
+    value: toMetaValue(content.item_price * content.quantity),
     currency: 'EUR',
   });
 
@@ -230,28 +280,21 @@ export function trackFBAddToCart(product: {
  * Track initiate checkout (InitiateCheckout)
  */
 export function trackFBInitiateCheckout(items: AnalyticsItem[], value: number) {
-  if (!window.fbq) return;
+  if (!hasFbq()) return;
 
-  const contents = items
-    .map((item) => toMetaContent(item))
-    .filter((content): content is NonNullable<ReturnType<typeof toMetaContent>> =>
-      Boolean(content)
-    );
+  const contents = buildContents(items);
 
   if (contents.length === 0) return;
 
-  const checkoutValue = contents.reduce(
-    (sum, item) => sum + item.item_price * item.quantity,
-    0
-  );
+  const checkoutValue = contentsValue(contents);
 
-  window.fbq('track', 'InitiateCheckout', {
+  window.fbq!('track', 'InitiateCheckout', {
     content_ids: contents.map((item) => item.id),
     content_type: 'product',
     contents,
-    value: toMetaValue(checkoutValue || value),
+    value: checkoutValue || toMetaValue(value),
     currency: 'EUR',
-    num_items: contents.reduce((sum, item) => sum + item.quantity, 0),
+    num_items: contentsNumItems(contents),
   });
 
   console.log('[FB Pixel] Initiate checkout:', checkoutValue || value);
@@ -264,27 +307,25 @@ export function trackFBPurchase(
   order: { id: string; total: number; items: AnalyticsItem[] },
   eventId?: string
 ) {
-  if (!window.fbq) return;
+  if (!hasFbq()) return;
 
-  const contents = order.items
-    .map((item) => toMetaContent(item))
-    .filter((content): content is NonNullable<ReturnType<typeof toMetaContent>> =>
-      Boolean(content)
-    );
+  const contents = buildContents(order.items);
+  if (contents.length === 0) return;
 
   const params = {
     content_ids: contents.map((item) => item.id),
     content_type: 'product',
     contents,
-    value: order.total,
+    value: toMetaValue(order.total),
     currency: 'EUR',
-    num_items: contents.reduce((sum, item) => sum + item.quantity, 0),
+    num_items: contentsNumItems(contents),
+    order_id: order.id,
   };
 
   if (eventId) {
-    window.fbq('track', 'Purchase', params, { eventID: eventId });
+    window.fbq!('track', 'Purchase', params, { eventID: eventId });
   } else {
-    window.fbq('track', 'Purchase', params);
+    window.fbq!('track', 'Purchase', params);
   }
 
   console.log('[FB Pixel] Purchase:', order.id, order.total);
@@ -293,37 +334,162 @@ export function trackFBPurchase(
 /**
  * Track search
  */
-export function trackFBSearch(searchTerm: string) {
-  if (!window.fbq) return;
+export function trackFBSearch(searchTerm: string, results: AnalyticsItem[] = []) {
+  const query = searchTerm.trim();
+  if (!query || !hasFbq()) return;
 
-  window.fbq('track', 'Search', {
-    search_string: searchTerm,
-  });
+  const contents = buildContents(results).slice(0, 10);
+  const params: Record<string, unknown> = {
+    search_string: query,
+    content_type: 'product',
+  };
 
-  console.log('[FB Pixel] Search:', searchTerm);
+  if (contents.length > 0) {
+    params.content_ids = contents.map((item) => item.id);
+    params.contents = contents;
+    params.currency = 'EUR';
+    params.value = 0;
+  }
+
+  window.fbq!('track', 'Search', params);
+
+  console.log('[FB Pixel] Search:', query);
 }
 
 /**
  * Track lead (newsletter signup, contact form)
  */
-export function trackFBLead(value?: number) {
-  if (!window.fbq) return;
+export function trackFBLead(payload?: LeadPayload) {
+  if (!hasFbq()) return;
 
-  window.fbq('track', 'Lead', {
-    value: value || 0,
+  const params: Record<string, unknown> = {
+    value: 0,
+    currency: 'EUR',
+  };
+
+  if (typeof payload === 'number') {
+    params.value = toMetaValue(payload);
+  } else if (payload) {
+    if (payload.content_name) params.content_name = payload.content_name;
+    params.value = toMetaValue(toPrice(payload.value));
+
+    if (payload.product) {
+      const content = buildSingleContent(
+        payload.product,
+        payload.quantity ?? payload.product.quantity ?? 1,
+        payload.unitPrice
+      );
+      if (content) {
+        params.content_ids = [content.id];
+        params.content_type = 'product';
+        params.contents = [content];
+        params.value = contentsValue([content]);
+        if (!params.content_name && payload.product.name) {
+          params.content_name = payload.product.name;
+        }
+      }
+    }
+  }
+
+  window.fbq!('track', 'Lead', params);
+
+  console.log('[FB Pixel] Lead generated');
+}
+
+/**
+ * Track contact intent
+ */
+export function trackFBContact(payload?: ContactPayload) {
+  if (!hasFbq()) return;
+
+  const params: Record<string, unknown> = {};
+  if (payload?.content_name) params.content_name = payload.content_name;
+  if (typeof payload?.value === 'number') {
+    params.value = toMetaValue(payload.value);
+    params.currency = 'EUR';
+  }
+
+  if (payload?.product) {
+    const content = buildSingleContent(payload.product, 1);
+    if (content) {
+      params.content_ids = [content.id];
+      params.content_type = 'product';
+      params.content_name = payload.product.name || payload.content_name;
+      params.value = content.item_price;
+      params.currency = 'EUR';
+    }
+  }
+
+  window.fbq!('track', 'Contact', params);
+
+  console.log('[FB Pixel] Contact:', params);
+}
+
+/**
+ * Track payment info added after a PaymentIntent is created
+ */
+export function trackFBAddPaymentInfo(items: AnalyticsItem[], value?: number) {
+  if (!hasFbq()) return;
+
+  const contents = buildContents(items);
+  if (contents.length === 0) return;
+
+  window.fbq!('track', 'AddPaymentInfo', {
+    content_ids: contents.map((item) => item.id),
+    content_type: 'product',
+    contents,
+    value: toMetaValue(value ?? contentsValue(contents)),
     currency: 'EUR',
   });
 
-  console.log('[FB Pixel] Lead generated');
+  console.log('[FB Pixel] Add payment info');
+}
+
+/**
+ * Track user registration
+ */
+export function trackFBCompleteRegistration() {
+  if (!hasFbq()) return;
+
+  window.fbq!('track', 'CompleteRegistration', {
+    content_name: 'Registro de usuario',
+    status: 'completed',
+    currency: 'EUR',
+    value: 0,
+  });
+
+  console.log('[FB Pixel] Complete registration');
+}
+
+/**
+ * Track add to wishlist
+ */
+export function trackFBAddToWishlist(product: ProductEventInput) {
+  if (!hasFbq()) return;
+
+  const content = buildSingleContent(product, 1);
+  if (!content) return;
+
+  window.fbq!('track', 'AddToWishlist', {
+    content_ids: [content.id],
+    content_type: 'product',
+    contents: [content],
+    content_name: product.name,
+    content_category: product.category || 'General',
+    value: content.item_price,
+    currency: 'EUR',
+  });
+
+  console.log('[FB Pixel] Add to wishlist:', product.name);
 }
 
 /**
  * Track custom event
  */
 export function trackFBCustomEvent(eventName: string, parameters?: Record<string, any>) {
-  if (!window.fbq) return;
+  if (!hasFbq()) return;
 
-  window.fbq('trackCustom', eventName, parameters);
+  window.fbq!('trackCustom', eventName, parameters);
 
   console.log('[FB Pixel] Custom event:', eventName, parameters);
 }
@@ -331,23 +497,46 @@ export function trackFBCustomEvent(eventName: string, parameters?: Record<string
 /**
  * Track design customization started
  */
-export function trackFBCustomizeProduct(productName: string) {
-  if (!window.fbq) return;
+export function trackFBCustomizeProduct(
+  product: ProductPayloadInput,
+  quantity = 1,
+  unitPrice?: number
+) {
+  if (!hasFbq()) return;
 
-  window.fbq('trackCustom', 'CustomizeProduct', {
-    product_name: productName,
+  if (typeof product === 'string') {
+    window.fbq!('track', 'CustomizeProduct', {
+      content_name: product,
+      currency: 'EUR',
+      value: 0,
+    });
+    console.log('[FB Pixel] Customize product:', product);
+    return;
+  }
+
+  const content = buildSingleContent(product, quantity, unitPrice);
+  if (!content) return;
+
+  window.fbq!('track', 'CustomizeProduct', {
+    content_ids: [content.id],
+    content_type: 'product',
+    contents: [content],
+    content_name: product.name,
+    content_category: product.category || 'General',
+    value: contentsValue([content]),
+    currency: 'EUR',
   });
 
-  console.log('[FB Pixel] Customize product:', productName);
+  console.log('[FB Pixel] Customize product:', product.name);
 }
 
 /**
  * Track design sharing
  */
 export function trackFBShareDesign(productName: string) {
-  if (!window.fbq) return;
+  if (!hasFbq()) return;
 
-  window.fbq('trackCustom', 'ShareDesign', {
+  window.fbq!('trackCustom', 'ShareDesign', {
     product_name: productName,
   });
 

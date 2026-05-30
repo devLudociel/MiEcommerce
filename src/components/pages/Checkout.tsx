@@ -22,7 +22,7 @@ import type { Address } from '../../lib/userProfile';
 import CustomizationDetails from '../cart/CustomizationDetails';
 import { Trash2, Plus, Minus, Gift } from 'lucide-react';
 // Analytics tracking
-import { trackBeginCheckout } from '../../lib/analytics';
+import { trackAddPaymentInfo, trackBeginCheckout } from '../../lib/analytics';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 // Shipping system
 import ShippingSelector from '../checkout/ShippingSelector';
@@ -576,6 +576,21 @@ export default function Checkout() {
       },
     },
     getAuthToken: async () => (user ? await user.getIdToken() : null),
+    onPaymentIntentCreated: () => {
+      trackAddPaymentInfo(
+        cart.items.map((item) => ({
+          id: item.id,
+          slug: item.slug,
+          productSlug: item.productSlug,
+          name: item.name,
+          price: item.price,
+          unitPrice: item.price,
+          quantity: item.quantity,
+          category: item.category || 'General',
+        })),
+        total
+      );
+    },
     onSuccess: async (paymentIntentId, completedOrderId) => {
       logger.info('[Checkout] Payment successful', {
         paymentIntentId,
@@ -661,6 +676,7 @@ export default function Checkout() {
             const parsed = JSON.parse(storedOrder);
             if (parsed?.id === completedOrderId) {
               parsed.status = 'paid';
+              parsed.paymentStatus = 'paid';
               sessionStorage.setItem('checkout:lastOrder', JSON.stringify(parsed));
             }
           } catch (storageError) {
@@ -1000,6 +1016,7 @@ export default function Checkout() {
           taxLabel: resolvedTotals.taxLabel || orderData.taxLabel,
           total: Number(resolvedTotals.total || 0),
           status: orderData.status,
+          paymentStatus: 'pending',
           userId: orderData.userId,
           accessKey: resolvedOrderAccessToken || null,
         };

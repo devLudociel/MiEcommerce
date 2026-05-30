@@ -4,12 +4,17 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { logger } from '../lib/logger';
 import { debounce } from '../lib/utils/debounce';
 import { safeImageSrc } from '../lib/placeholders';
+import { trackAddToWishlist } from '../lib/analytics';
 
 export interface WishlistItem {
   id: string | number;
+  slug?: string;
+  productSlug?: string;
   name: string;
   price?: number;
+  basePrice?: number;
   image?: string;
+  category?: string;
 }
 
 const WL_STORAGE_PREFIX = 'wishlist';
@@ -29,6 +34,11 @@ type WishlistChangeDetail = {
 function sanitizeWishlistItems(items: WishlistItem[]): WishlistItem[] {
   return items.map((item) => ({
     ...item,
+    slug: typeof item.slug === 'string' && item.slug.trim() ? item.slug.trim() : item.productSlug,
+    productSlug:
+      typeof item.productSlug === 'string' && item.productSlug.trim()
+        ? item.productSlug.trim()
+        : item.slug,
     image: typeof item.image === 'string' ? safeImageSrc(item.image) : item.image,
   }));
 }
@@ -191,8 +201,23 @@ export function getWishlist(): WishlistItem[] {
 export function toggleWishlist(item: WishlistItem) {
   const items = readWishlist(currentUserId);
   const exists = items.some((i) => i.id === item.id);
-  const next = exists ? items.filter((i) => i.id !== item.id) : [...items, item];
+  const sanitizedItem = sanitizeWishlistItems([item])[0];
+  const next = exists ? items.filter((i) => i.id !== item.id) : [...items, sanitizedItem];
   writeWishlist(next);
+
+  if (!exists && sanitizedItem) {
+    const catalogId = sanitizedItem.slug || sanitizedItem.productSlug || String(sanitizedItem.id);
+    trackAddToWishlist({
+      id: String(sanitizedItem.id),
+      slug: catalogId,
+      productSlug: catalogId,
+      name: sanitizedItem.name,
+      price: sanitizedItem.price,
+      basePrice: sanitizedItem.basePrice,
+      category: sanitizedItem.category,
+      quantity: 1,
+    });
+  }
 }
 
 export function removeFromWishlist(id: WishlistItem['id']) {

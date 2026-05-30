@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { ArrowLeft, ArrowRight, Loader, AlertTriangle, ShoppingCart } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
@@ -8,6 +8,7 @@ import { addToCart } from '../../store/cartStore';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import { safeImageSrc } from '../../lib/placeholders';
+import { trackCustomizeProduct } from '../../lib/analytics';
 import { normalizeConfigurator, getUnitPrice } from '../../lib/configurator';
 import type {
   ConfigurableProduct,
@@ -436,6 +437,7 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
 
   /** Per-size quantities when product has a size attribute (textile grid mode) */
   const [sizeQuantities, setSizeQuantities] = useState<Record<string, number>>({});
+  const customizeTrackedRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -565,6 +567,43 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
     }
     return calculatePricing(product, selections);
   }, [product, selections, isSizeGrid, sizeAttribute, sizeGridTotal]);
+
+  useEffect(() => {
+    if (!product || !pricing) return;
+
+    const hasStartedCustomization =
+      Object.values(selections.options).some(Boolean) ||
+      Boolean(selections.designMode) ||
+      Boolean(selections.placement) ||
+      Boolean(selections.placementSize) ||
+      sizeGridTotal > 0 ||
+      currentStep > 0;
+
+    if (!hasStartedCustomization) return;
+
+    const catalogId = product.slug || product.id;
+    if (customizeTrackedRef.current === catalogId) return;
+    customizeTrackedRef.current = catalogId;
+
+    const quantity = Math.max(isSizeGrid ? sizeGridTotal || 1 : selections.quantity || 1, 1);
+    const unitPrice =
+      isSizeGrid && sizeGridUnitPrice > 0
+        ? sizeGridUnitPrice
+        : pricing.total / Math.max(quantity, 1);
+
+    trackCustomizeProduct(
+      {
+        id: product.id,
+        slug: catalogId,
+        productSlug: catalogId,
+        name: product.name,
+        price: unitPrice,
+        basePrice: product.basePrice,
+      },
+      quantity,
+      unitPrice
+    );
+  }, [product, pricing, selections, isSizeGrid, sizeGridTotal, sizeGridUnitPrice, currentStep]);
 
   // En productos por texto (banderín), la cantidad no define precio.
   // Forzamos cantidad mínima para evitar inconsistencias visuales y de carrito.

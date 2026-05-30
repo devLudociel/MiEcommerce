@@ -8,6 +8,7 @@ import {
   getShortAddress,
   type ContactInfoInput,
 } from '../../lib/contactInfo';
+import { trackContact, trackLead } from '../../lib/analytics';
 
 interface FormData {
   nombre: string;
@@ -171,12 +172,23 @@ export default function ContactoComponent() {
 
     // Simular envío - Aquí conectarías con tu backend
     setTimeout(() => {
+      trackLead({
+        content_name:
+          formData.asunto === 'presupuesto'
+            ? 'Solicitud de presupuesto'
+            : 'Solicitud de contacto',
+        value: 0,
+      });
       setIsSubmitting(false);
       setSubmitStatus('success');
       setFormData({ nombre: '', email: '', telefono: '', asunto: '', mensaje: '' });
 
       setTimeout(() => setSubmitStatus('idle'), 5000);
     }, 1500);
+  };
+
+  const handleContactClick = (contentName: string) => {
+    trackContact({ content_name: contentName });
   };
 
   return (
@@ -335,6 +347,7 @@ export default function ContactoComponent() {
                   href={info.action || '#'}
                   target={info.action?.startsWith('http') ? '_blank' : undefined}
                   rel={info.action?.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  onClick={() => info.action && handleContactClick(`Contacto ${info.title}`)}
                   className={`bg-gradient-to-br ${info.color} p-6 rounded-2xl text-white shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 ${!info.action && 'cursor-default'}`}
                 >
                   <div className="text-4xl mb-3">{info.icon}</div>
@@ -373,6 +386,7 @@ export default function ContactoComponent() {
                     href={social.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => handleContactClick(`Contacto ${social.name}`)}
                     className={`aspect-square flex items-center justify-center text-3xl bg-gray-100 rounded-xl hover:text-white ${social.color} transform hover:scale-110 transition-all duration-300`}
                     title={social.name}
                   >
@@ -428,12 +442,14 @@ export default function ContactoComponent() {
               }
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => handleContactClick('Contacto WhatsApp')}
               className="px-8 py-4 bg-green-500 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
             >
               💬 Abrir WhatsApp
             </a>
             <a
               href={contactData ? getPhoneUrl(contactData.phone) : 'tel:+34645341452'}
+              onClick={() => handleContactClick('Contacto teléfono')}
               className="px-8 py-4 bg-gradient-primary text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
             >
               📞 Llamar Ahora

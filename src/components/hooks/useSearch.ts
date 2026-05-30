@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { db } from '../../lib/firebase';
 import { safeImageSrc } from '../../lib/placeholders';
+import { trackSearch } from '../../lib/analytics';
 import {
   collection,
   getDocs,
@@ -155,13 +156,40 @@ export const useSearch = (): UseSearchReturn => {
   const handleSearchSubmit = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      if (searchQuery.trim()) {
+      const query = searchQuery.trim();
+      if (query) {
+        trackSearch(
+          query,
+          searchResults.map((result) => ({
+            id: result.id,
+            slug: result.slug || result.id,
+            productSlug: result.slug || result.id,
+            name: result.name,
+            price: result.price,
+            quantity: 1,
+            category: result.category,
+          }))
+        );
         performSearch(searchQuery);
       }
     }
   };
 
   const handleResultClick = (result: SearchResult) => {
+    const query = searchQuery.trim();
+    if (query) {
+      trackSearch(query, [
+        {
+          id: result.id,
+          slug: result.slug || result.id,
+          productSlug: result.slug || result.id,
+          name: result.name,
+          price: result.price,
+          quantity: 1,
+          category: result.category,
+        },
+      ]);
+    }
     console.log('Selected result:', result);
   };
 

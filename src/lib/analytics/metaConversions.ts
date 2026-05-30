@@ -53,12 +53,14 @@ function buildContents(items: OrderItem[]): Array<{ id: string; quantity: number
   const contents: Array<{ id: string; quantity: number; item_price?: number }> = [];
 
   for (const item of items) {
-    const id = String(item.productId || '').trim();
+    const id = String(item.productSlug || item.productId || '').trim();
     if (!id) continue;
     const quantity = Math.max(1, Number(item.quantity) || 1);
     const unitPrice =
       Number.isFinite(Number(item.unitPrice)) && Number(item.unitPrice) > 0
         ? Number(item.unitPrice)
+        : Number.isFinite(Number((item as any).price)) && Number((item as any).price) > 0
+          ? Number((item as any).price)
         : Number.isFinite(Number(item.totalPrice)) && Number(item.totalPrice) > 0
           ? Number(item.totalPrice) / quantity
           : undefined;
@@ -118,7 +120,11 @@ export async function sendMetaPurchaseEvent(params: {
 
   const items = Array.isArray(order.items) ? order.items : [];
   const contents = buildContents(items);
-  const numItems = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+  if (contents.length === 0) {
+    logger.warn('[Meta CAPI] Missing catalog contents. Skipping event.', { orderId });
+    return;
+  }
+  const numItems = contents.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
 
   const eventId = params.eventId || orderId;
   const event = {
@@ -131,6 +137,7 @@ export async function sendMetaPurchaseEvent(params: {
       currency: DEFAULT_CURRENCY,
       value: Number(order.total) || 0,
       content_type: 'product',
+      content_ids: contents.map((item) => item.id),
       contents,
       num_items: numItems,
       order_id: orderId,

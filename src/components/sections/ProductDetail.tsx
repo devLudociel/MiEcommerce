@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { getProductReviewStats, db } from '../../lib/firebase';
 import { collection, query, where, limit, getDocs, orderBy } from 'firebase/firestore';
 import type { FirebaseProduct, InspirationImage, ProductVariant } from '../../types/firebase';
@@ -220,6 +220,7 @@ export default function ProductDetail({ id, slug }: Props) {
   const [reviewStats, setReviewStats] = useState({ averageRating: 0, totalReviews: 0 });
   const [mounted, setMounted] = useState(false);
   const [inspirationImages, setInspirationImages] = useState<InspirationImage[]>([]);
+  const viewTrackedRef = useRef<string | null>(null);
 
   // Modal state
   const [modal, setModal] = useState<{
@@ -255,15 +256,22 @@ export default function ProductDetail({ id, slug }: Props) {
   useEffect(() => {
     if (!uiProduct) return;
 
-    // Track product view in analytics
-    trackProductView({
-      id: uiProduct.id,
-      slug: uiProduct.slug,
-      name: uiProduct.name,
-      price: uiProduct.basePrice,
-      category: uiProduct.category,
-      brand: uiProduct.brand,
-    });
+    const catalogId = uiProduct.slug || uiProduct.id;
+
+    // Track product view in analytics once per loaded catalog product
+    if (viewTrackedRef.current !== catalogId) {
+      viewTrackedRef.current = catalogId;
+      trackProductView({
+        id: uiProduct.id,
+        slug: catalogId,
+        productSlug: catalogId,
+        name: uiProduct.name,
+        price: uiProduct.basePrice,
+        basePrice: uiProduct.basePrice,
+        category: uiProduct.category,
+        brand: uiProduct.brand,
+      });
+    }
 
     // Track product view in Klaviyo
     klaviyoViewedProduct({
@@ -380,7 +388,16 @@ export default function ProductDetail({ id, slug }: Props) {
 
   const handleCustomize = useCallback(() => {
     if (!uiProduct?.configuratorId) return;
-    trackCustomizeProduct(uiProduct.name);
+    const catalogId = uiProduct.slug || uiProduct.id;
+    trackCustomizeProduct({
+      id: uiProduct.id,
+      slug: catalogId,
+      productSlug: catalogId,
+      name: uiProduct.name,
+      price: uiProduct.basePrice,
+      basePrice: uiProduct.basePrice,
+      category: uiProduct.category,
+    });
     window.location.href = `/configurar/${uiProduct.id}`;
   }, [uiProduct]);
 
@@ -407,13 +424,20 @@ export default function ProductDetail({ id, slug }: Props) {
 
   const handleToggleWishlist = useCallback(() => {
     if (uiProduct) {
+      const variant = uiProduct.variants[selectedVariant];
+      const catalogId = uiProduct.slug || uiProduct.id;
       toggleWishlist({
         id: uiProduct.id,
+        slug: catalogId,
+        productSlug: catalogId,
         name: uiProduct.name,
+        price: variant?.price ?? uiProduct.basePrice,
+        basePrice: uiProduct.basePrice,
         image: uiProduct.images[0]?.url || '',
+        category: uiProduct.category,
       });
     }
-  }, [uiProduct]);
+  }, [uiProduct, selectedVariant]);
 
   useEffect(() => {
     const id = uiProduct?.id;
@@ -944,15 +968,7 @@ export default function ProductDetail({ id, slug }: Props) {
                   <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
                     <button
                       data-testid="product-add-to-wishlist"
-                      onClick={() => {
-                        if (uiProduct)
-                          toggleWishlist({
-                            id: uiProduct.id,
-                            name: uiProduct.name,
-                            price: currentVariant.price,
-                            image: product.images[0]?.url,
-                          });
-                      }}
+                      onClick={handleToggleWishlist}
                       className="flex items-center gap-2 text-rose-600 hover:text-rose-700 font-semibold"
                     >
                       <Icon

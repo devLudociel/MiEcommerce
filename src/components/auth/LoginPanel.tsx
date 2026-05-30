@@ -16,6 +16,7 @@ import { auth } from '../../lib/firebase';
 import { validatePassword } from '../../lib/validation/validators';
 import { resolveAdminAccess } from '../../lib/auth/adminAccessClient';
 import AccessibleModal from '../common/AccessibleModal';
+import { trackCompleteRegistration } from '../../lib/analytics';
 
 type TabMode = 'login' | 'register';
 
@@ -415,6 +416,7 @@ export default function LoginPanel() {
       if (tabMode === 'register') {
         await createUserWithEmailAndPassword(auth, email.trim(), password);
         await grantWelcomeBonus(auth.currentUser);
+        trackCompleteRegistration('email');
         showModal(
           'success',
           '¡Cuenta creada!',

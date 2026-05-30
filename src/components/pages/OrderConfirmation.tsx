@@ -22,6 +22,7 @@ interface Order {
   taxLabel?: string;
   total: number;
   status: string;
+  paymentStatus?: string;
   userId?: string;
   accessKey?: string;
 }
@@ -115,6 +116,25 @@ export default function OrderConfirmation() {
   // Track purchase in analytics (once per order)
   useEffect(() => {
     if (order && !purchaseTracked.current) {
+      const isPaid =
+        order.paymentStatus === 'paid' ||
+        ['paid', 'processing', 'completed'].includes(String(order.status || ''));
+
+      if (!isPaid) {
+        logger.debug('[OrderConfirmation] Purchase not tracked because order is not paid yet', {
+          orderId: order.id,
+          status: order.status,
+          paymentStatus: order.paymentStatus,
+        });
+        return;
+      }
+
+      const idempotencyKey = `meta:purchase:${order.id}`;
+      if (typeof window !== 'undefined' && localStorage.getItem(idempotencyKey)) {
+        purchaseTracked.current = true;
+        return;
+      }
+
       purchaseTracked.current = true;
 
       // Track purchase event
@@ -128,12 +148,17 @@ export default function OrderConfirmation() {
           id: item.productId,
           slug: item.productSlug,
           productSlug: item.productSlug,
-          name: item.name,
-          price: item.price,
+          name: (item as any).name || item.productName,
+          price: Number((item as any).price ?? item.unitPrice ?? 0),
+          unitPrice: Number((item as any).price ?? item.unitPrice ?? 0),
           quantity: item.quantity,
           category: 'General',
         })),
       });
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(idempotencyKey, '1');
+      }
 
       logger.debug('[OrderConfirmation] Purchase tracked in analytics', { orderId: order.id });
     }
