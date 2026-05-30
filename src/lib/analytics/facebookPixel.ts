@@ -195,6 +195,9 @@ export function initFacebookPixel(pixelId: string) {
     }
   }
 
+  // Disable Meta automatic event configuration so manual catalog events are not duplicated.
+  window.fbq('set', 'autoConfig', false, pixelId);
+
   // Initialize pixel
   window.fbq('init', pixelId);
   window.fbq('track', 'PageView');
