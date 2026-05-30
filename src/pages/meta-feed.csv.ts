@@ -102,33 +102,40 @@ export const GET: APIRoute = async () => {
     const db = getAdminDb();
     const snapshot = await db.collection('products').where('active', '==', true).get();
 
-    const rows = snapshot.docs.map((doc) => {
-      const product = doc.data() as Product;
+    const rows = snapshot.docs
+      .map((doc) => {
+        const product = doc.data() as Product;
 
-      const slug = product.slug || doc.id;
-      const title = product.name || product.metaTitle || slug;
-      const link = `${SITE_URL}/producto/${slug}`;
+        if (product.category === 'servicios-digitales') return null;
 
-      return [
-        slug,
-        title,
-        getDescription(product),
-        getAvailability(product),
-        'new',
-        getPrice(product),
-        link,
-        getFirstImage(product),
-        'Imprime Arte',
-        getProductType(product),
-        product.category || '',
-        product.subcategory || '',
-        product.featured === true ? 'destacado' : '',
-        product.onSale === true ? 'oferta' : '',
-        product.readyMade === true ? 'listo-para-comprar' : 'personalizable',
-      ]
-        .map(csv)
-        .join(',');
-    });
+        const image = getFirstImage(product);
+        if (!image) return null;
+
+        const slug = product.slug || doc.id;
+        const title = product.name || product.metaTitle || slug;
+        const link = `${SITE_URL}/producto/${slug}`;
+
+        return [
+          slug,
+          title,
+          getDescription(product),
+          getAvailability(product),
+          'new',
+          getPrice(product),
+          link,
+          image,
+          'Imprime Arte',
+          getProductType(product),
+          product.category || '',
+          product.subcategory || '',
+          product.featured === true ? 'destacado' : '',
+          product.onSale === true ? 'oferta' : '',
+          product.readyMade === true ? 'listo-para-comprar' : 'personalizable',
+        ]
+          .map(csv)
+          .join(',');
+      })
+      .filter((row): row is string => Boolean(row));
 
     const body = [headers.map(csv).join(','), ...rows].join('\n');
 
