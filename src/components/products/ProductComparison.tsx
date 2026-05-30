@@ -116,11 +116,14 @@ export default function ProductComparison() {
           <button
             onClick={() => {
               addToCart({
-                productId: item.id,
+                id: item.id,
+                slug: item.slug || item.id,
+                productSlug: item.slug || item.id,
                 name: item.name,
                 price: item.price,
                 quantity: 1,
                 image: item.image,
+                category: item.category,
               });
               notify.success(`${item.name} agregado al carrito`);
             }}

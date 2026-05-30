@@ -224,10 +224,13 @@ export default function Checkout() {
       trackBeginCheckout(
         cart.items.map((item) => ({
           id: item.id,
+          slug: item.slug,
+          productSlug: item.productSlug,
           name: item.name,
           price: item.price,
+          unitPrice: item.price,
           quantity: item.quantity,
-          category: 'General',
+          category: item.category || 'General',
         })),
         cart.total
       );
@@ -241,7 +244,7 @@ export default function Checkout() {
           Quantity: item.quantity,
           ItemPrice: item.price,
           ImageURL: item.image,
-          ProductURL: `https://imprimearte.es/producto/${item.id}`,
+          ProductURL: `https://imprimearte.es/producto/${item.slug || item.productSlug || item.id}`,
         })),
         totalPrice: cart.total,
         itemCount,
@@ -590,7 +593,7 @@ export default function Checkout() {
             Quantity: item.quantity,
             ItemPrice: item.price,
             ImageURL: item.image,
-            ProductURL: `https://imprimearte.es/producto/${item.id}`,
+            ProductURL: `https://imprimearte.es/producto/${item.slug || item.productSlug || item.id}`,
           })),
           totalPrice: total,
           itemCount,
@@ -903,6 +906,7 @@ export default function Checkout() {
         checkoutId,
         items: cart.items.map((item) => ({
           productId: item.id,
+          productSlug: item.slug || item.productSlug,
           name: item.name,
           quantity: item.quantity,
           price: item.price,

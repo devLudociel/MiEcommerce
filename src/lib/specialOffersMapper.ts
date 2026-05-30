@@ -6,6 +6,7 @@ import { getSpecialOffers } from './firebase';
  */
 export interface SpecialOffer {
   id: string;
+  slug?: string;
   title: string;
   description: string;
   originalPrice: number;
@@ -23,6 +24,7 @@ export interface SpecialOffer {
 
 interface FirebaseProduct {
   id: string;
+  slug?: string;
   name?: string;
   description?: string;
   basePrice?: number | string;
@@ -78,6 +80,7 @@ function mapProductToOffer(product: FirebaseProduct): SpecialOffer {
 
   return {
     id: product.id,
+    slug: product.slug,
     title: product.name || 'Producto sin nombre',
     description: product.description || 'Producto en oferta especial',
     originalPrice: basePrice,

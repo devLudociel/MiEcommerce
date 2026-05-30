@@ -16,9 +16,14 @@
 interface AnalyticsItem {
   id?: string;
   productId?: string;
+  slug?: string;
+  productSlug?: string;
   name?: string;
   quantity: number;
   price?: number;
+  unitPrice?: number;
+  item_price?: number;
+  category?: string;
 }
 
 // Facebook Pixel function type
@@ -36,6 +41,53 @@ declare global {
     fbq?: FbqFunction;
     _fbq?: FbqFunction;
   }
+}
+
+function toNonEmptyString(value: unknown): string | null {
+  const text = String(value ?? '').trim();
+  return text || null;
+}
+
+function getCatalogContentId(item: {
+  slug?: string;
+  productSlug?: string;
+  id?: string;
+  productId?: string;
+}): string | null {
+  return (
+    toNonEmptyString(item.slug) ||
+    toNonEmptyString(item.productSlug) ||
+    toNonEmptyString(item.id) ||
+    toNonEmptyString(item.productId)
+  );
+}
+
+function toPositiveQuantity(value: unknown): number {
+  const quantity = Number(value ?? 1);
+  return Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
+}
+
+function toPrice(value: unknown): number {
+  const price = Number(value ?? 0);
+  return Number.isFinite(price) && price > 0 ? price : 0;
+}
+
+function toMetaValue(value: number): number {
+  return Number(value.toFixed(2));
+}
+
+function toMetaContent(item: AnalyticsItem) {
+  const id = getCatalogContentId(item);
+  if (!id) return null;
+
+  const quantity = toPositiveQuantity(item.quantity);
+  const itemPrice = toPrice(item.unitPrice ?? item.item_price ?? item.price);
+
+  return {
+    id,
+    quantity,
+    item_price: itemPrice,
+  };
 }
 
 /**
@@ -103,18 +155,32 @@ export function trackFBPageView() {
  */
 export function trackFBProductView(product: {
   id: string;
+  slug?: string;
+  productSlug?: string;
   name: string;
   price: number;
   category?: string;
 }) {
   if (!window.fbq) return;
 
+  const contentId = getCatalogContentId(product);
+  if (!contentId) return;
+
+  const itemPrice = toPrice(product.price);
+
   window.fbq('track', 'ViewContent', {
-    content_ids: [product.id],
+    content_ids: [contentId],
     content_type: 'product',
+    contents: [
+      {
+        id: contentId,
+        quantity: 1,
+        item_price: itemPrice,
+      },
+    ],
     content_name: product.name,
     content_category: product.category || 'General',
-    value: product.price,
+    value: itemPrice,
     currency: 'EUR',
   });
 
@@ -126,6 +192,8 @@ export function trackFBProductView(product: {
  */
 export function trackFBAddToCart(product: {
   id: string;
+  slug?: string;
+  productSlug?: string;
   name: string;
   price: number;
   quantity: number;
@@ -133,12 +201,25 @@ export function trackFBAddToCart(product: {
 }) {
   if (!window.fbq) return;
 
+  const contentId = getCatalogContentId(product);
+  if (!contentId) return;
+
+  const quantity = toPositiveQuantity(product.quantity);
+  const itemPrice = toPrice(product.price);
+
   window.fbq('track', 'AddToCart', {
-    content_ids: [product.id],
+    content_ids: [contentId],
     content_type: 'product',
+    contents: [
+      {
+        id: contentId,
+        quantity,
+        item_price: itemPrice,
+      },
+    ],
     content_name: product.name,
     content_category: product.category || 'General',
-    value: product.price * product.quantity,
+    value: toMetaValue(itemPrice * quantity),
     currency: 'EUR',
   });
 
@@ -151,15 +232,29 @@ export function trackFBAddToCart(product: {
 export function trackFBInitiateCheckout(items: AnalyticsItem[], value: number) {
   if (!window.fbq) return;
 
+  const contents = items
+    .map((item) => toMetaContent(item))
+    .filter((content): content is NonNullable<ReturnType<typeof toMetaContent>> =>
+      Boolean(content)
+    );
+
+  if (contents.length === 0) return;
+
+  const checkoutValue = contents.reduce(
+    (sum, item) => sum + item.item_price * item.quantity,
+    0
+  );
+
   window.fbq('track', 'InitiateCheckout', {
-    content_ids: items.map((item) => item.id),
+    content_ids: contents.map((item) => item.id),
     content_type: 'product',
-    value: value,
+    contents,
+    value: toMetaValue(checkoutValue || value),
     currency: 'EUR',
-    num_items: items.reduce((sum, item) => sum + item.quantity, 0),
+    num_items: contents.reduce((sum, item) => sum + item.quantity, 0),
   });
 
-  console.log('[FB Pixel] Initiate checkout:', value);
+  console.log('[FB Pixel] Initiate checkout:', checkoutValue || value);
 }
 
 /**
@@ -171,12 +266,19 @@ export function trackFBPurchase(
 ) {
   if (!window.fbq) return;
 
+  const contents = order.items
+    .map((item) => toMetaContent(item))
+    .filter((content): content is NonNullable<ReturnType<typeof toMetaContent>> =>
+      Boolean(content)
+    );
+
   const params = {
-    content_ids: order.items.map((item) => item.id || item.productId),
+    content_ids: contents.map((item) => item.id),
     content_type: 'product',
+    contents,
     value: order.total,
     currency: 'EUR',
-    num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),
+    num_items: contents.reduce((sum, item) => sum + item.quantity, 0),
   };
 
   if (eventId) {

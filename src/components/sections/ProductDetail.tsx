@@ -16,7 +16,6 @@ import NotifyWhenAvailable from '../products/NotifyWhenAvailable';
 // Analytics tracking
 import {
   trackProductView,
-  trackAddToCart as trackAnalyticsAddToCart,
   trackCustomizeProduct,
 } from '../../lib/analytics';
 import { klaviyoViewedProduct } from '../../lib/klaviyo';
@@ -259,6 +258,7 @@ export default function ProductDetail({ id, slug }: Props) {
     // Track product view in analytics
     trackProductView({
       id: uiProduct.id,
+      slug: uiProduct.slug,
       name: uiProduct.name,
       price: uiProduct.basePrice,
       category: uiProduct.category,
@@ -358,21 +358,15 @@ export default function ProductDetail({ id, slug }: Props) {
     try {
       addToCart({
         id: product.id,
+        slug: product.slug || product.id,
+        productSlug: product.slug || product.id,
         name: product.name,
         price: variant.price,
         quantity: Math.max(1, quantity),
         image,
+        category: product.category,
         variantId: variant.id,
         variantName: variant.colorName ? `${variant.name} - ${variant.colorName}` : variant.name,
-      });
-
-      // Track add to cart in analytics
-      trackAnalyticsAddToCart({
-        id: product.id,
-        name: product.name,
-        price: variant.price,
-        quantity: Math.max(1, quantity),
-        category: product.category,
       });
     } finally {
       setTimeout(() => setIsAddingToCart(false), 600);

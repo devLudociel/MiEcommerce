@@ -767,6 +767,8 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
 
           addToCart({
             id: product.id,
+            slug: product.slug || product.id,
+            productSlug: product.slug || product.id,
             name: product.name,
             price: unitPrice,
             quantity: qty,
@@ -834,6 +836,8 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
 
       addToCart({
         id: product.id,
+        slug: product.slug || product.id,
+        productSlug: product.slug || product.id,
         name: product.name,
         price: pricing.total / Math.max(cartQuantity, 1),
         quantity: cartQuantity,

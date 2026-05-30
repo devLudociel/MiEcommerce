@@ -9,13 +9,18 @@ import { withRetry } from '../lib/resilience';
 import { debounce } from '../lib/utils/debounce';
 import { klaviyoAddedToCart } from '../lib/klaviyo';
 import { safeImageSrc } from '../lib/placeholders';
+import { trackAddToCart } from '../lib/analytics';
 
 export interface CartItem {
   id: string;
+  productId?: string;
+  slug?: string;
+  productSlug?: string;
   name: string;
   price: number;
   quantity: number;
   image: string;
+  category?: string;
   variantId?: number;
   variantName?: string;
   /** Unique key encoding product + all attribute selections. Used to distinguish
@@ -54,8 +59,16 @@ const CART_GUEST_KEY = `${CART_STORAGE_PREFIX}:guest`;
 const getCartStorageKey = (userId?: string | null) =>
   userId ? `${CART_STORAGE_PREFIX}:${userId}` : CART_GUEST_KEY;
 
+const cleanOptionalString = (value: unknown): string | undefined => {
+  const text = String(value ?? '').trim();
+  return text || undefined;
+};
+
 const sanitizeCartItem = (item: CartItem): CartItem => ({
   ...item,
+  id: cleanOptionalString(item.id) || cleanOptionalString(item.productId) || cleanOptionalString(item.slug) || '',
+  slug: cleanOptionalString(item.slug) || cleanOptionalString(item.productSlug),
+  productSlug: cleanOptionalString(item.productSlug) || cleanOptionalString(item.slug),
   image: safeImageSrc(item.image),
 });
 
@@ -299,6 +312,14 @@ export const setCurrentUserId = (userId: string | null): void => {
 // Agregar item al carrito
 export function addToCart(item: CartItem): void {
   const sanitizedItem = sanitizeCartItem(item);
+  if (!sanitizedItem.id) {
+    logger.warn('[CartStore] Refusing to add item without product id', {
+      productName: sanitizedItem.name,
+    });
+    notify.error('No se pudo agregar el producto al carrito.');
+    return;
+  }
+
   const currentState = cartStore.get();
   const existingItemIndex = currentState.items.findIndex((i: CartItem) => {
     // If both items have a variantKey, use it as the discriminator
@@ -347,13 +368,24 @@ export function addToCart(item: CartItem): void {
   }
 
   // Klaviyo event: Added to Cart
+  const catalogId = sanitizedItem.slug || sanitizedItem.productSlug || sanitizedItem.id;
+  trackAddToCart({
+    id: sanitizedItem.id,
+    slug: catalogId,
+    productSlug: catalogId,
+    name: sanitizedItem.name,
+    price: sanitizedItem.price,
+    quantity: sanitizedItem.quantity,
+    category: sanitizedItem.category,
+  });
+
   klaviyoAddedToCart({
     productId: sanitizedItem.id,
     productName: sanitizedItem.name,
     price: sanitizedItem.price,
     quantity: sanitizedItem.quantity,
     imageUrl: sanitizedItem.image,
-    productUrl: `https://imprimearte.es/producto/${sanitizedItem.id}`,
+    productUrl: `https://imprimearte.es/producto/${catalogId}`,
   });
 }
 

@@ -4,6 +4,7 @@ import { getAdminDb } from '../firebase-admin';
 
 export interface OrderItemInput {
   productId: string;
+  productSlug?: string;
   name?: string;
   quantity: number;
   variantId?: number;

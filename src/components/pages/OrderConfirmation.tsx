@@ -126,6 +126,8 @@ export default function OrderConfirmation() {
         tax: order.tax,
         items: order.items.map((item) => ({
           id: item.productId,
+          slug: item.productSlug,
+          productSlug: item.productSlug,
           name: item.name,
           price: item.price,
           quantity: item.quantity,

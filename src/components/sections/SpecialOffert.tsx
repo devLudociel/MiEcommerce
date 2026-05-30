@@ -5,6 +5,7 @@ import { loadSpecialOffers } from '../../lib/specialOffersMapper';
 
 interface SpecialOffer {
   id: string | number;
+  slug?: string;
   title: string;
   description: string;
   originalPrice: number;
@@ -739,10 +740,13 @@ const SpecialOffers: React.FC<SpecialOffersProps> = ({
                         onClick={() => {
                           addToCart({
                             id: String(offer.id),
+                            slug: offer.slug || String(offer.id),
+                            productSlug: offer.slug || String(offer.id),
                             name: offer.title,
                             price: offer.salePrice,
                             quantity: 1,
                             image: offer.image,
+                            category: offer.category,
                           });
                         }}
                         className={`

@@ -96,6 +96,7 @@ export interface FirebaseOrder {
 
 export interface OrderItem {
   productId: string;
+  productSlug?: string;
   productName: string;
   quantity: number;
   unitPrice: number;

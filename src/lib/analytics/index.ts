@@ -49,6 +49,8 @@ export function trackPageView(url?: string, title?: string) {
  */
 export function trackProductView(product: {
   id: string;
+  slug?: string;
+  productSlug?: string;
   name: string;
   price: number;
   category?: string;
@@ -63,6 +65,8 @@ export function trackProductView(product: {
  */
 export function trackAddToCart(product: {
   id: string;
+  slug?: string;
+  productSlug?: string;
   name: string;
   price: number;
   quantity: number;
@@ -76,9 +80,13 @@ export function trackAddToCart(product: {
 interface AnalyticsItem {
   id?: string;
   productId?: string;
+  slug?: string;
+  productSlug?: string;
   name?: string;
   category?: string;
   price?: number;
+  unitPrice?: number;
+  item_price?: number;
   quantity: number;
 }
 

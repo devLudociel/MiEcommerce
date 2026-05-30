@@ -82,6 +82,7 @@ const billingInfoSchema = z.object({
 
 const orderItemSchema = z.object({
   productId: z.string(),
+  productSlug: z.string().optional(),
   name: z.string().min(1).max(500).optional(),
   quantity: z.number().int().min(1).max(1000),
   image: z.string().optional(), // Not always a valid URL, can be relative path
@@ -245,6 +246,7 @@ export const POST: APIRoute = async ({ request }) => {
     const sanitizedItems = Array.isArray(orderData.items)
       ? orderData.items.map((i: OrderItem) => ({
           productId: i.productId,
+          productSlug: i.productSlug,
           name: i.name,
           quantity: Number(i?.quantity) || 0,
           image: i.image,
@@ -281,6 +283,7 @@ export const POST: APIRoute = async ({ request }) => {
         quantity: item.quantity,
         price: item.price,
       };
+      if (item.productSlug) docItem.productSlug = item.productSlug;
       if (item.image) docItem.image = item.image;
       if (typeof item.variantId === 'number') docItem.variantId = item.variantId;
       if (item.variantName) docItem.variantName = item.variantName;
