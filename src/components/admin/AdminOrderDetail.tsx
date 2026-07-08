@@ -30,6 +30,8 @@ interface CustomizationField {
 interface ItemCustomization {
   categoryName?: string;
   values?: CustomizationField[];
+  /** Pedidos del configurador V2 guardan claves planas: option_*, designMode, placement… */
+  [key: string]: unknown;
 }
 
 interface OrderItem {
@@ -41,6 +43,72 @@ interface OrderItem {
   productionStatus?: 'pending' | 'in_production' | 'ready' | 'shipped';
   productionNotes?: string;
   customization?: ItemCustomization;
+}
+
+/**
+ * Detalle de personalización para pedidos del configurador V2 (formato flat).
+ * Los pedidos legacy usan `customization.values` y se renderizan aparte.
+ */
+function ConfiguratorDetails({ customization }: { customization: ItemCustomization }) {
+  const lines: { label: string; value: string }[] = [];
+  for (const [key, val] of Object.entries(customization)) {
+    if (key.startsWith('option_') && key.endsWith('_label') && typeof val === 'string' && val) {
+      lines.push({ label: key.slice(7, -6).replace(/_/g, ' '), value: val });
+    }
+  }
+  if (typeof customization.placementLabel === 'string' && customization.placementLabel) {
+    const size =
+      typeof customization.placementSize === 'string' && customization.placementSize
+        ? ` · ${customization.placementSize}`
+        : '';
+    lines.push({ label: 'Posición', value: customization.placementLabel + size });
+  }
+  if (typeof customization.designNotes === 'string' && customization.designNotes) {
+    lines.push({ label: 'Notas de diseño', value: customization.designNotes });
+  }
+
+  const designMode = customization.designMode;
+  const uploadedImage =
+    typeof customization.uploadedImage === 'string' && /^https?:\/\//.test(customization.uploadedImage)
+      ? customization.uploadedImage
+      : null;
+
+  if (lines.length === 0 && !designMode) return null;
+
+  return (
+    <div className="space-y-1.5 mt-2">
+      {designMode === 'send-later' && (
+        <div className="p-2 bg-amber-100 border border-amber-300 rounded-lg text-sm font-bold text-amber-800">
+          ⚠️ Diseño pendiente — el cliente lo envía tras el pedido. Contactar para recibir el
+          archivo.
+        </div>
+      )}
+      {designMode === 'need-design' && (
+        <div className="p-2 bg-indigo-100 border border-indigo-300 rounded-lg text-sm font-bold text-indigo-800">
+          🎨 Servicio de diseño contratado
+        </div>
+      )}
+      {designMode === 'ready' && uploadedImage && (
+        <p className="text-sm">
+          <span className="font-semibold text-gray-700">Diseño del cliente:</span>{' '}
+          <a
+            href={uploadedImage}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-cyan-600 underline font-bold"
+          >
+            Ver / descargar archivo
+          </a>
+        </p>
+      )}
+      {lines.map((l) => (
+        <p key={l.label} className="text-sm">
+          <span className="font-semibold text-gray-700 capitalize">{l.label}:</span>{' '}
+          <span className="text-gray-600">{l.value}</span>
+        </p>
+      ))}
+    </div>
+  );
 }
 
 const statusLabels: Record<string, string> = {
@@ -973,6 +1041,9 @@ export default function AdminOrderDetail() {
                                 )}
                               </div>
                             )}
+
+                            {/* Detalle configurador V2 (formato flat, sin `values`) */}
+                            <ConfiguratorDetails customization={item.customization} />
 
                             {/* Preview visual del mockup */}
                             <OrderItemPreview item={item} signedUrls={signedUrls} />

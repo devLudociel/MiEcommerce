@@ -181,6 +181,143 @@ export function generateDesignPreviewHTML(
   `;
 }
 
+// ============================================================================
+// CONFIGURADOR V2 (formato flat)
+// ============================================================================
+
+/**
+ * Pedidos del configurador V2 guardan la personalización como objeto plano:
+ * option_<id> / option_<id>_label, designMode ('ready'|'need-design'|'send-later'),
+ * designNotes, placement / placementLabel / placementSize, uploadedImage.
+ * Este formato no tiene `fields` ni `values`, así que las funciones legacy
+ * devuelven '' y estas actúan de fallback.
+ */
+type FlatCustomization = Record<string, unknown>;
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function isFlatConfiguratorCustomization(customization: FlatCustomization): boolean {
+  if (customization.fields || customization.values) return false;
+  return (
+    typeof customization.designMode === 'string' ||
+    typeof customization.configuratorId === 'string' ||
+    Object.keys(customization).some((k) => k.startsWith('option_'))
+  );
+}
+
+function flatOptionLines(customization: FlatCustomization): { label: string; value: string }[] {
+  const lines: { label: string; value: string }[] = [];
+  for (const [key, val] of Object.entries(customization)) {
+    if (key.startsWith('option_') && key.endsWith('_label') && typeof val === 'string' && val) {
+      lines.push({ label: key.slice(7, -6).replace(/_/g, ' '), value: val });
+    }
+  }
+  if (typeof customization.placementLabel === 'string' && customization.placementLabel) {
+    const size =
+      typeof customization.placementSize === 'string' && customization.placementSize
+        ? ` · ${customization.placementSize}`
+        : '';
+    lines.push({ label: 'Posición', value: customization.placementLabel + size });
+  }
+  return lines;
+}
+
+/**
+ * Preview HTML para personalizaciones del configurador V2 en emails.
+ * Devuelve '' si la personalización no es del formato flat.
+ */
+export function generateConfiguratorPreviewHTML(
+  customization: FlatCustomization | null | undefined
+): string {
+  if (!customization || typeof customization !== 'object') return '';
+  if (!isFlatConfiguratorCustomization(customization)) return '';
+
+  const lines = flatOptionLines(customization);
+  const designMode = customization.designMode;
+  const designNotes =
+    typeof customization.designNotes === 'string' && customization.designNotes
+      ? customization.designNotes
+      : null;
+  const uploadedImage =
+    typeof customization.uploadedImage === 'string' &&
+    /^https?:\/\//.test(customization.uploadedImage)
+      ? customization.uploadedImage
+      : null;
+
+  if (lines.length === 0 && !designMode) return '';
+
+  let designBlock = '';
+  if (designMode === 'send-later') {
+    designBlock = `
+      <div style="margin-bottom: 12px; padding: 12px; background-color: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px;">
+        <div style="font-size: 13px; font-weight: bold; color: #92400e; margin-bottom: 4px;">📤 Diseño pendiente de envío</div>
+        <div style="font-size: 12px; color: #92400e; line-height: 1.5;">
+          Nos enviarás tu diseño después del pedido. Te contactaremos para recibirlo —
+          también puedes adelantarlo respondiendo a este email o por WhatsApp.
+          No imprimimos nada sin tu confirmación.
+        </div>
+      </div>`;
+  } else if (designMode === 'need-design') {
+    designBlock = `
+      <div style="margin-bottom: 12px; padding: 12px; background-color: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px;">
+        <div style="font-size: 13px; font-weight: bold; color: #4338ca; margin-bottom: 4px;">🎨 Servicio de diseño incluido</div>
+        <div style="font-size: 12px; color: #4338ca; line-height: 1.5;">
+          Nuestro equipo creará tu diseño y te enviaremos una propuesta antes de imprimir.
+        </div>
+      </div>`;
+  } else if (designMode === 'ready' && uploadedImage) {
+    designBlock = `
+      <div style="margin-bottom: 12px; text-align: center;">
+        <img src="${escapeHtml(uploadedImage)}" alt="Tu diseño" style="max-width: 200px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+        <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Tu diseño subido</div>
+      </div>`;
+  }
+
+  const optionsBlock =
+    lines.length > 0
+      ? `
+      <div style="background-color: white; padding: 10px; border-radius: 6px;">
+        ${lines
+          .map(
+            (l) => `
+          <div style="font-size: 11px; color: #6b7280; margin-bottom: 4px;">
+            <strong style="text-transform: capitalize;">${escapeHtml(l.label)}:</strong>
+            <span style="color: #1f2937;">${escapeHtml(l.value)}</span>
+          </div>`
+          )
+          .join('')}
+      </div>`
+      : '';
+
+  const notesBlock = designNotes
+    ? `
+      <div style="margin-top: 8px; background-color: white; padding: 8px 12px; border-radius: 6px;">
+        <div style="font-size: 11px; color: #6b7280;">Notas de diseño:</div>
+        <div style="font-size: 12px; color: #1f2937; margin-top: 3px;">"${escapeHtml(designNotes)}"</div>
+      </div>`
+    : '';
+
+  return `
+    <div style="margin-top: 15px; padding: 15px; background-color: #faf5ff; border-left: 4px solid #9333ea; border-radius: 8px;">
+      <div style="font-weight: bold; color: #9333ea; margin-bottom: 10px; font-size: 14px;">
+        ✨ Tu Personalización
+      </div>
+      ${designBlock}
+      ${optionsBlock}
+      ${notesBlock}
+      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e9d5ff; font-size: 11px; color: #7c3aed; text-align: center;">
+        💡 Revisaremos tu pedido antes de la producción
+      </div>
+    </div>`;
+}
+
 /**
  * Format field value for display
  */
@@ -206,8 +343,22 @@ function formatFieldValue(field: CustomizationField): string {
 export function generateCustomizationSummary(
   customization: ProductCustomization | null | undefined
 ): string {
-  if (!customization || !customization.fields) {
+  if (!customization) {
     return '';
+  }
+
+  // Formato flat del configurador V2
+  if (!customization.fields) {
+    const flat = customization as unknown as FlatCustomization;
+    if (!isFlatConfiguratorCustomization(flat)) return '';
+    const parts: string[] = [];
+    const optionCount = flatOptionLines(flat).length;
+    if (optionCount > 0)
+      parts.push(`${optionCount} ${optionCount > 1 ? 'opciones' : 'opción'}`);
+    if (flat.designMode === 'send-later') parts.push('diseño pendiente de envío');
+    else if (flat.designMode === 'need-design') parts.push('servicio de diseño');
+    else if (flat.designMode === 'ready') parts.push('diseño propio');
+    return parts.join(', ');
   }
 
   const fields = Object.entries(customization.fields);
@@ -224,7 +375,7 @@ export function generateCustomizationSummary(
   const parts = [];
   if (imageCount > 0) parts.push(`${imageCount} imagen${imageCount > 1 ? 'es' : ''}`);
   if (textCount > 0) parts.push(`${textCount} texto${textCount > 1 ? 's' : ''}`);
-  if (optionCount > 0) parts.push(`${optionCount} opción${optionCount > 1 ? 'es' : ''}`);
+  if (optionCount > 0) parts.push(`${optionCount} ${optionCount > 1 ? 'opciones' : 'opción'}`);
 
   return parts.join(', ');
 }

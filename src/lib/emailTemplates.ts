@@ -1,6 +1,10 @@
 // src/lib/emailTemplates.ts
 import type { OrderData } from './firebase';
-import { generateDesignPreviewHTML, generateCustomizationSummary } from './email/designPreview';
+import {
+  generateDesignPreviewHTML,
+  generateConfiguratorPreviewHTML,
+  generateCustomizationSummary,
+} from './email/designPreview';
 
 /**
  * Plantilla de email de confirmación de pedido
@@ -88,7 +92,12 @@ export function orderConfirmationTemplate(order: OrderData): { subject: string; 
                             </td>
                           </tr>
                         </table>
-                        ${item.customization ? generateDesignPreviewHTML(item.name, item.customization, item.previewImageUrl) : ''}
+                        ${
+                          item.customization
+                            ? generateDesignPreviewHTML(item.name, item.customization, item.previewImageUrl) ||
+                              generateConfiguratorPreviewHTML(item.customization)
+                            : ''
+                        }
                       </div>
                     `
                       )
