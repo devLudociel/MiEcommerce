@@ -48,6 +48,8 @@ export default function CustomizationDetails({ customization }: Props) {
     lines.push({ label: 'Diseño', value: String(customization.designFileName) });
   } else if (customization.designMode === 'need-design') {
     lines.push({ label: 'Diseño', value: 'Servicio de diseño incluido' });
+  } else if (customization.designMode === 'send-later') {
+    lines.push({ label: 'Diseño', value: 'Lo enviarás tras el pedido (te contactamos)' });
   }
 
   if (customization.designNotes) {

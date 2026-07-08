@@ -102,6 +102,12 @@ export default function StepSummary({
       label: 'Diseño',
       value: product.configurator.design.designServiceLabel || 'Servicio de diseño',
     });
+  } else if (selections.designMode === 'send-later') {
+    lines.push({
+      icon: <Upload className="w-4 h-4" />,
+      label: 'Diseño',
+      value: 'Lo enviarás después del pedido (te contactamos)',
+    });
   }
 
   // Quantity

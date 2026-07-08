@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Paintbrush, Upload, FileText, X } from 'lucide-react';
+import { Paintbrush, Upload, FileText, X, Send, CheckCircle2 } from 'lucide-react';
 import type { DesignConfig, DesignMode } from '../../../types/configurator';
 import FileUploader from '../ui/FileUploader';
 
@@ -88,7 +88,7 @@ export default function StepDesign({
       </div>
 
       {/* Design mode selector */}
-      <div className="grid sm:grid-cols-2 gap-4">
+      <div className={`grid gap-4 ${config.designServicePrice > 0 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
         <button
           type="button"
           onClick={() => onDesignModeChange('ready')}
@@ -130,6 +130,26 @@ export default function StepDesign({
             </div>
           </button>
         )}
+
+        <button
+          type="button"
+          onClick={() => onDesignModeChange('send-later')}
+          className={`
+            flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all text-center
+            ${designMode === 'send-later'
+              ? 'border-indigo-500 bg-indigo-50 shadow-md'
+              : 'border-gray-200 hover:border-gray-300 bg-white'
+            }
+          `}
+        >
+          <Send className={`w-8 h-8 ${designMode === 'send-later' ? 'text-indigo-600' : 'text-gray-400'}`} />
+          <div>
+            <p className="font-semibold text-gray-900">Lo envío después</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Completa tu pedido ahora y mándanos el diseño por WhatsApp o email
+            </p>
+          </div>
+        </button>
       </div>
 
       {/* Upload design file */}
@@ -180,6 +200,19 @@ export default function StepDesign({
               placeholder="Cuéntanos qué tienes en mente: colores, estilo, texto que quieres incluir..."
               className="w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm resize-none"
             />
+          </div>
+        </div>
+      )}
+
+      {/* Send later - reassurance */}
+      {designMode === 'send-later' && (
+        <div className="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+          <div className="text-sm text-emerald-900">
+            <p className="font-semibold">Sin prisa: tras completar el pedido te contactamos para recibir tu diseño.</p>
+            <p className="mt-1 text-emerald-800">
+              No imprimimos nada sin tu confirmación. Podrás enviarnos el archivo por WhatsApp o email cuando lo tengas.
+            </p>
           </div>
         </div>
       )}

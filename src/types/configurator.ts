@@ -321,7 +321,7 @@ export interface ProductConfiguratorPriceResult {
 // FRONTEND INTERNAL STATE
 // ============================================================================
 
-export type DesignMode = 'ready' | 'need-design' | null;
+export type DesignMode = 'ready' | 'need-design' | 'send-later' | null;
 
 export interface ConfiguratorSelections {
   options: Record<string, string>;

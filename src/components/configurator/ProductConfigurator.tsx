@@ -10,6 +10,11 @@ import { logger } from '../../lib/logger';
 import { safeImageSrc } from '../../lib/placeholders';
 import { trackCustomizeProduct } from '../../lib/analytics';
 import { normalizeConfigurator, getUnitPrice } from '../../lib/configurator';
+import {
+  saveConfiguratorDraft,
+  loadConfiguratorDraft,
+  clearConfiguratorDraft,
+} from '../../lib/configurator/draft';
 import type {
   ConfigurableProduct,
   ConfiguratorStepId,
@@ -22,6 +27,7 @@ import type {
 
 import StepProgress from './ui/StepProgress';
 import PriceDisplay from './ui/PriceDisplay';
+import TrustStrip from './ui/TrustStrip';
 import StepOption from './steps/StepOption';
 import StepFreetext from './steps/StepFreetext';
 import StepDesign from './steps/StepDesign';
@@ -398,6 +404,7 @@ function isStepValid(
     case 'design':
       if (selections.designMode === 'ready') return !!selections.designFile;
       if (selections.designMode === 'need-design') return true;
+      if (selections.designMode === 'send-later') return true;
       return false;
     case 'placement': {
       if (!selections.placement) return false;
@@ -413,6 +420,128 @@ function isStepValid(
     default:
       return true;
   }
+}
+
+// ============================================================================
+// DRAFT RESTORE
+// ============================================================================
+
+/**
+ * Reconstruye el estado del configurador desde un borrador guardado,
+ * validando cada selección contra la configuración actual del producto
+ * (el admin puede haber cambiado opciones desde que se guardó).
+ * El archivo de diseño nunca se restaura (File no es serializable); si el
+ * borrador estaba en modo "ready", el clamp de paso devuelve al usuario
+ * al paso de diseño para re-subirlo.
+ */
+function computeRestoredState(
+  product: ConfigurableProduct,
+  draft: import('../../lib/configurator/draft').ConfiguratorDraft
+): {
+  selections: Pick<
+    ConfiguratorSelections,
+    'options' | 'designMode' | 'designNotes' | 'placement' | 'placementSize' | 'quantity'
+  >;
+  sizeQuantities: Record<string, number>;
+  currentStep: number;
+} | null {
+  const configurator = product.configurator;
+  const optionGroups = configurator.options ?? [];
+  const attributes = configurator.attributes ?? [];
+
+  // Opciones: solo ids que sigan existiendo (freetext acepta cualquier string)
+  const options: Record<string, string> = {};
+  for (const [key, value] of Object.entries(draft.options ?? {})) {
+    if (typeof value !== 'string' || !value) continue;
+    const attr = attributes.find((a) => a.id === key);
+    const group = optionGroups.find((g) => g.id === key);
+    const validInAttr = attr?.type === 'freetext' || attr?.options?.some((o) => o.id === value);
+    const validInGroup = group?.values?.some((v) => v.id === value);
+    if (validInAttr || validInGroup) options[key] = value;
+  }
+
+  const designMode: DesignMode =
+    draft.designMode === 'ready' ||
+    draft.designMode === 'need-design' ||
+    draft.designMode === 'send-later'
+      ? draft.designMode
+      : null;
+
+  const placementValid = configurator.placement?.options?.some((o) => o.id === draft.placement);
+  const placement = placementValid ? draft.placement : undefined;
+  const placementSize =
+    placement && configurator.placement?.sizeOptions?.includes(draft.placementSize ?? '')
+      ? draft.placementSize
+      : undefined;
+
+  const minQty = configurator.quantity.min;
+  const quantity = Math.max(Number(draft.quantity) || minQty, minQty);
+
+  // Tallas (modo grid): solo tallas que existan y cantidades válidas
+  const sizeAttr = findSizeAttribute(attributes, optionGroups);
+  const isGrid = !!sizeAttr && !configurator.quantity.sheetBased;
+  const sizeQuantities: Record<string, number> = {};
+  if (isGrid && sizeAttr) {
+    for (const [sizeId, qty] of Object.entries(draft.sizeQuantities ?? {})) {
+      const n = Number(qty);
+      if (Number.isFinite(n) && n > 0 && sizeAttr.options?.some((o) => o.id === sizeId)) {
+        sizeQuantities[sizeId] = Math.floor(n);
+      }
+    }
+  }
+
+  const sizeTotal = Object.values(sizeQuantities).reduce((s, q) => s + q, 0);
+  const hasContent =
+    Object.keys(options).length > 0 || !!designMode || !!placement || sizeTotal > 0;
+  if (!hasContent) return null;
+
+  const selections: ConfiguratorSelections = {
+    options,
+    designMode,
+    designNotes: typeof draft.designNotes === 'string' ? draft.designNotes : undefined,
+    placement,
+    placementSize,
+    quantity,
+  };
+
+  // Paso seguro: nunca más allá del primer paso inválido
+  const visible = getVisibleSteps(configurator.steps, attributes, options);
+  const steps =
+    isGrid && sizeAttr
+      ? visible.filter((s) => s !== `attribute:${sizeAttr.id}` && s !== `option:${sizeAttr.id}`)
+      : visible;
+
+  let firstInvalid = Math.max(steps.length - 1, 0);
+  for (let i = 0; i < steps.length; i++) {
+    const stepId = steps[i];
+    if (!stepId) continue;
+    let valid: boolean;
+    if (stepId === 'quantity') {
+      valid = isGrid ? sizeTotal >= minQty : quantity >= minQty;
+    } else {
+      valid = isStepValid(stepId, product, selections);
+    }
+    if (!valid) {
+      firstInvalid = i;
+      break;
+    }
+  }
+
+  const savedStep = Number.isFinite(draft.currentStep) ? Math.max(draft.currentStep, 0) : 0;
+  const currentStep = Math.min(savedStep, firstInvalid, Math.max(steps.length - 1, 0));
+
+  return {
+    selections: {
+      options,
+      designMode,
+      designNotes: selections.designNotes,
+      placement,
+      placementSize,
+      quantity,
+    },
+    sizeQuantities,
+    currentStep,
+  };
 }
 
 // ============================================================================
@@ -482,10 +611,30 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
             configurator,
           };
           setProduct(p);
-          setSelections((prev) => ({
-            ...prev,
-            quantity: configurator.quantity.min,
-          }));
+
+          // Restaurar borrador guardado (si existe y sigue siendo válido).
+          // Un borrador corrupto o incompatible jamás debe impedir cargar el producto.
+          let restored: ReturnType<typeof computeRestoredState> = null;
+          try {
+            const draft = loadConfiguratorDraft(productId);
+            restored = draft ? computeRestoredState(p, draft) : null;
+          } catch (draftErr) {
+            logger.warn('[Configurator] Draft restore failed, starting fresh', {
+              error: String(draftErr),
+            });
+            clearConfiguratorDraft(productId);
+          }
+          if (restored) {
+            setSelections((prev) => ({ ...prev, ...restored.selections }));
+            setSizeQuantities(restored.sizeQuantities);
+            setCurrentStep(restored.currentStep);
+            notify.info('Hemos recuperado tu configuración anterior');
+          } else {
+            setSelections((prev) => ({
+              ...prev,
+              quantity: configurator.quantity.min,
+            }));
+          }
         }
       } catch (err) {
         logger.error('[Configurator] Error loading product', err);
@@ -640,6 +789,55 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
     [currentStep]
   );
 
+  // ── Auto-avance: seleccionar una opción única avanza solo al siguiente paso ──
+  // Elimina el click "Siguiente" en pasos de selección simple. El timer se
+  // cancela si el usuario navega manualmente antes de que dispare.
+  const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // El timer lee la validez vigente al disparar, no la del momento del click
+  const canAdvanceRef = useRef(false);
+
+  useEffect(() => {
+    canAdvanceRef.current = canGoNext && !isLastStep;
+  }, [canGoNext, isLastStep]);
+
+  useEffect(() => {
+    return () => {
+      if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+    };
+  }, []);
+
+  const scheduleAutoAdvance = useCallback((fromIndex: number) => {
+    if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+    autoAdvanceTimer.current = setTimeout(() => {
+      if (!canAdvanceRef.current) return;
+      // Solo avanza si seguimos en el mismo paso desde el que se seleccionó
+      setCurrentStep((prev) => (prev === fromIndex ? prev + 1 : prev));
+    }, 350);
+  }, []);
+
+  // ── Persistir borrador en localStorage (recuperable si el usuario se va) ──
+  useEffect(() => {
+    if (!product || addedToCart) return;
+    const hasStarted =
+      Object.values(selections.options).some(Boolean) ||
+      Boolean(selections.designMode) ||
+      Boolean(selections.placement) ||
+      Object.values(sizeQuantities).some((q) => q > 0) ||
+      currentStep > 0;
+    if (!hasStarted) return;
+
+    saveConfiguratorDraft(product.id, {
+      currentStep,
+      options: selections.options,
+      designMode: selections.designMode,
+      designNotes: selections.designNotes,
+      placement: selections.placement,
+      placementSize: selections.placementSize,
+      quantity: selections.quantity,
+      sizeQuantities,
+    });
+  }, [product, addedToCart, selections, sizeQuantities, currentStep]);
+
   // Selection handlers
   const setOption = useCallback((groupId: string, valueId: string) => {
     setSelections((prev) => {
@@ -747,6 +945,9 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
         customization.designServicePrice = pricingRef?.designPrice ?? 0;
       }
     }
+    if (selections.designMode === 'send-later') {
+      customization.designMode = 'send-later';
+    }
     if (selections.placement) {
       const placementOpt = product!.configurator.placement?.options.find(
         (o) => o.id === selections.placement
@@ -823,6 +1024,7 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
         setLastAddedSizes(
           selectedSizes.map((opt) => ({ label: opt.label, qty: sizeQuantities[opt.id] }))
         );
+        clearConfiguratorDraft(product.id);
         setAddedToCart(true);
         logger.info('[Configurator] Added size grid items to cart', {
           productId: product.id,
@@ -886,6 +1088,7 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
       });
 
       setLastAddedSizes([]);
+      clearConfiguratorDraft(product.id);
       setAddedToCart(true);
       logger.info('[Configurator] Added to cart', {
         productId: product.id,
@@ -1009,6 +1212,11 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
         />
       </div>
 
+      {/* Trust signals — visible en todo el flujo */}
+      <div className="mb-3">
+        <TrustStrip />
+      </div>
+
       {/* Content: block on mobile, grid on desktop */}
       <div className="lg:grid lg:grid-cols-5 lg:gap-8">
         {/* Step content */}
@@ -1042,7 +1250,10 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
                 <StepOption
                   group={group}
                   selected={selections.options[id]}
-                  onSelect={(valueId) => setOption(id, valueId)}
+                  onSelect={(valueId) => {
+                    setOption(id, valueId);
+                    scheduleAutoAdvance(currentStep);
+                  }}
                 />
               );
             })()}
@@ -1067,8 +1278,14 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
                 selected={selections.placement}
                 selectedSize={selections.placementSize}
                 printType={selections.options['print_type']}
-                onSelect={setPlacement}
-                onSizeSelect={setPlacementSize}
+                onSelect={(p) => {
+                  setPlacement(p);
+                  scheduleAutoAdvance(currentStep);
+                }}
+                onSizeSelect={(s) => {
+                  setPlacementSize(s);
+                  scheduleAutoAdvance(currentStep);
+                }}
               />
             )}
 
