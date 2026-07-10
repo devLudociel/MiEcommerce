@@ -115,6 +115,34 @@ export function klaviyoPlacedOrder(data: {
   });
 }
 
+/**
+ * Usuario empezó a configurar un producto personalizado.
+ * Base del flow de recuperación: el borrador queda en localStorage,
+ * así que ConfiguratorURL restaura su progreso al volver (mismo dispositivo).
+ */
+export function klaviyoStartedConfigurator(data: {
+  productId: string;
+  productName: string;
+  price?: number;
+  imageUrl?: string;
+  configuratorUrl: string;
+}) {
+  if (!isKlaviyoReady()) return;
+
+  window.klaviyo.push([
+    'track',
+    'Started Configurator',
+    {
+      ProductID: data.productId,
+      ProductName: data.productName,
+      ItemPrice: data.price ?? 0,
+      ImageURL: data.imageUrl || '',
+      ConfiguratorURL: data.configuratorUrl,
+      StartedAt: new Date().toISOString(),
+    },
+  ]);
+}
+
 export function klaviyoViewedProduct(product: {
   productId: string;
   productName: string;

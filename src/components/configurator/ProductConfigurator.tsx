@@ -9,6 +9,7 @@ import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import { safeImageSrc } from '../../lib/placeholders';
 import { trackCustomizeProduct, trackCustomEvent } from '../../lib/analytics';
+import { klaviyoIdentify, klaviyoStartedConfigurator } from '../../lib/klaviyo';
 import { normalizeConfigurator, getUnitPrice } from '../../lib/configurator';
 import {
   saveConfiguratorDraft,
@@ -759,6 +760,18 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
       quantity,
       unitPrice
     );
+
+    // Klaviyo: base del flow de recuperación de configuraciones abandonadas.
+    // Solo llega a perfiles que Klaviyo ya conoce (login o formulario previo).
+    const authEmail = getAuth().currentUser?.email;
+    if (authEmail) klaviyoIdentify(authEmail);
+    klaviyoStartedConfigurator({
+      productId: product.id,
+      productName: product.name,
+      price: unitPrice,
+      imageUrl: safeImageSrc(product.images[0]),
+      configuratorUrl: `https://imprimearte.es/configurar/${product.id}`,
+    });
   }, [product, pricing, selections, isSizeGrid, sizeGridTotal, sizeGridUnitPrice, currentStep]);
 
   // En productos por texto (banderín), la cantidad no define precio.
