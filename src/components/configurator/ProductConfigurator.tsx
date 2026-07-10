@@ -1241,6 +1241,18 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
   const unitsPerSheet = getUnitsPerSheet(optionGroups, selections.options);
   const isSheetBased = product.configurator.quantity.sheetBased;
 
+  // Resumen de selecciones para la tarjeta de preview móvil ("Negro · DTF")
+  const selectedLabels: string[] = [];
+  for (const [groupId, valueId] of Object.entries(selections.options)) {
+    if (!valueId) continue;
+    const attr = attributes?.find((a) => a.id === groupId);
+    const label =
+      attr?.options?.find((o) => o.id === valueId)?.label ??
+      optionGroups.find((g) => g.id === groupId)?.values?.find((v) => v.id === valueId)?.label ??
+      (attr?.type === 'freetext' ? valueId : undefined);
+    if (label) selectedLabels.push(label);
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-2 sm:py-8 overflow-x-hidden">
       {/* Header */}
@@ -1270,6 +1282,37 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
       <div className="mb-3">
         <TrustStrip />
       </div>
+
+      {/* Preview móvil — ver lo que configuras; en desktop lo cubre el sidebar */}
+      {previewImage && (
+        <div className="lg:hidden mb-3 flex items-center gap-3 bg-white rounded-2xl shadow-sm border border-gray-200 p-3">
+          {/\.(mp4|webm|ogg)(\?|$)/i.test(previewImage) ? (
+            <video
+              src={previewImage}
+              className="w-20 h-20 object-contain rounded-xl bg-gray-50 shrink-0"
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+          ) : (
+            <img
+              key={previewImage}
+              src={previewImage}
+              alt={product.name}
+              className="w-20 h-20 object-contain rounded-xl bg-gray-50 shrink-0"
+            />
+          )}
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">
+              {product.name}
+            </p>
+            {selectedLabels.length > 0 && (
+              <p className="text-xs text-gray-500 truncate mt-0.5">{selectedLabels.join(' · ')}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Content: block on mobile, grid on desktop */}
       <div className="lg:grid lg:grid-cols-5 lg:gap-8">
