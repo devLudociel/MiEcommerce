@@ -37,6 +37,11 @@ export function getAdminApp(): App {
     const svc = import.meta.env.FIREBASE_SERVICE_ACCOUNT as string | undefined;
     if (svc) {
       const serviceAccount = JSON.parse(svc);
+      // .env con la clave doble-escapada deja "\n" literales tras JSON.parse
+      // → firma inválida → UNAUTHENTICATED. Igual que la opción 2.
+      if (typeof serviceAccount.private_key === 'string') {
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+      }
       adminApp = initializeApp({
         credential: cert(serviceAccount),
         projectId: serviceAccount.project_id || projectId,

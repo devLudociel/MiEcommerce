@@ -309,21 +309,18 @@ export async function incrementPopupStat(
   id: string,
   stat: 'impressions' | 'clicks' | 'dismissals'
 ): Promise<void> {
+  // Vía API con Admin SDK: las reglas de Firestore solo permiten escribir
+  // promo_popups a admins, y los visitantes son anónimos. keepalive para
+  // que clicks/cierres sobrevivan a la navegación que provocan.
   try {
-    const docRef = doc(db, 'promo_popups', id);
-    // Get current value and increment
-    const snapshot = await getDocs(
-      query(collection(db, 'promo_popups'), where('__name__', '==', id))
-    );
-    if (!snapshot.empty) {
-      const currentValue = snapshot.docs[0].data()[stat] || 0;
-      await updateDoc(docRef, {
-        [stat]: currentValue + 1,
-        updatedAt: Timestamp.now(),
-      });
-    }
+    await fetch('/api/promo-popups/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ popupId: id, stat }),
+      keepalive: true,
+    });
   } catch (error) {
-    console.error(`[PromoPopups] Error incrementing ${stat}:`, error);
+    console.warn(`[PromoPopups] Error incrementing ${stat}:`, error);
   }
 }
 
