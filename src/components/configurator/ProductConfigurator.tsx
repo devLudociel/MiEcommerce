@@ -8,7 +8,7 @@ import { addToCart } from '../../store/cartStore';
 import { notify } from '../../lib/notifications';
 import { logger } from '../../lib/logger';
 import { safeImageSrc } from '../../lib/placeholders';
-import { trackCustomizeProduct } from '../../lib/analytics';
+import { trackCustomizeProduct, trackCustomEvent } from '../../lib/analytics';
 import { normalizeConfigurator, getUnitPrice } from '../../lib/configurator';
 import {
   saveConfiguratorDraft,
@@ -628,7 +628,14 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
             setSelections((prev) => ({ ...prev, ...restored.selections }));
             setSizeQuantities(restored.sizeQuantities);
             setCurrentStep(restored.currentStep);
+            // Los pasos previos ya emitieron su evento en la sesión original
+            maxStepTrackedRef.current = restored.currentStep - 1;
             notify.info('Hemos recuperado tu configuración anterior');
+            trackCustomEvent('ConfiguratorResumed', {
+              product_id: p.id,
+              product_name: p.name,
+              resumed_step: restored.currentStep + 1,
+            });
           } else {
             setSelections((prev) => ({
               ...prev,
@@ -776,9 +783,51 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
   }, [currentStepId, product, isSizeGrid, sizeGridTotal, selections]);
   const isLastStep = currentStep === steps.length - 1;
 
+  // ── Funnel: evento por paso completado (solo primera vez por paso) ─────────
+  // Permite ver en Meta Events Manager dónde abandona la gente el configurador.
+  const maxStepTrackedRef = useRef(-1);
+  const stepsRef = useRef(steps);
+  stepsRef.current = steps;
+  const selectionsRef = useRef(selections);
+  selectionsRef.current = selections;
+  const currentStepRef = useRef(currentStep);
+  currentStepRef.current = currentStep;
+
+  const trackStepCompleted = useCallback(
+    (fromIndex: number) => {
+      if (!product) return;
+      if (fromIndex <= maxStepTrackedRef.current) return;
+      maxStepTrackedRef.current = fromIndex;
+
+      const stepId = stepsRef.current[fromIndex];
+      if (!stepId) return;
+      const semanticId = stepId.startsWith('option:')
+        ? stepId.slice(7)
+        : stepId.startsWith('attribute:')
+          ? stepId.slice(10)
+          : stepId;
+
+      const params: Record<string, string | number> = {
+        product_id: product.id,
+        product_name: product.name,
+        step_id: semanticId,
+        step_index: fromIndex + 1,
+        steps_total: stepsRef.current.length,
+      };
+      if (stepId === 'design' && selectionsRef.current.designMode) {
+        params.design_mode = selectionsRef.current.designMode;
+      }
+      trackCustomEvent('ConfiguratorStepCompleted', params);
+    },
+    [product]
+  );
+
   const goNext = useCallback(() => {
-    if (canGoNext && !isLastStep) setCurrentStep((s) => s + 1);
-  }, [canGoNext, isLastStep]);
+    if (canGoNext && !isLastStep) {
+      trackStepCompleted(currentStep);
+      setCurrentStep((s) => s + 1);
+    }
+  }, [canGoNext, isLastStep, currentStep, trackStepCompleted]);
 
   const goBack = useCallback(() => {
     if (currentStep > 0) setCurrentStep((s) => s - 1);
@@ -806,14 +855,19 @@ export default function ProductConfigurator({ productId }: ProductConfiguratorPr
     };
   }, []);
 
-  const scheduleAutoAdvance = useCallback((fromIndex: number) => {
-    if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
-    autoAdvanceTimer.current = setTimeout(() => {
-      if (!canAdvanceRef.current) return;
-      // Solo avanza si seguimos en el mismo paso desde el que se seleccionó
-      setCurrentStep((prev) => (prev === fromIndex ? prev + 1 : prev));
-    }, 350);
-  }, []);
+  const scheduleAutoAdvance = useCallback(
+    (fromIndex: number) => {
+      if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+      autoAdvanceTimer.current = setTimeout(() => {
+        if (!canAdvanceRef.current) return;
+        // Solo avanza si seguimos en el mismo paso desde el que se seleccionó
+        if (currentStepRef.current !== fromIndex) return;
+        trackStepCompleted(fromIndex);
+        setCurrentStep(fromIndex + 1);
+      }, 350);
+    },
+    [trackStepCompleted]
+  );
 
   // ── Persistir borrador en localStorage (recuperable si el usuario se va) ──
   useEffect(() => {
