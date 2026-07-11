@@ -162,10 +162,14 @@ const showChatWidget =
     <PromoPopupDisplay client:idle />
     <WelcomeBonusPopup client:idle />
     {showChatWidget && <N8nChatWidget />}
-    <!-- Cookie Consent Banner -->
-    <CookieConsent client:idle />
+    <!-- Cookie Consent Banner y Analytics con client:load, no client:idle:
+         requestIdleCallback se muere de hambre cuando el main thread está
+         ocupado (carruseles, animaciones) y estos islands nunca hidratan —
+         sin banner no hay consent y sin init no hay page_view. Analytics
+         no renderiza nada y los scripts de terceros cargan async igual. -->
+    <CookieConsent client:load />
     <!-- Analytics Tracking -->
-    <Analytics client:idle />
+    <Analytics client:load />
     <script is:inline nonce={nonce}>
       // Defer Klaviyo to avoid blocking initial render (saves ~700ms TBT)
       (() => {
