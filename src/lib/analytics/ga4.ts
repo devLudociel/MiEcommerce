@@ -35,12 +35,18 @@ declare global {
 export function initGA4(measurementId: string) {
   if (typeof window === 'undefined') return;
 
+  // Idempotente: varios islands (Analytics, LandingAnalytics) llaman a init;
+  // window.gtag sobrevive aunque cada bundle tenga su propia copia del módulo.
+  if (window.gtag) return;
+
   // Create dataLayer
   window.dataLayer = window.dataLayer || [];
 
-  // gtag function
-  window.gtag = (...args: unknown[]) => {
-    window.dataLayer!.push(args);
+  // gtag.js solo procesa objetos `arguments` en el dataLayer — un array
+  // normal (rest params) se ignora en silencio, así que no usar arrow aquí.
+  window.gtag = function gtag() {
+    // eslint-disable-next-line prefer-rest-params
+    window.dataLayer!.push(arguments);
   };
 
   // Initialize
@@ -48,6 +54,11 @@ export function initGA4(measurementId: string) {
   window.gtag('config', measurementId, {
     send_page_view: true,
   });
+
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;
+  document.head.appendChild(script);
 
   console.log('[GA4] Initialized with ID:', measurementId);
 }
