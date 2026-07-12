@@ -94,8 +94,11 @@ export function orderConfirmationTemplate(order: OrderData): { subject: string; 
                         </table>
                         ${
                           item.customization
-                            ? generateDesignPreviewHTML(item.name, item.customization, item.previewImageUrl) ||
-                              generateConfiguratorPreviewHTML(item.customization)
+                            ? generateDesignPreviewHTML(
+                                item.name,
+                                item.customization,
+                                item.previewImageUrl
+                              ) || generateConfiguratorPreviewHTML(item.customization)
                             : ''
                         }
                       </div>
@@ -488,11 +491,15 @@ export function orderShippingTemplate(
                       <p style="margin: 0 0 6px 0; font-size: 13px; color: #6d28d9; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Número de seguimiento</p>
                       <p style="margin: 0 0 16px 0; font-size: 26px; font-weight: 900; color: #4c1d95; letter-spacing: 0.05em; font-family: monospace;">${trackingNumber}</p>
                       <p style="margin: 0 0 16px 0; font-size: 14px; color: #5b21b6;">Transportista: <strong>${carrier}</strong></p>
-                      ${trackingLink ? `
+                      ${
+                        trackingLink
+                          ? `
                       <a href="${trackingLink}" style="display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px;">
                         🔍 Rastrear mi paquete
                       </a>
-                      ` : ''}
+                      `
+                          : ''
+                      }
                     </div>
 
                     <!-- Info pedido -->
@@ -532,6 +539,114 @@ export function orderShippingTemplate(
                 <tr>
                   <td style="background-color: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #e2e8f0;">
                     <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+                      © ${new Date().getFullYear()} ImprimeArte. Todos los derechos reservados.
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+  };
+}
+
+/**
+ * Plantilla de recordatorio para pedidos con diseño "lo envío después" pendiente
+ */
+export function designReminderTemplate(
+  order: OrderData,
+  pendingItems: Array<{ name: string; quantity: number }>
+): { subject: string; html: string } {
+  const escapeHtml = (value: string): string =>
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  const orderNumber = order.id?.slice(0, 8) || '';
+  const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date();
+
+  const itemsHtml = pendingItems
+    .map(
+      (item) => `
+        <div style="background-color: #fffbeb; border: 1px solid #fde68a; padding: 12px 15px; border-radius: 8px; margin-bottom: 8px;">
+          <span style="font-weight: bold; color: #92400e;">${escapeHtml(item.name)}</span>
+          ${item.quantity > 1 ? `<span style="color: #b45309; font-size: 13px;"> × ${item.quantity}</span>` : ''}
+        </div>
+      `
+    )
+    .join('');
+
+  return {
+    subject: `🎨 Falta tu diseño para el pedido #${orderNumber} - ImprimeArte`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Falta tu diseño</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 20px;">
+          <tr>
+            <td align="center">
+              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+
+                <!-- Header -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 40px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Tu pedido espera tu diseño 🎨</h1>
+                    <p style="color: #ffffff; margin: 10px 0 0 0; font-size: 16px;">Hola ${escapeHtml(order.shippingInfo?.firstName || '')}, ¡solo falta un paso!</p>
+                  </td>
+                </tr>
+
+                <!-- Contenido -->
+                <tr>
+                  <td style="padding: 40px;">
+                    <p style="color: #334155; font-size: 15px; line-height: 1.7; margin: 0 0 20px 0;">
+                      Al hacer tu pedido <strong>#${orderNumber}</strong> el ${orderDate.toLocaleDateString('es-ES')} elegiste la opción
+                      <strong>"Lo envío después"</strong> para el diseño. Para empezar a producir necesitamos tu archivo.
+                    </p>
+
+                    <h2 style="font-size: 16px; font-weight: bold; color: #1e293b; margin: 0 0 12px 0;">Productos esperando diseño</h2>
+                    ${itemsHtml}
+
+                    <!-- Cómo enviarlo -->
+                    <div style="margin-top: 25px; padding: 20px; background-color: #f0fdfa; border-radius: 8px;">
+                      <h3 style="font-size: 15px; font-weight: bold; color: #0f766e; margin: 0 0 10px 0;">📎 Cómo enviarnos tu diseño</h3>
+                      <p style="color: #134e4a; font-size: 14px; line-height: 1.7; margin: 0;">
+                        Responde a este email adjuntando tu archivo (PNG, JPG, PDF, SVG…) o escríbenos a
+                        <a href="mailto:pedidos@imprimearte.es?subject=Dise%C3%B1o%20pedido%20%23${orderNumber}" style="color: #0891b2; font-weight: bold;">pedidos@imprimearte.es</a>
+                        indicando tu número de pedido <strong>#${orderNumber}</strong>.
+                      </p>
+                      <p style="color: #134e4a; font-size: 14px; line-height: 1.7; margin: 10px 0 0 0;">
+                        Revisamos tu archivo gratis y confirmamos contigo antes de imprimir.
+                      </p>
+                    </div>
+
+                    <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 25px 0 0 0;">
+                      ¿Ya nos lo enviaste? Entonces ignora este mensaje: lo estamos revisando y te confirmaremos en breve.
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                    <p style="margin: 0 0 15px 0; color: #64748b; font-size: 14px;">
+                      ¿Dudas con el formato o el tamaño? Respóndenos y te ayudamos
+                    </p>
+                    <a href="https://imprimearte.es" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                      Visitar Nuestra Tienda
+                    </a>
+                    <p style="margin: 20px 0 0 0; color: #94a3b8; font-size: 12px;">
                       © ${new Date().getFullYear()} ImprimeArte. Todos los derechos reservados.
                     </p>
                   </td>
