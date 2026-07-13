@@ -102,12 +102,14 @@ export const GET: APIRoute = async () => {
         if (!image) return null;
 
         const slug = product.slug || doc.id;
+        // Google limita g:id a 50 caracteres; el recorte debe ser estable entre ejecuciones
+        const feedId = slug.slice(0, 50);
         const title = truncate(product.name || product.metaTitle || slug, 150);
         const link = `${SITE_URL}/producto/${slug}`;
         const description = truncate(getDescription(product), 5000);
 
         return `    <item>
-      <g:id>${escapeXml(slug)}</g:id>
+      <g:id>${escapeXml(feedId)}</g:id>
       <g:title>${escapeXml(title)}</g:title>
       <g:description>${escapeXml(description)}</g:description>
       <g:link>${escapeXml(link)}</g:link>
