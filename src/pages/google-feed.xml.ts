@@ -87,6 +87,31 @@ function getFirstImage(product: Product): string {
   return product.images[0] || '';
 }
 
+// Solo se envía a Canarias (misma regla que el checkout: shipping_zones en Firestore).
+// g:shipping por producto restringe el área de entrega; la UI de Merchant Center
+// no permite regiones por código postal en cuentas nuevas.
+const SHIPPING_POSTAL_RANGES = ['35000-35999', '38000-38999'];
+const SHIPPING_BASE_PRICE = 4.99;
+const FREE_SHIPPING_THRESHOLD = 50;
+
+function getShippingXml(product: Product): string {
+  const price = Number(product.basePrice ?? 0);
+  const shippingPrice = price >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_BASE_PRICE;
+
+  return SHIPPING_POSTAL_RANGES.map(
+    (range) => `      <g:shipping>
+        <g:country>ES</g:country>
+        <g:postal_code>${range}</g:postal_code>
+        <g:service>Envío estándar</g:service>
+        <g:price>${shippingPrice.toFixed(2)} EUR</g:price>
+        <g:min_handling_time>2</g:min_handling_time>
+        <g:max_handling_time>5</g:max_handling_time>
+        <g:min_transit_time>2</g:min_transit_time>
+        <g:max_transit_time>7</g:max_transit_time>
+      </g:shipping>`
+  ).join('\n');
+}
+
 export const GET: APIRoute = async () => {
   try {
     const db = getAdminDb();
@@ -120,6 +145,7 @@ export const GET: APIRoute = async () => {
       <g:brand>Imprime Arte</g:brand>
       <g:identifier_exists>no</g:identifier_exists>
       <g:product_type>${escapeXml(getProductType(product))}</g:product_type>
+${getShippingXml(product)}
     </item>`;
       })
       .filter((item): item is string => Boolean(item));
