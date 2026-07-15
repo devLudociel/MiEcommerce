@@ -420,6 +420,55 @@ const nonce = Astro.locals?.cspNonce;
     box-shadow: 0 14px 28px rgba(236, 0, 140, 0.2);
   }
 
+  .ia-msg.bot a.ia-link {
+    color: var(--ia-chat-pink-dark);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    word-break: break-all;
+  }
+
+  .ia-msg.bot a.ia-link:hover {
+    color: var(--ia-chat-cyan);
+  }
+
+  .ia-link-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0 2px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(236, 0, 140, 0.09), rgba(0, 174, 239, 0.1));
+    border: 1px solid rgba(236, 0, 140, 0.22);
+    color: var(--ia-chat-pink-dark);
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease,
+      border-color 0.15s ease;
+  }
+
+  .ia-link-pill:hover {
+    transform: translateY(-1px);
+    border-color: rgba(236, 0, 140, 0.4);
+    box-shadow: 0 6px 14px rgba(236, 0, 140, 0.16);
+  }
+
+  .ia-link-pill .ia-link-pill-arrow {
+    font-size: 11px;
+    opacity: 0.7;
+  }
+
+  .ia-link-pill.wa {
+    background: rgba(37, 211, 102, 0.12);
+    border-color: rgba(37, 211, 102, 0.35);
+    color: #128c4b;
+  }
+
   .ia-meta {
     padding: 0 4px;
     color: var(--ia-chat-muted);
@@ -850,10 +899,77 @@ const nonce = Astro.locals?.cspNonce;
       return row;
     }
 
+    const URL_REGEX = /https?:\/\/[^\s<>"']+/g;
+
+    function labelForUrl(url) {
+      let parsed;
+      try {
+        parsed = new URL(url);
+      } catch {
+        return null;
+      }
+
+      const host = parsed.hostname.replace(/^www\./, '');
+      if (host === 'wa.me' || host === 'api.whatsapp.com') return 'Abrir WhatsApp';
+      if (host !== 'imprimearte.es') return null;
+
+      const path = parsed.pathname;
+      if (path.startsWith('/producto/')) return 'Ver producto';
+      if (path.startsWith('/productos')) return 'Ver catálogo';
+      if (path.startsWith('/personalizar') || path.startsWith('/configurar')) return 'Personalizar';
+      if (path.startsWith('/como-funciona')) return 'Cómo funciona';
+      if (path.startsWith('/faq')) return 'Preguntas frecuentes';
+      if (path.startsWith('/contacto')) return 'Contacto';
+      if (path.startsWith('/galeria')) return 'Ver galería';
+      return 'Abrir página';
+    }
+
+    function createLink(url) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+
+      const label = labelForUrl(url);
+      if (label) {
+        a.className = label === 'Abrir WhatsApp' ? 'ia-link-pill wa' : 'ia-link-pill';
+        a.appendChild(document.createTextNode(label));
+        const arrow = document.createElement('span');
+        arrow.className = 'ia-link-pill-arrow';
+        arrow.textContent = '↗';
+        a.appendChild(arrow);
+      } else {
+        a.className = 'ia-link';
+        const short = url.replace(/^https?:\/\//, '');
+        a.textContent = short.length > 42 ? short.slice(0, 42) + '…' : short;
+      }
+      return a;
+    }
+
+    // Convierte URLs del texto del bot en enlaces/botones sin usar innerHTML
+    function appendRichText(target, text) {
+      let last = 0;
+      for (const match of text.matchAll(URL_REGEX)) {
+        const before = text.slice(last, match.index);
+        if (before) target.appendChild(document.createTextNode(before));
+
+        let url = match[0];
+        const trail = url.match(/[.,;:!?)]+$/);
+        if (trail) url = url.slice(0, -trail[0].length);
+
+        target.appendChild(createLink(url));
+        if (trail) target.appendChild(document.createTextNode(trail[0]));
+
+        last = match.index + match[0].length;
+      }
+      const rest = text.slice(last);
+      if (rest) target.appendChild(document.createTextNode(rest));
+    }
+
     function addBotMessage(text) {
       const div = document.createElement('div');
       div.className = 'ia-msg bot';
-      div.textContent = text;
+      appendRichText(div, text);
       messages.appendChild(createMessageRow('bot', div));
       messages.scrollTop = messages.scrollHeight;
     }
