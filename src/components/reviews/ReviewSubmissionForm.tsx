@@ -7,16 +7,35 @@ import { submitReview, hasCustomerReviewed, type CustomerReviewInput } from '../
 
 interface ReviewSubmissionFormProps {
   orderId?: string;
+  productId?: string;
+  productName?: string;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
 export default function ReviewSubmissionForm({
   orderId,
+  productId,
+  productName,
   onSuccess,
   onCancel,
 }: ReviewSubmissionFormProps) {
   const { user, email, displayName, isAuthenticated } = useAuth();
+
+  // productId/productName pueden venir por props o por URL (?productId=...&productName=...)
+  // Se leen tras el montaje (no en render) para no romper la hidratación SSR.
+  const [urlProduct, setUrlProduct] = useState<{ id?: string; name?: string }>({});
+  const [loginRedirect, setLoginRedirect] = useState('/dejar-resena');
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setUrlProduct({
+      id: params.get('productId') || undefined,
+      name: params.get('productName') || undefined,
+    });
+    setLoginRedirect(window.location.pathname + window.location.search);
+  }, []);
+  const finalProductId = productId ?? urlProduct.id;
+  const finalProductName = productName ?? urlProduct.name;
 
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
@@ -32,13 +51,13 @@ export default function ReviewSubmissionForm({
   useEffect(() => {
     async function checkExisting() {
       if (user?.uid) {
-        const reviewed = await hasCustomerReviewed(user.uid, orderId);
+        const reviewed = await hasCustomerReviewed(user.uid, orderId, finalProductId);
         setAlreadyReviewed(reviewed);
       }
       setIsChecking(false);
     }
     checkExisting();
-  }, [user?.uid, orderId]);
+  }, [user?.uid, orderId, finalProductId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +91,7 @@ export default function ReviewSubmissionForm({
         customerName: displayName || email?.split('@')[0] || 'Cliente',
         customerEmail: email || '',
         orderId: orderId,
+        ...(finalProductId ? { productIds: [finalProductId] } : {}),
         rating,
         title: title.trim(),
         text: text.trim(),
@@ -103,7 +123,7 @@ export default function ReviewSubmissionForm({
         <h3 className="text-xl font-bold text-gray-800 mb-2">Inicia sesión para opinar</h3>
         <p className="text-gray-600 mb-6">Necesitas iniciar sesión para dejar una reseña</p>
         <a
-          href="/login?redirect=/dejar-resena"
+          href={`/login?redirect=${encodeURIComponent(loginRedirect)}`}
           className="inline-block px-6 py-3 bg-cyan-600 text-white font-medium rounded-lg hover:bg-cyan-700 transition-colors"
         >
           Iniciar Sesión
@@ -129,7 +149,9 @@ export default function ReviewSubmissionForm({
         <p className="text-gray-600">
           {orderId
             ? 'Ya has dejado una reseña para este pedido.'
-            : 'Ya has dejado una reseña anteriormente.'}
+            : finalProductId
+              ? 'Ya has dejado una reseña para este producto.'
+              : 'Ya has dejado una reseña anteriormente.'}
         </p>
       </div>
     );
@@ -150,6 +172,9 @@ export default function ReviewSubmissionForm({
   return (
     <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
       <h2 className="text-2xl font-bold text-gray-800 mb-2">Deja tu opinión</h2>
+      {finalProductName && (
+        <p className="text-sm font-medium text-cyan-700 mb-1">Sobre: {finalProductName}</p>
+      )}
       <p className="text-gray-600 mb-6">
         Tu reseña ayuda a otros clientes a tomar mejores decisiones
       </p>

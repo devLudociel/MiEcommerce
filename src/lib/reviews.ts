@@ -259,6 +259,58 @@ export async function getFeaturedReviews(maxResults: number = 6): Promise<Custom
 }
 
 /**
+ * Get approved reviews for a specific product (for product page + schema)
+ */
+export async function getProductApprovedReviews(
+  productId: string,
+  maxResults?: number
+): Promise<CustomerReview[]> {
+  try {
+    const reviews = await getApprovedReviews();
+    const productReviews = reviews.filter((r) => r.productIds?.includes(productId));
+    return maxResults ? productReviews.slice(0, maxResults) : productReviews;
+  } catch (error) {
+    console.error('Error fetching product reviews:', error);
+    return [];
+  }
+}
+
+/**
+ * Recalculate averageRating/totalReviews on the product docs so the
+ * Product schema (aggregateRating) and listings stay in sync.
+ * Called after moderation actions that change approved reviews.
+ */
+export async function recalcProductRatings(productIds: string[]): Promise<void> {
+  const uniqueIds = [...new Set(productIds.filter(Boolean))];
+  if (uniqueIds.length === 0) return;
+
+  try {
+    const approved = await getApprovedReviews();
+
+    await Promise.all(
+      uniqueIds.map(async (productId) => {
+        const productReviews = approved.filter((r) => r.productIds?.includes(productId));
+        const totalReviews = productReviews.length;
+        const averageRating =
+          totalReviews > 0
+            ? Math.round(
+                (productReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews) * 10
+              ) / 10
+            : 0;
+
+        await updateDoc(doc(db, 'products', productId), {
+          averageRating,
+          totalReviews,
+        });
+      })
+    );
+  } catch (error) {
+    // La moderación no debe fallar por el agregado; se corrige en la próxima acción
+    console.error('Error recalculating product ratings:', error);
+  }
+}
+
+/**
  * Get reviews by customer
  */
 export async function getCustomerReviews(customerId: string): Promise<CustomerReview[]> {
@@ -321,6 +373,11 @@ export async function approveReview(
       featured,
       updatedAt: Timestamp.now(),
     });
+
+    const review = await getReviewById(reviewId);
+    if (review?.productIds?.length) {
+      await recalcProductRatings(review.productIds);
+    }
   } catch (error) {
     console.error('Error approving review:', error);
     throw error;
@@ -344,6 +401,11 @@ export async function rejectReview(
       rejectionReason: reason || '',
       updatedAt: Timestamp.now(),
     });
+
+    const review = await getReviewById(reviewId);
+    if (review?.productIds?.length) {
+      await recalcProductRatings(review.productIds);
+    }
   } catch (error) {
     console.error('Error rejecting review:', error);
     throw error;
@@ -411,8 +473,13 @@ export async function addBusinessResponse(
  */
 export async function deleteReview(reviewId: string): Promise<void> {
   try {
+    const review = await getReviewById(reviewId);
     const docRef = doc(db, COLLECTION_NAME, reviewId);
     await deleteDoc(docRef);
+
+    if (review?.productIds?.length) {
+      await recalcProductRatings(review.productIds);
+    }
   } catch (error) {
     console.error('Error deleting review:', error);
     throw error;
@@ -532,12 +599,21 @@ export function subscribeToPendingCount(callback: (count: number) => void): Unsu
 /**
  * Check if customer has already reviewed (to prevent duplicates)
  */
-export async function hasCustomerReviewed(customerId: string, orderId?: string): Promise<boolean> {
+export async function hasCustomerReviewed(
+  customerId: string,
+  orderId?: string,
+  productId?: string
+): Promise<boolean> {
   try {
     const reviews = await getCustomerReviews(customerId);
 
     if (orderId) {
       return reviews.some((r) => r.orderId === orderId);
+    }
+
+    // Con producto: solo bloquear si ya opinó sobre ese producto
+    if (productId) {
+      return reviews.some((r) => r.productIds?.includes(productId));
     }
 
     // If no orderId, just check if they have any reviews
