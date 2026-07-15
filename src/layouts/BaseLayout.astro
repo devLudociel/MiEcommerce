@@ -7,7 +7,7 @@ import CookieConsent from '../components/analytics/CookieConsent.tsx';
 import CompareBar from '../components/products/CompareBar';
 import PromoPopupDisplay from '../components/promo/PromoPopupDisplay';
 import WelcomeBonusPopup from '../components/common/WelcomeBonusPopup';
-import N8nChatWidget from '../components/support/N8nChatWidget.astro';
+import AiChatWidget from '../components/support/AiChatWidget.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -161,7 +161,7 @@ const showChatWidget =
     <!-- Promotional Popups (max 1 por sesión vía gate en shouldShowPopup) -->
     <PromoPopupDisplay client:idle />
     <WelcomeBonusPopup client:idle />
-    {showChatWidget && <N8nChatWidget />}
+    {showChatWidget && <AiChatWidget />}
     <!-- Cookie Consent Banner y Analytics con client:load, no client:idle:
          requestIdleCallback se muere de hambre cuando el main thread está
          ocupado (carruseles, animaciones) y estos islands nunca hidratan —

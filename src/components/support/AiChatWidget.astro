@@ -634,8 +634,8 @@ const nonce = Astro.locals?.cspNonce;
 
 <script is:inline nonce={nonce}>
   (() => {
-    const WEBHOOK_URL =
-      'https://vps22689.cubepath.net/webhook/b2d50ee0-0b85-46a0-a50e-33bd58b9de7a/chat';
+    const API_URL = '/api/chat';
+    const MAX_HISTORY = 12;
     const POSITION_KEY = 'ia-chat-bubble-position';
     const DESKTOP_EDGE_MARGIN = 24;
     const MOBILE_EDGE_MARGIN = 16;
@@ -688,6 +688,7 @@ const nonce = Astro.locals?.cspNonce;
                 type="text"
                 placeholder="Cuéntanos qué necesitas..."
                 autocomplete="off"
+                maxlength="500"
               />
             </div>
 
@@ -714,6 +715,7 @@ const nonce = Astro.locals?.cspNonce;
 
     let isOpen = false;
     let isLoading = false;
+    const history = [];
     let isDragging = false;
     let wasDragged = false;
     let startX = 0;
@@ -931,29 +933,41 @@ const nonce = Astro.locals?.cspNonce;
       if (!text || isLoading) return;
 
       addUserMessage(text);
+      history.push({ role: 'user', content: text });
       input.value = '';
       isLoading = true;
       sendBtn.disabled = true;
       showTyping();
 
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'chat_message');
+      }
+
       try {
-        const res = await fetch(WEBHOOK_URL, {
+        const res = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action: 'sendMessage',
-            chatInput: text,
+            messages: history.slice(-MAX_HISTORY),
             sessionId: SESSION_ID,
           }),
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         hideTyping();
-        const reply =
-          data.output ||
-          data.text ||
-          'Perdona, no he podido procesar tu mensaje. ¿Puedes repetirlo?';
-        addBotMessage(reply);
+
+        if (res.status === 429) {
+          addBotMessage(
+            'Me has escrito muy rápido y necesito un respiro. Espera un momento y vuelve a intentarlo.',
+          );
+        } else if (res.ok && data.reply) {
+          history.push({ role: 'assistant', content: data.reply });
+          addBotMessage(data.reply);
+        } else {
+          addBotMessage(
+            'Perdona, no he podido procesar tu mensaje. Inténtalo de nuevo o escríbenos por WhatsApp al 645 341 452.',
+          );
+        }
       } catch {
         hideTyping();
         addBotMessage(

@@ -2,7 +2,7 @@
 import LandingAnalytics from '../components/landing/LandingAnalytics.tsx';
 import CookieConsent from '../components/analytics/CookieConsent.tsx';
 import WelcomeBonusPopup from '../components/common/WelcomeBonusPopup';
-import N8nChatWidget from '../components/support/N8nChatWidget.astro';
+import AiChatWidget from '../components/support/AiChatWidget.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -125,6 +125,6 @@ const {
       facebookPixelId={facebookPixelId}
     />
     <WelcomeBonusPopup client:load />
-    <N8nChatWidget />
+    <AiChatWidget />
   </body>
 </html>
