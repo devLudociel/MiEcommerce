@@ -287,6 +287,43 @@ export async function calculateShipping(
   return quotes;
 }
 
+// Cache del umbral de envío gratis (una lectura por sesión de página)
+let minFreeShippingThresholdPromise: Promise<number | null> | null = null;
+
+/**
+ * Umbral mínimo de envío gratis entre todos los métodos activos.
+ * Se usa para la barra de progreso del carrito, antes de conocer la dirección.
+ */
+export function getMinFreeShippingThreshold(): Promise<number | null> {
+  if (!minFreeShippingThresholdPromise) {
+    minFreeShippingThresholdPromise = (async () => {
+      try {
+        const snapshot = await getDocs(collection(db, 'shipping_methods'));
+        const thresholds = snapshot.docs
+          .map((doc) => doc.data() as ShippingMethod)
+          .filter((m) => m.active && Number(m.freeShippingThreshold) > 0)
+          .map((m) => Number(m.freeShippingThreshold));
+
+        if (thresholds.length === 0 && shouldUseDefaultShipping) {
+          return getDefaultMinThreshold();
+        }
+        return thresholds.length > 0 ? Math.min(...thresholds) : null;
+      } catch (error) {
+        console.error('[Shipping] Error loading free shipping threshold:', error);
+        return shouldUseDefaultShipping ? getDefaultMinThreshold() : null;
+      }
+    })();
+  }
+  return minFreeShippingThresholdPromise;
+}
+
+function getDefaultMinThreshold(): number | null {
+  const defaults = DEFAULT_SHIPPING_METHODS.filter(
+    (m) => m.active && Number(m.freeShippingThreshold) > 0
+  ).map((m) => Number(m.freeShippingThreshold));
+  return defaults.length > 0 ? Math.min(...defaults) : null;
+}
+
 /**
  * Obtiene el método de envío más barato disponible
  */

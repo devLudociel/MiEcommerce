@@ -9,6 +9,7 @@ import {
 } from '../../store/cartStore';
 import type { CartItem } from '../../store/cartStore';
 import { safeImageSrc } from '../../lib/placeholders';
+import FreeShippingBar from '../cart/FreeShippingBar';
 import { shippingInfoSchema } from '../../lib/validation/schemas';
 import { useFormValidation } from '../../hooks/useFormValidation';
 import { notify } from '../../lib/notifications';
@@ -1856,6 +1857,8 @@ export default function Checkout() {
                   ))}
                 </div>
               )}
+
+              <FreeShippingBar subtotal={subtotal} className="mb-4" />
 
               {/* Price Breakdown */}
               <div className="space-y-3">

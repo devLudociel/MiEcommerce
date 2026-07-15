@@ -8,6 +8,7 @@ import { cartStore, updateCartItemQuantity, removeFromCart } from '../../store/c
 import { categories } from '../../data/categories';
 import { occasions } from '../../data/occasions';
 import CustomizationDetails from '../cart/CustomizationDetails';
+import FreeShippingBar from '../cart/FreeShippingBar';
 import { useBundleDiscounts } from '../../lib/bundleDiscounts';
 import { safeImageSrc } from '../../lib/placeholders';
 
@@ -168,6 +169,8 @@ const CartDropdown = memo(function CartDropdown() {
       )}
 
       <div className="border-t p-3">
+        {cart.items.length > 0 && <FreeShippingBar subtotal={cart.total} className="mb-2" />}
+
         {/* Price breakdown with bundle discount */}
         <div className="space-y-1 mb-2">
           {bundleDiscounts.totalDiscount > 0 && (
