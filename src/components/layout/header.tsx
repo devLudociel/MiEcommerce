@@ -10,6 +10,7 @@ import { occasions } from '../../data/occasions';
 import CustomizationDetails from '../cart/CustomizationDetails';
 import FreeShippingBar from '../cart/FreeShippingBar';
 import { useBundleDiscounts } from '../../lib/bundleDiscounts';
+import { getMinFreeShippingThreshold } from '../../lib/shipping';
 import { safeImageSrc } from '../../lib/placeholders';
 
 const NAV_HIDDEN_CATEGORY_SLUGS = new Set(['packaging']);
@@ -229,6 +230,16 @@ const Header: React.FC<HeaderProps> = () => {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    getMinFreeShippingThreshold().then((value) => {
+      if (!cancelled) setFreeShippingThreshold(value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const headerRef = useRef<HTMLElement>(null);
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -981,45 +992,26 @@ const Header: React.FC<HeaderProps> = () => {
             className="flex items-center justify-center gap-2 text-center text-xs sm:text-sm leading-tight"
             style={{ gap: 'var(--spacing-3)' }}
           >
-            <button
-              className="hidden sm:inline-flex hover:text-white"
-              style={{ color: 'rgba(255, 255, 255, 0.7)' }}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
-            <span className="font-medium sm:hidden">-30€ con PROMO</span>
-            <span className="hidden font-medium sm:inline">Hasta -30 € con el código PROMO</span>
-            <span className="hidden sm:inline" style={{ color: '#f87171' }}>
-              ⏰
+            <span className="font-medium sm:hidden">
+              {freeShippingThreshold
+                ? `🚚 Envío gratis desde ${freeShippingThreshold} €`
+                : '🎁 Regalos personalizados hechos en La Palma'}
             </span>
-            <span className="sm:inline hidden">Hasta el 31 de diciembre de 2025</span>
+            <span className="hidden font-medium sm:inline">
+              {freeShippingThreshold
+                ? `🚚 Envío gratis en Canarias desde ${freeShippingThreshold} €`
+                : '🎁 Regalos personalizados hechos en La Palma'}
+            </span>
+            {freeShippingThreshold ? (
+              <span className="sm:inline hidden">· 🎁 Regalos personalizados hechos en La Palma</span>
+            ) : null}
             <a
-              href="/ofertas"
+              href="/productos"
               className="underline hover:no-underline"
               style={{ marginLeft: 'var(--spacing-1)' }}
             >
               Comprar ahora
             </a>
-            <button
-              className="hidden sm:inline-flex hover:text-white"
-              style={{ color: 'rgba(255, 255, 255, 0.7)', marginLeft: 'var(--spacing-2)' }}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
           </div>
         </div>
       </div>
