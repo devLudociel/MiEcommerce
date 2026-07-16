@@ -70,30 +70,30 @@ const DOCUMENT_PATH = 'settings/contact_info';
 export const DEFAULT_CONTACT_INFO: ContactInfoInput = {
   phone: '+34645341452',
   phoneDisplay: '645 341 452',
-  email: 'info@imprimarte.com',
+  email: 'info@imprimearte.es',
   whatsapp: '34645341452',
   whatsappMessage:
-    '¡Hola ImprimeArte! 👋 Tengo una consulta sobre sus servicios de impresión y personalización. ¿Podrían ayudarme?',
+    '¡Hola ImprimeArte! 👋 Tengo una consulta sobre sus regalos personalizados y servicios de impresión. ¿Podrían ayudarme?',
 
   address: '',
-  city: 'Santa Cruz de Tenerife',
-  province: 'Canarias',
-  postalCode: '',
+  city: 'Los Llanos de Aridane',
+  province: 'La Palma',
+  postalCode: '38760',
   country: 'España',
   googleMapsEmbed:
-    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d111551.9926778267!2d-16.402524!3d28.463888!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xc41ccfda44fc0fd%3A0x10340f3be4bc8c0!2sSanta%20Cruz%20de%20Tenerife!5e0!3m2!1ses!2ses',
+    'https://www.google.com/maps?q=Imprime+Arte+Los+Llanos+de+Aridane+La+Palma&hl=es&z=16&output=embed',
 
   companyName: 'ImprimeArte',
-  companySlogan: 'Impresión y personalización',
+  companySlogan: 'Regalos personalizados en La Palma',
   companyDescription:
-    'Especialistas en impresión y personalización. Damos vida a tus ideas con la más alta calidad y tecnología.',
+    'Tienda de regalos personalizados en Los Llanos de Aridane: estampado textil, bordado, impresión 3D, corte láser y sublimación. Damos vida a tus ideas con la más alta calidad.',
 
   socialLinks: [
     {
       id: '1',
       platform: 'Instagram',
       icon: '📷',
-      url: 'https://instagram.com/imprimarte',
+      url: 'https://www.instagram.com/imprimearte.es',
       active: true,
       order: 0,
     },
@@ -102,7 +102,7 @@ export const DEFAULT_CONTACT_INFO: ContactInfoInput = {
       platform: 'Facebook',
       icon: '👍',
       url: 'https://facebook.com/imprimarte',
-      active: true,
+      active: false,
       order: 1,
     },
     {
@@ -110,7 +110,7 @@ export const DEFAULT_CONTACT_INFO: ContactInfoInput = {
       platform: 'TikTok',
       icon: '🎵',
       url: 'https://tiktok.com/@imprimarte',
-      active: true,
+      active: false,
       order: 2,
     },
     { id: '4', platform: 'WhatsApp', icon: '💬', url: '', active: true, order: 3 }, // URL generated from whatsapp field
@@ -119,7 +119,7 @@ export const DEFAULT_CONTACT_INFO: ContactInfoInput = {
       platform: 'YouTube',
       icon: '📺',
       url: 'https://youtube.com/@imprimarte',
-      active: true,
+      active: false,
       order: 4,
     },
     {
@@ -127,7 +127,7 @@ export const DEFAULT_CONTACT_INFO: ContactInfoInput = {
       platform: 'Pinterest',
       icon: '📌',
       url: 'https://pinterest.com/imprimarte',
-      active: true,
+      active: false,
       order: 5,
     },
     {
