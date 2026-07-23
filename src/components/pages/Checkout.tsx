@@ -23,7 +23,11 @@ import type { Address } from '../../lib/userProfile';
 import CustomizationDetails from '../cart/CustomizationDetails';
 import { Trash2, Plus, Minus, Gift } from 'lucide-react';
 // Analytics tracking
-import { trackAddPaymentInfo, trackBeginCheckout } from '../../lib/analytics';
+import {
+  ANALYTICS_READY_EVENT,
+  trackAddPaymentInfo,
+  trackBeginCheckout,
+} from '../../lib/analytics';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 // Shipping system
 import ShippingSelector from '../checkout/ShippingSelector';
@@ -211,32 +215,40 @@ export default function Checkout() {
     formName: 'Checkout-Shipping',
   });
 
-  // Track flag to prevent duplicate begin_checkout events
-  const trackingInitialized = React.useRef(false);
+  // Track flags keep GA4 and Klaviyo independent. GA4 may initialize later
+  // when the shopper grants analytics consent on this page.
+  const checkoutAnalyticsTracked = React.useRef(false);
+  const klaviyoCheckoutTracked = React.useRef(false);
   const klaviyoEmailIdentified = React.useRef<string | null>(null);
   const klaviyoIdentifyTimer = React.useRef<number | null>(null);
 
   // Track begin_checkout when checkout page loads with items
   useEffect(() => {
-    if (!authLoading && !isCartSyncing && cart.items.length > 0 && !trackingInitialized.current) {
-      trackingInitialized.current = true;
+    if (authLoading || isCartSyncing || cart.items.length === 0) return;
 
-      // Track begin checkout in analytics
-      trackBeginCheckout(
-        cart.items.map((item) => ({
-          id: item.id,
-          slug: item.slug,
-          productSlug: item.productSlug,
-          name: item.name,
-          price: item.price,
-          unitPrice: item.price,
-          quantity: item.quantity,
-          category: item.category || 'General',
-        })),
-        cart.total
-      );
+    const analyticsItems = cart.items.map((item) => ({
+      id: item.id,
+      slug: item.slug,
+      productSlug: item.productSlug,
+      name: item.name,
+      price: item.price,
+      unitPrice: item.price,
+      quantity: item.quantity,
+      category: item.category || 'General',
+    }));
 
-      // Track Started Checkout in Klaviyo
+    const tryTrackCheckout = () => {
+      if (checkoutAnalyticsTracked.current) return;
+      if (trackBeginCheckout(analyticsItems, cart.total)) {
+        checkoutAnalyticsTracked.current = true;
+      }
+    };
+
+    tryTrackCheckout();
+    window.addEventListener(ANALYTICS_READY_EVENT, tryTrackCheckout);
+
+    if (!klaviyoCheckoutTracked.current) {
+      klaviyoCheckoutTracked.current = true;
       const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
       klaviyoStartedCheckout({
         items: cart.items.map((item) => ({
@@ -251,6 +263,10 @@ export default function Checkout() {
         itemCount,
       });
     }
+
+    return () => {
+      window.removeEventListener(ANALYTICS_READY_EVENT, tryTrackCheckout);
+    };
   }, [authLoading, isCartSyncing, cart.items, cart.total]);
 
   // Redirect to home if cart is empty (after initialization)

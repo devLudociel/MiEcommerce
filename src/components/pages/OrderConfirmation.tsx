@@ -7,7 +7,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import type { OrderItem, ShippingInfo, PaymentInfo, BillingInfo } from '../../types/firebase';
 import { safeImageSrc } from '../../lib/placeholders';
 // Analytics tracking
-import { trackPurchase } from '../../lib/analytics';
+import { ANALYTICS_READY_EVENT, trackPurchase } from '../../lib/analytics';
 
 interface Order {
   id: string;
@@ -115,53 +115,60 @@ export default function OrderConfirmation() {
 
   // Track purchase in analytics (once per order)
   useEffect(() => {
-    if (order && !purchaseTracked.current) {
-      const isPaid =
-        order.paymentStatus === 'paid' ||
-        ['paid', 'processing', 'completed'].includes(String(order.status || ''));
+    if (!order || purchaseTracked.current) return;
 
-      if (!isPaid) {
-        logger.debug('[OrderConfirmation] Purchase not tracked because order is not paid yet', {
-          orderId: order.id,
-          status: order.status,
-          paymentStatus: order.paymentStatus,
-        });
-        return;
-      }
+    const isPaid =
+      order.paymentStatus === 'paid' ||
+      ['paid', 'processing', 'completed'].includes(String(order.status || ''));
 
-      const idempotencyKey = `meta:purchase:${order.id}`;
-      if (typeof window !== 'undefined' && localStorage.getItem(idempotencyKey)) {
-        purchaseTracked.current = true;
-        return;
-      }
+    if (!isPaid) {
+      logger.debug('[OrderConfirmation] Purchase not tracked because order is not paid yet', {
+        orderId: order.id,
+        status: order.status,
+        paymentStatus: order.paymentStatus,
+      });
+      return;
+    }
+
+    const idempotencyKey = `meta:purchase:${order.id}`;
+    if (typeof window !== 'undefined' && localStorage.getItem(idempotencyKey)) {
+      purchaseTracked.current = true;
+      return;
+    }
+
+    const purchasePayload = {
+      id: order.id,
+      total: order.total,
+      subtotal: order.subtotal,
+      shipping: order.shipping,
+      tax: order.tax,
+      items: order.items.map((item) => ({
+        id: item.productId,
+        slug: item.productSlug,
+        productSlug: item.productSlug,
+        name: (item as any).name || item.productName,
+        price: Number((item as any).price ?? item.unitPrice ?? 0),
+        unitPrice: Number((item as any).price ?? item.unitPrice ?? 0),
+        quantity: item.quantity,
+        category: 'General',
+      })),
+    };
+
+    const tryTrackPurchase = () => {
+      if (purchaseTracked.current) return;
+      if (!trackPurchase(purchasePayload)) return;
 
       purchaseTracked.current = true;
-
-      // Track purchase event
-      trackPurchase({
-        id: order.id,
-        total: order.total,
-        subtotal: order.subtotal,
-        shipping: order.shipping,
-        tax: order.tax,
-        items: order.items.map((item) => ({
-          id: item.productId,
-          slug: item.productSlug,
-          productSlug: item.productSlug,
-          name: (item as any).name || item.productName,
-          price: Number((item as any).price ?? item.unitPrice ?? 0),
-          unitPrice: Number((item as any).price ?? item.unitPrice ?? 0),
-          quantity: item.quantity,
-          category: 'General',
-        })),
-      });
-
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(idempotencyKey, '1');
-      }
-
+      localStorage.setItem(idempotencyKey, '1');
       logger.debug('[OrderConfirmation] Purchase tracked in analytics', { orderId: order.id });
-    }
+    };
+
+    tryTrackPurchase();
+    window.addEventListener(ANALYTICS_READY_EVENT, tryTrackPurchase);
+
+    return () => {
+      window.removeEventListener(ANALYTICS_READY_EVENT, tryTrackPurchase);
+    };
   }, [order]);
 
   // Check if order has digital products by querying Firestore

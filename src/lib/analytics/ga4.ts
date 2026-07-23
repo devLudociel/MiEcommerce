@@ -139,7 +139,7 @@ export function trackAddToCart(product: {
  * Track begin checkout (begin_checkout)
  */
 export function trackBeginCheckout(items: GA4Item[], value: number) {
-  if (!window.gtag) return;
+  if (typeof window === 'undefined' || !window.gtag) return false;
 
   window.gtag('event', 'begin_checkout', {
     currency: 'EUR',
@@ -154,6 +154,7 @@ export function trackBeginCheckout(items: GA4Item[], value: number) {
   });
 
   console.log('[GA4] Begin checkout:', value);
+  return true;
 }
 
 /**
@@ -167,7 +168,7 @@ export function trackPurchase(order: {
   tax?: number;
   items: GA4Item[];
 }) {
-  if (!window.gtag) return;
+  if (typeof window === 'undefined' || !window.gtag) return false;
 
   window.gtag('event', 'purchase', {
     transaction_id: order.id,
@@ -185,6 +186,7 @@ export function trackPurchase(order: {
   });
 
   console.log('[GA4] Purchase:', order.id, order.total);
+  return true;
 }
 
 /**

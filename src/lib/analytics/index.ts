@@ -16,6 +16,8 @@ import * as FB from './facebookPixel';
 // Re-export individual platform functions for advanced use cases
 export { GA4, FB };
 
+export const ANALYTICS_READY_EVENT = 'analytics-ready';
+
 /**
  * Initialize all analytics platforms
  */
@@ -32,6 +34,10 @@ export function initAnalytics(config: { ga4MeasurementId?: string; facebookPixel
     ga4: !!config.ga4MeasurementId,
     facebook: !!config.facebookPixelId,
   });
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(ANALYTICS_READY_EVENT));
+  }
 }
 
 /**
@@ -105,7 +111,7 @@ interface AnalyticsItem {
  * Track checkout initiation (InitiateCheckout / begin_checkout)
  */
 export function trackBeginCheckout(items: AnalyticsItem[], value: number) {
-  GA4.trackBeginCheckout(
+  const trackedByGA4 = GA4.trackBeginCheckout(
     items.map((item) => ({
       ...item,
       quantity: item.quantity ?? 1,
@@ -113,6 +119,7 @@ export function trackBeginCheckout(items: AnalyticsItem[], value: number) {
     value
   );
   FB.trackFBInitiateCheckout(items, value);
+  return trackedByGA4;
 }
 
 /**
@@ -126,7 +133,7 @@ export function trackPurchase(order: {
   tax?: number;
   items: AnalyticsItem[];
 }) {
-  GA4.trackPurchase({
+  const trackedByGA4 = GA4.trackPurchase({
     ...order,
     items: order.items.map((item) => ({
       ...item,
@@ -134,6 +141,7 @@ export function trackPurchase(order: {
     })),
   });
   FB.trackFBPurchase(order, order.id);
+  return trackedByGA4;
 }
 
 /**
