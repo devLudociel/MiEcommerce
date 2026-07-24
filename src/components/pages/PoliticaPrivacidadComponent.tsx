@@ -28,13 +28,13 @@ export default function PoliticaPrivacidadComponent() {
                 <strong>Dirección:</strong> Calle Principal 123, Santa Cruz de Tenerife, España
               </li>
               <li>
-                <strong>Email:</strong> privacidad@imprimarte.com
+                <strong>Email:</strong> info@imprimearte.es
               </li>
               <li>
                 <strong>Teléfono:</strong> +34 645 341 452
               </li>
               <li>
-                <strong>Delegado de Protección de Datos:</strong> dpo@imprimarte.com
+                <strong>Delegado de Protección de Datos:</strong> info@imprimearte.es
               </li>
             </ul>
           </div>
@@ -386,7 +386,7 @@ export default function PoliticaPrivacidadComponent() {
             <ul className="space-y-2 text-sm">
               <li className="flex items-center gap-2">
                 <span className="text-cyan-500">✓</span>
-                <strong>Email:</strong> privacidad@imprimarte.com
+                <strong>Email:</strong> info@imprimearte.es
               </li>
               <li className="flex items-center gap-2">
                 <span className="text-cyan-500">✓</span>
@@ -633,7 +633,7 @@ export default function PoliticaPrivacidadComponent() {
               <h4 className="font-bold text-gray-800 mb-4">📞 Contacto General</h4>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <strong>Email:</strong> privacidad@imprimarte.com
+                  <strong>Email:</strong> info@imprimearte.es
                 </li>
                 <li>
                   <strong>Teléfono:</strong> +34 645 341 452
@@ -650,7 +650,7 @@ export default function PoliticaPrivacidadComponent() {
               </h4>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <strong>Email:</strong> dpo@imprimarte.com
+                  <strong>Email:</strong> info@imprimearte.es
                 </li>
                 <li>
                   <strong>Horario:</strong> Lunes a Viernes, 9:00 - 18:00
@@ -785,7 +785,7 @@ export default function PoliticaPrivacidadComponent() {
 
           <div className="flex flex-wrap justify-center gap-4">
             <a
-              href="mailto:privacidad@imprimarte.com"
+              href="mailto:info@imprimearte.es"
               className="px-8 py-4 bg-gradient-rainbow text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
             >
               📧 Email Privacidad

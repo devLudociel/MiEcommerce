@@ -30,8 +30,8 @@ const defaultContactCards = [
   {
     icon: '📧',
     title: 'Email',
-    content: 'info@imprimarte.com',
-    action: 'mailto:info@imprimarte.com',
+    content: 'info@imprimearte.es',
+    action: 'mailto:info@imprimearte.es',
     color: 'from-magenta-500 to-magenta-600',
   },
   {

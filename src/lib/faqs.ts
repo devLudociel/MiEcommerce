@@ -371,7 +371,7 @@ export const DEFAULT_FAQS: Omit<FAQInput, 'order'>[] = [
     category: 'devoluciones',
     question: '¿Puedo devolver un producto personalizado?',
     answer:
-      'Los productos personalizados no admiten devolución salvo que presenten defectos de fabricación o no se correspondan con el diseño aprobado. En estos casos, reemplazaremos el producto sin coste adicional. Los productos estándar sin personalizar tienen 30 días de devolución.',
+      'Los productos personalizados no admiten devolución salvo que presenten defectos de fabricación o no se correspondan con el diseño aprobado. En estos casos, reemplazaremos el producto sin coste adicional. Los productos estándar sin personalizar tienen 14 días de devolución.',
     active: true,
   },
   {

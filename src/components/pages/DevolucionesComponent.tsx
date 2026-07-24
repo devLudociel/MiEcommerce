@@ -11,7 +11,7 @@ export default function DevolucionesComponent() {
       icon: '📧',
       title: 'Contacta con nosotros',
       description:
-        'Envía un email a devoluciones@imprimarte.com o llámanos al 645 341 452 dentro de los 30 días desde la recepción',
+        'Envía un email a info@imprimearte.es o llámanos al 645 341 452 dentro de los 14 días desde la recepción',
       detalles:
         'Indica tu número de pedido y el motivo de la devolución. Te responderemos en menos de 24 horas con las instrucciones.',
     },
@@ -134,8 +134,8 @@ export default function DevolucionesComponent() {
     {
       icon: '⏰',
       motivo: 'Fuera de plazo',
-      descripcion: 'Han transcurrido más de 30 días desde la recepción',
-      solucion: 'El derecho de desistimiento es de 30 días naturales desde la entrega',
+      descripcion: 'Han transcurrido más de 14 días desde la recepción',
+      solucion: 'El derecho de desistimiento es de 14 días naturales desde la entrega',
     },
     {
       icon: '🎨',
@@ -156,7 +156,7 @@ export default function DevolucionesComponent() {
       titulo: '💼 Pedidos Corporativos',
       descripcion:
         'Para pedidos de más de 50 unidades personalizadas, contacta con nuestro equipo de atención corporativa. Condiciones especiales según el caso.',
-      accion: 'Email: corporativo@imprimarte.com',
+      accion: 'Email: info@imprimearte.es',
     },
     {
       titulo: '🚚 Producto Dañado en Transporte',
@@ -241,9 +241,9 @@ export default function DevolucionesComponent() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white rounded-xl p-5">
                   <div className="text-3xl mb-3">⏰</div>
-                  <h3 className="font-bold text-gray-800 mb-2">30 Días</h3>
+                  <h3 className="font-bold text-gray-800 mb-2">14 Días</h3>
                   <p className="text-sm text-gray-600">
-                    Tienes 30 días naturales desde la recepción para devolver productos estándar
+                    Tienes 14 días naturales desde la recepción para devolver productos estándar
                   </p>
                 </div>
                 <div className="bg-white rounded-xl p-5">
@@ -361,7 +361,7 @@ export default function DevolucionesComponent() {
                   </h3>
                   <p className="text-gray-700 mb-4">
                     Si necesitas cambiar la talla o color de un producto estándar (sin
-                    personalizar), puedes hacerlo dentro de los 30 días desde la recepción.
+                    personalizar), puedes hacerlo dentro de los 14 días desde la recepción.
                   </p>
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-center gap-2">
@@ -415,7 +415,7 @@ export default function DevolucionesComponent() {
                     <div className="flex items-start gap-3">
                       <span className="font-bold text-cyan-600">1.</span>
                       <p className="text-gray-700">
-                        Contacta con nosotros en <strong>cambios@imprimarte.com</strong> o al
+                        Contacta con nosotros en <strong>info@imprimearte.es</strong> o al
                         <strong> 645 341 452</strong>
                       </p>
                     </div>
@@ -576,7 +576,7 @@ export default function DevolucionesComponent() {
                       <div>
                         <p className="font-bold text-gray-800 mb-1">Contacta con nosotros</p>
                         <p className="text-sm text-gray-600">
-                          Email: garantia@imprimarte.com o llama al 645 341 452
+                          Email: info@imprimearte.es o llama al 645 341 452
                         </p>
                       </div>
                     </li>
@@ -677,7 +677,7 @@ export default function DevolucionesComponent() {
 
           <div className="flex flex-wrap justify-center gap-4">
             <a
-              href="mailto:devoluciones@imprimarte.com"
+              href="mailto:info@imprimearte.es"
               className="px-8 py-4 bg-gradient-rainbow text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
             >
               📧 Email Devoluciones

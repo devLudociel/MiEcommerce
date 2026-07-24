@@ -163,7 +163,7 @@ function toUIProduct(data: FirebaseProduct & { id: string }): UIProduct {
     inStock: !!active,
     freeShipping: true,
     warranty: 'Garantía 12 meses',
-    returnPolicy: '30 días para devoluciones gratuitas',
+    returnPolicy: '14 días para devoluciones gratuitas',
     customizable,
     productionTime: (data as any).productionTime || '3-5 días hábiles',
     categoryId: (data as any).categoryId,

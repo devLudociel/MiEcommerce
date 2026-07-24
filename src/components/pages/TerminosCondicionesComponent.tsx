@@ -12,7 +12,7 @@ export default function TerminosCondicionesComponent() {
         <div className="space-y-4">
           <p>
             Los presentes Términos y Condiciones regulan el uso de la tienda online{' '}
-            <strong>ImprimeArte</strong>, ubicada en la dirección web www.imprimarte.com, propiedad
+            <strong>ImprimeArte</strong>, ubicada en la dirección web imprimearte.es, propiedad
             de ImprimeArte S.L., con domicilio social en Santa Cruz de Tenerife, Islas Canarias,
             España.
           </p>
@@ -23,7 +23,7 @@ export default function TerminosCondicionesComponent() {
             <li>Razón Social: ImprimeArte S.L.</li>
             <li>CIF: B12345678</li>
             <li>Dirección: Calle Principal 123, Santa Cruz de Tenerife</li>
-            <li>Email: info@imprimarte.com</li>
+            <li>Email: info@imprimearte.es</li>
             <li>Teléfono: +34 645 341 452</li>
           </ul>
           <p>
@@ -180,7 +180,7 @@ export default function TerminosCondicionesComponent() {
       content: (
         <div className="space-y-4">
           <p>
-            <strong>Contenido de la Web:</strong> Todo el contenido de www.imprimarte.com,
+            <strong>Contenido de la Web:</strong> Todo el contenido de imprimearte.es,
             incluyendo textos, imágenes, logotipos, diseños, código fuente y cualquier otro
             material, está protegido por derechos de propiedad intelectual y pertenece a ImprimeArte
             o sus licenciantes.

@@ -241,7 +241,7 @@ export default function SocialProof() {
           </div>
           <div className="flex items-center gap-2 text-gray-600">
             <span className="text-2xl">💰</span>
-            <span className="font-semibold">30 Días Garantía</span>
+            <span className="font-semibold">14 Días Devolución</span>
           </div>
           <div className="flex items-center gap-2 text-gray-600">
             <span className="text-2xl">✅</span>

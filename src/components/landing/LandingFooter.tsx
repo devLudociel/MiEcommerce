@@ -28,7 +28,7 @@ export default function LandingFooter({ data }: LandingFooterProps) {
 
   const phone = data?.phoneDisplay || contactInfo?.phoneDisplay || '645 341 452';
   const phoneRaw = data?.phone || contactInfo?.phone || '+34645341452';
-  const email = data?.email || contactInfo?.email || 'info@imprimarte.com';
+  const email = data?.email || contactInfo?.email || 'info@imprimearte.es';
   const whatsapp = data?.whatsapp || contactInfo?.whatsapp || '34645341452';
   const address = data?.address || (contactInfo ? `${contactInfo.city}, ${contactInfo.province}` : 'Santa Cruz de Tenerife');
 

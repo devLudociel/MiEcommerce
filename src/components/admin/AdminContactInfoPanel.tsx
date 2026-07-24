@@ -286,7 +286,7 @@ export default function AdminContactInfoPanel() {
                     type="email"
                     value={contactInfo.email}
                     onChange={(e) => handleChange('email', e.target.value)}
-                    placeholder="info@imprimarte.com"
+                    placeholder="info@imprimearte.es"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                   />
                 </div>

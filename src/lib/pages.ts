@@ -284,7 +284,7 @@ Sí, ofrecemos descuentos para pedidos grandes. Contacta con nosotros.
 ## Información de Contacto
 
 **Teléfono:** 645 341 452
-**Email:** info@imprimarte.com
+**Email:** info@imprimearte.es
 **Dirección:** Santa Cruz de Tenerife, España
 
 ## Horario de Atención
