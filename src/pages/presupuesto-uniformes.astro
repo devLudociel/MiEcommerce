@@ -1,0 +1,18 @@
+---
+import LandingLayout from '../layouts/LandingLayout.astro';
+import UniformQuoteWizard from '../components/landing/UniformQuoteWizard';
+
+const title = 'Uniformes y camisetas personalizadas en Canarias | ImprimeArte';
+const description =
+  'Cuéntanos qué necesitas en seis pasos y recibe un presupuesto para uniformes, polos y camisetas personalizadas en todas las Islas Canarias.';
+---
+
+<LandingLayout
+  title={title}
+  description={description}
+  ogImage="/og-uniformes-canarias.png"
+  slug="uniformes-canarias"
+  campaignId="meta-uniformes-canarias"
+>
+  <UniformQuoteWizard client:load />
+</LandingLayout>
