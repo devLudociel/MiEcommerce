@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import RequireAdmin from '../../../components/auth/RequireAdmin';
+import AdminProductionTimes from '../../../components/admin/AdminProductionTimes';
+---
+
+<BaseLayout title="Tiempos de producción">
+  <RequireAdmin client:only="react">
+    <AdminProductionTimes client:idle />
+  </RequireAdmin>
+</BaseLayout>
