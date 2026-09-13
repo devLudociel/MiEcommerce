@@ -163,6 +163,11 @@ service cloud.firestore {
       allow write: if false; // Solo vía Admin SDK
     }
 
+    // Tareas manuales del panel de produccion. Solo las usa el administrador.
+    match /production_tasks/{taskId} {
+      allow read, write: if isAdmin();
+    }
+
     // System collections (contadores, configuración)
     match /system/{document} {
       allow read: if isAdmin();

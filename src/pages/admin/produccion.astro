@@ -1,11 +1,11 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import RequireAdmin from '../../components/auth/RequireAdmin';
-import AdminProductionPanel from '../../components/admin/AdminProductionPanel';
+import AdminWeekPanel from '../../components/admin/AdminWeekPanel';
 ---
 
-<BaseLayout title="Producción">
+<BaseLayout title="Mi semana">
   <RequireAdmin client:only="react">
-    <AdminProductionPanel client:idle />
+    <AdminWeekPanel client:idle />
   </RequireAdmin>
 </BaseLayout>
