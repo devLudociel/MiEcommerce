@@ -124,6 +124,11 @@ export interface OrderItem {
   uploadedFiles?: string[]; // URLs de los archivos subidos
   productionNotes?: string; // Notas internas del equipo de producción
   productionStatus?: 'pending' | 'in_production' | 'ready' | 'shipped'; // Estado individual del producto
+  // PLANIFICACION: ver docs/superpowers/specs/2026-09-13-dashboard-produccion-design.md
+  productionTypeId?: string; // Tipo de trabajo en la coleccion production_times
+  personMinutes?: number; // Minutos de persona, copiados al asignar el tipo y editables
+  machineMinutes?: number; // Minutos de maquina desatendida
+  productionDueDate?: Timestamp; // Fecha limite de produccion de esta linea
 }
 
 // CHECKOUT & ORDER: Shipping information
@@ -405,6 +410,10 @@ export interface OrderData {
   trackingUrl?: string;
   estimatedDelivery?: Timestamp;
   trackingHistory?: TrackingEvent[];
+  // PLANIFICACION: fecha comprometida con el cliente. Distinta de estimatedDelivery,
+  // que es lo que dice el transportista.
+  promisedDate?: Timestamp;
+  deliveryMode?: 'pickup' | 'local' | 'island';
   // Coupon information
   couponId?: string;
   couponCode?: string;
