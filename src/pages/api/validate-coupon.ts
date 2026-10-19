@@ -1,7 +1,7 @@
 // src/pages/api/validate-coupon.ts
 import type { APIRoute } from 'astro';
 import type { Timestamp } from 'firebase-admin/firestore';
-import { getAdminDb } from '../../lib/firebase-admin';
+import { getAdminAuth, getAdminDb } from '../../lib/firebase-admin';
 import { validateCouponCodeSchema } from '../../lib/validation/schemas';
 import {
   checkRateLimit,
@@ -227,10 +227,12 @@ export const POST: APIRoute = async ({ request }) => {
         );
       }
 
-      // Check if userId's email is in the allowed list
-      const usersRef = adminDb.collection('users');
-      const userDoc = await usersRef.doc(userId).get();
-      const userEmail = userDoc.data()?.email;
+      // Check if userId's email is in the allowed list. Read it from Firebase
+      // Auth, same as pricing.ts: users/{uid}.email is editable by its owner.
+      const userEmail = await getAdminAuth()
+        .getUser(userId)
+        .then((user) => user.email)
+        .catch(() => undefined);
 
       if (!userEmail || !coupon.userSpecific.includes(userEmail)) {
         logger.info('[validate-coupon] User not eligible for this coupon');

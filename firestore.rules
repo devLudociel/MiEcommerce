@@ -298,8 +298,20 @@ service cloud.firestore {
     match /customer_reviews/{reviewId} {
       // Cualquiera puede leer reseñas (filtrado por status en cliente)
       allow read: if true;
-      // Usuarios autenticados pueden crear reseñas (van a cola de moderación)
-      allow create: if isAuth() && request.resource.data.customerId == request.auth.uid;
+      // Usuarios autenticados pueden crear reseñas (van a cola de moderación).
+      // Se exige status 'pending' y se limitan los campos a los que envía
+      // submitReview(): sin esto un usuario podía crear la reseña ya aprobada,
+      // destacada o con una respuesta del negocio falsa.
+      allow create: if isAuth()
+                    && request.resource.data.customerId == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.featured == false
+                    && request.resource.data.keys().hasOnly([
+                         'customerId', 'customerName', 'customerEmail', 'customerAvatar',
+                         'rating', 'title', 'text', 'status', 'featured', 'displayOrder',
+                         'orderId', 'orderDate', 'productIds', 'images',
+                         'createdAt', 'updatedAt'
+                       ]);
       // Solo admins pueden actualizar (aprobar/rechazar) o eliminar
       allow update, delete: if isAdmin();
     }

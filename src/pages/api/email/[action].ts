@@ -17,6 +17,7 @@ import {
   createRateLimitResponse,
   RATE_LIMIT_CONFIGS,
 } from '../../../lib/rate-limiter';
+import { verifyAdminAuth } from '../../../lib/auth/authHelpers';
 
 const logger = {
   info: (msg: string, data?: unknown) => console.log(`[INFO] ${msg}`, data ?? ''),
@@ -74,6 +75,16 @@ export const POST: APIRoute = async ({ params, request }) => {
   const csrfResult = validateCSRF(request);
   if (!csrfResult.valid) {
     return createCSRFErrorResponse();
+  }
+
+  // SECURITY: admin only. These actions take an arbitrary recipient and, for
+  // 'newsletter', arbitrary HTML sent from our verified domain; CSRF alone does
+  // not stop a non-browser client, so without this anyone could send branded
+  // phishing through us.
+  const authResult = await verifyAdminAuth(request);
+  if (!authResult.success) {
+    logger.warn(`[email/${action}] Unauthorized access attempt`);
+    return authResult.error!;
   }
 
   try {

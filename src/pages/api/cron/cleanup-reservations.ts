@@ -13,7 +13,15 @@ export const prerender = false;
 
 function isAuthorized(request: Request): boolean {
   const secret = import.meta.env.CRON_SECRET as string | undefined;
-  if (!secret) return true;
+  if (!secret) {
+    // Fail closed in production. Vercel Cron sends `Authorization: Bearer $CRON_SECRET`
+    // once the variable is set in the project.
+    if (import.meta.env.PROD) {
+      console.error('[cron/cleanup-reservations] CRON_SECRET is not set; refusing request');
+      return false;
+    }
+    return true;
+  }
   const authHeader = request.headers.get('authorization') || '';
   return authHeader === `Bearer ${secret}`;
 }

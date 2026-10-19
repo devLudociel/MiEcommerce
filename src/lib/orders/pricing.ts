@@ -1,6 +1,6 @@
 import type { BundleDiscount, AppliedBundleDiscount } from '../../types/firebase';
 import type { CustomizationField, CustomizationSchema } from '../../types/customization';
-import { getAdminDb } from '../firebase-admin';
+import { getAdminAuth, getAdminDb } from '../firebase-admin';
 
 export interface OrderItemInput {
   productId: string;
@@ -77,6 +77,15 @@ function toDate(value: unknown): Date | null {
   if (typeof maybe.toDate === 'function') return maybe.toDate();
   const parsed = new Date(String(value));
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+async function getAuthEmail(uid: string): Promise<string> {
+  try {
+    const user = await getAdminAuth().getUser(uid);
+    return normalizeString(user.email).toLowerCase();
+  } catch {
+    return '';
+  }
 }
 
 function getTaxInfo(state?: string): { rate: number; name: string; label: string } {
@@ -597,8 +606,9 @@ async function getCouponDiscount(
     if (!normalizedUserId) {
       return { discount: 0, freeShipping: false };
     }
-    const userSnap = await db.collection('users').doc(normalizedUserId).get();
-    const userEmail = normalizeString(userSnap.data()?.email).toLowerCase();
+    // Use the email on the Firebase Auth account: users/{uid}.email is writable
+    // by its owner, so trusting it let anyone claim another customer's coupon.
+    const userEmail = await getAuthEmail(normalizedUserId);
     const allowed = userSpecific.map((v) => String(v).toLowerCase());
     if (!userEmail || !allowed.includes(userEmail)) {
       return { discount: 0, freeShipping: false };
