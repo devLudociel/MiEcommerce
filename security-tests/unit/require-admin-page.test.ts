@@ -68,6 +68,6 @@ describe('requireAdminPage', () => {
     const response = await requireAdminPage(request, url, 'session-cookie');
 
     expect(response?.status).toBe(302);
-    expect(response?.headers.get('location')).toBe('http://localhost:4321/account');
+    expect(response?.headers.get('location')).toBe('/account');
   });
 });

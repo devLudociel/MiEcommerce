@@ -119,7 +119,8 @@ export function createDb() {
           data[name][id] = doc;
           return { id } as any;
         },
-        doc: (id: string) => buildDocRef(name, id),
+        // Like Firestore, doc() without an id generates a new one
+        doc: (id?: string) => buildDocRef(name, id ?? `${name}_${idSeq++}`),
         where: (field: string, op: string, value: any) =>
           buildQuery(name, [[field, op, value]]),
       } as any;

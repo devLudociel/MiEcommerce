@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from '../share/create';
 
 const setMock = vi.fn();
@@ -42,7 +42,13 @@ describe('API share/create', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('no expone error.message interno en respuesta 500', async () => {
+    // The endpoint only includes error details in dev; assert production behaviour
+    vi.stubEnv('DEV', false);
     setMock.mockRejectedValueOnce(new Error('SENSITIVE_INTERNAL_ERROR'));
 
     const req = new Request('http://local/api/share/create', {

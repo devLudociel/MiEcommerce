@@ -1,0 +1,25 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test-and-build:
+    name: Unit tests + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Unit tests
+        run: npm run test:run
+      # Typecheck and lint are not gated yet: the codebase currently has ~620
+      # TypeScript errors and ~10k (mostly formatting) lint errors. Add them
+      # here once those are cleaned up.
+      - name: Build
+        run: npm run build

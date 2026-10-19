@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '../create-payment-intent';
-import { createDb } from './testDb';
 
 // Mock Stripe
 vi.mock('stripe', () => {
@@ -33,7 +32,9 @@ vi.mock('firebase-admin/firestore', () => ({
   },
 }));
 
-vi.mock('../../../lib/firebase-admin', () => {
+// vi.mock is hoisted above the imports, so the helper is loaded inside the factory
+vi.mock('../../../lib/firebase-admin', async () => {
+  const { createDb } = await import('./testDb');
   const db = createDb();
   return { getAdminDb: () => db, __mockDb: db } as any;
 });

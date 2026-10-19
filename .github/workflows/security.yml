@@ -11,6 +11,10 @@ jobs:
   npm-audit:
     name: NPM Audit (SCA)
     runs-on: ubuntu-latest
+    # `secrets` is not available in `if:` expressions (it made the whole file
+    # invalid, so no job ever ran). Expose it through env and test env instead.
+    env:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,22 +24,18 @@ jobs:
       - run: npm ci
       - run: npm audit --omit=dev --audit-level=high
       - name: Snyk test (optional)
-        if: ${{ secrets.SNYK_TOKEN != '' }}
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        if: ${{ env.SNYK_TOKEN != '' }}
         run: npx snyk test
 
   semgrep:
     name: Semgrep (SAST)
     runs-on: ubuntu-latest
+    # returntocorp/semgrep-action is deprecated; this is the documented replacement.
+    container:
+      image: semgrep/semgrep
     steps:
       - uses: actions/checkout@v4
-      - uses: returntocorp/semgrep-action@v1
-        with:
-          config: >-
-            p/owasp-top-ten
-            p/typescript
-            p/nodejs
+      - run: semgrep scan --config p/owasp-top-ten --config p/typescript --config p/nodejs --error --metrics=off
 
   custom-sast:
     name: Custom SAST Checks
@@ -64,6 +64,8 @@ jobs:
           ! grep -rn 'console\.log.*\(token\|secret\|password\|key\|credential\)' src/ --include='*.ts' --include='*.tsx' || true
 
           echo "=== Checking POST endpoints have auth/CSRF checks ==="
+          # Without globstar, ** matched a single directory level only
+          shopt -s globstar
           for file in src/pages/api/**/*.ts; do
             if grep -q 'export const POST' "$file"; then
               if ! grep -q 'verifyAuth\|verifyAdmin\|validateCSRF\|CRON_SECRET\|stripe-signature\|webhook' "$file"; then
@@ -93,10 +95,12 @@ jobs:
   zap-baseline:
     name: OWASP ZAP Baseline
     runs-on: ubuntu-latest
-    if: ${{ secrets.ZAP_TARGET != '' }}
+    env:
+      ZAP_TARGET: ${{ secrets.ZAP_TARGET }}
     steps:
       - uses: actions/checkout@v4
       - name: OWASP ZAP Baseline Scan
+        if: ${{ env.ZAP_TARGET != '' }}
         uses: zaproxy/action-baseline@v0.11.0
         with:
-          target: ${{ secrets.ZAP_TARGET }}
+          target: ${{ env.ZAP_TARGET }}

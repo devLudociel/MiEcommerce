@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '../save-order';
-import { createDb } from './testDb';
 
 // Mock CSRF protection (tested separately, should not block business logic tests)
 vi.mock('../../../lib/csrf', () => ({
@@ -23,7 +22,9 @@ vi.mock('firebase-admin/firestore', () => ({
 }));
 
 // Mock Admin DB provider
-vi.mock('../../../lib/firebase-admin', () => {
+// vi.mock is hoisted above the imports, so the helper is loaded inside the factory
+vi.mock('../../../lib/firebase-admin', async () => {
+  const { createDb } = await import('./testDb');
   const db = createDb();
   return {
     getAdminDb: () => db,

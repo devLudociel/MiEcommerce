@@ -1348,6 +1348,24 @@ export function validateConfigurator(input: unknown): ConfiguratorValidationResu
     };
   }
 
+  // normalizePricingFromV2 drops sheet-matrix rules whose unitsPerSheet is not a
+  // positive integer, so the check further down never sees them: a bad rule was
+  // lost silently (and that combination ended up with no price). Report it from
+  // the raw input instead.
+  const rawPricing = isRecord(input) && isRecord(input.pricing) ? input.pricing : null;
+  if (rawPricing?.mode === 'sheet-matrix' && Array.isArray(rawPricing.rules)) {
+    rawPricing.rules.forEach((rule, index) => {
+      const unitsPerSheet = toPositiveInt(isRecord(rule) ? rule.unitsPerSheet : undefined, 0);
+      if (unitsPerSheet <= 0) {
+        errors.push({
+          code: 'INVALID_UNITS_PER_SHEET',
+          message: `La regla ${index + 1} debe definir unitsPerSheet > 0`,
+          path: `pricing.rules[${index}].unitsPerSheet`,
+        });
+      }
+    });
+  }
+
   const normalized = deepClone(v2);
 
   const seenAttributes = new Set<string>();
