@@ -271,11 +271,28 @@ export const POST: APIRoute = async ({ request }) => {
           items: orderForN8n.items,
         });
       }
-    } else if (
-      type === 'payment_intent.payment_failed' ||
-      type === 'payment_intent.canceled' ||
-      type === 'charge.failed'
-    ) {
+    } else if (type === 'payment_intent.payment_failed' || type === 'charge.failed') {
+      // A declined attempt is not final: the PaymentIntent returns to
+      // requires_payment_method and the customer can retry with another card
+      // on the same order. Deleting the order here made that retry fail with
+      // "Pedido no encontrado" (and, with delayed or out-of-order webhooks,
+      // could leave a later successful charge without an order). Keep the order
+      // and its reservations; if the customer gives up, the reservation expires
+      // and /api/cron/cleanup-reservations returns the stock and wallet funds.
+      if (orderData?.paymentStatus !== 'paid') {
+        // payment_intent.* carries last_payment_error; charge.failed carries failure_message
+        const failureReason = data?.last_payment_error?.message || data?.failure_message || type;
+        await orderRef.set(
+          {
+            lastPaymentFailedAt: new Date(),
+            lastPaymentError: String(failureReason).slice(0, 500),
+            paymentFailedAttempts: FieldValue.increment(1),
+            updatedAt: new Date(),
+          },
+          { merge: true }
+        );
+      }
+    } else if (type === 'payment_intent.canceled') {
       if (orderData?.paymentStatus === 'paid') {
         logger.warn(
           '[Stripe Webhook] Received payment failure for already paid order. Skipping deletion.',
@@ -313,7 +330,7 @@ export const POST: APIRoute = async ({ request }) => {
         await orderRef.delete();
         await db.collection('order_cancellations').add({
           orderId,
-          reason: 'payment_failed_webhook',
+          reason: 'payment_canceled_webhook',
           createdAt: FieldValue.serverTimestamp(),
         });
       }

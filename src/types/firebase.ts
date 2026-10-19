@@ -400,6 +400,10 @@ export interface OrderData {
   total: number;
   status: string;
   paymentStatus: string;
+  // Set by the Stripe webhook when a charge succeeded but could not be applied
+  // to the order (expired reservation, amount mismatch...). Needs manual review.
+  paymentMismatch?: boolean;
+  paymentMismatchReason?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
   invoiceNumber?: string;

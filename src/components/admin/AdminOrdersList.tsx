@@ -306,6 +306,14 @@ export default function AdminOrdersList() {
                         >
                           {statusLabels[order.status] || order.status}
                         </span>
+                        {order.paymentMismatch && (
+                          <span
+                            className="px-3 py-1 rounded-full text-xs font-bold text-center bg-red-600 text-white"
+                            title={order.paymentMismatchReason}
+                          >
+                            ⚠️ Cobrado sin aplicar: revisar en Stripe
+                          </span>
+                        )}
                         <div className="flex gap-2">
                           <a
                             href={`/admin/orders/${order.id}`}

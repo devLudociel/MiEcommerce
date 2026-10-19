@@ -5,6 +5,7 @@ import {
   type DocumentReference,
   type Transaction,
 } from 'firebase-admin/firestore';
+import { releaseWalletReservation } from './walletReservations';
 
 const stockLogger = {
   info: (message: string, data?: unknown) => console.log(message, data ?? ''),
@@ -724,9 +725,47 @@ export async function cleanupExpiredReservations(db: Firestore): Promise<number>
 
   let processed = 0;
   for (const doc of snap.docs) {
-    await expireReservedOrder({ db, orderId: doc.id, reason: 'reservation_expired' });
+    const result = await expireReservedOrder({
+      db,
+      orderId: doc.id,
+      reason: 'reservation_expired',
+    });
+    if (!result.skipped) {
+      await releaseExpiredWalletReservation(db, doc.id);
+    }
     processed += 1;
   }
 
   return processed;
+}
+
+/**
+ * Return wallet funds held by an abandoned order. Without this the customer's
+ * reserved balance stayed locked forever once the checkout was abandoned.
+ * Only runs while the order still shows an unpaid 'reserved' wallet hold, so it
+ * cannot release funds twice or touch an order that was paid in the meantime.
+ */
+async function releaseExpiredWalletReservation(db: Firestore, orderId: string): Promise<void> {
+  const snap = await db.collection('orders').doc(orderId).get();
+  const data = snap.data() || {};
+  const userId = typeof data.userId === 'string' ? data.userId : '';
+  const amount = Number(data.walletReservedAmount || 0);
+  const paymentStatus = String(data.paymentStatus || '').toLowerCase();
+
+  if (
+    data.walletReservationStatus !== 'reserved' ||
+    amount <= 0 ||
+    !userId ||
+    userId === 'guest' ||
+    paymentStatus === 'paid' ||
+    paymentStatus === 'completed'
+  ) {
+    return;
+  }
+
+  try {
+    await releaseWalletReservation({ db, orderId, userId, amount });
+  } catch (error) {
+    stockLogger.warn('[reservation_expired_wallet_release_failed]', { orderId, error });
+  }
 }

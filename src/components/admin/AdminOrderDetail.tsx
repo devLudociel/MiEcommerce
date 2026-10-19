@@ -840,6 +840,16 @@ export default function AdminOrderDetail() {
             </p>
           </div>
 
+          {order.paymentMismatch && (
+            <div className="mb-6 rounded-2xl border-2 border-red-300 bg-red-50 p-5 text-red-800">
+              <p className="font-black">⚠️ Stripe cobró este pedido pero no se pudo aplicar</p>
+              <p className="mt-1 text-sm">
+                Motivo: <code>{order.paymentMismatchReason || 'desconocido'}</code>. El cliente ha
+                pagado: revisa el pago en Stripe y decide si preparar el pedido o reembolsarlo.
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-white rounded-2xl shadow-lg p-6">

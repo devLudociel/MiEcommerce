@@ -321,14 +321,16 @@ describe('Security: POST /api/stripe-webhook', () => {
   });
 
   // -------------------------------------------------------------------------
-  // 4. payment_intent.payment_failed — releases reservations
+  // 4. payment_intent.payment_failed — keeps the order so the customer can retry
   // -------------------------------------------------------------------------
 
-  it('FAILED-1: payment_intent.payment_failed releases stock reservations', async () => {
+  it('FAILED-1: payment_intent.payment_failed keeps the order and its reservations for a retry', async () => {
     const orderId = 'order-failed-1';
     const paymentIntentId = 'pi_failed_001';
 
     await seedWebhookOrder(orderId, paymentIntentId, {
+      walletReservationStatus: 'reserved',
+      walletReservedAmount: 10.0,
       stockReservationStatus: 'reserved',
       stockReservedItems: [{ productId: 'prod-1', quantity: 2 }],
     });
@@ -337,7 +339,42 @@ describe('Security: POST /api/stripe-webhook', () => {
       id: paymentIntentId,
       amount: 3499,
       currency: 'eur',
-      status: 'failed',
+      status: 'requires_payment_method',
+      last_payment_error: { message: 'Your card was declined.' },
+      metadata: { orderId },
+    });
+
+    const req = signedWebhookRequest(event);
+    const res = await WEBHOOK_POST({ request: req } as any);
+
+    expect(res.status).toBe(200);
+    expect(vi.mocked(releaseReservedStock)).not.toHaveBeenCalled();
+    expect(vi.mocked(releaseWalletReservation)).not.toHaveBeenCalled();
+
+    const db = await getMockDb();
+    const order = db.data.orders[orderId];
+    expect(order).toBeDefined();
+    expect(order?.paymentStatus).toBe('pending');
+    expect(order?.stockReservationStatus).toBe('reserved');
+    expect(order?.lastPaymentError).toBe('Your card was declined.');
+  });
+
+  it('FAILED-2: payment_intent.canceled releases stock and wallet reservations', async () => {
+    const orderId = 'order-canceled-1';
+    const paymentIntentId = 'pi_canceled_001';
+
+    await seedWebhookOrder(orderId, paymentIntentId, {
+      walletReservationStatus: 'reserved',
+      walletReservedAmount: 10.0,
+      stockReservationStatus: 'reserved',
+      stockReservedItems: [{ productId: 'prod-1', quantity: 2 }],
+    });
+
+    const event = createWebhookEvent('payment_intent.canceled', {
+      id: paymentIntentId,
+      amount: 3499,
+      currency: 'eur',
+      status: 'canceled',
       metadata: { orderId },
     });
 
@@ -352,31 +389,6 @@ describe('Security: POST /api/stripe-webhook', () => {
         ]),
       })
     );
-  });
-
-  it('FAILED-2: payment_intent.payment_failed releases wallet reservation when present', async () => {
-    const orderId = 'order-failed-wallet-1';
-    const paymentIntentId = 'pi_failed_wallet_001';
-
-    await seedWebhookOrder(orderId, paymentIntentId, {
-      walletReservationStatus: 'reserved',
-      walletReservedAmount: 10.0,
-      stockReservationStatus: 'reserved',
-      stockReservedItems: [],
-    });
-
-    const event = createWebhookEvent('payment_intent.payment_failed', {
-      id: paymentIntentId,
-      amount: 3499,
-      currency: 'eur',
-      status: 'failed',
-      metadata: { orderId },
-    });
-
-    const req = signedWebhookRequest(event);
-    const res = await WEBHOOK_POST({ request: req } as any);
-
-    expect(res.status).toBe(200);
     expect(vi.mocked(releaseWalletReservation)).toHaveBeenCalledWith(
       expect.objectContaining({
         orderId,
